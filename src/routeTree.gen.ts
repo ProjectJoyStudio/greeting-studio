@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreateRouteImport } from './routes/create'
@@ -16,6 +17,11 @@ import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
+  '/pricing': typeof PricingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
+  '/pricing': typeof PricingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
+  '/pricing': typeof PricingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/daily'
     | '/personal-orders'
+    | '/pricing'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/daily'
     | '/personal-orders'
+    | '/pricing'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/daily'
     | '/personal-orders'
+    | '/pricing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,10 +118,18 @@ export interface RootRouteChildren {
   CreateRoute: typeof CreateRoute
   DailyRoute: typeof DailyRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
+  PricingRoute: typeof PricingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/personal-orders': {
       id: '/personal-orders'
       path: '/personal-orders'
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreateRoute: CreateRoute,
   DailyRoute: DailyRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
+  PricingRoute: PricingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
