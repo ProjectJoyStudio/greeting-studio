@@ -5,14 +5,13 @@ import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "./LanguageSelector";
 
 const navItems = [
-  { to: "/", key: "nav_home" },
   { to: "/catalog", key: "nav_catalog" },
   { to: "/daily", key: "nav_daily" },
   { to: "/create", key: "nav_create" },
-  { to: "/pricing", key: "nav_pricing" },
+  { to: "/personal-orders", key: "nav_personal" },
   { to: "/calendar", key: "nav_calendar" },
-  { to: "/about", key: "nav_about" },
-  { to: "/contact", key: "nav_contact" },
+  { to: "/pricing", key: "nav_pricing" },
+  { to: "/corporate-orders", key: "nav_corporate" },
 ] as const;
 
 export function Header() {
@@ -40,7 +39,7 @@ export function Header() {
             <Link
               key={n.to}
               to={n.to}
-              activeOptions={{ exact: n.to === "/" }}
+              activeOptions={{ exact: false }}
               className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground data-[status=active]:bg-secondary data-[status=active]:text-foreground"
             >
               {t(n.key)}
@@ -75,7 +74,7 @@ export function Header() {
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
-                activeOptions={{ exact: n.to === "/" }}
+                activeOptions={{ exact: false }}
                 className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition hover:bg-secondary data-[status=active]:bg-secondary data-[status=active]:text-foreground"
               >
                 {t(n.key)}
