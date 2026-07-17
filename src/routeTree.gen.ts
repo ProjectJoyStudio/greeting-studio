@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
+  id: '/personal-orders',
+  path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DailyRoute = DailyRouteImport.update({
   id: '/daily',
   path: '/daily',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/personal-orders': typeof PersonalOrdersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/personal-orders': typeof PersonalOrdersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/personal-orders': typeof PersonalOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/catalog' | '/create' | '/daily'
+  fullPaths: '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/catalog' | '/create' | '/daily'
-  id: '__root__' | '/' | '/catalog' | '/create' | '/daily'
+  to: '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
+  id: '__root__' | '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   CatalogRoute: typeof CatalogRoute
   CreateRoute: typeof CreateRoute
   DailyRoute: typeof DailyRoute
+  PersonalOrdersRoute: typeof PersonalOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/personal-orders': {
+      id: '/personal-orders'
+      path: '/personal-orders'
+      fullPath: '/personal-orders'
+      preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/daily': {
       id: '/daily'
       path: '/daily'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogRoute: CatalogRoute,
   CreateRoute: CreateRoute,
   DailyRoute: DailyRoute,
+  PersonalOrdersRoute: PersonalOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
