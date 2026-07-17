@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -30,6 +31,11 @@ const CreateRoute = CreateRouteImport.update({
   path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CorporateOrdersRoute = CorporateOrdersRouteImport.update({
+  id: '/corporate-orders',
+  path: '/corporate-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
@@ -44,6 +50,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
@@ -59,21 +67,42 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/personal-orders': typeof PersonalOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
+  fullPaths:
+    | '/'
+    | '/catalog'
+    | '/corporate-orders'
+    | '/create'
+    | '/daily'
+    | '/personal-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
-  id: '__root__' | '/' | '/catalog' | '/create' | '/daily' | '/personal-orders'
+  to:
+    | '/'
+    | '/catalog'
+    | '/corporate-orders'
+    | '/create'
+    | '/daily'
+    | '/personal-orders'
+  id:
+    | '__root__'
+    | '/'
+    | '/catalog'
+    | '/corporate-orders'
+    | '/create'
+    | '/daily'
+    | '/personal-orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CatalogRoute: typeof CatalogRoute
+  CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
   DailyRoute: typeof DailyRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
@@ -102,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/corporate-orders': {
+      id: '/corporate-orders'
+      path: '/corporate-orders'
+      fullPath: '/corporate-orders'
+      preLoaderRoute: typeof CorporateOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog': {
       id: '/catalog'
       path: '/catalog'
@@ -122,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CatalogRoute: CatalogRoute,
+  CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
   DailyRoute: DailyRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
