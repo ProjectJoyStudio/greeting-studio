@@ -14,6 +14,7 @@ import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AboutRouteImport } from './routes/about'
@@ -44,6 +45,11 @@ const CorporateOrdersRoute = CorporateOrdersRouteImport.update({
   path: '/corporate-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/calendar': typeof CalendarRoute
   '/catalog': typeof CatalogRoute
+  '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/calendar': typeof CalendarRoute
   '/catalog': typeof CatalogRoute
+  '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/calendar': typeof CalendarRoute
   '/catalog': typeof CatalogRoute
+  '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/calendar'
     | '/catalog'
+    | '/contact'
     | '/corporate-orders'
     | '/create'
     | '/daily'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/calendar'
     | '/catalog'
+    | '/contact'
     | '/corporate-orders'
     | '/create'
     | '/daily'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/calendar'
     | '/catalog'
+    | '/contact'
     | '/corporate-orders'
     | '/create'
     | '/daily'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   CalendarRoute: typeof CalendarRoute
   CatalogRoute: typeof CatalogRoute
+  ContactRoute: typeof ContactRoute
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
   DailyRoute: typeof DailyRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CorporateOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog': {
       id: '/catalog'
       path: '/catalog'
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   CalendarRoute: CalendarRoute,
   CatalogRoute: CatalogRoute,
+  ContactRoute: ContactRoute,
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
   DailyRoute: DailyRoute,
