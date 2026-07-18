@@ -15,8 +15,7 @@ const dict: Dict = {
   nav_about: "About",
   nav_contact: "Contact",
   hero_eyebrow: "Personal greetings platform",
-  hero_title: "Give more than greetings.
-Give emotions.",
+  hero_title: "Give more than greetings.\nGive emotions.",
   hero_sub: "Cards, animations, music, voice, songs, videos and personal stories for the people you love.",
   cta_create: "Create Greeting",
   cta_browse: "Browse Catalog",

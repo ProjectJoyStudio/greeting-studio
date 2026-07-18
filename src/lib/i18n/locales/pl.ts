@@ -15,8 +15,7 @@ const dict: Dict = {
   nav_about: "O nas",
   nav_contact: "Kontakt",
   hero_eyebrow: "Platforma osobistych życzeń",
-  hero_title: "Podaruj więcej niż życzenia.
-Podaruj emocje.",
+  hero_title: "Podaruj więcej niż życzenia.\nPodaruj emocje.",
   hero_sub: "Kartki, animacje, muzyka, głos, piosenki, filmy i osobiste historie dla bliskich Ci osób.",
   cta_create: "Stwórz życzenie",
   cta_browse: "Przeglądaj katalog",
