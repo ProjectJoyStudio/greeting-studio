@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Mail,
@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { useI18n } from "@/lib/i18n";
+import { CreditModal } from "@/components/studio/CreditModal";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Project Joy Studio — the heart of the platform. Craft greeting cards, personal songs, videos, fairy tales and cartoons for the people you love.",
+          "Project Joy Studio — craft greeting cards, personal songs, videos, fairy tales and cartoons for the people you love.",
       },
       { property: "og:title", content: "Project Joy Studio" },
       {
@@ -47,7 +49,8 @@ export const Route = createFileRoute("/studio")({
 });
 
 // ---------------------------------------------------------------------------
-// Data
+// Static option catalogs — every user-facing label is a translation key so
+// the whole Studio follows the site language automatically.
 // ---------------------------------------------------------------------------
 
 type GiftId =
@@ -63,151 +66,66 @@ type GiftId =
 interface GiftOption {
   id: GiftId;
   icon: LucideIcon;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
   credits: number;
-  prepTime: string;
+  prepKey: string;
 }
 
 const GIFTS: GiftOption[] = [
-  {
-    id: "card",
-    icon: Mail,
-    title: "Greeting Card",
-    description: "A beautifully designed card with warm, personal wording.",
-    credits: 1,
-    prepTime: "Ready in minutes",
-  },
-  {
-    id: "animated",
-    icon: Sparkles,
-    title: "Animated Greeting",
-    description: "A living greeting with motion, music and heartfelt words.",
-    credits: 3,
-    prepTime: "Ready in under an hour",
-  },
-  {
-    id: "song",
-    icon: Music2,
-    title: "Personal Song",
-    description: "An original song written and performed just for them.",
-    credits: 8,
-    prepTime: "Ready within a few hours",
-  },
-  {
-    id: "video-greeting",
-    icon: Video,
-    title: "Personal Video Greeting",
-    description: "A cinematic video message crafted around their story.",
-    credits: 10,
-    prepTime: "Ready within a day",
-  },
-  {
-    id: "video-clip",
-    icon: Film,
-    title: "Personal Video Clip",
-    description: "A full music video created uniquely for the recipient.",
-    credits: 18,
-    prepTime: "Ready within 1–2 days",
-  },
-  {
-    id: "fairy-tale",
-    icon: BookHeart,
-    title: "Personal Fairy Tale",
-    description: "An enchanting fairy tale where they are the hero.",
-    credits: 6,
-    prepTime: "Ready within a few hours",
-  },
-  {
-    id: "cartoon",
-    icon: Clapperboard,
-    title: "Personal Cartoon",
-    description: "A charming animated short starring your loved one.",
-    credits: 20,
-    prepTime: "Ready within 1–2 days",
-  },
-  {
-    id: "premium",
-    icon: Crown,
-    title: "Premium Personal Order",
-    description: "A bespoke keepsake crafted by our creative concierge.",
-    credits: 50,
-    prepTime: "Delivered within 3–5 days",
-  },
+  { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc", credits: 1, prepKey: "prep_minutes" },
+  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", credits: 3, prepKey: "prep_hour" },
+  { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc", credits: 8, prepKey: "prep_hours" },
+  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", credits: 10, prepKey: "prep_day" },
+  { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc", credits: 18, prepKey: "prep_1_2_days" },
+  { id: "fairy-tale", icon: BookHeart, titleKey: "gift_fairy_tale", descKey: "gift_fairy_tale_desc", credits: 6, prepKey: "prep_hours" },
+  { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc", credits: 20, prepKey: "prep_1_2_days" },
+  { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc", credits: 50, prepKey: "prep_3_5_days" },
 ];
 
 const RELATIONSHIPS = [
-  "Mother",
-  "Father",
-  "Grandmother",
-  "Grandfather",
-  "Wife",
-  "Husband",
-  "Son",
-  "Daughter",
-  "Friend",
-  "Teacher",
-  "Boss",
-  "Child",
-  "Other",
+  "mother", "father", "grandmother", "grandfather", "wife", "husband",
+  "son", "daughter", "friend", "teacher", "boss", "child", "other",
 ] as const;
+type RelationshipId = (typeof RELATIONSHIPS)[number];
 
 const OCCASIONS = [
-  "Birthday",
-  "Wedding",
-  "Anniversary",
-  "Christmas",
-  "New Year",
-  "Easter",
-  "Valentine's Day",
-  "Mother's Day",
-  "Father's Day",
-  "Graduation",
-  "Congratulations",
-  "Thank You",
-  "Apology",
-  "Good Morning",
-  "Good Night",
-  "Other",
+  "birthday", "wedding", "anniversary", "christmas", "new_year", "easter",
+  "valentines", "mothers_day", "fathers_day", "graduation", "congrats",
+  "thank_you", "apology", "good_morning", "good_night", "other",
 ] as const;
+type OccasionId = (typeof OCCASIONS)[number];
 
 const STYLES = [
-  "Warm",
-  "Elegant",
-  "Funny",
-  "Romantic",
-  "Christian",
-  "Poetic",
-  "Motivational",
-  "Formal",
+  "warm", "elegant", "funny", "romantic",
+  "christian", "poetic", "motivational", "formal",
 ] as const;
+type StyleId = (typeof STYLES)[number];
 
 const LANGUAGES = [
-  "English",
-  "Deutsch",
-  "Русский",
-  "Українська",
-  "Français",
-  "Polski",
-] as const;
-
-type Relationship = (typeof RELATIONSHIPS)[number];
-type Occasion = (typeof OCCASIONS)[number];
-type Style = (typeof STYLES)[number];
-type Language = (typeof LANGUAGES)[number];
+  { id: "en" as const, label: "English" },
+  { id: "de" as const, label: "Deutsch" },
+  { id: "ru" as const, label: "Русский" },
+  { id: "uk" as const, label: "Українська" },
+  { id: "fr" as const, label: "Français" },
+  { id: "pl" as const, label: "Polski" },
+];
+type GiftLang = (typeof LANGUAGES)[number]["id"];
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 function StudioPage() {
+  const { t } = useI18n();
   const [gift, setGift] = useState<GiftId | null>(null);
   const [recipientName, setRecipientName] = useState("");
-  const [relationship, setRelationship] = useState<Relationship | null>(null);
-  const [occasion, setOccasion] = useState<Occasion | null>(null);
-  const [style, setStyle] = useState<Style | null>(null);
+  const [relationship, setRelationship] = useState<RelationshipId | null>(null);
+  const [occasion, setOccasion] = useState<OccasionId | null>(null);
+  const [style, setStyle] = useState<StyleId | null>(null);
   const [details, setDetails] = useState("");
-  const [language, setLanguage] = useState<Language>("English");
+  const [language, setLanguage] = useState<GiftLang>("en");
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
 
   const selectedGift = useMemo(
     () => GIFTS.find((g) => g.id === gift) ?? null,
@@ -221,7 +139,7 @@ function StudioPage() {
     setOccasion(null);
     setStyle(null);
     setDetails("");
-    setLanguage("English");
+    setLanguage("en");
   };
 
   return (
@@ -235,18 +153,16 @@ function StudioPage() {
         <div className="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
           <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1 text-xs font-medium uppercase tracking-widest text-muted-foreground backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Project Joy Studio
+            {t("studio_eyebrow")}
           </span>
           <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl">
-            Give more than greetings.
+            {t("studio_hero_title_1")}
             <span className="block bg-gold-gradient bg-clip-text text-transparent">
-              Give emotions.
+              {t("studio_hero_title_2")}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
-            Craft an unforgettable gift for the people who matter most.
-            Choose a format, share their story, and we&apos;ll shape every
-            detail into something truly personal.
+            {t("studio_hero_sub")}
           </p>
         </div>
       </section>
@@ -255,10 +171,7 @@ function StudioPage() {
       <section className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-10">
-            <Step1
-              value={gift}
-              onChange={setGift}
-            />
+            <Step1 value={gift} onChange={setGift} />
             <Step2
               name={recipientName}
               onName={setRecipientName}
@@ -272,6 +185,7 @@ function StudioPage() {
             <Step7
               gift={selectedGift}
               onReset={reset}
+              onOpenCredits={() => setCreditModalOpen(true)}
             />
           </div>
 
@@ -288,6 +202,12 @@ function StudioPage() {
           </aside>
         </div>
       </section>
+
+      <CreditModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        balance={0}
+      />
     </SiteLayout>
   );
 }
@@ -299,16 +219,17 @@ function StudioPage() {
 function StepShell({
   number,
   icon: Icon,
-  title,
-  subtitle,
+  titleKey,
+  subKey,
   children,
 }: {
   number: number;
   icon: LucideIcon;
-  title: string;
-  subtitle?: string;
+  titleKey: string;
+  subKey?: string;
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   return (
     <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-warm sm:p-8">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
@@ -318,16 +239,16 @@ function StepShell({
           </span>
           <div className="min-w-0">
             <div className="text-xs font-semibold uppercase tracking-widest text-primary/80">
-              Step {number}
+              {t("studio_step")} {number}
             </div>
             <h2 className="mt-0.5 truncate font-display text-xl font-semibold tracking-tight sm:text-2xl">
-              {title}
+              {t(titleKey)}
             </h2>
           </div>
         </div>
       </header>
-      {subtitle && (
-        <p className="mt-3 text-sm text-muted-foreground">{subtitle}</p>
+      {subKey && (
+        <p className="mt-3 text-sm text-muted-foreground">{t(subKey)}</p>
       )}
       <div className="mt-6">{children}</div>
     </section>
@@ -378,13 +299,9 @@ function Step1({
   value: GiftId | null;
   onChange: (v: GiftId) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <StepShell
-      number={1}
-      icon={Gift}
-      title="Choose Your Gift"
-      subtitle="Pick a format. Every option is crafted with the same premium care."
-    >
+    <StepShell number={1} icon={Gift} titleKey="studio_s1_title" subKey="studio_s1_sub">
       <div className="grid gap-4 sm:grid-cols-2">
         {GIFTS.map((g) => {
           const Icon = g.icon;
@@ -411,23 +328,21 @@ function Step1({
                   <Icon className="h-5 w-5" />
                 </span>
                 <h3 className="min-w-0 truncate font-display text-lg font-semibold tracking-tight">
-                  {g.title}
+                  {t(g.titleKey)}
                 </h3>
-                {active && (
-                  <Check className="ml-auto h-4 w-4 text-primary" />
-                )}
+                {active && <Check className="ml-auto h-4 w-4 text-primary" />}
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
-                {g.description}
+                {t(g.descKey)}
               </p>
-              <div className="mt-4 flex items-center gap-2 text-xs">
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 font-medium text-foreground/80">
                   <Coins className="h-3 w-3 text-primary" />
-                  {g.credits} credits
+                  {g.credits} {t("studio_credits_word")}
                 </span>
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {g.prepTime}
+                  {t(g.prepKey)}
                 </span>
               </div>
             </button>
@@ -450,28 +365,24 @@ function Step2({
 }: {
   name: string;
   onName: (v: string) => void;
-  relationship: Relationship | null;
-  onRelationship: (v: Relationship) => void;
+  relationship: RelationshipId | null;
+  onRelationship: (v: RelationshipId) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <StepShell
-      number={2}
-      icon={UserIcon}
-      title="Recipient"
-      subtitle="Who is this gift for? A little detail makes a big difference."
-    >
+    <StepShell number={2} icon={UserIcon} titleKey="studio_s2_title" subKey="studio_s2_sub">
       <div className="space-y-5">
         <div>
-          <FieldLabel>Recipient name</FieldLabel>
+          <FieldLabel>{t("studio_s2_name_label")}</FieldLabel>
           <input
             value={name}
             onChange={(e) => onName(e.target.value)}
-            placeholder="e.g. Anna"
+            placeholder={t("studio_s2_name_ph")}
             className="mt-2 w-full rounded-full border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/50"
           />
         </div>
         <div>
-          <FieldLabel>Relationship</FieldLabel>
+          <FieldLabel>{t("studio_s2_rel_label")}</FieldLabel>
           <div className="mt-3 flex flex-wrap gap-2">
             {RELATIONSHIPS.map((r) => (
               <Chip
@@ -479,7 +390,7 @@ function Step2({
                 active={relationship === r}
                 onClick={() => onRelationship(r)}
               >
-                {r}
+                {t(`rel_${r}`)}
               </Chip>
             ))}
           </div>
@@ -497,20 +408,16 @@ function Step3({
   value,
   onChange,
 }: {
-  value: Occasion | null;
-  onChange: (v: Occasion) => void;
+  value: OccasionId | null;
+  onChange: (v: OccasionId) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <StepShell
-      number={3}
-      icon={CalendarHeart}
-      title="Occasion"
-      subtitle="Tell us what you're celebrating."
-    >
+    <StepShell number={3} icon={CalendarHeart} titleKey="studio_s3_title" subKey="studio_s3_sub">
       <div className="flex flex-wrap gap-2">
         {OCCASIONS.map((o) => (
           <Chip key={o} active={value === o} onClick={() => onChange(o)}>
-            {o}
+            {t(`occ_${o}`)}
           </Chip>
         ))}
       </div>
@@ -526,20 +433,16 @@ function Step4({
   value,
   onChange,
 }: {
-  value: Style | null;
-  onChange: (v: Style) => void;
+  value: StyleId | null;
+  onChange: (v: StyleId) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <StepShell
-      number={4}
-      icon={Palette}
-      title="Choose a Style"
-      subtitle="Set the tone of your gift."
-    >
+    <StepShell number={4} icon={Palette} titleKey="studio_s4_title" subKey="studio_s4_sub">
       <div className="flex flex-wrap gap-2">
         {STYLES.map((s) => (
           <Chip key={s} active={value === s} onClick={() => onChange(s)}>
-            {s}
+            {t(`style_${s}`)}
           </Chip>
         ))}
       </div>
@@ -558,25 +461,18 @@ function Step5({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <StepShell
-      number={5}
-      icon={MessageSquareHeart}
-      title="Personal Information"
-      subtitle="The more you share, the more personal the gift becomes."
-    >
+    <StepShell number={5} icon={MessageSquareHeart} titleKey="studio_s5_title" subKey="studio_s5_sub">
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={8}
-        placeholder={
-          "Tell us about this person.\n\nDescribe personality, hobbies, memories, wishes and everything important.\n\nProject Joy will prepare a unique and personalized gift."
-        }
+        placeholder={t("studio_s5_ph")}
         className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-4 text-sm leading-relaxed outline-none transition focus:border-primary/50"
       />
       <p className="mt-3 text-xs text-muted-foreground">
-        {value.trim().length} characters — every detail helps us craft something
-        unforgettable.
+        {value.trim().length} {t("studio_s5_chars_suffix")}
       </p>
     </StepShell>
   );
@@ -590,20 +486,15 @@ function Step6({
   value,
   onChange,
 }: {
-  value: Language;
-  onChange: (v: Language) => void;
+  value: GiftLang;
+  onChange: (v: GiftLang) => void;
 }) {
   return (
-    <StepShell
-      number={6}
-      icon={Languages}
-      title="Language"
-      subtitle="Which language should your gift be in?"
-    >
+    <StepShell number={6} icon={Languages} titleKey="studio_s6_title" subKey="studio_s6_sub">
       <div className="flex flex-wrap gap-2">
         {LANGUAGES.map((l) => (
-          <Chip key={l} active={value === l} onClick={() => onChange(l)}>
-            {l}
+          <Chip key={l.id} active={value === l.id} onClick={() => onChange(l.id)}>
+            {l.label}
           </Chip>
         ))}
       </div>
@@ -618,49 +509,49 @@ function Step6({
 function Step7({
   gift,
   onReset,
+  onOpenCredits,
 }: {
   gift: GiftOption | null;
   onReset: () => void;
+  onOpenCredits: () => void;
 }) {
-  const balance = 0; // placeholder — connected once wallets are backed by Cloud
+  const { t } = useI18n();
+  const balance = 0; // placeholder until Cloud is wired
   const required = gift?.credits ?? 0;
   const enough = balance >= required;
+  const creditsWord = t("studio_credits_word");
   return (
-    <StepShell
-      number={7}
-      icon={Sparkles}
-      title="Gift Summary"
-      subtitle="Review the essentials before we begin."
-    >
+    <StepShell number={7} icon={Sparkles} titleKey="studio_s7_title" subKey="studio_s7_sub">
       <div className="grid gap-3 sm:grid-cols-2">
         <SummaryRow
-          label="Selected gift"
-          value={gift ? gift.title : "Not chosen yet"}
+          label={t("studio_sum_gift")}
+          value={gift ? t(gift.titleKey) : t("studio_sum_not_chosen")}
         />
         <SummaryRow
-          label="Preparation time"
-          value={gift ? gift.prepTime : "—"}
+          label={t("studio_sum_prep")}
+          value={gift ? t(gift.prepKey) : "—"}
         />
         <SummaryRow
-          label="Credits required"
-          value={gift ? `${gift.credits} credits` : "—"}
+          label={t("studio_sum_credits_req")}
+          value={gift ? `${gift.credits} ${creditsWord}` : "—"}
         />
         <SummaryRow
-          label="Your balance"
-          value={`${balance} credits`}
+          label={t("studio_sum_balance")}
+          value={`${balance} ${creditsWord}`}
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <Link
-          to="/pricing"
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onOpenCredits}
           className="text-xs font-medium text-primary underline-offset-4 hover:underline"
         >
-          Need more credits?
-        </Link>
+          {t("studio_need_credits")}
+        </button>
         {gift && !enough && (
           <span className="text-xs text-muted-foreground">
-            Top up to unlock this gift.
+            {t("studio_sum_topup")}
           </span>
         )}
       </div>
@@ -671,7 +562,7 @@ function Step7({
           className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground"
         >
           <Save className="h-4 w-4" />
-          Save draft
+          {t("studio_save_draft")}
         </button>
         <button
           type="button"
@@ -679,14 +570,14 @@ function Step7({
           className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground"
         >
           <RotateCcw className="h-4 w-4" />
-          Reset
+          {t("studio_reset")}
         </button>
         <button
           type="button"
           className="ml-auto inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
         >
           <Wand2 className="h-4 w-4" />
-          Create my gift
+          {t("studio_create_gift")}
         </button>
       </div>
     </StepShell>
@@ -721,25 +612,27 @@ function LivePreview({
 }: {
   gift: GiftOption | null;
   recipientName: string;
-  relationship: Relationship | null;
-  occasion: Occasion | null;
-  style: Style | null;
+  relationship: RelationshipId | null;
+  occasion: OccasionId | null;
+  style: StyleId | null;
   details: string;
-  language: Language;
+  language: GiftLang;
 }) {
+  const { t } = useI18n();
   const Icon = gift?.icon ?? Heart;
   const hasSelection =
     gift || recipientName || relationship || occasion || style || details;
+  const langLabel = LANGUAGES.find((l) => l.id === language)?.label ?? "";
 
   return (
     <div className="rounded-3xl border border-border/70 bg-warm-gradient p-6 shadow-warm sm:p-8">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur">
           <Sparkles className="h-3 w-3 text-primary" />
-          Live preview
+          {t("studio_preview_label")}
         </span>
         <span className="text-[11px] font-medium text-muted-foreground">
-          {language}
+          {langLabel}
         </span>
       </div>
 
@@ -750,10 +643,12 @@ function LivePreview({
           </span>
           <div className="min-w-0">
             <div className="text-[11px] font-semibold uppercase tracking-widest text-primary/80">
-              {gift ? gift.title : "Your gift"}
+              {gift ? t(gift.titleKey) : t("studio_preview_default_gift")}
             </div>
             <div className="mt-0.5 truncate font-display text-lg font-semibold tracking-tight">
-              {occasion ? `For ${occasion}` : "Choose an occasion"}
+              {occasion
+                ? `${t("studio_preview_for")} ${t(`occ_${occasion}`)}`
+                : t("studio_preview_choose_occasion")}
             </div>
           </div>
         </div>
@@ -762,7 +657,7 @@ function LivePreview({
           <div className="text-2xl italic leading-tight text-foreground">
             {recipientName ? (
               <>
-                Dear{" "}
+                {t("studio_preview_dear")}{" "}
                 <span className="bg-gold-gradient bg-clip-text text-transparent">
                   {recipientName}
                 </span>
@@ -770,14 +665,14 @@ function LivePreview({
               </>
             ) : (
               <span className="text-muted-foreground/70">
-                Dear loved one,
+                {t("studio_preview_dear_default")}
               </span>
             )}
           </div>
           <p className="text-sm italic leading-relaxed text-muted-foreground">
             {details.trim()
               ? `"${details.trim().slice(0, 260)}${details.trim().length > 260 ? "…" : ""}"`
-              : "Every word, every note, every frame will be shaped around the story you share. This is where their personal message will appear."}
+              : t("studio_preview_default_body")}
           </p>
         </div>
 
@@ -785,31 +680,31 @@ function LivePreview({
           {relationship && (
             <Tag>
               <Heart className="h-3 w-3 text-primary" />
-              {relationship}
+              {t(`rel_${relationship}`)}
             </Tag>
           )}
-          {style && <Tag>{style}</Tag>}
+          {style && <Tag>{t(`style_${style}`)}</Tag>}
           {gift && (
             <Tag>
               <Coins className="h-3 w-3 text-primary" />
-              {gift.credits} credits
+              {gift.credits} {t("studio_credits_word")}
             </Tag>
           )}
         </div>
 
         <div className="mt-6 flex items-center justify-between border-t border-border/60 pt-4">
           <span className="font-display text-sm italic text-muted-foreground">
-            with love,
+            {t("studio_preview_with_love")}
           </span>
           <span className="text-xs font-medium text-muted-foreground">
-            Project Joy
+            {t("brand")}
           </span>
         </div>
       </div>
 
       {!hasSelection && (
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Start with step 1 — the preview updates as you go.
+          {t("studio_preview_hint")}
         </p>
       )}
     </div>
