@@ -3,12 +3,21 @@ import { X, Coins, Sparkles, Check } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 // Placeholder pricing — real prices arrive with the payment integration.
-const PACKAGES = [
+type Pkg = {
+  id: string;
+  credits: number;
+  price: string;
+  nameKey: string;
+  descKey: string;
+  highlight?: boolean;
+};
+
+const PACKAGES: Pkg[] = [
   { id: "starter", credits: 20, price: "€9", nameKey: "credit_pkg_starter", descKey: "credit_pkg_starter_desc" },
   { id: "popular", credits: 50, price: "€19", nameKey: "credit_pkg_popular", descKey: "credit_pkg_popular_desc", highlight: true },
   { id: "value", credits: 100, price: "€35", nameKey: "credit_pkg_value", descKey: "credit_pkg_value_desc" },
   { id: "premium", credits: 250, price: "€79", nameKey: "credit_pkg_premium", descKey: "credit_pkg_premium_desc" },
-] as const;
+];
 
 export function CreditModal({
   open,
