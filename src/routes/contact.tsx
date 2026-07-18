@@ -23,9 +23,9 @@ function ContactPage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
           <div className="space-y-5">
             {[
-              { icon: Mail, label: "Email", value: "hello@projectjoy.app" },
-              { icon: MessageCircle, label: "Support", value: "Weekdays · 9–18 CET" },
-              { icon: MapPin, label: "Studio", value: "Berlin · Kyiv · Lisbon" },
+              { icon: Mail, label: t("contact_email_label"), value: "hello@projectjoy.app" },
+              { icon: MessageCircle, label: t("contact_support_label"), value: t("contact_support_value") },
+              { icon: MapPin, label: t("contact_studio_label"), value: t("contact_studio_value") },
             ].map((c) => {
               const Icon = c.icon;
               return (
@@ -47,8 +47,8 @@ function ContactPage() {
             className="rounded-3xl border border-border/70 bg-card p-8 shadow-warm"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              <Field label={t("name")} placeholder="Anna" />
-              <Field label={t("email")} placeholder="anna@example.com" type="email" />
+              <Field label={t("name")} placeholder={t("contact_name_ph")} />
+              <Field label={t("email")} placeholder={t("contact_email_ph")} type="email" />
             </div>
             <div className="mt-5">
               <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -56,7 +56,7 @@ function ContactPage() {
               </label>
               <textarea
                 rows={6}
-                placeholder="Tell us anything…"
+                placeholder={t("contact_message_ph")}
                 className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/50"
               />
             </div>
