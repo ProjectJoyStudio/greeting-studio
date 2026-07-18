@@ -43,6 +43,10 @@ export interface FormatPricing {
   humanCraft: boolean;
   humanCraftDaysMin?: number;
   humanCraftDaysMax?: number;
+  /** True → supports "Create a Series" with multiple episodes. */
+  supportsSeries?: boolean;
+  /** Maximum episodes for series-capable formats. */
+  maxEpisodes?: number;
 }
 
 export const STUDIO_PRICING: Record<StudioGiftId, FormatPricing> = {
@@ -68,7 +72,7 @@ export const STUDIO_PRICING: Record<StudioGiftId, FormatPricing> = {
     id: "song",
     baseCredits: 6,
     creditsPer30s: 2,
-    duration: { allowed: [60, 90, 120, 180, 300], default: 120 },
+    duration: { allowed: [30, 60, 120, 180, 240, 300], default: 60 },
     baseProcessingSeconds: 40 * 60,
     processingSecondsPer30s: 6 * 60,
     humanCraft: false,
@@ -77,7 +81,7 @@ export const STUDIO_PRICING: Record<StudioGiftId, FormatPricing> = {
     id: "video-greeting",
     baseCredits: 8,
     creditsPer30s: 3,
-    duration: { allowed: [30, 60, 90, 120], default: 60 },
+    duration: { allowed: [30, 60, 120, 180, 240, 300], default: 60 },
     baseProcessingSeconds: 45 * 60,
     processingSecondsPer30s: 12 * 60,
     humanCraft: false,
@@ -86,7 +90,7 @@ export const STUDIO_PRICING: Record<StudioGiftId, FormatPricing> = {
     id: "video-clip",
     baseCredits: 14,
     creditsPer30s: 4,
-    duration: { allowed: [90, 120, 180, 300], default: 120 },
+    duration: { allowed: [30, 60, 120, 180, 240, 300, 360, 420, 480], default: 120 },
     baseProcessingSeconds: 60 * 60,
     processingSecondsPer30s: 15 * 60,
     humanCraft: false,
@@ -95,19 +99,23 @@ export const STUDIO_PRICING: Record<StudioGiftId, FormatPricing> = {
     id: "fairy-tale",
     baseCredits: 5,
     creditsPer30s: 1,
-    duration: { allowed: [120, 180, 300], default: 180 },
+    duration: { allowed: [30, 60, 120, 180, 240, 300, 360, 420, 480], default: 180 },
     baseProcessingSeconds: 25 * 60,
     processingSecondsPer30s: 5 * 60,
     humanCraft: false,
+    supportsSeries: true,
+    maxEpisodes: 5,
   },
   cartoon: {
     id: "cartoon",
     baseCredits: 16,
     creditsPer30s: 5,
-    duration: { allowed: [60, 90, 120, 180], default: 90 },
+    duration: { allowed: [30, 60, 120, 180, 240, 300, 360, 420, 480], default: 120 },
     baseProcessingSeconds: 70 * 60,
     processingSecondsPer30s: 18 * 60,
     humanCraft: false,
+    supportsSeries: true,
+    maxEpisodes: 5,
   },
   premium: {
     id: "premium",
@@ -146,6 +154,7 @@ export function computeEstimate(
   giftId: StudioGiftId,
   durationSeconds: number | null,
   tier: QueueTier,
+  episodes: number = 1,
 ): Estimate {
   const p = STUDIO_PRICING[giftId];
   const priorityCredit = tier === "priority" ? PRIORITY_CREDIT_MULTIPLIER : 1;
@@ -168,15 +177,16 @@ export function computeEstimate(
 
   const dur = durationSeconds ?? 0;
   const units = dur > 0 ? dur / 30 : 0;
+  const ep = Math.max(1, Math.min(episodes, p.maxEpisodes ?? 1));
   const credits = Math.max(
     1,
-    Math.round((p.baseCredits + units * p.creditsPer30s) * priorityCredit),
+    Math.round((p.baseCredits + units * p.creditsPer30s) * priorityCredit * ep),
   );
   const processing = Math.max(
     30,
     Math.round(
       (p.baseProcessingSeconds + units * p.processingSecondsPer30s) *
-        priorityTime,
+        priorityTime * ep,
     ),
   );
   const startIn = Math.round(
@@ -196,13 +206,17 @@ export function computeEstimate(
 export function durationKey(seconds: number): string {
   const map: Record<number, string> = {
     30: "dur_30s",
-    60: "dur_60s",
+    60: "dur_1m",
     90: "dur_90s",
     120: "dur_2m",
     180: "dur_3m",
+    240: "dur_4m",
     300: "dur_5m",
+    360: "dur_6m",
+    420: "dur_7m",
+    480: "dur_8m",
   };
-  return map[seconds] ?? "dur_60s";
+  return map[seconds] ?? "dur_1m";
 }
 
 /** Break seconds into a rounded {value, unitKey} pair for i18n formatting. */
