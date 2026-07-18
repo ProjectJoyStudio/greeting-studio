@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles, UserRound } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "./LanguageSelector";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
   { to: "/", key: "nav_home" },
@@ -19,6 +20,7 @@ const navItems = [
 
 export function Header() {
   const { t } = useI18n();
+  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (
@@ -52,6 +54,22 @@ export function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <LanguageSelector />
+          {isAuthenticated ? (
+            <Link
+              to="/dashboard"
+              className="hidden items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-sm text-foreground/80 transition hover:text-foreground md:inline-flex"
+            >
+              <UserRound className="h-4 w-4 text-primary/70" />
+              <span>{t("nav_dashboard")}</span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-sm text-foreground/80 transition hover:text-foreground md:inline-flex"
+            >
+              {t("auth_signin")}
+            </Link>
+          )}
           <Link
             to="/create"
             className="hidden rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95 md:inline-flex"
@@ -89,6 +107,13 @@ export function Header() {
               className="mt-2 inline-flex justify-center rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
             >
               {t("cta_create")}
+            </Link>
+            <Link
+              to={isAuthenticated ? "/dashboard" : "/login"}
+              onClick={() => setOpen(false)}
+              className="inline-flex justify-center rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-medium text-foreground"
+            >
+              {isAuthenticated ? t("nav_dashboard") : t("auth_signin")}
             </Link>
           </nav>
         </div>
