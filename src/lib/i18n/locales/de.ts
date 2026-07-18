@@ -15,7 +15,8 @@ const dict: Dict = {
   nav_about: "Über uns",
   nav_contact: "Kontakt",
   hero_eyebrow: "Plattform für persönliche Grüße",
-  hero_title: "Freude verschicken —\nals wär sie handgeschrieben.",
+  hero_title: "Schenken Sie mehr als Glückwünsche.
+Schenken Sie Emotionen.",
   hero_sub: "Karten, Animationen, Musik, Stimme, Lieder, Videos und persönliche Geschichten für die Menschen, die Sie lieben.",
   cta_create: "Gruß erstellen",
   cta_browse: "Katalog ansehen",
