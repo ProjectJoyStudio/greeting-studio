@@ -1102,7 +1102,7 @@ Object.assign(uk, ukExtras);
 
 const DICTS: Record<Lang, Dict> = { en, ru, de, uk };
 
-type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: keyof typeof en) => string };
+type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
 const I18nCtx = createContext<Ctx | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -1126,7 +1126,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const t = (k: keyof typeof en) => DICTS[lang][k] ?? en[k] ?? String(k);
+  const t = (k: string) => DICTS[lang][k] ?? en[k] ?? k;
 
   return <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>;
 }
