@@ -142,6 +142,7 @@ function Hero() {
 }
 
 function HeroCardStack() {
+  const { t } = useI18n();
   return (
     <div className="relative mx-auto flex h-[440px] w-full max-w-md items-center justify-center">
       <div
@@ -152,10 +153,10 @@ function HeroCardStack() {
         }}
       >
         <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-          <span className="font-display text-sm italic opacity-90">to Anna</span>
+          <span className="font-display text-sm italic opacity-90">{t("hero_card_to")}</span>
           <div>
-            <div className="font-display text-3xl leading-tight">Happy Birthday</div>
-            <div className="mt-1 text-xs opacity-80">with love</div>
+            <div className="font-display text-3xl leading-tight">{t("hero_card_hb")}</div>
+            <div className="mt-1 text-xs opacity-80">{t("hero_card_love")}</div>
           </div>
         </div>
       </div>
@@ -169,13 +170,13 @@ function HeroCardStack() {
       >
         <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
-            <Heart className="h-3.5 w-3.5" /> from Berlin
+            <Heart className="h-3.5 w-3.5" /> {t("hero_card_from")}
           </div>
           <div>
             <div className="font-display text-2xl italic leading-tight">
-              „Ein warmer Gruß für dich."
+              „{t("hero_card_quote")}"
             </div>
-            <div className="mt-3 text-xs opacity-80">— Project Joy</div>
+            <div className="mt-3 text-xs opacity-80">{t("hero_card_sig")}</div>
           </div>
         </div>
       </div>
@@ -187,10 +188,10 @@ function HeroCardStack() {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
           <div>
-            <div className="font-display text-2xl leading-tight">З Днем народження!</div>
+            <div className="font-display text-2xl leading-tight">{t("hero_card_hb")}</div>
             <div className="mt-2 h-px bg-border" />
             <div className="mt-2 text-xs italic text-muted-foreground">
-              Хай радість буде щоденною.
+              {t("hero_card_wish")}
             </div>
           </div>
         </div>
