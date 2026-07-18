@@ -17,10 +17,10 @@ export const Route = createFileRoute("/create")({
 function CreatePage() {
   const { t } = useI18n();
   const steps = [
-    { icon: Palette, label: "Template" },
-    { icon: Type, label: "Message" },
-    { icon: ImageIcon, label: "Photo" },
-    { icon: Send, label: "Send" },
+    { icon: Palette, label: t("create_step_template") },
+    { icon: Type, label: t("create_step_message") },
+    { icon: ImageIcon, label: t("create_step_photo") },
+    { icon: Send, label: t("create_step_send") },
   ];
   return (
     <SiteLayout>
@@ -41,15 +41,15 @@ function CreatePage() {
             </div>
 
             <div className="mt-8 space-y-5">
-              <Field label="Occasion" placeholder="Birthday, anniversary, holiday…" />
-              <Field label="Recipient name" placeholder="Anna" />
+              <Field label={t("create_field_occasion")} placeholder={t("create_occ_ph")} />
+              <Field label={t("create_field_recipient")} placeholder={t("create_rec_ph")} />
               <div>
                 <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Your message
+                  {t("create_field_message")}
                 </label>
                 <textarea
                   rows={5}
-                  placeholder="Write something warm — we'll style it beautifully."
+                  placeholder={t("create_msg_ph")}
                   className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary/50"
                 />
               </div>
@@ -62,13 +62,13 @@ function CreatePage() {
 
           <div className="relative flex items-center justify-center rounded-3xl border border-border/70 bg-warm-gradient p-8">
             <div className="w-72 rotate-[-3deg] rounded-3xl border border-border/70 bg-card p-8 shadow-warm">
-              <div className="text-xs uppercase tracking-widest text-muted-foreground">Preview</div>
-              <div className="mt-6 font-display text-3xl leading-tight">Happy Birthday, Anna</div>
+              <div className="text-xs uppercase tracking-widest text-muted-foreground">{t("create_preview_label")}</div>
+              <div className="mt-6 font-display text-3xl leading-tight">{t("create_preview_title")}</div>
               <p className="mt-4 text-sm italic text-muted-foreground">
-                "May your year be filled with soft mornings, deep laughter, and everything you quietly hope for."
+                "{t("create_preview_quote")}"
               </p>
               <div className="mt-8 flex items-center justify-between">
-                <span className="font-display text-sm italic">— With love</span>
+                <span className="font-display text-sm italic">{t("create_preview_signature")}</span>
                 <span className="text-xs text-muted-foreground">Project Joy</span>
               </div>
             </div>
