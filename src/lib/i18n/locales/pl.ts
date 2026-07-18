@@ -4,6 +4,7 @@ const dict: Dict = {
   brand: "Project Joy",
   tagline: "Osobiste życzenia tworzone z ciepłem",
   nav_home: "Strona główna",
+  nav_studio: "Studio",
   nav_catalog: "Katalog",
   nav_daily: "Codzienne życzenia",
   nav_create: "Stwórz życzenie",
