@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
   { to: "/", key: "nav_home" },
+  { to: "/studio", key: "nav_studio" },
   { to: "/catalog", key: "nav_catalog" },
   { to: "/daily", key: "nav_daily" },
   { to: "/create", key: "nav_create" },
