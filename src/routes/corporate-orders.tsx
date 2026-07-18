@@ -17,10 +17,10 @@ export const Route = createFileRoute("/corporate-orders")({
 function CorporateOrdersPage() {
   const { t } = useI18n();
   const perks = [
-    { icon: Palette, title: "Fully branded", body: "Your logo, colors, and typography — reflected in every greeting." },
-    { icon: Users, title: "Bulk delivery", body: "Send thousands of unique greetings from a single upload." },
-    { icon: ShieldCheck, title: "Enterprise-ready", body: "SSO, data residency, and audit logs available on request." },
-    { icon: Building2, title: "Dedicated design", body: "A designer works with your brand team to craft the collection." },
+    { icon: Palette, title: t("corp_perk1_t"), body: t("corp_perk1_b") },
+    { icon: Users, title: t("corp_perk2_t"), body: t("corp_perk2_b") },
+    { icon: ShieldCheck, title: t("corp_perk3_t"), body: t("corp_perk3_b") },
+    { icon: Building2, title: t("corp_perk4_t"), body: t("corp_perk4_b") },
   ];
   return (
     <SiteLayout>
@@ -45,10 +45,10 @@ function CorporateOrdersPage() {
 
         <div className="mt-14 overflow-hidden rounded-3xl border border-border/70 bg-warm-gradient p-10 md:p-14">
           <h3 className="max-w-2xl font-display text-3xl font-semibold md:text-4xl">
-            Send greetings your customers <span className="text-gold-gradient italic">forward</span> to friends.
+            {t("corp_forward_1")} <span className="text-gold-gradient italic">{t("corp_forward_em")}</span> {t("corp_forward_2")}
           </h3>
           <button className="mt-8 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm">
-            Talk to sales
+            {t("cta_corp")}
           </button>
         </div>
       </section>
