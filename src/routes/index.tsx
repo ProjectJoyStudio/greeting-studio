@@ -100,7 +100,13 @@ function Hero() {
           <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.03] tracking-tight md:text-6xl lg:text-7xl">
             {title.split("\n").map((line, i) => (
               <span key={i} className="block">
-                {i === 1 ? <span className="text-gold-gradient italic">{line}</span> : line}
+                {i === 1 ? (
+                  <span className="bg-gold-gradient bg-clip-text text-transparent">
+                    {line}
+                  </span>
+                ) : (
+                  line
+                )}
               </span>
             ))}
           </h1>
