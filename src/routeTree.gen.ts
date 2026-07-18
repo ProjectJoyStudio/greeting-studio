@@ -9,9 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
@@ -21,9 +26,24 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -34,6 +54,16 @@ const PricingRoute = PricingRouteImport.update({
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DailyRoute = DailyRouteImport.update({
@@ -86,9 +116,14 @@ export interface FileRoutesByFullPath {
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,9 +134,14 @@ export interface FileRoutesByTo {
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,9 +153,14 @@ export interface FileRoutesById {
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,9 +173,14 @@ export interface FileRouteTypes {
     | '/corporate-orders'
     | '/create'
     | '/daily'
+    | '/forgot-password'
+    | '/login'
     | '/personal-orders'
     | '/pricing'
+    | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-email'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -141,9 +191,14 @@ export interface FileRouteTypes {
     | '/corporate-orders'
     | '/create'
     | '/daily'
+    | '/forgot-password'
+    | '/login'
     | '/personal-orders'
     | '/pricing'
+    | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-email'
   id:
     | '__root__'
     | '/'
@@ -154,9 +209,14 @@ export interface FileRouteTypes {
     | '/corporate-orders'
     | '/create'
     | '/daily'
+    | '/forgot-password'
+    | '/login'
     | '/personal-orders'
     | '/pricing'
+    | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-email'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -168,18 +228,44 @@ export interface RootRouteChildren {
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
   DailyRoute: typeof DailyRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -194,6 +280,20 @@ declare module '@tanstack/react-router' {
       path: '/personal-orders'
       fullPath: '/personal-orders'
       preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daily': {
@@ -264,9 +364,14 @@ const rootRouteChildren: RootRouteChildren = {
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
   DailyRoute: DailyRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
