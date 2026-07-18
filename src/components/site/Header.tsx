@@ -77,7 +77,7 @@ export function Header() {
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
-                activeOptions={{ exact: false }}
+                activeOptions={{ exact: n.to === "/" }}
                 className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition hover:bg-secondary data-[status=active]:bg-secondary data-[status=active]:text-foreground"
               >
                 {t(n.key)}
