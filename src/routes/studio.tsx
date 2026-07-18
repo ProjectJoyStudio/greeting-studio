@@ -28,6 +28,15 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { CreditModal } from "@/components/studio/CreditModal";
+import {
+  STUDIO_PRICING,
+  computeEstimate,
+  durationKey,
+  humanizeSeconds,
+  type Estimate,
+  type QueueTier,
+  type StudioGiftId,
+} from "@/lib/studio/pricing";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -53,34 +62,24 @@ export const Route = createFileRoute("/studio")({
 // the whole Studio follows the site language automatically.
 // ---------------------------------------------------------------------------
 
-type GiftId =
-  | "card"
-  | "animated"
-  | "song"
-  | "video-greeting"
-  | "video-clip"
-  | "fairy-tale"
-  | "cartoon"
-  | "premium";
+type GiftId = StudioGiftId;
 
 interface GiftOption {
   id: GiftId;
   icon: LucideIcon;
   titleKey: string;
   descKey: string;
-  credits: number;
-  prepKey: string;
 }
 
 const GIFTS: GiftOption[] = [
-  { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc", credits: 1, prepKey: "prep_minutes" },
-  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", credits: 3, prepKey: "prep_hour" },
-  { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc", credits: 8, prepKey: "prep_hours" },
-  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", credits: 10, prepKey: "prep_day" },
-  { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc", credits: 18, prepKey: "prep_1_2_days" },
-  { id: "fairy-tale", icon: BookHeart, titleKey: "gift_fairy_tale", descKey: "gift_fairy_tale_desc", credits: 6, prepKey: "prep_hours" },
-  { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc", credits: 20, prepKey: "prep_1_2_days" },
-  { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc", credits: 50, prepKey: "prep_3_5_days" },
+  { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc" },
+  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc" },
+  { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc" },
+  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc" },
+  { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc" },
+  { id: "fairy-tale", icon: BookHeart, titleKey: "gift_fairy_tale", descKey: "gift_fairy_tale_desc" },
+  { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc" },
+  { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc" },
 ];
 
 const RELATIONSHIPS = [
