@@ -833,3 +833,192 @@ function Tag({ children }: { children: React.ReactNode }) {
     </span>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Duration & queue panel — shown after a gift is selected.
+// Hides the duration slider for static formats (card, animated, premium).
+// ---------------------------------------------------------------------------
+
+function DurationQueuePanel({
+  gift,
+  duration,
+  onDuration,
+  tier,
+  onTier,
+  estimate,
+}: {
+  gift: GiftId;
+  duration: number | null;
+  onDuration: (v: number) => void;
+  tier: QueueTier;
+  onTier: (v: QueueTier) => void;
+  estimate: Estimate;
+}) {
+  const { t } = useI18n();
+  const spec = STUDIO_PRICING[gift];
+  const allowed = spec.duration?.allowed ?? [];
+  const showDuration = allowed.length > 0 && duration !== null;
+  const prepLabel = formatEstimatePrep(estimate, t);
+
+  return (
+    <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-warm sm:p-8">
+      {showDuration && (
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient text-primary-foreground shadow-warm">
+              <Timer className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-widest text-primary/80">
+                {t("studio_duration_title")}
+              </div>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {t("studio_duration_sub")}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {allowed.map((sec) => {
+              const active = duration === sec;
+              return (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => onDuration(sec)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition ${
+                    active
+                      ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                  {t(durationKey(sec))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className={showDuration ? "mt-8" : ""}>
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient text-primary-foreground shadow-warm">
+            <Gauge className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-widest text-primary/80">
+              {t("studio_queue_title")}
+            </div>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("studio_queue_sub")}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <QueueCard
+            active={tier === "standard"}
+            onClick={() => onTier("standard")}
+            icon={Clock}
+            titleKey="studio_queue_standard"
+            descKey="studio_queue_standard_desc"
+          />
+          <QueueCard
+            active={tier === "priority"}
+            onClick={() => onTier("priority")}
+            icon={Zap}
+            titleKey="studio_queue_priority"
+            descKey="studio_queue_priority_desc"
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-border/70 bg-background p-5">
+        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("studio_calc_title")}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <EstimateRow
+            label={t("studio_calc_credits")}
+            value={`${estimate.credits} ${t("studio_credits_word")}`}
+          />
+          <EstimateRow label={t("studio_calc_prep")} value={prepLabel} />
+          {!estimate.humanCraft && (
+            <>
+              <EstimateRow
+                label={t("studio_calc_queue_position")}
+                value={`#${estimate.queuePosition}`}
+              />
+              <EstimateRow
+                label={t("studio_calc_start")}
+                value={formatDurationForFuture(estimate.startInSeconds, t)}
+              />
+              <EstimateRow
+                label={t("studio_calc_completion")}
+                value={formatDurationForFuture(estimate.completionInSeconds, t)}
+              />
+            </>
+          )}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          {t("studio_calc_disclaimer")}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("studio_calc_final_note")}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function QueueCard({
+  active,
+  onClick,
+  icon: Icon,
+  titleKey,
+  descKey,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  titleKey: string;
+  descKey: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col rounded-2xl border p-4 text-left transition ${
+        active
+          ? "border-primary/60 bg-primary/[0.04] shadow-warm"
+          : "border-border bg-background hover:border-primary/40 hover:bg-secondary/40"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`grid h-8 w-8 place-items-center rounded-lg ${
+            active ? "bg-gold-gradient text-primary-foreground shadow-warm" : "bg-secondary text-primary"
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="font-display text-base font-semibold tracking-tight">
+          {t(titleKey)}
+        </span>
+        {active && <Check className="ml-auto h-4 w-4 text-primary" />}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{t(descKey)}</p>
+    </button>
+  );
+}
+
+function EstimateRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 font-display text-sm font-medium">{value}</div>
+    </div>
+  );
+}
