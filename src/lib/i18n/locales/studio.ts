@@ -460,7 +460,7 @@ const de: Dict = {
   studio_duration_title: "Dauer",
   studio_duration_sub: "Wählen Sie, wie lang Ihr Geschenk sein soll.",
   studio_queue_title: "Lieferpriorität",
-  studio_queue_sub: "Wählen Sie eine Warteschlange — „Priorität" bringt Sie nach vorn.",
+  studio_queue_sub: "Wählen Sie eine Warteschlange — Priorität bringt Sie nach vorn.",
   studio_queue_standard: "Standard",
   studio_queue_standard_desc: "Reguläre Warteschlange · Standard-Credits · Standardzeit.",
   studio_queue_priority: "Priorität",
