@@ -25,9 +25,11 @@ import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
@@ -115,6 +117,11 @@ const CalendarRoute = CalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -129,6 +136,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
@@ -164,6 +176,7 @@ const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
@@ -186,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -212,12 +226,14 @@ export interface FileRoutesByTo {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
@@ -240,6 +256,7 @@ export interface FileRoutesById {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -247,6 +264,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/calendar'
     | '/catalog'
     | '/contact'
@@ -269,6 +287,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/admin/'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -295,11 +314,13 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/admin'
     | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/calendar'
     | '/catalog'
     | '/contact'
@@ -322,12 +343,14 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/admin/'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CalendarRoute: typeof CalendarRoute
   CatalogRoute: typeof CatalogRoute
   ContactRoute: typeof ContactRoute
@@ -460,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -480,6 +510,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/dashboard/settings': {
       id: '/dashboard/settings'
@@ -526,6 +563,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface DashboardRouteChildren {
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
@@ -553,6 +600,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   CalendarRoute: CalendarRoute,
   CatalogRoute: CatalogRoute,
   ContactRoute: ContactRoute,
