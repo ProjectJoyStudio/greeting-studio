@@ -373,6 +373,8 @@ function Step1({
         {GIFTS.map((g) => {
           const Icon = g.icon;
           const active = value === g.id;
+          const est = baselineEstimateForCard(g.id);
+          const prepLabel = formatEstimatePrep(est, t);
           return (
             <button
               key={g.id}
@@ -405,17 +407,20 @@ function Step1({
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 font-medium text-foreground/80">
                   <Coins className="h-3 w-3 text-primary" />
-                  {g.credits} {t("studio_credits_word")}
+                  {est.credits} {t("studio_credits_word")}
                 </span>
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {t(g.prepKey)}
+                  {prepLabel}
                 </span>
               </div>
             </button>
           );
         })}
       </div>
+      <p className="mt-4 text-xs text-muted-foreground">
+        {t("studio_calc_final_note")}
+      </p>
     </StepShell>
   );
 }
