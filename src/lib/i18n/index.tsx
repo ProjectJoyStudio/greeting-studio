@@ -9,6 +9,7 @@ import fr from "./locales/fr";
 import pl from "./locales/pl";
 import { AUTH_DASHBOARD } from "./locales/auth-dashboard";
 import { STUDIO } from "./locales/studio";
+import { ADMIN_I18N } from "./locales/admin";
 
 export { LANGS };
 export type { Lang, Dict };
@@ -16,12 +17,12 @@ export type { Lang, Dict };
 // Merge the auth/dashboard namespace into each locale so `t()` resolves
 // every UI string from a single flat dictionary per language.
 const DICTS: Record<Lang, Dict> = {
-  en: { ...en, ...AUTH_DASHBOARD.en, ...STUDIO.en },
-  ru: { ...ru, ...AUTH_DASHBOARD.ru, ...STUDIO.ru },
-  de: { ...de, ...AUTH_DASHBOARD.de, ...STUDIO.de },
-  uk: { ...uk, ...AUTH_DASHBOARD.uk, ...STUDIO.uk },
-  fr: { ...fr, ...AUTH_DASHBOARD.fr, ...STUDIO.fr },
-  pl: { ...pl, ...AUTH_DASHBOARD.pl, ...STUDIO.pl },
+  en: { ...en, ...AUTH_DASHBOARD.en, ...STUDIO.en, ...ADMIN_I18N.en },
+  ru: { ...ru, ...AUTH_DASHBOARD.ru, ...STUDIO.ru, ...ADMIN_I18N.ru },
+  de: { ...de, ...AUTH_DASHBOARD.de, ...STUDIO.de, ...ADMIN_I18N.de },
+  uk: { ...uk, ...AUTH_DASHBOARD.uk, ...STUDIO.uk, ...ADMIN_I18N.uk },
+  fr: { ...fr, ...AUTH_DASHBOARD.fr, ...STUDIO.fr, ...ADMIN_I18N.fr },
+  pl: { ...pl, ...AUTH_DASHBOARD.pl, ...STUDIO.pl, ...ADMIN_I18N.pl },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
