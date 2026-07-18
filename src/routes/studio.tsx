@@ -22,12 +22,24 @@ import {
   Palette,
   Languages,
   MessageSquareHeart,
+  Timer,
+  Zap,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { CreditModal } from "@/components/studio/CreditModal";
+import {
+  STUDIO_PRICING,
+  computeEstimate,
+  durationKey,
+  humanizeSeconds,
+  type Estimate,
+  type QueueTier,
+  type StudioGiftId,
+} from "@/lib/studio/pricing";
 
 export const Route = createFileRoute("/studio")({
   head: () => ({
@@ -53,34 +65,24 @@ export const Route = createFileRoute("/studio")({
 // the whole Studio follows the site language automatically.
 // ---------------------------------------------------------------------------
 
-type GiftId =
-  | "card"
-  | "animated"
-  | "song"
-  | "video-greeting"
-  | "video-clip"
-  | "fairy-tale"
-  | "cartoon"
-  | "premium";
+type GiftId = StudioGiftId;
 
 interface GiftOption {
   id: GiftId;
   icon: LucideIcon;
   titleKey: string;
   descKey: string;
-  credits: number;
-  prepKey: string;
 }
 
 const GIFTS: GiftOption[] = [
-  { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc", credits: 1, prepKey: "prep_minutes" },
-  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", credits: 3, prepKey: "prep_hour" },
-  { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc", credits: 8, prepKey: "prep_hours" },
-  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", credits: 10, prepKey: "prep_day" },
-  { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc", credits: 18, prepKey: "prep_1_2_days" },
-  { id: "fairy-tale", icon: BookHeart, titleKey: "gift_fairy_tale", descKey: "gift_fairy_tale_desc", credits: 6, prepKey: "prep_hours" },
-  { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc", credits: 20, prepKey: "prep_1_2_days" },
-  { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc", credits: 50, prepKey: "prep_3_5_days" },
+  { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc" },
+  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc" },
+  { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc" },
+  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc" },
+  { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc" },
+  { id: "fairy-tale", icon: BookHeart, titleKey: "gift_fairy_tale", descKey: "gift_fairy_tale_desc" },
+  { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc" },
+  { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc" },
 ];
 
 const RELATIONSHIPS = [
@@ -113,12 +115,50 @@ const LANGUAGES = [
 type GiftLang = (typeof LANGUAGES)[number]["id"];
 
 // ---------------------------------------------------------------------------
+// Format helpers — turn seconds into localized "about N minutes" strings
+// and read a card's baseline estimate from the pricing config.
+// ---------------------------------------------------------------------------
+
+function formatDurationForPreparation(
+  seconds: number,
+  t: (k: string) => string,
+): string {
+  const { value, unitKey } = humanizeSeconds(seconds);
+  return `${t("prep_about")} ${value} ${t(unitKey)}`;
+}
+
+function formatDurationForFuture(
+  seconds: number,
+  t: (k: string) => string,
+): string {
+  const { value, unitKey } = humanizeSeconds(seconds);
+  return `${t("studio_calc_in")} ~${value} ${t(unitKey)}`;
+}
+
+function formatEstimatePrep(estimate: Estimate, t: (k: string) => string): string {
+  if (estimate.humanCraft) {
+    const min = estimate.humanCraftDaysMin ?? 3;
+    const max = estimate.humanCraftDaysMax ?? 5;
+    return `${t("prep_within_days")} ${min}–${max} ${t("unit_days")}`;
+  }
+  return formatDurationForPreparation(estimate.processingSeconds, t);
+}
+
+function baselineEstimateForCard(id: GiftId): Estimate {
+  const spec = STUDIO_PRICING[id];
+  const dur = spec.duration ? spec.duration.default : null;
+  return computeEstimate(id, dur, "standard");
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 function StudioPage() {
   const { t } = useI18n();
   const [gift, setGift] = useState<GiftId | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [tier, setTier] = useState<QueueTier>("standard");
   const [recipientName, setRecipientName] = useState("");
   const [relationship, setRelationship] = useState<RelationshipId | null>(null);
   const [occasion, setOccasion] = useState<OccasionId | null>(null);
@@ -132,8 +172,21 @@ function StudioPage() {
     [gift],
   );
 
+  const handleGiftChange = (id: GiftId) => {
+    setGift(id);
+    const spec = STUDIO_PRICING[id];
+    setDuration(spec.duration ? spec.duration.default : null);
+  };
+
+  const estimate = useMemo<Estimate | null>(
+    () => (gift ? computeEstimate(gift, duration, tier) : null),
+    [gift, duration, tier],
+  );
+
   const reset = () => {
     setGift(null);
+    setDuration(null);
+    setTier("standard");
     setRecipientName("");
     setRelationship(null);
     setOccasion(null);
@@ -171,7 +224,17 @@ function StudioPage() {
       <section className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-10">
-            <Step1 value={gift} onChange={setGift} />
+            <Step1 value={gift} onChange={handleGiftChange} />
+            {gift && (
+              <DurationQueuePanel
+                gift={gift}
+                duration={duration}
+                onDuration={setDuration}
+                tier={tier}
+                onTier={setTier}
+                estimate={estimate!}
+              />
+            )}
             <Step2
               name={recipientName}
               onName={setRecipientName}
@@ -184,6 +247,8 @@ function StudioPage() {
             <Step6 value={language} onChange={setLanguage} />
             <Step7
               gift={selectedGift}
+              estimate={estimate}
+              duration={duration}
               onReset={reset}
               onOpenCredits={() => setCreditModalOpen(true)}
             />
@@ -192,6 +257,8 @@ function StudioPage() {
           <aside className="min-w-0 lg:sticky lg:top-24 lg:h-fit">
             <LivePreview
               gift={selectedGift}
+              estimate={estimate}
+              duration={duration}
               recipientName={recipientName}
               relationship={relationship}
               occasion={occasion}
@@ -306,6 +373,8 @@ function Step1({
         {GIFTS.map((g) => {
           const Icon = g.icon;
           const active = value === g.id;
+          const est = baselineEstimateForCard(g.id);
+          const prepLabel = formatEstimatePrep(est, t);
           return (
             <button
               key={g.id}
@@ -338,17 +407,20 @@ function Step1({
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 font-medium text-foreground/80">
                   <Coins className="h-3 w-3 text-primary" />
-                  {g.credits} {t("studio_credits_word")}
+                  {est.credits} {t("studio_credits_word")}
                 </span>
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {t(g.prepKey)}
+                  {prepLabel}
                 </span>
               </div>
             </button>
           );
         })}
       </div>
+      <p className="mt-4 text-xs text-muted-foreground">
+        {t("studio_calc_final_note")}
+      </p>
     </StepShell>
   );
 }
@@ -508,18 +580,25 @@ function Step6({
 
 function Step7({
   gift,
+  estimate,
+  duration,
   onReset,
   onOpenCredits,
 }: {
   gift: GiftOption | null;
+  estimate: Estimate | null;
+  duration: number | null;
   onReset: () => void;
   onOpenCredits: () => void;
 }) {
   const { t } = useI18n();
   const balance = 0; // placeholder until Cloud is wired
-  const required = gift?.credits ?? 0;
+  const required = estimate?.credits ?? 0;
   const enough = balance >= required;
   const creditsWord = t("studio_credits_word");
+  const prepValue = gift && estimate ? formatEstimatePrep(estimate, t) : "—";
+  const durationValue =
+    gift && duration !== null ? t(durationKey(duration)) : null;
   return (
     <StepShell number={7} icon={Sparkles} titleKey="studio_s7_title" subKey="studio_s7_sub">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -527,19 +606,45 @@ function Step7({
           label={t("studio_sum_gift")}
           value={gift ? t(gift.titleKey) : t("studio_sum_not_chosen")}
         />
+        {durationValue && (
+          <SummaryRow
+            label={t("studio_sum_duration")}
+            value={durationValue}
+          />
+        )}
         <SummaryRow
           label={t("studio_sum_prep")}
-          value={gift ? t(gift.prepKey) : "—"}
+          value={prepValue}
         />
         <SummaryRow
           label={t("studio_sum_credits_req")}
-          value={gift ? `${gift.credits} ${creditsWord}` : "—"}
+          value={estimate ? `${estimate.credits} ${creditsWord}` : "—"}
         />
         <SummaryRow
           label={t("studio_sum_balance")}
           value={`${balance} ${creditsWord}`}
         />
+        {estimate && !estimate.humanCraft && (
+          <>
+            <SummaryRow
+              label={t("studio_calc_queue_position")}
+              value={`#${estimate.queuePosition}`}
+            />
+            <SummaryRow
+              label={t("studio_calc_start")}
+              value={formatDurationForFuture(estimate.startInSeconds, t)}
+            />
+            <SummaryRow
+              label={t("studio_calc_completion")}
+              value={formatDurationForFuture(estimate.completionInSeconds, t)}
+            />
+          </>
+        )}
       </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {t("studio_calc_disclaimer")}
+      </p>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <button
@@ -603,6 +708,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function LivePreview({
   gift,
+  estimate,
+  duration,
   recipientName,
   relationship,
   occasion,
@@ -611,6 +718,8 @@ function LivePreview({
   language,
 }: {
   gift: GiftOption | null;
+  estimate: Estimate | null;
+  duration: number | null;
   recipientName: string;
   relationship: RelationshipId | null;
   occasion: OccasionId | null;
@@ -684,10 +793,16 @@ function LivePreview({
             </Tag>
           )}
           {style && <Tag>{t(`style_${style}`)}</Tag>}
-          {gift && (
+          {gift && estimate && (
             <Tag>
               <Coins className="h-3 w-3 text-primary" />
-              {gift.credits} {t("studio_credits_word")}
+              {estimate.credits} {t("studio_credits_word")}
+            </Tag>
+          )}
+          {gift && duration !== null && (
+            <Tag>
+              <Timer className="h-3 w-3 text-primary" />
+              {t(durationKey(duration))}
             </Tag>
           )}
         </div>
@@ -716,5 +831,194 @@ function Tag({ children }: { children: React.ReactNode }) {
     <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 text-[11px] font-medium text-foreground/80">
       {children}
     </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Duration & queue panel — shown after a gift is selected.
+// Hides the duration slider for static formats (card, animated, premium).
+// ---------------------------------------------------------------------------
+
+function DurationQueuePanel({
+  gift,
+  duration,
+  onDuration,
+  tier,
+  onTier,
+  estimate,
+}: {
+  gift: GiftId;
+  duration: number | null;
+  onDuration: (v: number) => void;
+  tier: QueueTier;
+  onTier: (v: QueueTier) => void;
+  estimate: Estimate;
+}) {
+  const { t } = useI18n();
+  const spec = STUDIO_PRICING[gift];
+  const allowed = spec.duration?.allowed ?? [];
+  const showDuration = allowed.length > 0 && duration !== null;
+  const prepLabel = formatEstimatePrep(estimate, t);
+
+  return (
+    <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-warm sm:p-8">
+      {showDuration && (
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient text-primary-foreground shadow-warm">
+              <Timer className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-widest text-primary/80">
+                {t("studio_duration_title")}
+              </div>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {t("studio_duration_sub")}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {allowed.map((sec) => {
+              const active = duration === sec;
+              return (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => onDuration(sec)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition ${
+                    active
+                      ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                  {t(durationKey(sec))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className={showDuration ? "mt-8" : ""}>
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient text-primary-foreground shadow-warm">
+            <Gauge className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-widest text-primary/80">
+              {t("studio_queue_title")}
+            </div>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("studio_queue_sub")}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <QueueCard
+            active={tier === "standard"}
+            onClick={() => onTier("standard")}
+            icon={Clock}
+            titleKey="studio_queue_standard"
+            descKey="studio_queue_standard_desc"
+          />
+          <QueueCard
+            active={tier === "priority"}
+            onClick={() => onTier("priority")}
+            icon={Zap}
+            titleKey="studio_queue_priority"
+            descKey="studio_queue_priority_desc"
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-border/70 bg-background p-5">
+        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("studio_calc_title")}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <EstimateRow
+            label={t("studio_calc_credits")}
+            value={`${estimate.credits} ${t("studio_credits_word")}`}
+          />
+          <EstimateRow label={t("studio_calc_prep")} value={prepLabel} />
+          {!estimate.humanCraft && (
+            <>
+              <EstimateRow
+                label={t("studio_calc_queue_position")}
+                value={`#${estimate.queuePosition}`}
+              />
+              <EstimateRow
+                label={t("studio_calc_start")}
+                value={formatDurationForFuture(estimate.startInSeconds, t)}
+              />
+              <EstimateRow
+                label={t("studio_calc_completion")}
+                value={formatDurationForFuture(estimate.completionInSeconds, t)}
+              />
+            </>
+          )}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          {t("studio_calc_disclaimer")}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("studio_calc_final_note")}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function QueueCard({
+  active,
+  onClick,
+  icon: Icon,
+  titleKey,
+  descKey,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  titleKey: string;
+  descKey: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col rounded-2xl border p-4 text-left transition ${
+        active
+          ? "border-primary/60 bg-primary/[0.04] shadow-warm"
+          : "border-border bg-background hover:border-primary/40 hover:bg-secondary/40"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`grid h-8 w-8 place-items-center rounded-lg ${
+            active ? "bg-gold-gradient text-primary-foreground shadow-warm" : "bg-secondary text-primary"
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="font-display text-base font-semibold tracking-tight">
+          {t(titleKey)}
+        </span>
+        {active && <Check className="ml-auto h-4 w-4 text-primary" />}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{t(descKey)}</p>
+    </button>
+  );
+}
+
+function EstimateRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 font-display text-sm font-medium">{value}</div>
+    </div>
   );
 }
