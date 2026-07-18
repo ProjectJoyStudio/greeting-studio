@@ -43,6 +43,7 @@ import { Route as AdminPlatformRouteImport } from './routes/admin.platform'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
@@ -218,6 +219,11 @@ const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   path: '/languages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEconomyRoute = AdminEconomyRouteImport.update({
+  id: '/economy',
+  path: '/economy',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreditPackagesRoute = AdminCreditPackagesRouteImport.update({
   id: '/credit-packages',
   path: '/credit-packages',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/catalog'
     | '/admin/credit-packages'
+    | '/admin/economy'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/catalog'
     | '/admin/credit-packages'
+    | '/admin/economy'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/catalog'
     | '/admin/credit-packages'
+    | '/admin/economy'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -741,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLanguagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/economy': {
+      id: '/admin/economy'
+      path: '/economy'
+      fullPath: '/admin/economy'
+      preLoaderRoute: typeof AdminEconomyRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/credit-packages': {
       id: '/admin/credit-packages'
       path: '/credit-packages'
@@ -777,6 +796,7 @@ interface AdminRouteChildren {
   AdminCalendarSettingsRoute: typeof AdminCalendarSettingsRoute
   AdminCatalogRoute: typeof AdminCatalogRoute
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
+  AdminEconomyRoute: typeof AdminEconomyRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -792,6 +812,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarSettingsRoute: AdminCalendarSettingsRoute,
   AdminCatalogRoute: AdminCatalogRoute,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
+  AdminEconomyRoute: AdminEconomyRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
