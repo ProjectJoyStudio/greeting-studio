@@ -22,6 +22,9 @@ import {
   Palette,
   Languages,
   MessageSquareHeart,
+  Timer,
+  Zap,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 
