@@ -17,12 +17,12 @@ export const Route = createFileRoute("/daily")({
 function DailyPage() {
   const { t } = useI18n();
   const items = [
-    { day: "Today", title: "International Friendship Day", grad: "linear-gradient(160deg, oklch(0.88 0.1 55), oklch(0.55 0.16 30))" },
-    { day: "Tomorrow", title: "Grandparents Day", grad: "linear-gradient(160deg, oklch(0.88 0.08 150), oklch(0.5 0.1 165))" },
-    { day: "Nov 13", title: "World Kindness Day", grad: "linear-gradient(160deg, oklch(0.88 0.09 20), oklch(0.55 0.16 12))" },
-    { day: "Nov 20", title: "Children's Day", grad: "linear-gradient(160deg, oklch(0.9 0.09 220), oklch(0.55 0.13 240))" },
-    { day: "Nov 25", title: "Thanksgiving Eve", grad: "linear-gradient(160deg, oklch(0.9 0.08 65), oklch(0.5 0.14 45))" },
-    { day: "Dec 6", title: "St. Nicholas Day", grad: "linear-gradient(160deg, oklch(0.9 0.09 340), oklch(0.5 0.14 340))" },
+    { day: t("daily_today"), title: t("evt_friendship"), grad: "linear-gradient(160deg, oklch(0.88 0.1 55), oklch(0.55 0.16 30))" },
+    { day: t("daily_tomorrow"), title: t("evt_grandparents"), grad: "linear-gradient(160deg, oklch(0.88 0.08 150), oklch(0.5 0.1 165))" },
+    { day: `${t("month_11")} 13`, title: t("evt_kindness"), grad: "linear-gradient(160deg, oklch(0.88 0.09 20), oklch(0.55 0.16 12))" },
+    { day: `${t("month_11")} 20`, title: t("evt_children"), grad: "linear-gradient(160deg, oklch(0.9 0.09 220), oklch(0.55 0.13 240))" },
+    { day: `${t("month_11")} 25`, title: t("evt_thanksgiving_eve"), grad: "linear-gradient(160deg, oklch(0.9 0.08 65), oklch(0.5 0.14 45))" },
+    { day: `${t("month_12")} 6`, title: t("evt_st_nicholas_day"), grad: "linear-gradient(160deg, oklch(0.9 0.09 340), oklch(0.5 0.14 340))" },
   ];
   return (
     <SiteLayout>
@@ -39,12 +39,10 @@ function DailyPage() {
               </div>
               <div className="p-6">
                 <h3 className="font-display text-xl font-semibold">{it.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Discover a curated set of designs and message ideas for this moment.
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("daily_body")}</p>
                 <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  12 designs
+                  {t("daily_designs_count")}
                 </div>
               </div>
             </article>
