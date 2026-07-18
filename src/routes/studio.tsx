@@ -708,6 +708,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function LivePreview({
   gift,
+  estimate,
+  duration,
   recipientName,
   relationship,
   occasion,
@@ -716,6 +718,8 @@ function LivePreview({
   language,
 }: {
   gift: GiftOption | null;
+  estimate: Estimate | null;
+  duration: number | null;
   recipientName: string;
   relationship: RelationshipId | null;
   occasion: OccasionId | null;
@@ -789,10 +793,16 @@ function LivePreview({
             </Tag>
           )}
           {style && <Tag>{t(`style_${style}`)}</Tag>}
-          {gift && (
+          {gift && estimate && (
             <Tag>
               <Coins className="h-3 w-3 text-primary" />
-              {gift.credits} {t("studio_credits_word")}
+              {estimate.credits} {t("studio_credits_word")}
+            </Tag>
+          )}
+          {gift && duration !== null && (
+            <Tag>
+              <Timer className="h-3 w-3 text-primary" />
+              {t(durationKey(duration))}
             </Tag>
           )}
         </div>
