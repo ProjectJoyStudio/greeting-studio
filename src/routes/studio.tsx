@@ -115,12 +115,50 @@ const LANGUAGES = [
 type GiftLang = (typeof LANGUAGES)[number]["id"];
 
 // ---------------------------------------------------------------------------
+// Format helpers — turn seconds into localized "about N minutes" strings
+// and read a card's baseline estimate from the pricing config.
+// ---------------------------------------------------------------------------
+
+function formatDurationForPreparation(
+  seconds: number,
+  t: (k: string) => string,
+): string {
+  const { value, unitKey } = humanizeSeconds(seconds);
+  return `${t("prep_about")} ${value} ${t(unitKey)}`;
+}
+
+function formatDurationForFuture(
+  seconds: number,
+  t: (k: string) => string,
+): string {
+  const { value, unitKey } = humanizeSeconds(seconds);
+  return `${t("studio_calc_in")} ~${value} ${t(unitKey)}`;
+}
+
+function formatEstimatePrep(estimate: Estimate, t: (k: string) => string): string {
+  if (estimate.humanCraft) {
+    const min = estimate.humanCraftDaysMin ?? 3;
+    const max = estimate.humanCraftDaysMax ?? 5;
+    return `${t("prep_within_days")} ${min}–${max} ${t("unit_days")}`;
+  }
+  return formatDurationForPreparation(estimate.processingSeconds, t);
+}
+
+function baselineEstimateForCard(id: GiftId): Estimate {
+  const spec = STUDIO_PRICING[id];
+  const dur = spec.duration ? spec.duration.default : null;
+  return computeEstimate(id, dur, "standard");
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 function StudioPage() {
   const { t } = useI18n();
   const [gift, setGift] = useState<GiftId | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [tier, setTier] = useState<QueueTier>("standard");
   const [recipientName, setRecipientName] = useState("");
   const [relationship, setRelationship] = useState<RelationshipId | null>(null);
   const [occasion, setOccasion] = useState<OccasionId | null>(null);
@@ -134,8 +172,21 @@ function StudioPage() {
     [gift],
   );
 
+  const handleGiftChange = (id: GiftId) => {
+    setGift(id);
+    const spec = STUDIO_PRICING[id];
+    setDuration(spec.duration ? spec.duration.default : null);
+  };
+
+  const estimate = useMemo<Estimate | null>(
+    () => (gift ? computeEstimate(gift, duration, tier) : null),
+    [gift, duration, tier],
+  );
+
   const reset = () => {
     setGift(null);
+    setDuration(null);
+    setTier("standard");
     setRecipientName("");
     setRelationship(null);
     setOccasion(null);
@@ -173,7 +224,17 @@ function StudioPage() {
       <section className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-10">
-            <Step1 value={gift} onChange={setGift} />
+            <Step1 value={gift} onChange={handleGiftChange} />
+            {gift && (
+              <DurationQueuePanel
+                gift={gift}
+                duration={duration}
+                onDuration={setDuration}
+                tier={tier}
+                onTier={setTier}
+                estimate={estimate!}
+              />
+            )}
             <Step2
               name={recipientName}
               onName={setRecipientName}
@@ -186,6 +247,8 @@ function StudioPage() {
             <Step6 value={language} onChange={setLanguage} />
             <Step7
               gift={selectedGift}
+              estimate={estimate}
+              duration={duration}
               onReset={reset}
               onOpenCredits={() => setCreditModalOpen(true)}
             />
@@ -194,6 +257,8 @@ function StudioPage() {
           <aside className="min-w-0 lg:sticky lg:top-24 lg:h-fit">
             <LivePreview
               gift={selectedGift}
+              estimate={estimate}
+              duration={duration}
               recipientName={recipientName}
               relationship={relationship}
               occasion={occasion}
