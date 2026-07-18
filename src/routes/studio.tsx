@@ -580,18 +580,25 @@ function Step6({
 
 function Step7({
   gift,
+  estimate,
+  duration,
   onReset,
   onOpenCredits,
 }: {
   gift: GiftOption | null;
+  estimate: Estimate | null;
+  duration: number | null;
   onReset: () => void;
   onOpenCredits: () => void;
 }) {
   const { t } = useI18n();
   const balance = 0; // placeholder until Cloud is wired
-  const required = gift?.credits ?? 0;
+  const required = estimate?.credits ?? 0;
   const enough = balance >= required;
   const creditsWord = t("studio_credits_word");
+  const prepValue = gift && estimate ? formatEstimatePrep(estimate, t) : "—";
+  const durationValue =
+    gift && duration !== null ? t(durationKey(duration)) : null;
   return (
     <StepShell number={7} icon={Sparkles} titleKey="studio_s7_title" subKey="studio_s7_sub">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -599,19 +606,45 @@ function Step7({
           label={t("studio_sum_gift")}
           value={gift ? t(gift.titleKey) : t("studio_sum_not_chosen")}
         />
+        {durationValue && (
+          <SummaryRow
+            label={t("studio_sum_duration")}
+            value={durationValue}
+          />
+        )}
         <SummaryRow
           label={t("studio_sum_prep")}
-          value={gift ? t(gift.prepKey) : "—"}
+          value={prepValue}
         />
         <SummaryRow
           label={t("studio_sum_credits_req")}
-          value={gift ? `${gift.credits} ${creditsWord}` : "—"}
+          value={estimate ? `${estimate.credits} ${creditsWord}` : "—"}
         />
         <SummaryRow
           label={t("studio_sum_balance")}
           value={`${balance} ${creditsWord}`}
         />
+        {estimate && !estimate.humanCraft && (
+          <>
+            <SummaryRow
+              label={t("studio_calc_queue_position")}
+              value={`#${estimate.queuePosition}`}
+            />
+            <SummaryRow
+              label={t("studio_calc_start")}
+              value={formatDurationForFuture(estimate.startInSeconds, t)}
+            />
+            <SummaryRow
+              label={t("studio_calc_completion")}
+              value={formatDurationForFuture(estimate.completionInSeconds, t)}
+            />
+          </>
+        )}
       </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {t("studio_calc_disclaimer")}
+      </p>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <button
