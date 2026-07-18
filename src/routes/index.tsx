@@ -129,16 +129,6 @@ function Hero() {
               {t("cta_browse")}
             </Link>
           </div>
-
-          <div className="mt-10 flex flex-wrap items-center gap-6 text-xs uppercase tracking-widest text-muted-foreground">
-            <span>Deutsch</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>English</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>Русский</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>Українська</span>
-          </div>
         </div>
 
         <HeroCardStack />
