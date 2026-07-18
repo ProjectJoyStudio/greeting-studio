@@ -8,6 +8,7 @@ import uk from "./locales/uk";
 import fr from "./locales/fr";
 import pl from "./locales/pl";
 import { AUTH_DASHBOARD } from "./locales/auth-dashboard";
+import { STUDIO } from "./locales/studio";
 
 export { LANGS };
 export type { Lang, Dict };
@@ -15,12 +16,12 @@ export type { Lang, Dict };
 // Merge the auth/dashboard namespace into each locale so `t()` resolves
 // every UI string from a single flat dictionary per language.
 const DICTS: Record<Lang, Dict> = {
-  en: { ...en, ...AUTH_DASHBOARD.en },
-  ru: { ...ru, ...AUTH_DASHBOARD.ru },
-  de: { ...de, ...AUTH_DASHBOARD.de },
-  uk: { ...uk, ...AUTH_DASHBOARD.uk },
-  fr: { ...fr, ...AUTH_DASHBOARD.fr },
-  pl: { ...pl, ...AUTH_DASHBOARD.pl },
+  en: { ...en, ...AUTH_DASHBOARD.en, ...STUDIO.en },
+  ru: { ...ru, ...AUTH_DASHBOARD.ru, ...STUDIO.ru },
+  de: { ...de, ...AUTH_DASHBOARD.de, ...STUDIO.de },
+  uk: { ...uk, ...AUTH_DASHBOARD.uk, ...STUDIO.uk },
+  fr: { ...fr, ...AUTH_DASHBOARD.fr, ...STUDIO.fr },
+  pl: { ...pl, ...AUTH_DASHBOARD.pl, ...STUDIO.pl },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
