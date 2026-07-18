@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
-import { Heart } from "lucide-react";
+import { Heart, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/catalog")({
   head: () => ({
@@ -28,54 +29,90 @@ const gradients = [
 
 function CatalogPage() {
   const { t } = useI18n();
-  const filters = [
-    t("cat_birthday"),
-    t("cat_love"),
-    t("cat_holiday"),
-    t("cat_thanks"),
-    t("cat_congrats"),
-    t("cat_wedding"),
-    t("cat_newborn"),
-    t("cat_corporate"),
+  const filterKeys = [
+    "cat_birthday", "cat_mother", "cat_father", "cat_wife", "cat_husband",
+    "cat_children", "cat_friends", "cat_love", "cat_wedding", "cat_anniversary",
+    "cat_newborn", "cat_congrats", "cat_graduation", "cat_teacher",
+    "cat_christmas", "cat_newyear", "cat_easter", "cat_holiday",
+    "cat_thanks", "cat_getwell", "cat_luck", "cat_corporate",
   ];
+  const [active, setActive] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
+  const items = useMemo(() => {
+    return filterKeys.map((k, i) => ({ key: k, label: t(k), index: i }));
+  }, [filterKeys, t]);
+
+  const visible = items.filter((it) => {
+    const inCat = active === "all" || it.key === active;
+    const inQuery = !query.trim() || it.label.toLowerCase().includes(query.trim().toLowerCase());
+    return inCat && inQuery;
+  });
   return (
     <SiteLayout>
       <PageHeader eyebrow={t("nav_catalog")} title={t("page_catalog_title")} subtitle={t("page_catalog_sub")}>
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground">All</button>
-          {filters.map((f) => (
-            <button key={f} className="rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur transition hover:border-primary/40">
-              {f}
+        <div className="flex flex-col gap-4">
+          <div className="relative w-full max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("catalog_search_ph")}
+              className="w-full rounded-full border border-border bg-card/70 py-2 pl-9 pr-4 text-sm text-foreground shadow-sm outline-none backdrop-blur transition placeholder:text-muted-foreground focus:border-primary/50"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActive("all")}
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${active === "all" ? "bg-primary text-primary-foreground" : "border border-border bg-card/70 text-foreground/80 hover:border-primary/40"}`}
+            >
+              {t("catalog_all")}
             </button>
-          ))}
+            {filterKeys.map((k) => (
+              <button
+                key={k}
+                onClick={() => setActive(k)}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${active === k ? "bg-primary text-primary-foreground" : "border border-border bg-card/70 text-foreground/80 hover:border-primary/40"}`}
+              >
+                {t(k)}
+              </button>
+            ))}
+          </div>
         </div>
       </PageHeader>
 
       <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <article key={i} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
-              <div className="aspect-[4/5]" style={{ backgroundImage: gradients[i % gradients.length] }}>
-                <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-                  <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest backdrop-blur">Card 0{i + 1}</span>
-                  <div>
-                    <div className="font-display text-2xl italic">Warmest wishes</div>
-                    <div className="mt-1 text-xs opacity-80">to someone dear</div>
+        {visible.length === 0 ? (
+          <p className="py-16 text-center text-sm text-muted-foreground">{t("catalog_no_results")}</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
+            {visible.map((it, i) => (
+              <article key={it.key} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
+                <div className="aspect-[4/5]" style={{ backgroundImage: gradients[it.index % gradients.length] }}>
+                  <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
+                    <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest backdrop-blur">
+                      {t("catalog_card_tag")} {String(it.index + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <div className="font-display text-2xl italic">{t("catalog_card_wish")}</div>
+                      <div className="mt-1 text-xs opacity-80">{t("catalog_card_sub")}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between p-4">
-                <div>
-                  <div className="text-sm font-semibold">Design N°{100 + i}</div>
-                  <div className="text-xs text-muted-foreground">{filters[i % filters.length]}</div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{t("catalog_card_wish")}</div>
+                    <div className="truncate text-xs text-muted-foreground">{it.label}</div>
+                  </div>
+                  <button aria-label="favorite" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary">
+                    <Heart className="h-4 w-4" />
+                  </button>
                 </div>
-                <button className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary">
-                  <Heart className="h-4 w-4" />
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </SiteLayout>
   );
