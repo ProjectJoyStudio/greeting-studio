@@ -36,6 +36,17 @@ import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
 import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
+import { Route as AdminPlatformRouteImport } from './routes/admin.platform'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
+import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
+import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
+import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -172,6 +183,61 @@ const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
   path: '/credits',
   getParentRoute: () => DashboardRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPromotionsRoute = AdminPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlatformRoute = AdminPlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
+  id: '/languages',
+  path: '/languages',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCreditPackagesRoute = AdminCreditPackagesRouteImport.update({
+  id: '/credit-packages',
+  path: '/credit-packages',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCatalogRoute = AdminCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalendarSettingsRoute = AdminCalendarSettingsRouteImport.update({
+  id: '/calendar-settings',
+  path: '/calendar-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -193,6 +259,17 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
+  '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
+  '/admin/catalog': typeof AdminCatalogRoute
+  '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/promotions': typeof AdminPromotionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -220,6 +297,17 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
+  '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
+  '/admin/catalog': typeof AdminCatalogRoute
+  '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/promotions': typeof AdminPromotionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -250,6 +338,17 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
+  '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
+  '/admin/catalog': typeof AdminCatalogRoute
+  '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/promotions': typeof AdminPromotionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -281,6 +380,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/audit-log'
+    | '/admin/calendar-settings'
+    | '/admin/catalog'
+    | '/admin/credit-packages'
+    | '/admin/languages'
+    | '/admin/notifications'
+    | '/admin/orders'
+    | '/admin/platform'
+    | '/admin/promotions'
+    | '/admin/reports'
+    | '/admin/users'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -308,6 +418,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/audit-log'
+    | '/admin/calendar-settings'
+    | '/admin/catalog'
+    | '/admin/credit-packages'
+    | '/admin/languages'
+    | '/admin/notifications'
+    | '/admin/orders'
+    | '/admin/platform'
+    | '/admin/promotions'
+    | '/admin/reports'
+    | '/admin/users'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -337,6 +458,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/audit-log'
+    | '/admin/calendar-settings'
+    | '/admin/catalog'
+    | '/admin/credit-packages'
+    | '/admin/languages'
+    | '/admin/notifications'
+    | '/admin/orders'
+    | '/admin/platform'
+    | '/admin/promotions'
+    | '/admin/reports'
+    | '/admin/users'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -560,14 +692,113 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCreditsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/promotions': {
+      id: '/admin/promotions'
+      path: '/promotions'
+      fullPath: '/admin/promotions'
+      preLoaderRoute: typeof AdminPromotionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/platform': {
+      id: '/admin/platform'
+      path: '/platform'
+      fullPath: '/admin/platform'
+      preLoaderRoute: typeof AdminPlatformRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/languages': {
+      id: '/admin/languages'
+      path: '/languages'
+      fullPath: '/admin/languages'
+      preLoaderRoute: typeof AdminLanguagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/credit-packages': {
+      id: '/admin/credit-packages'
+      path: '/credit-packages'
+      fullPath: '/admin/credit-packages'
+      preLoaderRoute: typeof AdminCreditPackagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/catalog': {
+      id: '/admin/catalog'
+      path: '/catalog'
+      fullPath: '/admin/catalog'
+      preLoaderRoute: typeof AdminCatalogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calendar-settings': {
+      id: '/admin/calendar-settings'
+      path: '/calendar-settings'
+      fullPath: '/admin/calendar-settings'
+      preLoaderRoute: typeof AdminCalendarSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit-log': {
+      id: '/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AdminAuditLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAuditLogRoute: typeof AdminAuditLogRoute
+  AdminCalendarSettingsRoute: typeof AdminCalendarSettingsRoute
+  AdminCatalogRoute: typeof AdminCatalogRoute
+  AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
+  AdminLanguagesRoute: typeof AdminLanguagesRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminPlatformRoute: typeof AdminPlatformRoute
+  AdminPromotionsRoute: typeof AdminPromotionsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditLogRoute: AdminAuditLogRoute,
+  AdminCalendarSettingsRoute: AdminCalendarSettingsRoute,
+  AdminCatalogRoute: AdminCatalogRoute,
+  AdminCreditPackagesRoute: AdminCreditPackagesRoute,
+  AdminLanguagesRoute: AdminLanguagesRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminPlatformRoute: AdminPlatformRoute,
+  AdminPromotionsRoute: AdminPromotionsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
