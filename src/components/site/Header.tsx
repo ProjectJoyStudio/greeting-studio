@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "./LanguageSelector";
 
 const navItems = [
+  { to: "/", key: "nav_home" },
   { to: "/catalog", key: "nav_catalog" },
   { to: "/daily", key: "nav_daily" },
   { to: "/create", key: "nav_create" },
@@ -12,6 +13,8 @@ const navItems = [
   { to: "/calendar", key: "nav_calendar" },
   { to: "/pricing", key: "nav_pricing" },
   { to: "/corporate-orders", key: "nav_corporate" },
+  { to: "/about", key: "nav_about" },
+  { to: "/contact", key: "nav_contact" },
 ] as const;
 
 export function Header() {
@@ -34,13 +37,13 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="ml-6 hidden flex-1 items-center gap-1 lg:flex">
+        <nav className="ml-6 hidden flex-1 flex-wrap items-center gap-x-1 gap-y-1 xl:flex-nowrap lg:flex">
           {navItems.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              activeOptions={{ exact: false }}
-              className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground data-[status=active]:bg-secondary data-[status=active]:text-foreground"
+              activeOptions={{ exact: n.to === "/" }}
+              className="rounded-full px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground transition hover:bg-secondary hover:text-foreground data-[status=active]:bg-secondary data-[status=active]:text-foreground"
             >
               {t(n.key)}
             </Link>
@@ -74,7 +77,7 @@ export function Header() {
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
-                activeOptions={{ exact: false }}
+                activeOptions={{ exact: n.to === "/" }}
                 className="rounded-lg px-3 py-2 text-sm text-foreground/80 transition hover:bg-secondary data-[status=active]:bg-secondary data-[status=active]:text-foreground"
               >
                 {t(n.key)}

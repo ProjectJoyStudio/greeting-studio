@@ -142,6 +142,7 @@ function Hero() {
 }
 
 function HeroCardStack() {
+  const { t } = useI18n();
   return (
     <div className="relative mx-auto flex h-[440px] w-full max-w-md items-center justify-center">
       <div
@@ -152,10 +153,10 @@ function HeroCardStack() {
         }}
       >
         <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-          <span className="font-display text-sm italic opacity-90">to Anna</span>
+          <span className="font-display text-sm italic opacity-90">{t("hero_card_to")}</span>
           <div>
-            <div className="font-display text-3xl leading-tight">Happy Birthday</div>
-            <div className="mt-1 text-xs opacity-80">with love</div>
+            <div className="font-display text-3xl leading-tight">{t("hero_card_hb")}</div>
+            <div className="mt-1 text-xs opacity-80">{t("hero_card_love")}</div>
           </div>
         </div>
       </div>
@@ -169,13 +170,13 @@ function HeroCardStack() {
       >
         <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
-            <Heart className="h-3.5 w-3.5" /> from Berlin
+            <Heart className="h-3.5 w-3.5" /> {t("hero_card_from")}
           </div>
           <div>
             <div className="font-display text-2xl italic leading-tight">
-              „Ein warmer Gruß für dich."
+              „{t("hero_card_quote")}"
             </div>
-            <div className="mt-3 text-xs opacity-80">— Project Joy</div>
+            <div className="mt-3 text-xs opacity-80">{t("hero_card_sig")}</div>
           </div>
         </div>
       </div>
@@ -187,10 +188,10 @@ function HeroCardStack() {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
           <div>
-            <div className="font-display text-2xl leading-tight">З Днем народження!</div>
+            <div className="font-display text-2xl leading-tight">{t("hero_card_hb")}</div>
             <div className="mt-2 h-px bg-border" />
             <div className="mt-2 text-xs italic text-muted-foreground">
-              Хай радість буде щоденною.
+              {t("hero_card_wish")}
             </div>
           </div>
         </div>
@@ -427,9 +428,9 @@ function EverydayWishes() {
 function DailyGreetings() {
   const { t } = useI18n();
   const items = [
-    { title: "International Friendship Day", tag: "Today", grad: "linear-gradient(160deg, oklch(0.86 0.11 55), oklch(0.55 0.16 30))" },
-    { title: "Grandparents Day", tag: "Tomorrow", grad: "linear-gradient(160deg, oklch(0.88 0.08 150), oklch(0.5 0.1 165))" },
-    { title: "World Kindness Day", tag: "Nov 13", grad: "linear-gradient(160deg, oklch(0.88 0.09 20), oklch(0.55 0.16 12))" },
+    { title: t("evt_friendship"), tag: t("daily_today"), grad: "linear-gradient(160deg, oklch(0.86 0.11 55), oklch(0.55 0.16 30))" },
+    { title: t("evt_grandparents"), tag: t("daily_tomorrow"), grad: "linear-gradient(160deg, oklch(0.88 0.08 150), oklch(0.5 0.1 165))" },
+    { title: t("evt_kindness"), tag: `${t("month_11")} 13`, grad: "linear-gradient(160deg, oklch(0.88 0.09 20), oklch(0.55 0.16 12))" },
   ];
   return (
     <section className="border-y border-border/60 bg-secondary/40">
@@ -466,11 +467,9 @@ function DailyGreetings() {
               </div>
               <div className="p-6">
                 <h3 className="font-display text-xl font-semibold">{it.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  A hand-selected greeting collection tuned for this occasion.
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("home_daily_body")}</p>
                 <div className="mt-5 flex items-center gap-2 text-sm font-medium text-primary">
-                  Open collection
+                  {t("home_open_collection")}
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </div>
               </div>

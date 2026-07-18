@@ -20,22 +20,22 @@ function PricingPage() {
     {
       name: t("free"),
       price: "€0",
-      tag: "Start here",
-      features: ["10 greetings per month", "50 free templates", "4 languages", "Send by link"],
+      tag: t("pricing_tag_start"),
+      features: [t("pricing_free_1"), t("pricing_free_2"), t("pricing_free_3"), t("pricing_free_4")],
       highlight: false,
     },
     {
       name: t("premium"),
       price: "€6",
-      tag: "Most loved",
-      features: ["Unlimited greetings", "All premium templates", "Custom photos & fonts", "Scheduled delivery", "Priority support"],
+      tag: t("pricing_tag_loved"),
+      features: [t("pricing_prem_1"), t("pricing_prem_2"), t("pricing_prem_3"), t("pricing_prem_4"), t("pricing_prem_5")],
       highlight: true,
     },
     {
       name: t("business"),
       price: "€49",
-      tag: "For teams",
-      features: ["Everything in Premium", "Team workspace", "Branded designs", "Bulk delivery", "Dedicated designer"],
+      tag: t("pricing_tag_teams"),
+      features: [t("pricing_biz_1"), t("pricing_biz_2"), t("pricing_biz_3"), t("pricing_biz_4"), t("pricing_biz_5")],
       highlight: false,
     },
   ];

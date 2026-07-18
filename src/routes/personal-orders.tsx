@@ -17,9 +17,9 @@ export const Route = createFileRoute("/personal-orders")({
 function PersonalOrdersPage() {
   const { t } = useI18n();
   const items = [
-    { icon: PenLine, title: "Handwritten note", body: "A designer transcribes your message into a personalized card in your chosen script." },
-    { icon: Gift, title: "Bespoke design", body: "One-of-one artwork inspired by the recipient, illustrated for you." },
-    { icon: HandHeart, title: "Curated moments", body: "We help you plan an entire year of greetings for the people you love." },
+    { icon: PenLine, title: t("personal_item1_t"), body: t("personal_item1_b") },
+    { icon: Gift, title: t("personal_item2_t"), body: t("personal_item2_b") },
+    { icon: HandHeart, title: t("personal_item3_t"), body: t("personal_item3_b") },
   ];
   return (
     <SiteLayout>
@@ -36,7 +36,7 @@ function PersonalOrdersPage() {
                 <h3 className="mt-6 font-display text-xl font-semibold">{it.title}</h3>
                 <p className="mt-3 text-sm text-muted-foreground">{it.body}</p>
                 <button className="mt-6 rounded-full border border-border px-4 py-2 text-xs font-medium transition hover:border-primary/40">
-                  Request quote
+                  {t("personal_request")}
                 </button>
               </div>
             );

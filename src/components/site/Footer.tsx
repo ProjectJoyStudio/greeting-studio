@@ -45,9 +45,9 @@ export function Footer() {
             { to: "/corporate-orders", label: t("nav_corporate") },
           ]} />
           <FooterCol title={t("footer_legal")} links={[
-            { to: "/about", label: "Terms" },
-            { to: "/about", label: "Privacy" },
-            { to: "/about", label: "Cookies" },
+            { to: "/about", label: t("footer_terms") },
+            { to: "/about", label: t("footer_privacy") },
+            { to: "/about", label: t("footer_cookies") },
           ]} />
         </div>
 
