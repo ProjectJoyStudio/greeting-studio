@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { AuthProvider } from "../lib/auth/AuthContext";
+import { AdminRoleProvider } from "../lib/admin/role";
+import { EconomyProvider } from "../lib/admin/economy";
 
 function NotFoundComponent() {
   return (
@@ -128,8 +130,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
+          <AdminRoleProvider>
+            <EconomyProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </EconomyProvider>
+          </AdminRoleProvider>
         </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
