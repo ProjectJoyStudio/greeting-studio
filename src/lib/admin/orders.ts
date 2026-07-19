@@ -54,6 +54,79 @@ export interface OrderNotification {
   status: NotifyStatus;
 }
 
+export type Priority = "normal" | "high" | "urgent";
+export const PRIORITIES: Priority[] = ["normal", "high", "urgent"];
+
+export const PRIORITY_TONE: Record<Priority, string> = {
+  normal: "bg-slate-500/15 text-slate-700 dark:text-slate-200 border-slate-500/30",
+  high: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30",
+  urgent: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30",
+};
+
+export type TimelineKind =
+  | "created"
+  | "payment"
+  | "queued"
+  | "processing_started"
+  | "processing_finished"
+  | "notification_sent"
+  | "delivered"
+  | "cancelled"
+  | "priority_changed"
+  | "queue_moved"
+  | "paused"
+  | "resumed"
+  | "status_changed"
+  | "note_added"
+  | "notification_resent";
+
+export interface TimelineEvent {
+  id: string;
+  kind: TimelineKind;
+  at: string; // ISO
+  note: string;
+  author: string;
+}
+
+export interface InternalNote {
+  id: string;
+  author: string;
+  at: string;
+  text: string;
+}
+
+export interface NotificationLogEntry {
+  id: string;
+  channel: NotifyChannel;
+  at: string;
+  status: NotifyStatus;
+  subjectKey: string;
+  bodyKey: string;
+}
+
+export type GeneratedFileKind = "card" | "song" | "video" | "cartoon" | "premium";
+
+export interface GeneratedFile {
+  id: string;
+  kind: GeneratedFileKind;
+  label: string;
+}
+
+export type CancellationReason =
+  | "customer_request"
+  | "payment_failed"
+  | "technical_issue"
+  | "duplicate"
+  | "other";
+
+export const CANCELLATION_REASONS: CancellationReason[] = [
+  "customer_request",
+  "payment_failed",
+  "technical_issue",
+  "duplicate",
+  "other",
+];
+
 export interface OrderRecord {
   id: string;
   customerName: string;
@@ -64,6 +137,8 @@ export interface OrderRecord {
   productName: string;
   credits: number;
   status: OrderStatus;
+  priority: Priority;
+  paused: boolean;
   queuePosition: number | null;
   estimatedMinutes: number; // 0 = not applicable
   createdAt: string; // ISO
@@ -73,6 +148,12 @@ export interface OrderRecord {
   durationSeconds: number | null;
   customerNotes: string;
   notifications: OrderNotification[];
+  timeline: TimelineEvent[];
+  internalNotes: InternalNote[];
+  notificationLogs: NotificationLogEntry[];
+  files: GeneratedFile[];
+  cancellationReason: CancellationReason | null;
+  cancellationNote: string;
 }
 
 export const STATUS_TONE: Record<OrderStatus, string> = {
@@ -100,8 +181,90 @@ function iso(daysAgo: number, hoursAgo = 0): string {
   return d.toISOString();
 }
 
+let evtSeq = 1;
+export function newEventId(): string {
+  evtSeq += 1;
+  return `evt-${evtSeq}`;
+}
+
+export function makeTimelineEvent(kind: TimelineKind, note = "", author = "Admin"): TimelineEvent {
+  return { id: newEventId(), kind, at: new Date().toISOString(), note, author };
+}
+
+function seedTimeline(o: Pick<OrderRecord, "createdAt" | "status" | "priority">): TimelineEvent[] {
+  const base: TimelineEvent[] = [
+    { id: newEventId(), kind: "created", at: o.createdAt, note: "", author: "System" },
+  ];
+  const advance = (kind: TimelineKind, hoursOffset: number): TimelineEvent => {
+    const d = new Date(o.createdAt);
+    d.setUTCHours(d.getUTCHours() + hoursOffset);
+    return { id: newEventId(), kind, at: d.toISOString(), note: "", author: "System" };
+  };
+  const chain: TimelineKind[] = [];
+  if (["paid", "in_queue", "processing", "ready", "delivered"].includes(o.status)) chain.push("payment");
+  if (["in_queue", "processing", "ready", "delivered"].includes(o.status)) chain.push("queued");
+  if (["processing", "ready", "delivered"].includes(o.status)) chain.push("processing_started");
+  if (["ready", "delivered"].includes(o.status)) chain.push("processing_finished");
+  if (o.status === "delivered") {
+    chain.push("notification_sent");
+    chain.push("delivered");
+  }
+  if (o.status === "cancelled") chain.push("cancelled");
+  chain.forEach((k, i) => base.push(advance(k, (i + 1) * 2)));
+  return base;
+}
+
+function defaultFiles(type: OrderType): GeneratedFile[] {
+  const map: Record<OrderType, GeneratedFileKind[]> = {
+    card: ["card"],
+    animated: ["card"],
+    song: ["song"],
+    video: ["video"],
+    cartoon: ["cartoon"],
+    premium: ["premium"],
+    individual: ["premium"],
+  };
+  return map[type].map((kind, i) => ({
+    id: `f-${kind}-${i}`,
+    kind,
+    label: `${kind.toUpperCase()}-${100 + i}`,
+  }));
+}
+
+function defaultNotifLogs(createdAt: string): NotificationLogEntry[] {
+  const d = new Date(createdAt);
+  d.setUTCHours(d.getUTCHours() + 1);
+  return [
+    {
+      id: `nl-${Math.random().toString(36).slice(2, 8)}`,
+      channel: "email",
+      at: d.toISOString(),
+      status: "sent",
+      subjectKey: "tmpl_confirm_subject",
+      bodyKey: "tmpl_confirm_body",
+    },
+  ];
+}
+
+function makeDemoOrder(partial: Omit<OrderRecord,
+  "priority" | "paused" | "timeline" | "internalNotes" | "notificationLogs" | "files" | "cancellationReason" | "cancellationNote"
+> & { priority?: Priority; paused?: boolean }): OrderRecord {
+  const priority = partial.priority ?? "normal";
+  return {
+    ...partial,
+    priority,
+    paused: partial.paused ?? false,
+    timeline: seedTimeline({ createdAt: partial.createdAt, status: partial.status, priority }),
+    internalNotes: [],
+    notificationLogs: defaultNotifLogs(partial.createdAt),
+    files: defaultFiles(partial.type),
+    cancellationReason: null,
+    cancellationNote: "",
+  };
+}
+
 export const DEMO_ORDERS: OrderRecord[] = [
-  {
+  makeDemoOrder({
     id: "JOY-100241",
     customerName: "Anna Weber",
     customerEmail: "anna.weber@example.com",
@@ -123,8 +286,9 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "sent" },
       { channel: "sms", enabled: false, status: "pending" },
     ],
-  },
-  {
+    priority: "normal",
+  }),
+  makeDemoOrder({
     id: "JOY-100242",
     customerName: "Ivan Petrov",
     customerEmail: "ivan.petrov@example.com",
@@ -146,8 +310,9 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "pending" },
       { channel: "sms", enabled: true, status: "pending" },
     ],
-  },
-  {
+    priority: "high",
+  }),
+  makeDemoOrder({
     id: "JOY-100243",
     customerName: "Marie Dubois",
     customerEmail: "marie.dubois@example.com",
@@ -169,8 +334,9 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "pending" },
       { channel: "sms", enabled: false, status: "pending" },
     ],
-  },
-  {
+    priority: "urgent",
+  }),
+  makeDemoOrder({
     id: "JOY-100244",
     customerName: "Olena Koval",
     customerEmail: "olena.koval@example.com",
@@ -192,8 +358,9 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "sent" },
       { channel: "sms", enabled: true, status: "failed" },
     ],
-  },
-  {
+    priority: "normal",
+  }),
+  makeDemoOrder({
     id: "JOY-100245",
     customerName: "Piotr Nowak",
     customerEmail: "piotr.nowak@example.com",
@@ -215,8 +382,9 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "pending" },
       { channel: "sms", enabled: false, status: "pending" },
     ],
-  },
-  {
+    priority: "normal",
+  }),
+  makeDemoOrder({
     id: "JOY-100246",
     customerName: "John Smith",
     customerEmail: "john.smith@example.com",
@@ -238,7 +406,8 @@ export const DEMO_ORDERS: OrderRecord[] = [
       { channel: "email", enabled: true, status: "pending" },
       { channel: "sms", enabled: false, status: "pending" },
     ],
-  },
+    priority: "normal",
+  }),
 ];
 
 let seq = 100300;
@@ -248,7 +417,8 @@ export function nextOrderId(): string {
 }
 
 export function makeTestOrder(): OrderRecord {
-  return {
+  const createdAt = new Date().toISOString();
+  return makeDemoOrder({
     id: nextOrderId(),
     customerName: "Test Customer",
     customerEmail: "test.customer@example.com",
@@ -260,7 +430,7 @@ export function makeTestOrder(): OrderRecord {
     status: "draft",
     queuePosition: null,
     estimatedMinutes: 0,
-    createdAt: new Date().toISOString(),
+    createdAt,
     recipientName: "Recipient",
     occasion: "Birthday",
     style: "Warm",
@@ -270,16 +440,100 @@ export function makeTestOrder(): OrderRecord {
       { channel: "email", enabled: true, status: "pending" },
       { channel: "sms", enabled: false, status: "pending" },
     ],
-  };
+    priority: "normal",
+  });
 }
 
 export function duplicateOrder(o: OrderRecord): OrderRecord {
-  return {
-    ...o,
+  const createdAt = new Date().toISOString();
+  return makeDemoOrder({
     id: nextOrderId(),
+    customerName: o.customerName,
+    customerEmail: o.customerEmail,
+    customerLanguage: o.customerLanguage,
+    customerCountry: o.customerCountry,
+    type: o.type,
+    productName: o.productName,
+    credits: o.credits,
     status: "draft",
     queuePosition: null,
-    createdAt: new Date().toISOString(),
+    estimatedMinutes: o.estimatedMinutes,
+    createdAt,
+    recipientName: o.recipientName,
+    occasion: o.occasion,
+    style: o.style,
+    durationSeconds: o.durationSeconds,
+    customerNotes: o.customerNotes,
     notifications: o.notifications.map((n) => ({ ...n, status: "pending" })),
-  };
+    priority: "normal",
+  });
 }
+
+// ---------------------------------------------------------------------------
+// Queue helpers
+// ---------------------------------------------------------------------------
+
+export type QueueAction = "up" | "down" | "top";
+
+function queuedIds(orders: OrderRecord[]): OrderRecord[] {
+  return [...orders]
+    .filter((o) => o.queuePosition != null && !["delivered", "cancelled"].includes(o.status))
+    .sort((a, b) => (a.queuePosition ?? 0) - (b.queuePosition ?? 0));
+}
+
+function reassign(orders: OrderRecord[], sorted: OrderRecord[]): OrderRecord[] {
+  const posById = new Map(sorted.map((o, i) => [o.id, i + 1]));
+  return orders.map((o) => (posById.has(o.id) ? { ...o, queuePosition: posById.get(o.id)! } : o));
+}
+
+export function moveInQueue(orders: OrderRecord[], id: string, action: QueueAction): OrderRecord[] {
+  const list = queuedIds(orders);
+  const idx = list.findIndex((o) => o.id === id);
+  if (idx < 0) return orders;
+  if (action === "top" && idx > 0) {
+    const [item] = list.splice(idx, 1);
+    list.unshift(item);
+  } else if (action === "up" && idx > 0) {
+    [list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
+  } else if (action === "down" && idx < list.length - 1) {
+    [list[idx + 1], list[idx]] = [list[idx], list[idx + 1]];
+  } else {
+    return orders;
+  }
+  return reassign(orders, list);
+}
+
+/**
+ * Re-sort the temporary queue so higher priorities float upward while keeping
+ * relative order within each priority tier. Frontend demonstration only.
+ */
+export function reprioritizeQueue(orders: OrderRecord[]): OrderRecord[] {
+  const rank: Record<Priority, number> = { urgent: 0, high: 1, normal: 2 };
+  const list = queuedIds(orders).sort((a, b) => {
+    if (rank[a.priority] !== rank[b.priority]) return rank[a.priority] - rank[b.priority];
+    return (a.queuePosition ?? 0) - (b.queuePosition ?? 0);
+  });
+  return reassign(orders, list);
+}
+
+export function appendEvent(order: OrderRecord, kind: TimelineKind, note = "", author = "Admin"): OrderRecord {
+  return { ...order, timeline: [...order.timeline, makeTimelineEvent(kind, note, author)] };
+}
+
+export const TIMELINE_KINDS: TimelineKind[] = [
+  "created",
+  "payment",
+  "queued",
+  "processing_started",
+  "processing_finished",
+  "notification_sent",
+  "delivered",
+  "cancelled",
+  "priority_changed",
+  "queue_moved",
+  "paused",
+  "resumed",
+  "status_changed",
+  "note_added",
+  "notification_resent",
+];
