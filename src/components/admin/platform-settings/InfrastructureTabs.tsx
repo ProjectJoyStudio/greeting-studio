@@ -741,7 +741,7 @@ export function ServicesTab({ state, setState, t }: {
                 <tr key={s.id} className="border-t border-border/40">
                   <td className="py-1.5"><div className="font-medium">{s.name}</div><div className="text-[10px] text-muted-foreground">{s.id}</div></td>
                   <td>{t(`sc_${s.category}`)}</td>
-                  <td><span className={`${chip} ${serviceStatusTone(s.status)}`}>{s.status === "not_configured" || s.status === "rate_limited" || s.status === "maintenance" ? t(`ss_${s.status}`) : t(`ps_${s.status === "not_configured" ? "not_connected" : s.status}`)}</span></td>
+                  <td><span className={`${chip} ${serviceStatusTone(s.status)}`}>{s.status === "not_configured" || s.status === "rate_limited" || s.status === "maintenance" ? t(`ss_${s.status}`) : t(`ps_${s.status}`)}</span></td>
                   <td><span className={`${chip} ${s.environment === "live" ? providerTone("connected") : providerTone("test")}`}>{s.environment === "live" ? t("badge_live") : t("badge_test")}</span></td>
                   <td className="font-mono">{s.credentialMasked}</td>
                   <td>{fmtDate(s.lastCheck)}</td>

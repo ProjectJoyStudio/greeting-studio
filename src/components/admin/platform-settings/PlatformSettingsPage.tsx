@@ -6,6 +6,7 @@ import {
   Cpu, Scale, GitBranch, Languages, Type, Cloud, Plug, HeartPulse, Gauge, ScrollText,
   Plus, Power, Play, ArrowRightLeft,
   Zap, ListOrdered, Siren, GripVertical, TrendingUp, Route,
+  CreditCard, UserCog, Boxes, Plug2, Beaker, Pause, Rocket,
 } from "lucide-react";
 
 import { useI18n, LANGS } from "@/lib/i18n";
@@ -25,6 +26,13 @@ import {
   type BalancerEvent, type BalancerEventSeverity,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
+import {
+  DEFAULT_INFRASTRUCTURE, type InfrastructureState,
+} from "@/lib/admin/platform-infrastructure";
+import {
+  PaymentsTab, AuthTab, StorageMgmtTab, ServicesTab,
+  SandboxTab, ControlTab, LaunchTab,
+} from "./InfrastructureTabs";
 
 // ---------- shared classes ----------
 const inputCls =
@@ -41,7 +49,9 @@ type TabKey =
   | "general" | "domain" | "server" | "maintenance"
   | "backup" | "security" | "monitoring" | "info"
   | "generators" | "balancer" | "fallback" | "translations"
-  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs";
+  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs"
+  | "payments" | "auth" | "storage_mgmt" | "services"
+  | "sandbox" | "control" | "launch";
 
 const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }[] = [
   { key: "general",     icon: Wrench,      labelKey: "tab_general",     catKey: "cat_general" },
@@ -62,6 +72,13 @@ const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }
   { key: "health",      icon: HeartPulse,  labelKey: "tab_health",      catKey: "cat_health" },
   { key: "scaling",     icon: Gauge,       labelKey: "tab_scaling",     catKey: "cat_scaling" },
   { key: "logs",        icon: ScrollText,  labelKey: "tab_logs",        catKey: "cat_logs" },
+  { key: "payments",    icon: CreditCard,  labelKey: "tab_payments",    catKey: "tab_payments" },
+  { key: "auth",        icon: UserCog,     labelKey: "tab_auth",        catKey: "tab_auth" },
+  { key: "storage_mgmt",icon: Boxes,       labelKey: "tab_storage_mgmt",catKey: "tab_storage_mgmt" },
+  { key: "services",    icon: Plug2,       labelKey: "tab_services",    catKey: "tab_services" },
+  { key: "sandbox",     icon: Beaker,      labelKey: "tab_sandbox",     catKey: "tab_sandbox" },
+  { key: "control",     icon: Pause,       labelKey: "tab_control",     catKey: "tab_control" },
+  { key: "launch",      icon: Rocket,      labelKey: "tab_launch",      catKey: "tab_launch" },
 ];
 
 function StatusPill({ status, label }: { status: IndicatorStatus; label: string }) {
@@ -120,6 +137,9 @@ export function PlatformSettingsPage() {
   );
   const [balDash, setBalDash] = useState<BalancerDashboardSettings>(() =>
     JSON.parse(JSON.stringify(DEFAULT_BALANCER_DASHBOARD)),
+  );
+  const [infra, setInfra] = useState<InfrastructureState>(() =>
+    JSON.parse(JSON.stringify(DEFAULT_INFRASTRUCTURE)),
   );
   const [dragTier, setDragTier] = useState<PriorityTier | null>(null);
   const [tab, setTab] = useState<TabKey>("general");
@@ -197,6 +217,26 @@ export function PlatformSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {infra.control.mode !== "normal" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-amber-900">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Pause className="h-4 w-4" />
+            <span>
+              {infra.control.mode === "full_maintenance"
+                ? t("tab_control") + " — " + t("badge_live")
+                : t("tab_control")}
+            </span>
+            <span className="text-xs opacity-80">· {infra.control.mode}</span>
+          </div>
+          <button
+            type="button"
+            className={btnBase}
+            onClick={() => setTab("control")}
+          >
+            <Play className="h-3.5 w-3.5" />{t("btn_check")}
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -1411,6 +1451,14 @@ export function PlatformSettingsPage() {
       )}
 
       {tab === "logs" && <LogsPanel logs={adv.logs} t={t} />}
+
+      {tab === "payments" && <PaymentsTab state={infra} setState={setInfra} t={t} />}
+      {tab === "auth" && <AuthTab state={infra} setState={setInfra} t={t} />}
+      {tab === "storage_mgmt" && <StorageMgmtTab state={infra} setState={setInfra} t={t} />}
+      {tab === "services" && <ServicesTab state={infra} setState={setInfra} t={t} />}
+      {tab === "sandbox" && <SandboxTab state={infra} setState={setInfra} t={t} />}
+      {tab === "control" && <ControlTab state={infra} setState={setInfra} t={t} lang={lang} />}
+      {tab === "launch" && <LaunchTab state={infra} setState={setInfra} t={t} />}
 
       {toast && <Toast msg={toast} onDone={() => { /* auto */ }} />}
     </div>
