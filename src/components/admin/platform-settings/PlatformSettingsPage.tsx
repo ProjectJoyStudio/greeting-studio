@@ -1498,6 +1498,20 @@ function LogResultBadge({ result, t }: { result: LogResult; t: (k: string) => st
   );
 }
 
+function BalEventSeverityBadge({
+  severity, t,
+}: { severity: BalancerEventSeverity; t: (k: string) => string }) {
+  const tone =
+    severity === "info" ? statusTone("online")
+    : severity === "warning" ? statusTone("warning")
+    : statusTone("error");
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>
+      {t(`bal_ev_sev_${severity}`)}
+    </span>
+  );
+}
+
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-3">
