@@ -21,8 +21,11 @@ export type DiscountScope = "global" | "country" | "language" | "package";
 
 export type PromoDiscountType = "percentage" | "fixed" | "bonus_credits";
 
+export type PackageStatus = "draft" | "active" | "inactive";
+
 export interface CreditPackage {
   id: string;
+  internalId: string;
   name: string;
   credits: number;
   bonusCredits: number;
@@ -31,6 +34,7 @@ export interface CreditPackage {
   badge: BadgeKind;
   color: string; // hex — used by the customer preview card
   active: boolean;
+  status: PackageStatus;
   visibleCountries: string[]; // ISO codes; empty = all
   visibleLanguages: string[]; // Lang codes; empty = all
   startDate: string | null; // ISO date (yyyy-mm-dd)
