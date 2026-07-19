@@ -3,17 +3,22 @@ import {
   Save, RefreshCw, Activity, Database, ShieldCheck, Globe, Server, Wrench,
   BellRing, Info, HardDrive, Download, RotateCcw, Trash2, Eye, X, Search,
   AlertTriangle, CheckCircle2, XCircle, LogOut, ChevronRight,
+  Cpu, Scale, GitBranch, Languages, Type, Cloud, Plug, HeartPulse, Gauge, ScrollText,
+  Plus, Power, Play, ArrowRightLeft,
 } from "lucide-react";
 
 import { useI18n, LANGS } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n/types";
 import {
-  DEFAULT_PLATFORM_SETTINGS,
+  DEFAULT_PLATFORM_SETTINGS, DEFAULT_PLATFORM_ADVANCED,
+  GENERATOR_TYPES, TRANSLATION_PROVIDERS, computeBalancerLive,
   SUPPORTED_CURRENCIES, SUPPORTED_TIMEZONES, DATE_FORMATS, TIME_FORMATS,
   WEEK_STARTS, COUNTRY_CODES,
   validateGeneral, formatDate, formatDateTime, statusTone, progressTone,
-  type PlatformSettingsState, type IndicatorStatus, type BackupRecord,
-  type MonitoringCheck, type BackupType,
+  type PlatformSettingsState, type PlatformAdvancedState, type IndicatorStatus,
+  type BackupRecord, type MonitoringCheck, type BackupType,
+  type GeneratorRecord, type BalancerMode, type TranslationProvider,
+  type HealthStatus, type LogCategory, type LogResult,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
 
@@ -30,7 +35,9 @@ const cardCls =
 
 type TabKey =
   | "general" | "domain" | "server" | "maintenance"
-  | "backup" | "security" | "monitoring" | "info";
+  | "backup" | "security" | "monitoring" | "info"
+  | "generators" | "balancer" | "fallback" | "translations"
+  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs";
 
 const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }[] = [
   { key: "general",     icon: Wrench,      labelKey: "tab_general",     catKey: "cat_general" },
@@ -41,6 +48,16 @@ const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }
   { key: "security",    icon: ShieldCheck, labelKey: "tab_security",    catKey: "cat_security" },
   { key: "monitoring",  icon: Activity,    labelKey: "tab_monitoring",  catKey: "cat_monitoring" },
   { key: "info",        icon: Info,        labelKey: "tab_info",        catKey: "cat_info" },
+  { key: "generators",  icon: Cpu,         labelKey: "tab_generators",  catKey: "cat_generators" },
+  { key: "balancer",    icon: Scale,       labelKey: "tab_balancer",    catKey: "cat_balancer" },
+  { key: "fallback",    icon: GitBranch,   labelKey: "tab_fallback",    catKey: "cat_fallback" },
+  { key: "translations",icon: Languages,   labelKey: "tab_translations",catKey: "cat_translations" },
+  { key: "overlay",     icon: Type,        labelKey: "tab_overlay",     catKey: "cat_overlay" },
+  { key: "storage",     icon: Cloud,       labelKey: "tab_storage",     catKey: "cat_storage" },
+  { key: "api",         icon: Plug,        labelKey: "tab_api",         catKey: "cat_api" },
+  { key: "health",      icon: HeartPulse,  labelKey: "tab_health",      catKey: "cat_health" },
+  { key: "scaling",     icon: Gauge,       labelKey: "tab_scaling",     catKey: "cat_scaling" },
+  { key: "logs",        icon: ScrollText,  labelKey: "tab_logs",        catKey: "cat_logs" },
 ];
 
 function StatusPill({ status, label }: { status: IndicatorStatus; label: string }) {
@@ -94,6 +111,9 @@ export function PlatformSettingsPage() {
   const [state, setState] = useState<PlatformSettingsState>(() =>
     JSON.parse(JSON.stringify(DEFAULT_PLATFORM_SETTINGS)),
   );
+  const [adv, setAdv] = useState<PlatformAdvancedState>(() =>
+    JSON.parse(JSON.stringify(DEFAULT_PLATFORM_ADVANCED)),
+  );
   const [tab, setTab] = useState<TabKey>("general");
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -114,6 +134,11 @@ export function PlatformSettingsPage() {
     key: K, mut: (draft: PlatformSettingsState[K]) => PlatformSettingsState[K],
   ) {
     setState((s) => ({ ...s, [key]: mut(s[key]) }));
+  }
+  function updateAdv<K extends keyof PlatformAdvancedState>(
+    key: K, mut: (draft: PlatformAdvancedState[K]) => PlatformAdvancedState[K],
+  ) {
+    setAdv((s) => ({ ...s, [key]: mut(s[key]) }));
   }
 
   function handleSave() {
