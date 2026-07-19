@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
-import { Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle } from "lucide-react";
+import {
+  Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle,
+  Mail, MessageSquare, Bell, KeyRound, Gift, Crown, Star, Trophy, ExternalLink, Copy, XCircle,
+  Monitor, Globe2, Wallet, Clock, ClipboardList,
+} from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
 import { LANGS, type Lang } from "@/lib/i18n/types";
 import {
   DEMO_USERS, ACCOUNT_STATUSES, SUBSCRIPTION_TYPES, STATUS_TONE, SUBSCRIPTION_TONE,
-  COUNTRY_CODES, makeTestUser, validateUser,
-  type UserRecord, type AccountStatus, type SubscriptionType,
+  COUNTRY_CODES, makeTestUser, validateUser, enrichUser, totalSpentFor, avgOrderValueFor,
+  ORDER_STATUS_TONE, NOTIF_STATUS_TONE, SUB_HISTORY_TONE, VIP_TONE,
+  type UserRecord, type AccountStatus, type SubscriptionType, type EnrichedUser,
+  type InternalNote, type VipTier,
 } from "@/lib/admin/users";
 import { useLocalUsers, type LocalUsers } from "./i18n";
 
@@ -37,6 +43,7 @@ export function UsersPage() {
   const [viewing, setViewing] = useState<UserRecord | null>(null);
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<UserRecord | null>(null);
+  const [notesByUser, setNotesByUser] = useState<Record<string, InternalNote[]>>({});
 
   const filtered = useMemo(() => {
     void tick;
@@ -230,7 +237,31 @@ export function UsersPage() {
         )}
       </div>
 
-      {viewing && <ViewModal user={viewing} L={L} lang={lang} onClose={() => setViewing(null)} onEdit={() => { setEditing({ ...viewing }); setViewing(null); }} />}
+      {viewing && (
+        <ViewModal
+          user={viewing}
+          L={L}
+          lang={lang}
+          notes={notesByUser[viewing.id] ?? []}
+          onNotesChange={(next) => setNotesByUser((m) => ({ ...m, [viewing.id]: next }))}
+          onStatusChange={(s) => {
+            setStatus(viewing.id, s);
+            setViewing((v) => (v ? { ...v, status: s } : v));
+          }}
+          onGrantCredits={(amount) => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === viewing.id
+                  ? { ...u, creditsBalance: u.creditsBalance + amount, creditsPurchased: u.creditsPurchased + amount }
+                  : u,
+              ),
+            );
+            setViewing((v) => (v ? { ...v, creditsBalance: v.creditsBalance + amount, creditsPurchased: v.creditsPurchased + amount } : v));
+          }}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing({ ...viewing }); setViewing(null); }}
+        />
+      )}
       {editing && (
         <EditModal
           initial={editing}
@@ -323,56 +354,440 @@ function formatDateTime(iso: string | null, lang: Lang, L: LocalUsers): string {
   }
 }
 
+type ProfileTab = "overview" | "orders" | "credits" | "subs" | "notifs" | "notes" | "activity";
+
 function ViewModal({
-  user, L, lang, onClose, onEdit,
+  user, L, lang, notes, onNotesChange, onStatusChange, onGrantCredits, onClose, onEdit,
 }: {
   user: UserRecord;
   L: LocalUsers;
   lang: Lang;
+  notes: InternalNote[];
+  onNotesChange: (next: InternalNote[]) => void;
+  onStatusChange: (s: AccountStatus) => void;
+  onGrantCredits: (amount: number) => void;
   onClose: () => void;
   onEdit: () => void;
 }) {
+  const [tab, setTab] = useState<ProfileTab>("overview");
+  const [toast, setToast] = useState<string | null>(null);
+  const enriched: EnrichedUser = useMemo(() => enrichUser(user), [user]);
   const remaining = Math.max(0, user.creditsPurchased - user.creditsUsed);
+
+  const flash = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2200);
+  };
+
+  const tabs: { id: ProfileTab; label: string }[] = [
+    { id: "overview", label: L("tab_overview") },
+    { id: "orders", label: L("tab_orders") },
+    { id: "credits", label: L("tab_credits") },
+    { id: "subs", label: L("tab_subs") },
+    { id: "notifs", label: L("tab_notifs") },
+    { id: "notes", label: L("tab_notes") },
+    { id: "activity", label: L("tab_activity") },
+  ];
+
   return (
     <Modal onClose={onClose} title={L("view_title")}>
-      <div className="grid gap-5 md:grid-cols-2">
-        <Section title={L("section_personal")}>
-          <Field label={L("f_full_name")} value={user.fullName} />
-          <Field label={L("f_email")} value={user.email} />
-          <Field label={L("f_country")} value={user.country} />
-          <Field label={L("f_language")} value={user.language.toUpperCase()} />
-          <Field label={L("f_registration")} value={formatDate(user.registrationDate, lang)} />
-        </Section>
-        <Section title={L("section_account")}>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{L("f_status")}</span>
-            <StatusPill status={user.status} L={L} />
+      {/* Header identity */}
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/60 bg-background/70 p-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-[Fraunces] text-xl font-semibold text-foreground">{user.fullName}</h3>
+            <VipBadge tier={user.vipTier ?? "none"} L={L} />
           </div>
-          <Field label={L("f_balance")} value={String(user.creditsBalance)} />
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{L("f_sub_type")}</span>
-            <SubPill sub={user.subscription} L={L} />
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-mono">{user.id}</span>
+            <span>{user.email}</span>
+            <span>{user.country}</span>
+            <span className="uppercase">{user.language}</span>
           </div>
-          <Field label={L("f_sub_start")} value={formatDateTime(user.subscriptionStart, lang, L)} />
-          <Field label={L("f_sub_end")} value={formatDateTime(user.subscriptionEnd, lang, L)} />
-        </Section>
-        <Section title={L("section_stats")}>
-          <Field label={L("f_total_orders")} value={String(user.totalOrders)} />
-          <Field label={L("f_credits_purchased")} value={String(user.creditsPurchased)} />
-          <Field label={L("f_credits_used")} value={String(user.creditsUsed)} />
-        </Section>
-        <Section title={L("section_credits")}>
-          <Field label={L("f_balance")} value={String(user.creditsBalance)} />
-          <Field label={L("f_credits_purchased")} value={String(user.creditsPurchased)} />
-          <Field label={L("f_credits_used")} value={String(user.creditsUsed)} />
-          <Field label={L("f_credits_remaining")} value={String(remaining)} />
-        </Section>
+        </div>
+        <QuickActions L={L} user={user} onStatusChange={onStatusChange} onGrantCredits={onGrantCredits} onFlash={flash} />
       </div>
-      <div className="mt-6 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className={btnBase}>{L("close")}</button>
-        <button type="button" onClick={onEdit} className={btnPrimary}><Pencil className="h-3.5 w-3.5" />{L("act_edit")}</button>
+
+      {/* Tabs */}
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-border/60">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`rounded-t-md px-3 py-1.5 text-xs font-medium transition ${
+              tab === t.id ? "bg-primary/10 text-foreground border border-border/60 border-b-transparent" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" && (
+        <div className="grid gap-5 md:grid-cols-2">
+          <Section title={L("section_personal")}>
+            <Field label={L("f_full_name")} value={user.fullName} />
+            <Field label={L("f_email")} value={user.email} />
+            <Field label={L("f_country")} value={user.country} />
+            <Field label={L("f_language")} value={user.language.toUpperCase()} />
+            <Field label={L("f_registration")} value={formatDate(user.registrationDate, lang)} />
+          </Section>
+          <Section title={L("section_account")}>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{L("f_status")}</span>
+              <StatusPill status={user.status} L={L} />
+            </div>
+            <Field label={L("f_balance")} value={String(user.creditsBalance)} />
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{L("f_sub_type")}</span>
+              <SubPill sub={user.subscription} L={L} />
+            </div>
+            <Field label={L("f_sub_start")} value={formatDateTime(user.subscriptionStart, lang, L)} />
+            <Field label={L("f_sub_end")} value={formatDateTime(user.subscriptionEnd, lang, L)} />
+          </Section>
+          <Section title={L("section_stats")}>
+            <Field label={L("f_total_orders")} value={String(user.totalOrders)} />
+            <Field label={L("f_credits_purchased")} value={String(user.creditsPurchased)} />
+            <Field label={L("f_credits_used")} value={String(user.creditsUsed)} />
+          </Section>
+          <Section title={L("section_credits")}>
+            <Field label={L("f_balance")} value={String(user.creditsBalance)} />
+            <Field label={L("f_credits_purchased")} value={String(user.creditsPurchased)} />
+            <Field label={L("f_credits_used")} value={String(user.creditsUsed)} />
+            <Field label={L("f_credits_remaining")} value={String(remaining)} />
+          </Section>
+          <Section title={L("section_login")}>
+            <Field label={L("f_last_login")} value={user.lastLoginAt ? formatDateTime(user.lastLoginAt, lang, L) : L("none")} />
+            <Field label={L("f_last_ip")} value={user.lastIp ?? L("none")} />
+            <Field label={L("f_last_device")} value={user.lastDevice ?? L("none")} />
+          </Section>
+          <Section title={L("section_spend")}>
+            <Field label={L("f_total_spent")} value={formatMoney(totalSpentFor(user), user.currency)} />
+            <Field label={L("f_lifetime_value")} value={formatMoney(totalSpentFor(user), user.currency)} />
+            <Field label={L("f_avg_order")} value={formatMoney(avgOrderValueFor(user), user.currency)} />
+          </Section>
+        </div>
+      )}
+
+      {tab === "orders" && <OrdersTab enriched={enriched} L={L} lang={lang} onFlash={flash} />}
+      {tab === "credits" && <CreditsTab enriched={enriched} L={L} lang={lang} />}
+      {tab === "subs" && <SubsTab enriched={enriched} L={L} lang={lang} />}
+      {tab === "notifs" && <NotifsTab enriched={enriched} L={L} lang={lang} />}
+      {tab === "notes" && <NotesTab L={L} lang={lang} notes={notes} onChange={onNotesChange} />}
+      {tab === "activity" && <ActivityTab enriched={enriched} L={L} lang={lang} />}
+
+      <div className="mt-6 flex items-center justify-between gap-2">
+        <div className="min-h-[24px] text-xs text-emerald-700 dark:text-emerald-300">{toast ?? ""}</div>
+        <div className="flex gap-2">
+          <button type="button" onClick={onClose} className={btnBase}>{L("close")}</button>
+          <button type="button" onClick={onEdit} className={btnPrimary}><Pencil className="h-3.5 w-3.5" />{L("act_edit")}</button>
+        </div>
       </div>
     </Modal>
+  );
+}
+
+function formatMoney(v: number, currency?: string): string {
+  const c = currency ?? "USD";
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: c, maximumFractionDigits: 2 }).format(v);
+  } catch {
+    return `${v} ${c}`;
+  }
+}
+
+function VipBadge({ tier, L }: { tier: VipTier; L: LocalUsers }) {
+  if (tier === "none") return null;
+  const icon =
+    tier === "vip" ? <Star className="h-3 w-3" /> :
+    tier === "premium" ? <Crown className="h-3 w-3" /> :
+    <Trophy className="h-3 w-3" />;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${VIP_TONE[tier]}`}>
+      {icon}
+      {L(`vip_${tier}`)}
+    </span>
+  );
+}
+
+function QuickActions({
+  L, user, onStatusChange, onGrantCredits, onFlash,
+}: {
+  L: LocalUsers;
+  user: UserRecord;
+  onStatusChange: (s: AccountStatus) => void;
+  onGrantCredits: (amount: number) => void;
+  onFlash: (msg: string) => void;
+}) {
+  const [granting, setGranting] = useState(false);
+  const [amount, setAmount] = useState<number>(10);
+  const isBlocked = user.status === "blocked";
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <button type="button" className={btnBase} onClick={() => onFlash(L("qa_done"))}><Mail className="h-3.5 w-3.5" />{L("qa_send_email")}</button>
+      <button type="button" className={btnBase} onClick={() => onFlash(L("qa_done"))}><MessageSquare className="h-3.5 w-3.5" />{L("qa_send_sms")}</button>
+      <button type="button" className={btnBase} onClick={() => setGranting((g) => !g)}><Gift className="h-3.5 w-3.5" />{L("qa_grant_credits")}</button>
+      {granting && (
+        <span className="inline-flex items-center gap-1">
+          <input type="number" min={1} value={amount} onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))} className="w-16 rounded-md border border-border/60 bg-background px-2 py-1 text-xs" aria-label={L("qa_grant_amount")} />
+          <button type="button" className={btnPrimary} onClick={() => { onGrantCredits(amount); setGranting(false); onFlash(L("qa_done")); }}>+{amount}</button>
+        </span>
+      )}
+      {isBlocked ? (
+        <button type="button" className={btnBase} onClick={() => onStatusChange("active")}><ShieldCheck className="h-3.5 w-3.5" />{L("act_unblock")}</button>
+      ) : (
+        <button type="button" className={btnBase} onClick={() => onStatusChange("blocked")}><Ban className="h-3.5 w-3.5" />{L("act_block")}</button>
+      )}
+      <button type="button" className={btnBase} onClick={() => onFlash(L("qa_done"))}><KeyRound className="h-3.5 w-3.5" />{L("qa_reset_password")}</button>
+    </div>
+  );
+}
+
+function OrdersTab({ enriched, L, lang, onFlash }: { enriched: EnrichedUser; L: LocalUsers; lang: Lang; onFlash: (m: string) => void }) {
+  if (enriched.orders.length === 0) return <EmptyBox L={L} />;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border/60">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2">{L("col_order_id")}</th>
+            <th className="px-3 py-2">{L("col_product")}</th>
+            <th className="px-3 py-2 text-right">{L("col_credits")}</th>
+            <th className="px-3 py-2">{L("col_status")}</th>
+            <th className="px-3 py-2">{L("col_queue")}</th>
+            <th className="px-3 py-2">{L("col_estimate")}</th>
+            <th className="px-3 py-2">{L("col_created")}</th>
+            <th className="px-3 py-2 text-right">{L("col_actions")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {enriched.orders.map((o) => (
+            <tr key={o.id} className="border-t border-border/50">
+              <td className="px-3 py-2 font-mono text-xs">{o.id}</td>
+              <td className="px-3 py-2">{L(o.product)}</td>
+              <td className="px-3 py-2 text-right">{o.credits}</td>
+              <td className="px-3 py-2">
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${ORDER_STATUS_TONE[o.status]}`}>{L(`ost_${o.status}`)}</span>
+              </td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{o.queuePosition ? L("queue_pos", { n: o.queuePosition }) : L("queue_in")}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{L(o.estimateKey)}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(o.createdAt, lang)}</td>
+              <td className="px-3 py-2">
+                <div className="flex justify-end gap-1.5">
+                  <button className={btnBase} onClick={() => onFlash(L("qa_done"))}><ExternalLink className="h-3 w-3" />{L("act_open")}</button>
+                  <button className={btnBase} onClick={() => onFlash(L("qa_done"))}><Copy className="h-3 w-3" />{L("act_duplicate")}</button>
+                  <button className={btnDanger} onClick={() => onFlash(L("qa_done"))}><XCircle className="h-3 w-3" />{L("act_cancel_order")}</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CreditsTab({ enriched, L, lang }: { enriched: EnrichedUser; L: LocalUsers; lang: Lang }) {
+  if (enriched.credits.length === 0) return <EmptyBox L={L} />;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border/60">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2">{L("col_ch_date")}</th>
+            <th className="px-3 py-2">{L("col_ch_type")}</th>
+            <th className="px-3 py-2 text-right">{L("col_ch_credits")}</th>
+            <th className="px-3 py-2 text-right">{L("col_ch_balance")}</th>
+            <th className="px-3 py-2">{L("col_ch_desc")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {enriched.credits.map((c) => (
+            <tr key={c.id} className="border-t border-border/50">
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(c.date, lang)}</td>
+              <td className="px-3 py-2 text-xs">{L(`ct_${c.type}`)}</td>
+              <td className={`px-3 py-2 text-right font-medium ${c.credits >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`}>
+                {c.credits >= 0 ? `+${c.credits}` : c.credits}
+              </td>
+              <td className="px-3 py-2 text-right">{c.balanceAfter}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{L(c.description)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SubsTab({ enriched, L, lang }: { enriched: EnrichedUser; L: LocalUsers; lang: Lang }) {
+  if (enriched.subscriptions.length === 0) return <EmptyBox L={L} />;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border/60">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2">{L("col_sh_plan")}</th>
+            <th className="px-3 py-2">{L("col_sh_start")}</th>
+            <th className="px-3 py-2">{L("col_sh_end")}</th>
+            <th className="px-3 py-2">{L("col_status")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {enriched.subscriptions.map((s) => (
+            <tr key={s.id} className="border-t border-border/50">
+              <td className="px-3 py-2"><SubPill sub={s.plan} L={L} /></td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(s.startDate, lang)}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(s.endDate, lang)}</td>
+              <td className="px-3 py-2">
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${SUB_HISTORY_TONE[s.status]}`}>{L(`sh_${s.status}`)}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function NotifsTab({ enriched, L, lang }: { enriched: EnrichedUser; L: LocalUsers; lang: Lang }) {
+  if (enriched.notifications.length === 0) return <EmptyBox L={L} />;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border/60">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2">{L("col_ch_date")}</th>
+            <th className="px-3 py-2">{L("col_notif_channel")}</th>
+            <th className="px-3 py-2">{L("col_notif_subject")}</th>
+            <th className="px-3 py-2">{L("col_status")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {enriched.notifications.map((n) => (
+            <tr key={n.id} className="border-t border-border/50">
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(n.date, lang)}</td>
+              <td className="px-3 py-2 text-xs">{L(`ch_${n.channel}`)}</td>
+              <td className="px-3 py-2 text-xs">{L(n.subject)}</td>
+              <td className="px-3 py-2">
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${NOTIF_STATUS_TONE[n.status]}`}>{L(`ns_${n.status}`)}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function NotesTab({ L, lang, notes, onChange }: { L: LocalUsers; lang: Lang; notes: InternalNote[]; onChange: (n: InternalNote[]) => void }) {
+  const [text, setText] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  const add = () => {
+    const t = text.trim();
+    if (!t) return;
+    const note: InternalNote = {
+      id: `NOTE-${Date.now()}`,
+      date: new Date().toISOString(),
+      author: L("notes_author"),
+      text: t,
+    };
+    onChange([note, ...notes]);
+    setText("");
+  };
+  const del = (id: string) => onChange(notes.filter((n) => n.id !== id));
+  const saveEdit = (id: string) => {
+    onChange(notes.map((n) => (n.id === id ? { ...n, text: editingText } : n)));
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-2 rounded-md border border-border/60 bg-background/70 p-3">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={L("notes_placeholder")}
+          className="min-h-[64px] flex-1 resize-y rounded-md border border-border/60 bg-background px-2 py-1.5 text-sm outline-none focus:border-primary/60"
+        />
+        <button type="button" onClick={add} disabled={!text.trim()} className={btnPrimary}>
+          <Plus className="h-3.5 w-3.5" />{L("notes_add")}
+        </button>
+      </div>
+      <p className="text-[11px] italic text-muted-foreground">{L("notes_customer_hidden")}</p>
+      {notes.length === 0 ? <EmptyBox L={L} keyId="notes_empty" /> : (
+        <ul className="space-y-2">
+          {notes.map((n) => (
+            <li key={n.id} className="rounded-md border border-border/60 bg-background/70 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground">{n.author}</span> · {formatDateTime(n.date, lang, L)}
+                </div>
+                <div className="flex gap-1">
+                  {editingId === n.id ? (
+                    <>
+                      <button className={btnPrimary} onClick={() => saveEdit(n.id)}>{L("save")}</button>
+                      <button className={btnBase} onClick={() => { setEditingId(null); setEditingText(""); }}>{L("cancel")}</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className={btnBase} onClick={() => { setEditingId(n.id); setEditingText(n.text); }}><Pencil className="h-3 w-3" />{L("notes_edit")}</button>
+                      <button className={btnDanger} onClick={() => del(n.id)}><Trash2 className="h-3 w-3" />{L("notes_delete")}</button>
+                    </>
+                  )}
+                </div>
+              </div>
+              {editingId === n.id ? (
+                <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} className="mt-2 w-full rounded-md border border-border/60 bg-background px-2 py-1.5 text-sm" />
+              ) : (
+                <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{n.text}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ActivityTab({ enriched, L, lang }: { enriched: EnrichedUser; L: LocalUsers; lang: Lang }) {
+  if (enriched.activity.length === 0) return <EmptyBox L={L} />;
+  const icon = (k: string) => {
+    switch (k) {
+      case "registered": return <ClipboardList className="h-3.5 w-3.5" />;
+      case "purchased_credits": return <Wallet className="h-3.5 w-3.5" />;
+      case "created_order": return <Bell className="h-3.5 w-3.5" />;
+      case "cancelled_order": return <XCircle className="h-3.5 w-3.5" />;
+      case "subscription_purchased": return <Crown className="h-3.5 w-3.5" />;
+      case "password_changed": return <KeyRound className="h-3.5 w-3.5" />;
+      case "language_changed": return <Globe2 className="h-3.5 w-3.5" />;
+      case "login": return <Monitor className="h-3.5 w-3.5" />;
+      default: return <Clock className="h-3.5 w-3.5" />;
+    }
+  };
+  return (
+    <ol className="space-y-2">
+      {enriched.activity.map((a) => (
+        <li key={a.id} className="flex items-start gap-3 rounded-md border border-border/60 bg-background/70 px-3 py-2 text-sm">
+          <span className="mt-0.5 text-muted-foreground">{icon(a.kind)}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-foreground">{L(`act_${a.kind}`)}{a.details ? ` — ${a.details}` : ""}</div>
+            <div className="text-[11px] text-muted-foreground">{formatDateTime(a.date, lang, L)}</div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function EmptyBox({ L, keyId }: { L: LocalUsers; keyId?: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
+      {L(keyId ?? "empty_list")}
+    </div>
   );
 }
 
