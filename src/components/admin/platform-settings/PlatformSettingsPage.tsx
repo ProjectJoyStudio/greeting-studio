@@ -118,6 +118,10 @@ export function PlatformSettingsPage() {
   const [adv, setAdv] = useState<PlatformAdvancedState>(() =>
     JSON.parse(JSON.stringify(DEFAULT_PLATFORM_ADVANCED)),
   );
+  const [balDash, setBalDash] = useState<BalancerDashboardSettings>(() =>
+    JSON.parse(JSON.stringify(DEFAULT_BALANCER_DASHBOARD)),
+  );
+  const [dragTier, setDragTier] = useState<PriorityTier | null>(null);
   const [tab, setTab] = useState<TabKey>("general");
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
