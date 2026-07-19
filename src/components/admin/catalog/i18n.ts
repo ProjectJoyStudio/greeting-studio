@@ -297,6 +297,104 @@ Object.assign(D, {
   pv_card: { en: "Card", ru: "Открытка", de: "Karte", uk: "Листівка", fr: "Carte", pl: "Kartka" },
 });
 
+// -------- Performance, authors, media warnings, tooltips --------
+Object.assign(D, {
+  // Column headers / labels
+  col_performance: { en: "Performance", ru: "Показатели", de: "Leistung", uk: "Показники", fr: "Performance", pl: "Wyniki" },
+  col_author: { en: "Author", ru: "Автор", de: "Autor", uk: "Автор", fr: "Auteur", pl: "Autor" },
+  col_views: { en: "Views", ru: "Просмотры", de: "Ansichten", uk: "Перегляди", fr: "Vues", pl: "Wyświetlenia" },
+  col_purchases: { en: "Uses", ru: "Использования", de: "Nutzungen", uk: "Використання", fr: "Utilisations", pl: "Użycia" },
+
+  // Tooltips
+  tt_credits: { en: "Customer credit cost", ru: "Стоимость в кредитах для клиента", de: "Kunden-Credits-Kosten", uk: "Вартість у кредитах для клієнта", fr: "Coût en crédits pour le client", pl: "Koszt w kredytach dla klienta" },
+  tt_views: { en: "Customer catalog views", ru: "Просмотры в каталоге клиентов", de: "Aufrufe im Kundenkatalog", uk: "Перегляди в клієнтському каталозі", fr: "Vues dans le catalogue client", pl: "Wyświetlenia w katalogu klienta" },
+  tt_purchases: { en: "Completed customer uses or purchases", ru: "Успешные использования или покупки клиентами", de: "Abgeschlossene Nutzungen oder Käufe", uk: "Успішні використання або покупки", fr: "Utilisations ou achats terminés", pl: "Zakończone użycia lub zakupy" },
+  tt_author: { en: "Content author or internal owner", ru: "Автор или внутренний владелец контента", de: "Autor oder interner Verantwortlicher", uk: "Автор або внутрішній власник контенту", fr: "Auteur ou responsable interne", pl: "Autor lub wewnętrzny właściciel" },
+  tt_open_customer: { en: "Preview this item as a customer", ru: "Открыть глазами клиента", de: "Als Kunde anzeigen", uk: "Переглянути очима клієнта", fr: "Aperçu côté client", pl: "Podgląd jako klient" },
+  tt_archive: { en: "Remove from active catalog without permanent deletion", ru: "Убрать из активного каталога без удаления", de: "Aus dem aktiven Katalog entfernen (nicht löschen)", uk: "Прибрати з активного каталогу без видалення", fr: "Retirer du catalogue actif sans suppression", pl: "Usuń z aktywnego katalogu bez trwałego usuwania" },
+  tt_delete: { en: "Protected permanent deletion action", ru: "Защищённое безвозвратное удаление", de: "Geschützte endgültige Löschung", uk: "Захищене остаточне видалення", fr: "Suppression définitive protégée", pl: "Chronione trwałe usunięcie" },
+
+  // Sort options
+  sort_most_viewed: { en: "Most Viewed", ru: "Больше всего просмотров", de: "Meist gesehen", uk: "Найпопулярніше", fr: "Plus vues", pl: "Najczęściej oglądane" },
+  sort_least_viewed: { en: "Least Viewed", ru: "Меньше всего просмотров", de: "Am wenigsten gesehen", uk: "Найменше переглядів", fr: "Moins vues", pl: "Najrzadziej oglądane" },
+  sort_most_purchased: { en: "Most Used", ru: "Больше всего использований", de: "Am meisten genutzt", uk: "Найчастіше вжите", fr: "Plus utilisé", pl: "Najczęściej używane" },
+  sort_least_purchased: { en: "Least Used", ru: "Меньше всего использований", de: "Am wenigsten genutzt", uk: "Найменше використань", fr: "Moins utilisé", pl: "Najrzadziej używane" },
+
+  // Filters
+  filter_has_views: { en: "Has views", ru: "Есть просмотры", de: "Mit Ansichten", uk: "Є перегляди", fr: "Avec vues", pl: "Ma wyświetlenia" },
+  filter_never_viewed: { en: "Never viewed", ru: "Без просмотров", de: "Nie angesehen", uk: "Без переглядів", fr: "Jamais vues", pl: "Bez wyświetleń" },
+  filter_has_purchases: { en: "Has uses", ru: "Есть использования", de: "Mit Nutzungen", uk: "Є використання", fr: "Avec utilisations", pl: "Ma użycia" },
+  filter_never_purchased: { en: "Never used", ru: "Без использований", de: "Nie genutzt", uk: "Без використань", fr: "Jamais utilisées", pl: "Nigdy nieużyte" },
+  filter_has_thumbnail: { en: "Has thumbnail", ru: "С миниатюрой", de: "Mit Miniaturbild", uk: "З мініатюрою", fr: "Avec miniature", pl: "Z miniaturą" },
+  filter_missing_thumbnail: { en: "Missing thumbnail", ru: "Без миниатюры", de: "Ohne Miniaturbild", uk: "Без мініатюри", fr: "Sans miniature", pl: "Bez miniatury" },
+  filter_published_missing_media: { en: "Published, missing media", ru: "Опубликовано без медиа", de: "Veröffentlicht, Medien fehlen", uk: "Опубліковано без медіа", fr: "Publié sans média", pl: "Opublikowane bez mediów" },
+  filter_author_type: { en: "Author type", ru: "Тип автора", de: "Autorentyp", uk: "Тип автора", fr: "Type d'auteur", pl: "Typ autora" },
+  filter_performance: { en: "Performance status", ru: "Статус показателей", de: "Leistungsstatus", uk: "Статус показників", fr: "État de performance", pl: "Status wyników" },
+
+  // Author types
+  author_project_joy: { en: "Project Joy", ru: "Project Joy", de: "Project Joy", uk: "Project Joy", fr: "Project Joy", pl: "Project Joy" },
+  author_administrator: { en: "Administrator", ru: "Администратор", de: "Administrator", uk: "Адміністратор", fr: "Administrateur", pl: "Administrator" },
+  author_content_manager: { en: "Content Manager", ru: "Контент-менеджер", de: "Content-Manager", uk: "Контент-менеджер", fr: "Responsable de contenu", pl: "Menedżer treści" },
+  author_designer: { en: "Designer", ru: "Дизайнер", de: "Designer", uk: "Дизайнер", fr: "Designer", pl: "Projektant" },
+  author_partner: { en: "Partner", ru: "Партнёр", de: "Partner", uk: "Партнер", fr: "Partenaire", pl: "Partner" },
+  author_imported: { en: "Imported Content", ru: "Импортированный контент", de: "Importierter Inhalt", uk: "Імпортований контент", fr: "Contenu importé", pl: "Treść importowana" },
+  author_custom: { en: "Custom Author Name", ru: "Собственное имя автора", de: "Eigener Autorenname", uk: "Власне ім'я автора", fr: "Nom d'auteur personnalisé", pl: "Własny autor" },
+
+  // Author fields
+  au_section: { en: "Author & Owner", ru: "Автор и владелец", de: "Autor & Verantwortlicher", uk: "Автор і власник", fr: "Auteur & responsable", pl: "Autor i właściciel" },
+  au_type: { en: "Author Type", ru: "Тип автора", de: "Autorentyp", uk: "Тип автора", fr: "Type d'auteur", pl: "Typ autora" },
+  au_display_name: { en: "Author Display Name", ru: "Отображаемое имя автора", de: "Anzeigename des Autors", uk: "Ім'я автора для показу", fr: "Nom d'affichage", pl: "Wyświetlana nazwa autora" },
+  au_owner: { en: "Internal Owner", ru: "Внутренний владелец", de: "Interner Verantwortlicher", uk: "Внутрішній власник", fr: "Responsable interne", pl: "Właściciel wewnętrzny" },
+  au_source: { en: "Creation Source", ru: "Источник создания", de: "Erstellungsquelle", uk: "Джерело створення", fr: "Source de création", pl: "Źródło utworzenia" },
+  au_last_edited_by: { en: "Last Edited By", ru: "Кто изменил", de: "Zuletzt bearbeitet von", uk: "Хто редагував", fr: "Modifié par", pl: "Ostatnio edytowano przez" },
+  au_last_edited_at: { en: "Last Edited Date", ru: "Дата последней правки", de: "Datum der letzten Änderung", uk: "Дата останньої правки", fr: "Date de modification", pl: "Data ostatniej edycji" },
+  au_show_customer: { en: "Show Author to Customer", ru: "Показывать автора клиенту", de: "Autor Kunden anzeigen", uk: "Показувати автора клієнту", fr: "Afficher l'auteur au client", pl: "Pokaż autora klientowi" },
+  au_hidden_note: { en: "Author is visible only inside the Admin Panel.", ru: "Автор виден только в админ-панели.", de: "Autor nur im Admin-Bereich sichtbar.", uk: "Автор видимий лише в адмін-панелі.", fr: "L'auteur est visible uniquement dans l'admin.", pl: "Autor widoczny tylko w panelu administratora." },
+
+  // Performance labels
+  perf_new: { en: "New", ru: "Новое", de: "Neu", uk: "Нове", fr: "Nouveau", pl: "Nowe" },
+  perf_growing: { en: "Growing", ru: "Растёт", de: "Wachsend", uk: "Зростає", fr: "En croissance", pl: "Rośnie" },
+  perf_popular: { en: "Popular", ru: "Популярное", de: "Beliebt", uk: "Популярне", fr: "Populaire", pl: "Popularne" },
+  perf_top: { en: "Top Performer", ru: "Лидер", de: "Top-Performer", uk: "Лідер", fr: "Meilleur", pl: "Lider" },
+  perf_low_activity: { en: "Low Activity", ru: "Низкая активность", de: "Geringe Aktivität", uk: "Низька активність", fr: "Faible activité", pl: "Niska aktywność" },
+
+  // Media (extended)
+  m_video_poster: { en: "Video Poster", ru: "Постер видео", de: "Video-Poster", uk: "Постер відео", fr: "Affiche vidéo", pl: "Plakat wideo" },
+  m_first_frame: { en: "First Cartoon Frame", ru: "Первый кадр мультфильма", de: "Erstes Zeichentrickbild", uk: "Перший кадр мультфільму", fr: "Première image du dessin animé", pl: "Pierwszy kadr kreskówki" },
+  m_audio_cover: { en: "Audio Cover", ru: "Обложка аудио", de: "Audio-Cover", uk: "Обкладинка аудіо", fr: "Couverture audio", pl: "Okładka audio" },
+  m_preview_btn: { en: "Media Preview", ru: "Просмотр медиа", de: "Medienvorschau", uk: "Перегляд медіа", fr: "Aperçu média", pl: "Podgląd mediów" },
+  m_replace: { en: "Replace Media", ru: "Заменить медиа", de: "Medien ersetzen", uk: "Замінити медіа", fr: "Remplacer le média", pl: "Zamień media" },
+  m_remove: { en: "Remove Media", ru: "Удалить медиа", de: "Medien entfernen", uk: "Видалити медіа", fr: "Supprimer le média", pl: "Usuń media" },
+
+  // Warnings
+  warn_title: { en: "Publication warnings", ru: "Предупреждения публикации", de: "Veröffentlichungswarnungen", uk: "Попередження публікації", fr: "Avertissements de publication", pl: "Ostrzeżenia publikacji" },
+  warn_missing_thumbnail: { en: "No usable thumbnail.", ru: "Нет пригодной миниатюры.", de: "Kein nutzbares Miniaturbild.", uk: "Немає придатної мініатюри.", fr: "Aucune miniature utilisable.", pl: "Brak użytecznej miniatury." },
+  warn_missing_poster: { en: "Video content has no poster.", ru: "У видео нет постера.", de: "Video ohne Poster.", uk: "У відео немає постера.", fr: "Vidéo sans affiche.", pl: "Wideo bez plakatu." },
+  warn_missing_frame: { en: "Cartoon content has no first-frame preview.", ru: "У мультфильма нет первого кадра.", de: "Zeichentrick ohne erstes Bild.", uk: "Мультфільм без першого кадру.", fr: "Dessin animé sans première image.", pl: "Kreskówka bez pierwszego kadru." },
+  warn_missing_cover: { en: "Song content has no cover.", ru: "У песни нет обложки.", de: "Lied ohne Cover.", uk: "У пісні немає обкладинки.", fr: "Chanson sans couverture.", pl: "Piosenka bez okładki." },
+  warn_missing_primary_text: { en: "Primary-language customer text is missing.", ru: "Отсутствует клиентский текст в основном языке.", de: "Kundentext in Primärsprache fehlt.", uk: "Немає клієнтського тексту основною мовою.", fr: "Texte client dans la langue principale manquant.", pl: "Brak tekstu klienta w języku podstawowym." },
+  warn_route_unavailable: { en: "Customer-facing route is not connected yet.", ru: "Клиентский маршрут ещё не подключён.", de: "Kundenroute noch nicht angebunden.", uk: "Клієнтський маршрут ще не підключено.", fr: "Route client non connectée.", pl: "Trasa klienta jeszcze niepodłączona." },
+  warn_author_visible_empty: { en: "Author visibility is on but the display name is empty.", ru: "Показ автора включён, но отображаемое имя пустое.", de: "Autor sichtbar, aber Anzeigename leer.", uk: "Показ автора увімкнено, але ім'я порожнє.", fr: "Auteur visible mais nom vide.", pl: "Widoczność autora włączona, ale nazwa pusta." },
+  warn_publication_blocked: { en: "Publication is blocked until customer-facing requirements are met.", ru: "Публикация заблокирована до заполнения обязательных клиентских полей.", de: "Veröffentlichung blockiert, bis kundenrelevante Anforderungen erfüllt sind.", uk: "Публікація заблокована до виконання обов'язкових клієнтських вимог.", fr: "Publication bloquée jusqu'à ce que les exigences client soient remplies.", pl: "Publikacja zablokowana do czasu spełnienia wymogów dla klienta." },
+
+  // Statistics extended
+  st_purchases: { en: "Total Uses", ru: "Всего использований", de: "Nutzungen gesamt", uk: "Усього використань", fr: "Utilisations totales", pl: "Łączne użycia" },
+  st_unique_views: { en: "Unique Views", ru: "Уникальные просмотры", de: "Eindeutige Ansichten", uk: "Унікальні перегляди", fr: "Vues uniques", pl: "Unikalne wyświetlenia" },
+  st_credits_earned: { en: "Credits Earned", ru: "Заработано кредитов", de: "Verdiente Credits", uk: "Зароблено кредитів", fr: "Crédits gagnés", pl: "Zarobione kredyty" },
+  st_last_viewed: { en: "Last Viewed", ru: "Последний просмотр", de: "Zuletzt gesehen", uk: "Востаннє переглянуто", fr: "Dernière vue", pl: "Ostatnio wyświetlone" },
+  st_last_purchased: { en: "Last Used", ru: "Последнее использование", de: "Zuletzt genutzt", uk: "Востаннє використано", fr: "Dernière utilisation", pl: "Ostatnio użyte" },
+  st_backend_note: { en: "Demonstration statistics. Real analytics will appear after backend integration.", ru: "Демонстрационные показатели. Реальная аналитика появится после подключения серверной части.", de: "Demonstrationsstatistik. Echte Analysen erscheinen nach der Backend-Integration.", uk: "Демонстраційна статистика. Реальна аналітика з'явиться після підключення бекенду.", fr: "Statistiques de démonstration. Les analyses réelles apparaîtront après l'intégration du backend.", pl: "Statystyki demonstracyjne. Prawdziwe analityki pojawią się po integracji z backendem." },
+
+  // Customer preview labels
+  preview_internal_label: { en: "Internal Customer View Preview", ru: "Внутренний просмотр глазами клиента", de: "Interne Kundenansicht", uk: "Внутрішній перегляд клієнта", fr: "Aperçu client interne", pl: "Wewnętrzny podgląd klienta" },
+  preview_return_admin: { en: "Return to Admin Catalog", ru: "Вернуться в админ-каталог", de: "Zurück zum Admin-Katalog", uk: "Повернутися до адмін-каталогу", fr: "Retour au catalogue admin", pl: "Wróć do katalogu admina" },
+  preview_protected_note: { en: "Draft, hidden and archived content stays inside protected preview only.", ru: "Черновики, скрытый и архивный контент доступны только во внутреннем предпросмотре.", de: "Entwürfe, ausgeblendete und archivierte Inhalte bleiben nur in der geschützten Vorschau sichtbar.", uk: "Чернетки, приховане та архівне доступні лише у захищеному перегляді.", fr: "Les brouillons, contenus masqués et archivés restent en aperçu protégé.", pl: "Szkice, ukryte i zarchiwizowane treści są dostępne tylko w chronionym podglądzie." },
+  by_author: { en: "By", ru: "Автор:", de: "Von", uk: "Автор:", fr: "Par", pl: "Autor:" },
+
+  // Columns visibility
+  cols_visible: { en: "Columns", ru: "Столбцы", de: "Spalten", uk: "Стовпці", fr: "Colonnes", pl: "Kolumny" },
+});
+
 export function useLocalCatalog(lang: Lang) {
   return (k: string): string => {
     const row = D[k];
