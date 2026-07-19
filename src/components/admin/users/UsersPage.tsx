@@ -43,6 +43,7 @@ export function UsersPage() {
   const [viewing, setViewing] = useState<UserRecord | null>(null);
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<UserRecord | null>(null);
+  const [notesByUser, setNotesByUser] = useState<Record<string, InternalNote[]>>({});
 
   const filtered = useMemo(() => {
     void tick;
