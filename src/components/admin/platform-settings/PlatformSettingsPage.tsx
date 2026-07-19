@@ -1432,6 +1432,14 @@ export function PlatformSettingsPage() {
 
       {tab === "logs" && <LogsPanel logs={adv.logs} t={t} />}
 
+      {tab === "payments" && <PaymentsTab state={infra} setState={setInfra} t={t} />}
+      {tab === "auth" && <AuthTab state={infra} setState={setInfra} t={t} />}
+      {tab === "storage_mgmt" && <StorageMgmtTab state={infra} setState={setInfra} t={t} />}
+      {tab === "services" && <ServicesTab state={infra} setState={setInfra} t={t} />}
+      {tab === "sandbox" && <SandboxTab state={infra} setState={setInfra} t={t} />}
+      {tab === "control" && <ControlTab state={infra} setState={setInfra} t={t} lang={lang} />}
+      {tab === "launch" && <LaunchTab state={infra} setState={setInfra} t={t} />}
+
       {toast && <Toast msg={toast} onDone={() => { /* auto */ }} />}
     </div>
   );
