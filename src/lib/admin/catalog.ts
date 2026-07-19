@@ -71,6 +71,88 @@ export const CATALOG_STATUSES: CatalogStatus[] = [
   "archived",
 ];
 
+// ---------------------------------------------------------------------------
+// Advanced extensions — media URLs, authors, performance
+// ---------------------------------------------------------------------------
+
+export type AuthorType =
+  | "project_joy"
+  | "administrator"
+  | "content_manager"
+  | "designer"
+  | "partner"
+  | "imported"
+  | "custom";
+
+export const AUTHOR_TYPES: AuthorType[] = [
+  "project_joy",
+  "administrator",
+  "content_manager",
+  "designer",
+  "partner",
+  "imported",
+  "custom",
+];
+
+export interface CatalogAuthor {
+  type: AuthorType;
+  displayName: string;
+  internalOwner: string;
+  creationSource: string;
+  lastEditedBy: string;
+  lastEditedAt: string; // ISO
+  showToCustomer: boolean;
+}
+
+export function defaultAuthor(seed = 0): CatalogAuthor {
+  const owners = ["studio@projectjoy", "editorial@projectjoy", "design@projectjoy"];
+  return {
+    type: "project_joy",
+    displayName: "Project Joy",
+    internalOwner: owners[seed % owners.length],
+    creationSource: "manual",
+    lastEditedBy: "admin@projectjoy",
+    lastEditedAt: new Date().toISOString(),
+    showToCustomer: false,
+  };
+}
+
+export type PerformanceStatus =
+  | "new"
+  | "growing"
+  | "popular"
+  | "top"
+  | "low_activity";
+
+export const PERFORMANCE_STATUSES: PerformanceStatus[] = [
+  "new",
+  "growing",
+  "popular",
+  "top",
+  "low_activity",
+];
+
+export function derivePerformance(stats: { views: number; uses: number }): PerformanceStatus {
+  const v = stats.views;
+  const ratio = v > 0 ? stats.uses / v : 0;
+  if (v < 100) return "new";
+  if (v > 2000 && ratio > 0.3) return "top";
+  if (ratio > 0.2) return "popular";
+  if (ratio < 0.05) return "low_activity";
+  return "growing";
+}
+
+/** Compact formatter — 1234 → 1.2K, 12800 → 12.8K. */
+export function formatCompact(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) {
+    const v = n / 1000;
+    return `${v >= 10 ? Math.round(v) : v.toFixed(1)}K`;
+  }
+  const v = n / 1_000_000;
+  return `${v >= 10 ? Math.round(v) : v.toFixed(1)}M`;
+}
+
 /** Includes derived statuses used only for display / filtering. */
 export type DisplayStatus = CatalogStatus | "scheduled" | "expired";
 
@@ -155,6 +237,11 @@ export interface CatalogMedia {
   video: string;
   cover: string;
   additional: string[];
+  /** URL-shaped placeholders — replaceable when real media storage is connected. */
+  thumbnailUrl?: string;
+  coverUrl?: string;
+  mediaUrl?: string;
+  posterUrl?: string;
 }
 
 export function emptyMedia(): CatalogMedia {
@@ -177,6 +264,11 @@ export interface CatalogStats {
   shares: number;
   conversion: number; // percent 0-100
   lastUsed: string; // ISO
+  // Extended demonstration analytics
+  purchases?: number;
+  uniqueViews?: number;
+  creditsEarned?: number;
+  lastViewed?: string; // ISO
 }
 
 export function demoStats(seed: number): CatalogStats {
@@ -213,6 +305,22 @@ export interface CatalogItem {
   noEndDate: boolean;
   versions: CatalogVersion[];
   stats: CatalogStats;
+  /** Content author / owner metadata. */
+  author?: CatalogAuthor;
+}
+
+/** Ensure legacy demo/blank items carry the extended fields at read time. */
+export function ensureExtended(it: CatalogItem, seed = 0): CatalogItem {
+  const stats = it.stats;
+  const purchases = stats.purchases ?? stats.uses;
+  const uniqueViews = stats.uniqueViews ?? Math.max(1, Math.round(stats.views * 0.72));
+  const creditsEarned = stats.creditsEarned ?? purchases * (it.credits || 0);
+  const lastViewed = stats.lastViewed ?? stats.lastUsed;
+  return {
+    ...it,
+    author: it.author ?? defaultAuthor(seed),
+    stats: { ...stats, purchases, uniqueViews, creditsEarned, lastViewed },
+  };
 }
 
 /** Convenience — read the display title in a given language (falls back). */
