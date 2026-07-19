@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
-import { Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle } from "lucide-react";
+import {
+  Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle,
+  Mail, MessageSquare, Bell, KeyRound, Gift, Crown, Star, Trophy, ExternalLink, Copy, XCircle,
+  Monitor, Globe2, Wallet, Clock, ClipboardList,
+} from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
 import { LANGS, type Lang } from "@/lib/i18n/types";
 import {
   DEMO_USERS, ACCOUNT_STATUSES, SUBSCRIPTION_TYPES, STATUS_TONE, SUBSCRIPTION_TONE,
-  COUNTRY_CODES, makeTestUser, validateUser,
-  type UserRecord, type AccountStatus, type SubscriptionType,
+  COUNTRY_CODES, makeTestUser, validateUser, enrichUser, totalSpentFor, avgOrderValueFor,
+  ORDER_STATUS_TONE, NOTIF_STATUS_TONE, SUB_HISTORY_TONE, VIP_TONE,
+  type UserRecord, type AccountStatus, type SubscriptionType, type EnrichedUser,
+  type InternalNote, type VipTier,
 } from "@/lib/admin/users";
 import { useLocalUsers, type LocalUsers } from "./i18n";
 
