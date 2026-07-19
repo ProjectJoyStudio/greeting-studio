@@ -805,12 +805,23 @@ function ViewModal({ item, L, lang, onClose, onEdit, onPreview }: {
   item: CatalogItem; L: LocalCatalog; lang: Lang; onClose: () => void; onEdit: () => void; onPreview: () => void;
 }) {
   const ds = deriveDisplayStatus(item);
+  const warnKey = missingMediaWarning(item);
   return (
     <Modal title={L("view_title")} onClose={onClose} wide>
+      {warnKey && (
+        <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-100">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div>
+            <div className="font-semibold">{L("warn_title")}</div>
+            <div>{L(warnKey)}</div>
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-[220px_1fr]">
         <div className="flex flex-col items-center gap-3">
           <TypedPreview it={item} L={L} size="lg" />
           <FlagBadges flags={item.flags} L={L} max={6} />
+          <PerformancePill item={item} L={L} />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <Section title={L("sec_basic")}>
@@ -858,14 +869,29 @@ function ViewModal({ item, L, lang, onClose, onEdit, onPreview }: {
           <Section title={L("sec_stats")}>
             <div className="grid grid-cols-2 gap-1 text-xs">
               <StatRow label={L("st_views")} value={item.stats.views} />
+              <StatRow label={L("st_unique_views")} value={item.stats.uniqueViews ?? Math.round(item.stats.views * 0.72)} />
               <StatRow label={L("st_opens")} value={item.stats.opens} />
               <StatRow label={L("st_uses")} value={item.stats.uses} />
+              <StatRow label={L("st_purchases")} value={item.stats.purchases ?? item.stats.uses} />
               <StatRow label={L("st_favorites")} value={item.stats.favorites} />
               <StatRow label={L("st_shares")} value={item.stats.shares} />
               <StatRow label={L("st_conversion")} value={`${item.stats.conversion}%`} />
+              <StatRow label={L("st_credits_earned")} value={item.stats.creditsEarned ?? (item.stats.purchases ?? item.stats.uses) * item.credits} />
             </div>
-            <div className="pt-1 text-[10px] text-muted-foreground">{L("st_last_used")}: {formatDate(item.stats.lastUsed, lang)}</div>
-            <div className="pt-1 text-[10px] italic text-muted-foreground">{L("st_demo_note")}</div>
+            <div className="pt-1 text-[10px] text-muted-foreground">{L("st_last_viewed")}: {formatDate(item.stats.lastViewed ?? item.stats.lastUsed, lang)}</div>
+            <div className="text-[10px] text-muted-foreground">{L("st_last_purchased")}: {formatDate(item.stats.lastUsed, lang)}</div>
+            <div className="pt-1 text-[10px] italic text-muted-foreground">{L("st_backend_note")}</div>
+          </Section>
+          <Section title={L("au_section")}>
+            <Field label={L("au_type")} value={L("author_" + (item.author?.type ?? "project_joy"))} />
+            <Field label={L("au_display_name")} value={item.author?.displayName || "—"} />
+            <Field label={L("au_owner")} value={item.author?.internalOwner || "—"} />
+            <Field label={L("au_source")} value={item.author?.creationSource || "—"} />
+            <Field label={L("au_last_edited_by")} value={item.author?.lastEditedBy || "—"} />
+            <Field label={L("au_last_edited_at")} value={item.author?.lastEditedAt ? formatDateTime(item.author.lastEditedAt, lang) : "—"} />
+            <div className="text-[10px] italic text-muted-foreground">
+              {item.author?.showToCustomer ? L("au_show_customer") : L("au_hidden_note")}
+            </div>
           </Section>
           <Section title={L("sec_versions")}>
             {item.versions.length === 0 ? (
