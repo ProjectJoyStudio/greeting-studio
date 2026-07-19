@@ -1086,6 +1086,40 @@ function EditModal({ item, isNew, L, lang, onClose, onSave }: {
             <span className="mb-1 block text-xs text-muted-foreground">{L("f_internal_notes")}</span>
             <textarea rows={2} className={inputCls} value={draft.internalNotes} onChange={(e) => update("internalNotes", e.target.value)} />
           </label>
+          {/* Author & owner */}
+          <div className="md:col-span-2 rounded-md border border-border/60 bg-muted/20 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{L("au_section")}</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_type")}</span>
+                <select className={inputCls} value={draft.author?.type ?? "project_joy"}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), type: e.target.value as AuthorType } }))}>
+                  {AUTHOR_TYPES.map((a) => <option key={a} value={a}>{L("author_" + a)}</option>)}
+                </select>
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_display_name")}</span>
+                <input className={inputCls} value={draft.author?.displayName ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), displayName: e.target.value } }))} />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_owner")}</span>
+                <input className={inputCls} value={draft.author?.internalOwner ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), internalOwner: e.target.value } }))} />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_source")}</span>
+                <input className={inputCls} value={draft.author?.creationSource ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), creationSource: e.target.value } }))} />
+              </label>
+              <label className="flex items-center gap-2 text-sm md:col-span-2">
+                <input type="checkbox" checked={!!draft.author?.showToCustomer}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), showToCustomer: e.target.checked } }))} />
+                <span>{L("au_show_customer")}</span>
+              </label>
+              <div className="text-[11px] italic text-muted-foreground md:col-span-2">{L("au_hidden_note")}</div>
+            </div>
+          </div>
           {errors.title && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.title}</span>}
           {errors.translations && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.translations}</span>}
           {errors.pin && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.pin}</span>}
