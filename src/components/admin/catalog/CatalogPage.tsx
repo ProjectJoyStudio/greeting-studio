@@ -239,8 +239,23 @@ export function CatalogPage() {
       const cMin = creditsMin === "" ? -Infinity : Number(creditsMin);
       const cMax = creditsMax === "" ? Infinity : Number(creditsMax);
       if (it.credits < cMin || it.credits > cMax) return false;
+      if (authorFilter !== "all" && (it.author?.type ?? "project_joy") !== authorFilter) return false;
+      if (perfFilter !== "all" && derivePerformance(it.stats) !== perfFilter) return false;
+      if (mediaFilter !== "any") {
+        const hasThumb = !!(it.media.thumbnail || it.media.thumbnailUrl || it.media.mainPreview);
+        if (mediaFilter === "has_thumb" && !hasThumb) return false;
+        if (mediaFilter === "missing_thumb" && hasThumb) return false;
+        if (mediaFilter === "has_views" && !(it.stats.views > 0)) return false;
+        if (mediaFilter === "never_viewed" && it.stats.views > 0) return false;
+        if (mediaFilter === "has_purchases" && !((it.stats.purchases ?? it.stats.uses) > 0)) return false;
+        if (mediaFilter === "never_purchased" && (it.stats.purchases ?? it.stats.uses) > 0) return false;
+        if (mediaFilter === "published_missing_media") {
+          if (deriveDisplayStatus(it) !== "published" || !missingMediaWarning(it)) return false;
+        }
+      }
       if (q) {
         const parts = [it.id, it.internalName, L("cat_" + it.category)];
+        parts.push(it.author?.displayName ?? "", it.author?.internalOwner ?? "");
         for (const l of LANGS) {
           const tr = it.translations[l.code];
           if (tr) parts.push(tr.title, tr.shortDescription, tr.tags.join(" "), tr.searchKeywords.join(" "));
