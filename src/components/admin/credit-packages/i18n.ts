@@ -167,6 +167,73 @@ const D: Record<string, Row> = {
     fr: "Ce pack est actif mais sa date de fin est dépassée.",
     pl: "Pakiet aktywny, ale data zakończenia minęła.",
   },
+
+  cp_subtitle_core: {
+    en: "Manage temporary customer credit packages.",
+    ru: "Управляйте временными пакетами кредитов для клиентов.",
+    de: "Verwalte temporäre Kunden-Kreditpakete.",
+    uk: "Керуйте тимчасовими пакетами кредитів для клієнтів.",
+    fr: "Gérez les packs de crédits clients temporaires.",
+    pl: "Zarządzaj tymczasowymi pakietami kredytów klientów.",
+  },
+  cp_create: { en: "Create Package", ru: "Создать пакет", de: "Paket erstellen", uk: "Створити пакет", fr: "Créer un pack", pl: "Utwórz pakiet" },
+  cp_demo_notice: {
+    en: "Demonstration data only. Backend storage is not connected yet.",
+    ru: "Только демонстрационные данные. Хранилище ещё не подключено.",
+    de: "Nur Demo-Daten. Backend-Speicher ist noch nicht angebunden.",
+    uk: "Лише демонстраційні дані. Сховище ще не підключене.",
+    fr: "Données de démonstration uniquement. Stockage non connecté.",
+    pl: "Tylko dane demonstracyjne. Baza jeszcze nie podłączona.",
+  },
+  cp_temp_values: { en: "Temporary", ru: "Временное", de: "Temporär", uk: "Тимчасове", fr: "Temporaire", pl: "Tymczasowe" },
+  cp_sort_by: { en: "Sort by", ru: "Сортировать", de: "Sortieren", uk: "Сортувати", fr: "Trier", pl: "Sortuj" },
+  cp_filter_draft: { en: "Draft", ru: "Черновики", de: "Entwürfe", uk: "Чернетки", fr: "Brouillons", pl: "Szkice" },
+
+  col_id: { en: "Internal ID", ru: "Внутр. ID", de: "Interne ID", uk: "Внутр. ID", fr: "ID interne", pl: "ID wewn." },
+  col_base: { en: "Base credits", ru: "Базовые кредиты", de: "Basis-Kredits", uk: "Базові кредити", fr: "Crédits de base", pl: "Kredyty bazowe" },
+  col_total: { en: "Total credits", ru: "Итого кредитов", de: "Gesamt", uk: "Разом кредитів", fr: "Total crédits", pl: "Kredyty razem" },
+  col_order: { en: "Display order", ru: "Порядок", de: "Reihenfolge", uk: "Порядок", fr: "Ordre", pl: "Kolejność" },
+
+  st_draft: { en: "Draft", ru: "Черновик", de: "Entwurf", uk: "Чернетка", fr: "Brouillon", pl: "Szkic" },
+
+  fld_internal_id: { en: "Internal Package ID", ru: "Внутренний ID пакета", de: "Interne Paket-ID", uk: "Внутрішній ID пакета", fr: "ID interne du pack", pl: "ID wewnętrzne pakietu" },
+  fld_status: { en: "Status", ru: "Статус", de: "Status", uk: "Статус", fr: "Statut", pl: "Status" },
+  fld_order: { en: "Display order", ru: "Порядок отображения", de: "Anzeigereihenfolge", uk: "Порядок відображення", fr: "Ordre d’affichage", pl: "Kolejność wyświetlania" },
+  fld_currency: { en: "Currency", ru: "Валюта", de: "Währung", uk: "Валюта", fr: "Devise", pl: "Waluta" },
+  fld_customer_price: { en: "Customer price", ru: "Цена для клиента", de: "Kundenpreis", uk: "Ціна для клієнта", fr: "Prix client", pl: "Cena dla klienta" },
+  fld_total_auto: { en: "Total credits (auto)", ru: "Итого кредитов (авто)", de: "Gesamt-Kredits (auto)", uk: "Разом кредитів (авто)", fr: "Total crédits (auto)", pl: "Kredyty razem (auto)" },
+  fld_effective_ppc: { en: "Effective price per credit", ru: "Эффективная цена за кредит", de: "Effektiver Preis pro Kredit", uk: "Ефективна ціна за кредит", fr: "Prix effectif par crédit", pl: "Efektywna cena za kredyt" },
+
+  err_name_required: { en: "Package name is required.", ru: "Название пакета обязательно.", de: "Paketname erforderlich.", uk: "Назва пакета обовʼязкова.", fr: "Le nom du pack est requis.", pl: "Nazwa pakietu wymagana." },
+  err_id_required: { en: "Internal ID is required.", ru: "Внутренний ID обязателен.", de: "Interne ID erforderlich.", uk: "Внутрішній ID обовʼязковий.", fr: "L’ID interne est requis.", pl: "ID wewn. wymagane." },
+  err_id_unique: { en: "This Internal ID is already used.", ru: "Такой внутренний ID уже используется.", de: "Diese interne ID ist bereits vergeben.", uk: "Такий внутрішній ID уже використовується.", fr: "Cet ID interne est déjà utilisé.", pl: "To ID wewn. jest już używane." },
+  err_base_gtz: { en: "Base credits must be greater than zero.", ru: "Базовых кредитов должно быть больше нуля.", de: "Basis-Kredits müssen größer als null sein.", uk: "Базових кредитів має бути більше нуля.", fr: "Les crédits de base doivent être > 0.", pl: "Kredyty bazowe muszą być > 0." },
+  err_bonus_neg: { en: "Bonus credits cannot be negative.", ru: "Бонусные кредиты не могут быть отрицательными.", de: "Bonus-Kredits dürfen nicht negativ sein.", uk: "Бонусні кредити не можуть бути відʼємними.", fr: "Les crédits bonus ne peuvent pas être négatifs.", pl: "Kredyty bonusowe nie mogą być ujemne." },
+  err_price_neg: { en: "Customer price cannot be negative.", ru: "Цена не может быть отрицательной.", de: "Preis kann nicht negativ sein.", uk: "Ціна не може бути відʼємною.", fr: "Le prix ne peut pas être négatif.", pl: "Cena nie może być ujemna." },
+  err_order_neg: { en: "Display order cannot be negative.", ru: "Порядок не может быть отрицательным.", de: "Reihenfolge kann nicht negativ sein.", uk: "Порядок не може бути відʼємним.", fr: "L’ordre ne peut pas être négatif.", pl: "Kolejność nie może być ujemna." },
+
+  unsaved_changes: { en: "Unsaved changes", ru: "Есть несохранённые изменения", de: "Nicht gespeicherte Änderungen", uk: "Є незбережені зміни", fr: "Modifications non enregistrées", pl: "Niezapisane zmiany" },
+  unsaved_confirm: {
+    en: "Discard unsaved changes?",
+    ru: "Отменить несохранённые изменения?",
+    de: "Änderungen verwerfen?",
+    uk: "Скасувати незбережені зміни?",
+    fr: "Abandonner les modifications ?",
+    pl: "Odrzucić zmiany?",
+  },
+  confirm_delete_title: { en: "Delete package?", ru: "Удалить пакет?", de: "Paket löschen?", uk: "Видалити пакет?", fr: "Supprimer le pack ?", pl: "Usunąć pakiet?" },
+  confirm_delete_body: {
+    en: "This will remove the package from the temporary list. This action cannot be undone.",
+    ru: "Пакет будет удалён из временного списка. Действие необратимо.",
+    de: "Das Paket wird aus der temporären Liste entfernt. Aktion ist unumkehrbar.",
+    uk: "Пакет буде видалено з тимчасового списку. Дію не можна скасувати.",
+    fr: "Le pack sera retiré de la liste temporaire. Action irréversible.",
+    pl: "Pakiet zostanie usunięty z listy tymczasowej. Operacja nieodwracalna.",
+  },
+  keep_package: { en: "Keep package", ru: "Оставить пакет", de: "Paket behalten", uk: "Залишити пакет", fr: "Conserver le pack", pl: "Zachowaj pakiet" },
+  delete_package: { en: "Delete package", ru: "Удалить пакет", de: "Paket löschen", uk: "Видалити пакет", fr: "Supprimer le pack", pl: "Usuń pakiet" },
+
+  empty_state: { en: "No packages match the current filters.", ru: "Нет пакетов, соответствующих фильтрам.", de: "Keine Pakete für die Filter.", uk: "Немає пакетів за фільтрами.", fr: "Aucun pack ne correspond.", pl: "Brak pakietów spełniających filtry." },
 };
 
 export function useLocal(lang: Lang) {
