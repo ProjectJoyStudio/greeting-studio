@@ -184,8 +184,7 @@ export const DEMO_EVENTS: PersonalEvent[] = [
   },
   {
     id: "EV-1008", customer: "Lena F.", eventType: "family",
-    name: "Family Gathering", recipient: "Family", recipient_group: undefined as unknown as string,
-    date: iso(40),
+    name: "Family Gathering", recipient: "Family", date: iso(40),
     recurrence: "once", timezone: "Europe/Berlin", recipientTimezone: "Europe/Berlin",
     reminderDaysBefore: [14], reminderChannel: "internal", reminderPaused: false,
     scheduledGift: false, deliveryChannel: "email", deliveryWindow: "afternoon",
