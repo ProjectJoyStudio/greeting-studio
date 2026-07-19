@@ -284,7 +284,7 @@ export function CatalogPage() {
       }
     });
     return list;
-  }, [items, query, categoryFilter, langFilter, statusFilter, typeFilter, flagFeatured, flagRecommended, flagPremium, transFilter, activeFilter, periodFilter, creditsMin, creditsMax, sortKey, tick, L, lang]);
+  }, [items, query, categoryFilter, langFilter, statusFilter, typeFilter, flagFeatured, flagRecommended, flagPremium, transFilter, activeFilter, periodFilter, creditsMin, creditsMax, authorFilter, perfFilter, mediaFilter, sortKey, tick, L, lang]);
 
   const upsert = (it: CatalogItem) =>
     setItems((prev) => {
