@@ -39,7 +39,7 @@ import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
-import { Route as AdminPlatformRouteImport } from './routes/admin.platform'
+import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
@@ -199,9 +199,9 @@ const AdminPromotionsRoute = AdminPromotionsRouteImport.update({
   path: '/promotions',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPlatformRoute = AdminPlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
+const AdminPlatformSettingsRoute = AdminPlatformSettingsRouteImport.update({
+  id: '/platform-settings',
+  path: '/platform-settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -273,7 +273,7 @@ export interface FileRoutesByFullPath {
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -312,7 +312,7 @@ export interface FileRoutesByTo {
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -354,7 +354,7 @@ export interface FileRoutesById {
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/platform': typeof AdminPlatformRoute
+  '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -397,7 +397,7 @@ export interface FileRouteTypes {
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/platform'
+    | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
@@ -436,7 +436,7 @@ export interface FileRouteTypes {
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/platform'
+    | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
@@ -477,7 +477,7 @@ export interface FileRouteTypes {
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/platform'
+    | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
@@ -725,11 +725,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPromotionsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/platform': {
-      id: '/admin/platform'
-      path: '/platform'
-      fullPath: '/admin/platform'
-      preLoaderRoute: typeof AdminPlatformRouteImport
+    '/admin/platform-settings': {
+      id: '/admin/platform-settings'
+      path: '/platform-settings'
+      fullPath: '/admin/platform-settings'
+      preLoaderRoute: typeof AdminPlatformSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -800,7 +800,7 @@ interface AdminRouteChildren {
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
-  AdminPlatformRoute: typeof AdminPlatformRoute
+  AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
   AdminPromotionsRoute: typeof AdminPromotionsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -816,7 +816,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
-  AdminPlatformRoute: AdminPlatformRoute,
+  AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
   AdminPromotionsRoute: AdminPromotionsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUsersRoute: AdminUsersRoute,
