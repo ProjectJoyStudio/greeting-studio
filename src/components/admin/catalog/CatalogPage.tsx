@@ -535,14 +535,16 @@ export function CatalogPage() {
               <th className="px-3 py-2 text-left">{L("col_category")}</th>
               <th className="px-3 py-2 text-left">{L("col_type")}</th>
               <th className="px-3 py-2 text-left">{L("col_status")}</th>
-              <th className="px-3 py-2 text-right">{L("col_credits")}</th>
+              <th className="px-3 py-2 text-right" title={L("tt_credits")}>{L("col_credits")}</th>
+              <th className="px-3 py-2 text-right" title={L("tt_purchases")}>{L("col_performance")}</th>
+              <th className="px-3 py-2 text-left" title={L("tt_author")}>{L("col_author")}</th>
               <th className="px-3 py-2 text-left">{L("col_created")}</th>
               <th className="px-3 py-2 text-right">{L("col_actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
             {filtered.length === 0 ? (
-              <tr><td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">{L("empty_list")}</td></tr>
+              <tr><td colSpan={12} className="px-3 py-6 text-center text-muted-foreground">{L("empty_list")}</td></tr>
             ) : filtered.map((it) => (
               <tr key={it.id} className={`hover:bg-muted/30 ${selected.has(it.id) ? "bg-primary/5" : ""}`}>
                 <td className="px-3 py-2">
@@ -558,19 +560,34 @@ export function CatalogPage() {
                 <td className="px-3 py-2"><span className="inline-flex items-center gap-1">{typeIcon(it.type)}{L("type_" + it.type)}</span></td>
                 <td className="px-3 py-2"><StatusPill status={deriveDisplayStatus(it)} L={L} /></td>
                 <td className="px-3 py-2 text-right tabular-nums">{it.credits}</td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex flex-col items-end gap-0.5 leading-none">
+                    <span className="text-[11px] tabular-nums" title={L("tt_views")}>
+                      <Eye className="mr-1 inline h-3 w-3" />{formatCompact(it.stats.views)}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground" title={L("tt_purchases")}>
+                      {formatCompact(it.stats.purchases ?? it.stats.uses)} · {L("col_purchases").toLowerCase()}
+                    </span>
+                    <PerformancePill item={it} L={L} />
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  <div className="font-medium">{it.author?.displayName ?? "—"}</div>
+                  <div className="text-[10px] text-muted-foreground">{L("author_" + (it.author?.type ?? "project_joy"))}</div>
+                </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(it.createdAt, lang)}</td>
                 <td className="px-3 py-2">
                   <div className="flex justify-end gap-1">
                     <button className={btnBase} title={L("act_view")} onClick={() => setViewing(it)}><Eye className="h-3.5 w-3.5" /></button>
-                    <button className={btnBase} title={L("act_preview_customer")} onClick={() => setPreviewing(it)}><Sparkles className="h-3.5 w-3.5" /></button>
+                    <button className={btnBase} title={L("tt_open_customer")} onClick={() => setPreviewing(it)}><Sparkles className="h-3.5 w-3.5" /></button>
                     <button className={btnBase} title={L("act_edit")} onClick={() => setEditing(it)}><Pencil className="h-3.5 w-3.5" /></button>
                     <button className={btnBase} title={L("act_duplicate")} onClick={() => doDuplicate(it)}><Copy className="h-3.5 w-3.5" /></button>
                     {it.status === "archived" ? (
                       <button className={btnBase} title={L("act_restore")} onClick={() => doRestore(it)}><RotateCcw className="h-3.5 w-3.5" /></button>
                     ) : (
-                      <button className={btnBase} title={L("act_archive")} onClick={() => doArchive(it)}><Archive className="h-3.5 w-3.5" /></button>
+                      <button className={btnBase} title={L("tt_archive")} onClick={() => doArchive(it)}><Archive className="h-3.5 w-3.5" /></button>
                     )}
-                    <button className={btnDanger} title={L("act_delete")} onClick={() => setConfirmDelete(it)}><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button className={btnDanger} title={L("tt_delete")} onClick={() => setConfirmDelete(it)}><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </td>
               </tr>
