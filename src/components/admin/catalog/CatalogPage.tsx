@@ -464,6 +464,33 @@ export function CatalogPage() {
             <span className="mb-1 block text-muted-foreground">{L("filter_credits_max")}</span>
             <input type="number" min={0} className={inputCls} value={creditsMax} onChange={(e) => setCreditsMax(e.target.value)} />
           </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("filter_author_type")}</span>
+            <select className={inputCls} value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value as "all" | AuthorType)}>
+              <option value="all">{L("filter_all")}</option>
+              {AUTHOR_TYPES.map((a) => <option key={a} value={a}>{L("author_" + a)}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("filter_performance")}</span>
+            <select className={inputCls} value={perfFilter} onChange={(e) => setPerfFilter(e.target.value as "all" | PerformanceStatus)}>
+              <option value="all">{L("filter_all")}</option>
+              {PERFORMANCE_STATUSES.map((p) => <option key={p} value={p}>{L("perf_" + p)}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("col_performance")} / {L("col_preview")}</span>
+            <select className={inputCls} value={mediaFilter} onChange={(e) => setMediaFilter(e.target.value as MediaFilter)}>
+              <option value="any">{L("filter_all")}</option>
+              <option value="has_thumb">{L("filter_has_thumbnail")}</option>
+              <option value="missing_thumb">{L("filter_missing_thumbnail")}</option>
+              <option value="has_views">{L("filter_has_views")}</option>
+              <option value="never_viewed">{L("filter_never_viewed")}</option>
+              <option value="has_purchases">{L("filter_has_purchases")}</option>
+              <option value="never_purchased">{L("filter_never_purchased")}</option>
+              <option value="published_missing_media">{L("filter_published_missing_media")}</option>
+            </select>
+          </label>
         </div>
       )}
 
