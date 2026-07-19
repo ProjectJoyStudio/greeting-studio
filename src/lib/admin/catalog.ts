@@ -643,6 +643,7 @@ export function makeBlankCatalogItem(): CatalogItem {
     noEndDate: true,
     versions: [],
     stats: demoStats(Math.floor(Math.random() * 999)),
+    author: defaultAuthor(),
   };
 }
 
