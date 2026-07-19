@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminPlaceholder } from "@/components/admin/Placeholder";
+import { LanguagesPage } from "@/components/admin/languages/LanguagesPage";
 
 export const Route = createFileRoute("/admin/languages")({
-  component: () => <AdminPlaceholder titleKey="admin_nav_languages" />,
+  component: LanguagesPage,
 });
