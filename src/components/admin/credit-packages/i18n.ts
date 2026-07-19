@@ -236,6 +236,73 @@ const D: Record<string, Row> = {
   empty_state: { en: "No packages match the current filters.", ru: "Нет пакетов, соответствующих фильтрам.", de: "Keine Pakete für die Filter.", uk: "Немає пакетів за фільтрами.", fr: "Aucun pack ne correspond.", pl: "Brak pakietów spełniających filtry." },
 };
 
+// --- Extended fields (customer presentation / availability / preview) ------
+const E: Record<string, Row> = {
+  fld_customer_name: { en: "Customer-facing name", ru: "Название для клиента", de: "Kundenname", uk: "Назва для клієнта", fr: "Nom affiché aux clients", pl: "Nazwa dla klienta" },
+  fld_description: { en: "Short description", ru: "Короткое описание", de: "Kurzbeschreibung", uk: "Короткий опис", fr: "Description courte", pl: "Krótki opis" },
+  fld_badge: { en: "Badge", ru: "Бейдж", de: "Badge", uk: "Бейдж", fr: "Badge", pl: "Odznaka" },
+  fld_accent: { en: "Accent color", ru: "Акцентный цвет", de: "Akzentfarbe", uk: "Акцентний колір", fr: "Couleur d’accent", pl: "Kolor akcentu" },
+  fld_highlight: { en: "Highlight this package", ru: "Выделить этот пакет", de: "Dieses Paket hervorheben", uk: "Виділити цей пакет", fr: "Mettre en avant ce pack", pl: "Wyróżnij ten pakiet" },
+  fld_original_price: { en: "Original price (optional)", ru: "Исходная цена (опц.)", de: "Ursprungspreis (optional)", uk: "Початкова ціна (опц.)", fr: "Prix d’origine (opt.)", pl: "Cena pierwotna (opc.)" },
+  fld_icon: { en: "Card icon", ru: "Иконка карточки", de: "Karten-Symbol", uk: "Іконка картки", fr: "Icône de la carte", pl: "Ikona karty" },
+  fld_all_countries: { en: "Visible in all countries", ru: "Видно во всех странах", de: "In allen Ländern sichtbar", uk: "Видно в усіх країнах", fr: "Visible dans tous les pays", pl: "Widoczne we wszystkich krajach" },
+  fld_all_languages: { en: "Visible in all languages", ru: "Видно на всех языках", de: "In allen Sprachen sichtbar", uk: "Видно всіма мовами", fr: "Visible dans toutes les langues", pl: "Widoczne we wszystkich językach" },
+  fld_no_end_date: { en: "No end date", ru: "Без даты окончания", de: "Kein Enddatum", uk: "Без дати завершення", fr: "Sans date de fin", pl: "Bez daty końca" },
+  fld_start_date: { en: "Start date", ru: "Дата начала", de: "Startdatum", uk: "Дата початку", fr: "Date de début", pl: "Data początku" },
+  fld_end_date: { en: "End date", ru: "Дата окончания", de: "Enddatum", uk: "Дата завершення", fr: "Date de fin", pl: "Data zakończenia" },
+  fld_country_search: { en: "Search countries…", ru: "Поиск стран…", de: "Länder suchen…", uk: "Пошук країн…", fr: "Rechercher pays…", pl: "Szukaj krajów…" },
+
+  sec_customer: { en: "Customer presentation", ru: "Отображение для клиента", de: "Kundenpräsentation", uk: "Показ клієнту", fr: "Présentation client", pl: "Prezentacja klienta" },
+  sec_availability: { en: "Availability", ru: "Доступность", de: "Verfügbarkeit", uk: "Доступність", fr: "Disponibilité", pl: "Dostępność" },
+  sec_core: { en: "Core values", ru: "Основные значения", de: "Grundwerte", uk: "Основні значення", fr: "Valeurs de base", pl: "Wartości podstawowe" },
+
+  st_scheduled: { en: "Scheduled", ru: "Запланирован", de: "Geplant", uk: "Заплановано", fr: "Planifié", pl: "Zaplanowane" },
+  st_expired: { en: "Expired", ru: "Истёк", de: "Abgelaufen", uk: "Завершено", fr: "Expiré", pl: "Wygasłe" },
+
+  cp_filter_scheduled: { en: "Scheduled", ru: "Запланированы", de: "Geplant", uk: "Заплановані", fr: "Planifiés", pl: "Zaplanowane" },
+  cp_filter_expired: { en: "Expired", ru: "Истёкшие", de: "Abgelaufen", uk: "Завершені", fr: "Expirés", pl: "Wygasłe" },
+
+  col_badge: { en: "Badge", ru: "Бейдж", de: "Badge", uk: "Бейдж", fr: "Badge", pl: "Odznaka" },
+  col_effective_ppc: { en: "€ / credit", ru: "€ / кредит", de: "€ / Kredit", uk: "€ / кредит", fr: "€ / crédit", pl: "€ / kredyt" },
+  col_period: { en: "Active period", ru: "Период активности", de: "Aktivzeitraum", uk: "Період активності", fr: "Période active", pl: "Okres aktywności" },
+  vis_all_countries: { en: "All countries", ru: "Все страны", de: "Alle Länder", uk: "Усі країни", fr: "Tous pays", pl: "Wszystkie kraje" },
+  vis_all_languages: { en: "All languages", ru: "Все языки", de: "Alle Sprachen", uk: "Усі мови", fr: "Toutes langues", pl: "Wszystkie języki" },
+  vis_n_countries: { en: "{n} countries", ru: "{n} стран", de: "{n} Länder", uk: "{n} країн", fr: "{n} pays", pl: "{n} krajów" },
+  vis_n_languages: { en: "{n} languages", ru: "{n} языков", de: "{n} Sprachen", uk: "{n} мов", fr: "{n} langues", pl: "{n} języków" },
+  period_open: { en: "Always", ru: "Всегда", de: "Immer", uk: "Завжди", fr: "Toujours", pl: "Zawsze" },
+  period_until: { en: "until {d}", ru: "до {d}", de: "bis {d}", uk: "до {d}", fr: "jusqu’au {d}", pl: "do {d}" },
+  period_from: { en: "from {d}", ru: "с {d}", de: "ab {d}", uk: "з {d}", fr: "dès {d}", pl: "od {d}" },
+  period_between: { en: "{a} → {b}", ru: "{a} → {b}", de: "{a} → {b}", uk: "{a} → {b}", fr: "{a} → {b}", pl: "{a} → {b}" },
+
+  err_customer_name_required: { en: "Customer-facing name is required.", ru: "Название для клиента обязательно.", de: "Kundenname erforderlich.", uk: "Назва для клієнта обовʼязкова.", fr: "Nom client requis.", pl: "Nazwa dla klienta wymagana." },
+  err_original_lt_price: { en: "Original price cannot be lower than the customer price.", ru: "Исходная цена не может быть ниже цены для клиента.", de: "Ursprungspreis darf nicht unter dem Kundenpreis liegen.", uk: "Початкова ціна не може бути меншою за ціну для клієнта.", fr: "Le prix d’origine ne peut pas être inférieur au prix client.", pl: "Cena pierwotna nie może być niższa od ceny klienta." },
+  err_end_before_start: { en: "End date cannot be earlier than start date.", ru: "Дата окончания не может быть раньше даты начала.", de: "Enddatum darf nicht vor Startdatum liegen.", uk: "Дата завершення не може бути раніше дати початку.", fr: "La date de fin ne peut pas précéder la date de début.", pl: "Data końca nie może być wcześniej niż data początku." },
+  err_country_required: { en: "Select at least one country.", ru: "Выберите хотя бы одну страну.", de: "Mindestens ein Land wählen.", uk: "Виберіть хоча б одну країну.", fr: "Sélectionnez au moins un pays.", pl: "Wybierz co najmniej jeden kraj." },
+  err_language_required: { en: "Select at least one language.", ru: "Выберите хотя бы один язык.", de: "Mindestens eine Sprache wählen.", uk: "Виберіть хоча б одну мову.", fr: "Sélectionnez au moins une langue.", pl: "Wybierz co najmniej jeden język." },
+
+  highlight_replace_title: { en: "Replace highlighted package?", ru: "Заменить выделенный пакет?", de: "Hervorgehobenes Paket ersetzen?", uk: "Замінити виділений пакет?", fr: "Remplacer le pack mis en avant ?", pl: "Zamienić wyróżniony pakiet?" },
+  highlight_replace_body: { en: "{name} is currently highlighted. Only one package can be highlighted at a time.", ru: "Сейчас выделен {name}. Одновременно можно выделить только один пакет.", de: "{name} ist derzeit hervorgehoben. Es kann nur ein Paket gleichzeitig hervorgehoben werden.", uk: "Зараз виділений {name}. Одночасно можна виділити лише один пакет.", fr: "{name} est actuellement mis en avant. Un seul pack peut l’être à la fois.", pl: "{name} jest teraz wyróżniony. Tylko jeden pakiet może być wyróżniony jednocześnie." },
+  highlight_replace_confirm: { en: "Replace it", ru: "Заменить", de: "Ersetzen", uk: "Замінити", fr: "Remplacer", pl: "Zamień" },
+
+  preview_internal_note: { en: "Internal preview — payments are not connected.", ru: "Внутреннее превью — платежи не подключены.", de: "Interne Vorschau — Zahlungen nicht angebunden.", uk: "Внутрішнє превʼю — платежі не підключені.", fr: "Aperçu interne — paiements non connectés.", pl: "Podgląd wewnętrzny — płatności niepodłączone." },
+  preview_live_card: { en: "Live customer card", ru: "Живая карточка клиента", de: "Live-Kundenkarte", uk: "Жива картка клієнта", fr: "Carte client en direct", pl: "Karta klienta na żywo" },
+  preview_customer_view: { en: "Preview customer view", ru: "Превью клиентского вида", de: "Kundenansicht Vorschau", uk: "Перегляд для клієнта", fr: "Aperçu vue client", pl: "Podgląd widoku klienta" },
+  preview_all_title: { en: "How customers see credit packages", ru: "Как клиенты видят пакеты", de: "So sehen Kunden die Pakete", uk: "Як клієнти бачать пакети", fr: "Vue client des packs", pl: "Widok pakietów dla klienta" },
+  preview_back: { en: "Back to admin", ru: "Назад в админку", de: "Zurück zum Admin", uk: "Назад в адмінку", fr: "Retour à l’admin", pl: "Powrót do admin" },
+  preview_country: { en: "Country", ru: "Страна", de: "Land", uk: "Країна", fr: "Pays", pl: "Kraj" },
+  preview_language: { en: "Language", ru: "Язык", de: "Sprache", uk: "Мова", fr: "Langue", pl: "Język" },
+  preview_no_packages: { en: "No packages match this demo audience.", ru: "Нет пакетов для этой демо-аудитории.", de: "Keine Pakete für dieses Demo-Publikum.", uk: "Немає пакетів для цієї демо-аудиторії.", fr: "Aucun pack pour cette audience de démo.", pl: "Brak pakietów dla tej demo-grupy." },
+
+  buy_credits: { en: "Buy credits", ru: "Купить кредиты", de: "Kredits kaufen", uk: "Купити кредити", fr: "Acheter des crédits", pl: "Kup kredyty" },
+  save_pct: { en: "Save {p}%", ru: "Скидка {p}%", de: "Spare {p}%", uk: "Знижка {p}%", fr: "Économie {p}%", pl: "Oszczędź {p}%" },
+  base_credits_label: { en: "Base credits", ru: "Базовые кредиты", de: "Basis-Kredits", uk: "Базові кредити", fr: "Crédits de base", pl: "Kredyty bazowe" },
+  bonus_credits_label: { en: "Bonus", ru: "Бонус", de: "Bonus", uk: "Бонус", fr: "Bonus", pl: "Bonus" },
+  total_credits_label: { en: "Total credits", ru: "Итого", de: "Gesamt", uk: "Разом", fr: "Total", pl: "Razem" },
+  highlighted_ribbon: { en: "Highlighted", ru: "Выделен", de: "Hervorgehoben", uk: "Виділено", fr: "Mis en avant", pl: "Wyróżniony" },
+};
+
+Object.assign(D, E);
+
 export function useLocal(lang: Lang) {
   return (k: keyof typeof D | string): string => {
     const row = D[k as string];
