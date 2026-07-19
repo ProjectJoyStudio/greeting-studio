@@ -114,6 +114,189 @@ const D: Record<string, Row> = {
   empty_list: { en: "No content matches your filters.", ru: "Нет контента по выбранным фильтрам.", de: "Keine Inhalte für die Filter.", uk: "Немає контенту для цих фільтрів.", fr: "Aucun contenu ne correspond.", pl: "Brak treści dla filtrów." },
 };
 
+// -------- Extended keys for the advanced management module --------
+Object.assign(D, {
+  // Section titles
+  sec_basic: { en: "Basic", ru: "Основное", de: "Basis", uk: "Основне", fr: "Base", pl: "Podstawowe" },
+  sec_media: { en: "Media", ru: "Медиа", de: "Medien", uk: "Медіа", fr: "Médias", pl: "Media" },
+  sec_presentation: { en: "Presentation", ru: "Представление", de: "Darstellung", uk: "Подання", fr: "Présentation", pl: "Prezentacja" },
+  sec_publication: { en: "Publication", ru: "Публикация", de: "Veröffentlichung", uk: "Публікація", fr: "Publication", pl: "Publikacja" },
+  sec_translations: { en: "Translations", ru: "Переводы", de: "Übersetzungen", uk: "Переклади", fr: "Traductions", pl: "Tłumaczenia" },
+  sec_versions: { en: "Version History", ru: "История версий", de: "Versionsverlauf", uk: "Історія версій", fr: "Historique", pl: "Historia wersji" },
+  sec_stats: { en: "Statistics", ru: "Статистика", de: "Statistik", uk: "Статистика", fr: "Statistiques", pl: "Statystyki" },
+
+  // Media placeholders
+  m_main_preview: { en: "Main Preview Image", ru: "Главное превью", de: "Hauptvorschau", uk: "Головне прев'ю", fr: "Image principale", pl: "Główny podgląd" },
+  m_thumbnail: { en: "Thumbnail", ru: "Миниатюра", de: "Miniaturbild", uk: "Мініатюра", fr: "Miniature", pl: "Miniatura" },
+  m_audio: { en: "Audio File", ru: "Аудиофайл", de: "Audiodatei", uk: "Аудіофайл", fr: "Fichier audio", pl: "Plik audio" },
+  m_video: { en: "Video File", ru: "Видеофайл", de: "Videodatei", uk: "Відеофайл", fr: "Fichier vidéo", pl: "Plik wideo" },
+  m_cover: { en: "Cover Image", ru: "Обложка", de: "Cover", uk: "Обкладинка", fr: "Couverture", pl: "Okładka" },
+  m_additional: { en: "Additional Media", ru: "Доп. медиа", de: "Weitere Medien", uk: "Додаткові медіа", fr: "Médias additionnels", pl: "Dodatkowe media" },
+  m_placeholder_note: {
+    en: "File controls are frontend placeholders. Real storage is not connected.",
+    ru: "Управление файлами — демонстрационное. Реальное хранилище не подключено.",
+    de: "Datei-Steuerungen sind Platzhalter. Kein Speicher angebunden.",
+    uk: "Керування файлами — демонстрація. Сховище не підключене.",
+    fr: "Contrôles de fichiers — démonstration. Aucun stockage n'est connecté.",
+    pl: "Kontrolki plików — tylko demonstracja. Brak podłączonego magazynu.",
+  },
+  m_upload: { en: "Upload placeholder", ru: "Загрузка (демо)", de: "Upload (Demo)", uk: "Завантаження (демо)", fr: "Téléverser (démo)", pl: "Wgraj (demo)" },
+  m_filename_ph: { en: "e.g. cover.jpg", ru: "например, cover.jpg", de: "z. B. cover.jpg", uk: "напр., cover.jpg", fr: "ex. cover.jpg", pl: "np. cover.jpg" },
+
+  // Presentation
+  p_customer_title: { en: "Customer-Facing Title", ru: "Клиентское название", de: "Kundentitel", uk: "Клієнтська назва", fr: "Titre client", pl: "Tytuł dla klienta" },
+  p_short_desc: { en: "Short Description", ru: "Краткое описание", de: "Kurzbeschreibung", uk: "Короткий опис", fr: "Description courte", pl: "Krótki opis" },
+  p_long_desc: { en: "Long Description", ru: "Полное описание", de: "Lange Beschreibung", uk: "Повний опис", fr: "Description complète", pl: "Pełny opis" },
+  p_search_keywords: { en: "Search Keywords", ru: "Ключевые слова", de: "Schlüsselwörter", uk: "Ключові слова", fr: "Mots-clés", pl: "Słowa kluczowe" },
+  p_keywords_ph: { en: "Comma-separated keywords", ru: "Ключевые слова через запятую", de: "Kommagetrennt", uk: "Через кому", fr: "Séparés par une virgule", pl: "Oddzielone przecinkiem" },
+
+  // Flags
+  flag_featured: { en: "Featured", ru: "Избранное", de: "Empfohlen", uk: "Обране", fr: "En vedette", pl: "Wyróżnione" },
+  flag_recommended: { en: "Recommended", ru: "Рекомендуется", de: "Empfehlenswert", uk: "Рекомендовано", fr: "Recommandé", pl: "Polecane" },
+  flag_premium: { en: "Premium", ru: "Премиум", de: "Premium", uk: "Преміум", fr: "Premium", pl: "Premium" },
+  flag_new: { en: "New", ru: "Новое", de: "Neu", uk: "Нове", fr: "Nouveau", pl: "Nowe" },
+  flag_popular: { en: "Popular", ru: "Популярное", de: "Beliebt", uk: "Популярне", fr: "Populaire", pl: "Popularne" },
+  flag_seasonal: { en: "Seasonal", ru: "Сезонное", de: "Saisonal", uk: "Сезонне", fr: "Saisonnier", pl: "Sezonowe" },
+  flag_pin: { en: "Pin to Top", ru: "Закрепить сверху", de: "Anheften", uk: "Закріпити", fr: "Épingler", pl: "Przypnij" },
+
+  // Publication
+  pub_publish_now: { en: "Publish Now", ru: "Опубликовать сейчас", de: "Jetzt veröffentlichen", uk: "Опублікувати зараз", fr: "Publier maintenant", pl: "Opublikuj teraz" },
+  pub_schedule: { en: "Schedule Publication", ru: "Запланировать публикацию", de: "Veröffentlichung planen", uk: "Запланувати публікацію", fr: "Programmer la publication", pl: "Zaplanuj publikację" },
+  pub_date: { en: "Publication Date", ru: "Дата публикации", de: "Veröffentlichungsdatum", uk: "Дата публікації", fr: "Date de publication", pl: "Data publikacji" },
+  pub_time: { en: "Publication Time", ru: "Время публикации", de: "Uhrzeit", uk: "Час публікації", fr: "Heure", pl: "Godzina" },
+  pub_hide_after: { en: "Hide After Date", ru: "Скрыть после даты", de: "Ausblenden ab", uk: "Приховати після дати", fr: "Masquer après le", pl: "Ukryj po dacie" },
+  pub_no_end: { en: "No End Date", ru: "Без даты окончания", de: "Kein Enddatum", uk: "Без дати закінчення", fr: "Sans date de fin", pl: "Bez daty końca" },
+
+  // Derived statuses
+  status_scheduled: { en: "Scheduled", ru: "Запланировано", de: "Geplant", uk: "Заплановано", fr: "Programmé", pl: "Zaplanowane" },
+  status_expired: { en: "Expired", ru: "Истекло", de: "Abgelaufen", uk: "Прострочено", fr: "Expiré", pl: "Wygasłe" },
+
+  // Translations tab
+  tr_status_complete: { en: "Complete", ru: "Готов", de: "Vollständig", uk: "Готово", fr: "Complet", pl: "Kompletne" },
+  tr_status_incomplete: { en: "Incomplete", ru: "Не полностью", de: "Unvollständig", uk: "Неповно", fr: "Incomplet", pl: "Niekompletne" },
+  tr_status_missing: { en: "Missing", ru: "Отсутствует", de: "Fehlt", uk: "Відсутнє", fr: "Manquant", pl: "Brak" },
+  tr_primary: { en: "Primary", ru: "Основной", de: "Primär", uk: "Основна", fr: "Principal", pl: "Podstawowy" },
+  tr_make_primary: { en: "Set as primary", ru: "Сделать основным", de: "Als primär setzen", uk: "Зробити основною", fr: "Définir principal", pl: "Ustaw jako główny" },
+  tr_add: { en: "Add translation", ru: "Добавить перевод", de: "Übersetzung hinzufügen", uk: "Додати переклад", fr: "Ajouter une traduction", pl: "Dodaj tłumaczenie" },
+
+  // Preview modal
+  preview_customer: { en: "Preview Customer View", ru: "Просмотр глазами клиента", de: "Kundenansicht", uk: "Перегляд клієнта", fr: "Aperçu client", pl: "Podgląd klienta" },
+  preview_language: { en: "Preview language", ru: "Язык просмотра", de: "Vorschausprache", uk: "Мова перегляду", fr: "Langue d'aperçu", pl: "Język podglądu" },
+  preview_cta: { en: "Get this greeting", ru: "Получить это поздравление", de: "Diesen Gruß erhalten", uk: "Отримати вітання", fr: "Obtenir ce vœu", pl: "Odbierz to życzenie" },
+  preview_draft_hidden: { en: "Draft items are hidden from customers.", ru: "Черновики скрыты от клиентов.", de: "Entwürfe sind für Kunden ausgeblendet.", uk: "Чернетки приховано від клієнтів.", fr: "Les brouillons sont cachés aux clients.", pl: "Szkice są ukryte przed klientami." },
+
+  // Bulk actions
+  bulk_selected: { en: "Selected", ru: "Выбрано", de: "Ausgewählt", uk: "Обрано", fr: "Sélectionné", pl: "Zaznaczono" },
+  bulk_publish: { en: "Publish", ru: "Опубликовать", de: "Veröffentlichen", uk: "Опублікувати", fr: "Publier", pl: "Opublikuj" },
+  bulk_hide: { en: "Hide", ru: "Скрыть", de: "Ausblenden", uk: "Приховати", fr: "Masquer", pl: "Ukryj" },
+  bulk_archive: { en: "Archive", ru: "В архив", de: "Archivieren", uk: "В архів", fr: "Archiver", pl: "Archiwizuj" },
+  bulk_restore: { en: "Restore", ru: "Восстановить", de: "Wiederherstellen", uk: "Відновити", fr: "Restaurer", pl: "Przywróć" },
+  bulk_change_category: { en: "Change Category", ru: "Сменить категорию", de: "Kategorie ändern", uk: "Змінити категорію", fr: "Changer de catégorie", pl: "Zmień kategorię" },
+  bulk_change_status: { en: "Change Status", ru: "Сменить статус", de: "Status ändern", uk: "Змінити статус", fr: "Changer de statut", pl: "Zmień status" },
+  bulk_add_tag: { en: "Add Tag", ru: "Добавить тег", de: "Tag hinzufügen", uk: "Додати тег", fr: "Ajouter un tag", pl: "Dodaj tag" },
+  bulk_remove_tag: { en: "Remove Tag", ru: "Убрать тег", de: "Tag entfernen", uk: "Прибрати тег", fr: "Retirer un tag", pl: "Usuń tag" },
+  bulk_clear: { en: "Clear selection", ru: "Снять выделение", de: "Auswahl aufheben", uk: "Зняти вибір", fr: "Effacer la sélection", pl: "Wyczyść zaznaczenie" },
+  bulk_confirm_title: { en: "Apply to selected?", ru: "Применить к выбранным?", de: "Auf Auswahl anwenden?", uk: "Застосувати до обраних?", fr: "Appliquer à la sélection ?", pl: "Zastosować do zaznaczonych?" },
+  bulk_confirm_body: { en: "This bulk change will apply to all selected items.", ru: "Массовое изменение применится ко всем выбранным.", de: "Diese Massenänderung wirkt auf alle Ausgewählten.", uk: "Масову зміну буде застосовано до всіх обраних.", fr: "Le changement s'applique à tous les éléments sélectionnés.", pl: "Zmiana obejmie wszystkie zaznaczone." },
+
+  // Version history
+  ver_version: { en: "Version", ru: "Версия", de: "Version", uk: "Версія", fr: "Version", pl: "Wersja" },
+  ver_date: { en: "Date", ru: "Дата", de: "Datum", uk: "Дата", fr: "Date", pl: "Data" },
+  ver_admin: { en: "Administrator", ru: "Администратор", de: "Administrator", uk: "Адміністратор", fr: "Administrateur", pl: "Administrator" },
+  ver_changed: { en: "Changed fields", ru: "Изменённые поля", de: "Geänderte Felder", uk: "Змінені поля", fr: "Champs modifiés", pl: "Zmienione pola" },
+  ver_preview: { en: "Preview version", ru: "Просмотр версии", de: "Version ansehen", uk: "Перегляд версії", fr: "Aperçu", pl: "Podgląd wersji" },
+  ver_restore: { en: "Restore (demo)", ru: "Восстановить (демо)", de: "Wiederherstellen (Demo)", uk: "Відновити (демо)", fr: "Restaurer (démo)", pl: "Przywróć (demo)" },
+  ver_none: { en: "No versions recorded yet.", ru: "Версий пока нет.", de: "Noch keine Versionen.", uk: "Версій ще немає.", fr: "Aucune version.", pl: "Brak wersji." },
+  ver_demo_note: { en: "Version history is demonstration only.", ru: "История версий — только демонстрация.", de: "Versionsverlauf ist nur Demo.", uk: "Історія версій — лише демонстрація.", fr: "Historique de démonstration uniquement.", pl: "Historia wersji tylko demonstracyjna." },
+
+  // Statistics
+  st_views: { en: "Views", ru: "Просмотры", de: "Ansichten", uk: "Перегляди", fr: "Vues", pl: "Wyświetlenia" },
+  st_opens: { en: "Opens", ru: "Открытия", de: "Öffnungen", uk: "Відкриття", fr: "Ouvertures", pl: "Otwarcia" },
+  st_uses: { en: "Uses", ru: "Использования", de: "Nutzungen", uk: "Використання", fr: "Utilisations", pl: "Użycia" },
+  st_favorites: { en: "Favorites", ru: "В избранном", de: "Favoriten", uk: "Обране", fr: "Favoris", pl: "Ulubione" },
+  st_shares: { en: "Shares", ru: "Поделились", de: "Geteilt", uk: "Поширення", fr: "Partages", pl: "Udostępnienia" },
+  st_conversion: { en: "Conversion", ru: "Конверсия", de: "Conversion", uk: "Конверсія", fr: "Conversion", pl: "Konwersja" },
+  st_last_used: { en: "Last used", ru: "Последнее использование", de: "Zuletzt genutzt", uk: "Востаннє використано", fr: "Dernière utilisation", pl: "Ostatnio użyto" },
+  st_demo_note: { en: "All values are demonstration data.", ru: "Все значения — демонстрационные.", de: "Alle Werte sind Demodaten.", uk: "Усі значення — демонстраційні.", fr: "Toutes les valeurs sont de démonstration.", pl: "Wszystkie wartości demonstracyjne." },
+  sort_views: { en: "Most Viewed", ru: "Больше всего просмотров", de: "Meist gesehen", uk: "Найпопулярніше", fr: "Plus vues", pl: "Najczęściej oglądane" },
+  sort_uses: { en: "Most Used", ru: "Больше всего используется", de: "Am meisten genutzt", uk: "Найчастіше вжите", fr: "Plus utilisé", pl: "Najczęściej używane" },
+  sort_favorites: { en: "Most Favorited", ru: "Больше всего в избранном", de: "Am meisten favorisiert", uk: "Найбільше в обраному", fr: "Plus favorisé", pl: "Najczęściej ulubione" },
+
+  // Advanced filters
+  filter_featured: { en: "Featured", ru: "Избранное", de: "Empfohlen", uk: "Обране", fr: "En vedette", pl: "Wyróżnione" },
+  filter_recommended: { en: "Recommended", ru: "Рекомендуется", de: "Empfohlen", uk: "Рекомендовано", fr: "Recommandé", pl: "Polecane" },
+  filter_premium: { en: "Premium", ru: "Премиум", de: "Premium", uk: "Преміум", fr: "Premium", pl: "Premium" },
+  filter_translation: { en: "Translation status", ru: "Статус перевода", de: "Übersetzungsstatus", uk: "Стан перекладу", fr: "État de traduction", pl: "Stan tłumaczenia" },
+  filter_publication_period: { en: "Publication period", ru: "Период публикации", de: "Veröffentlichungszeitraum", uk: "Період публікації", fr: "Période", pl: "Okres publikacji" },
+  filter_active: { en: "Active", ru: "Активные", de: "Aktiv", uk: "Активні", fr: "Actifs", pl: "Aktywne" },
+  filter_archived_only: { en: "Archived only", ru: "Только архив", de: "Nur Archiv", uk: "Лише архів", fr: "Archivés seulement", pl: "Tylko archiwum" },
+  filter_credits_min: { en: "Credits min", ru: "Кредиты от", de: "Credits min", uk: "Кредити від", fr: "Crédits min", pl: "Kredyty min" },
+  filter_credits_max: { en: "Credits max", ru: "Кредиты до", de: "Credits max", uk: "Кредити до", fr: "Crédits max", pl: "Kredyty max" },
+  filter_period_upcoming: { en: "Upcoming", ru: "Предстоящие", de: "Bevorstehend", uk: "Майбутні", fr: "À venir", pl: "Nadchodzące" },
+  filter_period_live: { en: "Live now", ru: "Сейчас идёт", de: "Jetzt live", uk: "Наразі", fr: "En cours", pl: "Trwające" },
+  filter_period_past: { en: "Past", ru: "Прошедшие", de: "Vergangen", uk: "Минулі", fr: "Passés", pl: "Minione" },
+  filter_reset: { en: "Reset filters", ru: "Сбросить фильтры", de: "Filter zurücksetzen", uk: "Скинути фільтри", fr: "Réinitialiser", pl: "Wyczyść filtry" },
+
+  // Row actions
+  act_preview_customer: { en: "Customer preview", ru: "Клиентский просмотр", de: "Kundenvorschau", uk: "Клієнтський перегляд", fr: "Aperçu client", pl: "Podgląd klienta" },
+  act_restore: { en: "Restore", ru: "Восстановить", de: "Wiederherstellen", uk: "Відновити", fr: "Restaurer", pl: "Przywróć" },
+
+  // Unsaved changes
+  unsaved: { en: "Unsaved changes", ru: "Несохранённые изменения", de: "Ungespeicherte Änderungen", uk: "Незбережені зміни", fr: "Modifications non enregistrées", pl: "Niezapisane zmiany" },
+  unsaved_confirm_title: { en: "Discard unsaved changes?", ru: "Отменить изменения?", de: "Änderungen verwerfen?", uk: "Скасувати зміни?", fr: "Abandonner les modifications ?", pl: "Odrzucić zmiany?" },
+  unsaved_confirm_body: { en: "Your changes will be lost.", ru: "Ваши изменения будут потеряны.", de: "Ihre Änderungen gehen verloren.", uk: "Ваші зміни буде втрачено.", fr: "Vos modifications seront perdues.", pl: "Zmiany zostaną utracone." },
+  act_discard: { en: "Discard", ru: "Отменить", de: "Verwerfen", uk: "Скасувати", fr: "Abandonner", pl: "Odrzuć" },
+  act_keep_editing: { en: "Keep editing", ru: "Продолжить", de: "Weiter bearbeiten", uk: "Продовжити", fr: "Continuer", pl: "Kontynuuj" },
+
+  // Pin confirm
+  pin_replace_title: { en: "Replace pinned item?", ru: "Заменить закреплённый?", de: "Angeheftetes ersetzen?", uk: "Замінити закріплене?", fr: "Remplacer l'épinglé ?", pl: "Zamienić przypięty?" },
+  pin_replace_body: {
+    en: "Another item is already pinned in this category. Replace it?",
+    ru: "В этой категории уже закреплён другой элемент. Заменить?",
+    de: "In dieser Kategorie ist bereits ein Element angeheftet. Ersetzen?",
+    uk: "У цій категорії вже закріплено інший елемент. Замінити?",
+    fr: "Un autre élément est déjà épinglé dans cette catégorie. Remplacer ?",
+    pl: "W tej kategorii przypięto już inny element. Zamienić?",
+  },
+
+  // Validation
+  v_needs_translation: {
+    en: "At least one complete language version is required before publication.",
+    ru: "Для публикации нужен хотя бы один полностью заполненный перевод.",
+    de: "Vor der Veröffentlichung ist mindestens eine vollständige Sprachversion erforderlich.",
+    uk: "Для публікації потрібна щонайменше одна повна мовна версія.",
+    fr: "Au moins une version linguistique complète est requise avant publication.",
+    pl: "Do publikacji wymagana jest co najmniej jedna kompletna wersja językowa.",
+  },
+  v_invalid_date: { en: "Invalid date.", ru: "Некорректная дата.", de: "Ungültiges Datum.", uk: "Некоректна дата.", fr: "Date invalide.", pl: "Nieprawidłowa data." },
+  v_hide_before_publish: {
+    en: "Hide-after date cannot be earlier than publication date.",
+    ru: "Дата скрытия не может быть раньше даты публикации.",
+    de: "Ausblenddatum darf nicht vor dem Veröffentlichungsdatum liegen.",
+    uk: "Дата приховування не може бути раніше дати публікації.",
+    fr: "La date de masquage ne peut pas précéder la publication.",
+    pl: "Data ukrycia nie może być wcześniejsza niż publikacja.",
+  },
+  v_archived_published: {
+    en: "Archived content cannot remain Published.",
+    ru: "Архивный контент не может оставаться Опубликованным.",
+    de: "Archivierter Inhalt darf nicht veröffentlicht bleiben.",
+    uk: "Архівний контент не може залишатися Опублікованим.",
+    fr: "Un contenu archivé ne peut rester publié.",
+    pl: "Zarchiwizowana treść nie może pozostać opublikowana.",
+  },
+  v_pin_needs_category: { en: "Pinned content must belong to a category.", ru: "Закреплённый контент должен принадлежать категории.", de: "Angeheftete Inhalte benötigen eine Kategorie.", uk: "Закріплений контент має належати до категорії.", fr: "Un contenu épinglé doit appartenir à une catégorie.", pl: "Przypięta treść musi mieć kategorię." },
+
+  // Preview types
+  pv_animated: { en: "Animated preview", ru: "Анимированное превью", de: "Animierte Vorschau", uk: "Анімоване прев'ю", fr: "Aperçu animé", pl: "Podgląd animowany" },
+  pv_audio: { en: "Audio", ru: "Аудио", de: "Audio", uk: "Аудіо", fr: "Audio", pl: "Audio" },
+  pv_video: { en: "Video", ru: "Видео", de: "Video", uk: "Відео", fr: "Vidéo", pl: "Wideo" },
+  pv_cartoon: { en: "First frame", ru: "Первый кадр", de: "Erstes Bild", uk: "Перший кадр", fr: "Première image", pl: "Pierwszy kadr" },
+  pv_premium: { en: "Premium cover", ru: "Премиум-обложка", de: "Premium-Cover", uk: "Преміум-обкладинка", fr: "Couverture premium", pl: "Okładka premium" },
+  pv_template: { en: "Template", ru: "Шаблон", de: "Vorlage", uk: "Шаблон", fr: "Modèle", pl: "Szablon" },
+  pv_card: { en: "Card", ru: "Открытка", de: "Karte", uk: "Листівка", fr: "Carte", pl: "Kartka" },
+});
+
 export function useLocalCatalog(lang: Lang) {
   return (k: string): string => {
     const row = D[k];
