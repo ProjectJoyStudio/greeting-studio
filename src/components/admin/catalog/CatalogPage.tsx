@@ -19,7 +19,7 @@ import {
   type TranslationStatus, type CatalogFlags,
   AUTHOR_TYPES, PERFORMANCE_STATUSES, derivePerformance, formatCompact,
   defaultAuthor, missingMediaWarning,
-  type AuthorType, type PerformanceStatus, type CatalogAuthor,
+  type AuthorType, type PerformanceStatus,
 } from "@/lib/admin/catalog";
 import { useLocalCatalog, type LocalCatalog } from "./i18n";
 
