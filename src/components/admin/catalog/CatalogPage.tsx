@@ -17,6 +17,9 @@ import {
   type CatalogItem, type CatalogCategory, type CatalogType, type CatalogStatus,
   type CatalogValidation, type CatalogTranslation, type DisplayStatus,
   type TranslationStatus, type CatalogFlags,
+  AUTHOR_TYPES, PERFORMANCE_STATUSES, derivePerformance, formatCompact,
+  defaultAuthor, missingMediaWarning,
+  type AuthorType, type PerformanceStatus,
 } from "@/lib/admin/catalog";
 import { useLocalCatalog, type LocalCatalog } from "./i18n";
 
@@ -29,10 +32,34 @@ const btnPrimary =
 const btnDanger =
   "inline-flex items-center gap-1.5 rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-500/20 dark:text-rose-200";
 
-type SortKey = "title" | "created" | "credits" | "views" | "uses" | "favorites";
+type SortKey =
+  | "title" | "created" | "credits"
+  | "views" | "uses" | "favorites"
+  | "most_viewed" | "least_viewed" | "most_purchased" | "least_purchased";
 type TransFilter = "any" | "complete" | "incomplete" | "missing_primary";
 type PeriodFilter = "any" | "upcoming" | "live" | "past";
 type ActiveFilter = "any" | "active" | "archived";
+type MediaFilter =
+  | "any" | "has_thumb" | "missing_thumb" | "has_views"
+  | "never_viewed" | "has_purchases" | "never_purchased"
+  | "published_missing_media";
+
+const PERF_TONE: Record<PerformanceStatus, string> = {
+  new: "bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30",
+  growing: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 border-indigo-500/30",
+  popular: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30",
+  top: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30",
+  low_activity: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200 border-zinc-500/30",
+};
+
+function PerformancePill({ item, L }: { item: CatalogItem; L: LocalCatalog }) {
+  const p = derivePerformance(item.stats);
+  return (
+    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${PERF_TONE[p]}`}>
+      {L("perf_" + p)}
+    </span>
+  );
+}
 
 function formatDate(iso: string, lang: Lang): string {
   try {
@@ -158,6 +185,9 @@ export function CatalogPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("any");
   const [creditsMin, setCreditsMin] = useState<string>("");
   const [creditsMax, setCreditsMax] = useState<string>("");
+  const [authorFilter, setAuthorFilter] = useState<"all" | AuthorType>("all");
+  const [perfFilter, setPerfFilter] = useState<"all" | PerformanceStatus>("all");
+  const [mediaFilter, setMediaFilter] = useState<MediaFilter>("any");
 
   // Modals
   const [viewing, setViewing] = useState<CatalogItem | null>(null);
@@ -175,6 +205,7 @@ export function CatalogPage() {
     setTypeFilter("all"); setFlagFeatured(false); setFlagRecommended(false); setFlagPremium(false);
     setTransFilter("any"); setPeriodFilter("any"); setActiveFilter("any");
     setCreditsMin(""); setCreditsMax("");
+    setAuthorFilter("all"); setPerfFilter("all"); setMediaFilter("any");
   };
 
   const filtered = useMemo(() => {
@@ -208,8 +239,23 @@ export function CatalogPage() {
       const cMin = creditsMin === "" ? -Infinity : Number(creditsMin);
       const cMax = creditsMax === "" ? Infinity : Number(creditsMax);
       if (it.credits < cMin || it.credits > cMax) return false;
+      if (authorFilter !== "all" && (it.author?.type ?? "project_joy") !== authorFilter) return false;
+      if (perfFilter !== "all" && derivePerformance(it.stats) !== perfFilter) return false;
+      if (mediaFilter !== "any") {
+        const hasThumb = !!(it.media.thumbnail || it.media.thumbnailUrl || it.media.mainPreview);
+        if (mediaFilter === "has_thumb" && !hasThumb) return false;
+        if (mediaFilter === "missing_thumb" && hasThumb) return false;
+        if (mediaFilter === "has_views" && !(it.stats.views > 0)) return false;
+        if (mediaFilter === "never_viewed" && it.stats.views > 0) return false;
+        if (mediaFilter === "has_purchases" && !((it.stats.purchases ?? it.stats.uses) > 0)) return false;
+        if (mediaFilter === "never_purchased" && (it.stats.purchases ?? it.stats.uses) > 0) return false;
+        if (mediaFilter === "published_missing_media") {
+          if (deriveDisplayStatus(it) !== "published" || !missingMediaWarning(it)) return false;
+        }
+      }
       if (q) {
         const parts = [it.id, it.internalName, L("cat_" + it.category)];
+        parts.push(it.author?.displayName ?? "", it.author?.internalOwner ?? "");
         for (const l of LANGS) {
           const tr = it.translations[l.code];
           if (tr) parts.push(tr.title, tr.shortDescription, tr.tags.join(" "), tr.searchKeywords.join(" "));
@@ -230,10 +276,15 @@ export function CatalogPage() {
         case "views": return b.stats.views - a.stats.views;
         case "uses": return b.stats.uses - a.stats.uses;
         case "favorites": return b.stats.favorites - a.stats.favorites;
+        case "most_viewed": return b.stats.views - a.stats.views;
+        case "least_viewed": return a.stats.views - b.stats.views;
+        case "most_purchased": return (b.stats.purchases ?? b.stats.uses) - (a.stats.purchases ?? a.stats.uses);
+        case "least_purchased": return (a.stats.purchases ?? a.stats.uses) - (b.stats.purchases ?? b.stats.uses);
+        default: return 0;
       }
     });
     return list;
-  }, [items, query, categoryFilter, langFilter, statusFilter, typeFilter, flagFeatured, flagRecommended, flagPremium, transFilter, activeFilter, periodFilter, creditsMin, creditsMax, sortKey, tick, L, lang]);
+  }, [items, query, categoryFilter, langFilter, statusFilter, typeFilter, flagFeatured, flagRecommended, flagPremium, transFilter, activeFilter, periodFilter, creditsMin, creditsMax, authorFilter, perfFilter, mediaFilter, sortKey, tick, L, lang]);
 
   const upsert = (it: CatalogItem) =>
     setItems((prev) => {
@@ -358,8 +409,10 @@ export function CatalogPage() {
           <option value="created">{L("sort_created")}</option>
           <option value="title">{L("sort_title")}</option>
           <option value="credits">{L("sort_credits")}</option>
-          <option value="views">{L("sort_views")}</option>
-          <option value="uses">{L("sort_uses")}</option>
+          <option value="most_viewed">{L("sort_most_viewed")}</option>
+          <option value="least_viewed">{L("sort_least_viewed")}</option>
+          <option value="most_purchased">{L("sort_most_purchased")}</option>
+          <option value="least_purchased">{L("sort_least_purchased")}</option>
           <option value="favorites">{L("sort_favorites")}</option>
         </select>
         <button className={btnBase} onClick={resetFilters}><RotateCcw className="h-3.5 w-3.5" />{L("filter_reset")}</button>
@@ -411,6 +464,33 @@ export function CatalogPage() {
             <span className="mb-1 block text-muted-foreground">{L("filter_credits_max")}</span>
             <input type="number" min={0} className={inputCls} value={creditsMax} onChange={(e) => setCreditsMax(e.target.value)} />
           </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("filter_author_type")}</span>
+            <select className={inputCls} value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value as "all" | AuthorType)}>
+              <option value="all">{L("filter_all")}</option>
+              {AUTHOR_TYPES.map((a) => <option key={a} value={a}>{L("author_" + a)}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("filter_performance")}</span>
+            <select className={inputCls} value={perfFilter} onChange={(e) => setPerfFilter(e.target.value as "all" | PerformanceStatus)}>
+              <option value="all">{L("filter_all")}</option>
+              {PERFORMANCE_STATUSES.map((p) => <option key={p} value={p}>{L("perf_" + p)}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="mb-1 block text-muted-foreground">{L("col_performance")} / {L("col_preview")}</span>
+            <select className={inputCls} value={mediaFilter} onChange={(e) => setMediaFilter(e.target.value as MediaFilter)}>
+              <option value="any">{L("filter_all")}</option>
+              <option value="has_thumb">{L("filter_has_thumbnail")}</option>
+              <option value="missing_thumb">{L("filter_missing_thumbnail")}</option>
+              <option value="has_views">{L("filter_has_views")}</option>
+              <option value="never_viewed">{L("filter_never_viewed")}</option>
+              <option value="has_purchases">{L("filter_has_purchases")}</option>
+              <option value="never_purchased">{L("filter_never_purchased")}</option>
+              <option value="published_missing_media">{L("filter_published_missing_media")}</option>
+            </select>
+          </label>
         </div>
       )}
 
@@ -455,14 +535,16 @@ export function CatalogPage() {
               <th className="px-3 py-2 text-left">{L("col_category")}</th>
               <th className="px-3 py-2 text-left">{L("col_type")}</th>
               <th className="px-3 py-2 text-left">{L("col_status")}</th>
-              <th className="px-3 py-2 text-right">{L("col_credits")}</th>
+              <th className="px-3 py-2 text-right" title={L("tt_credits")}>{L("col_credits")}</th>
+              <th className="px-3 py-2 text-right" title={L("tt_purchases")}>{L("col_performance")}</th>
+              <th className="px-3 py-2 text-left" title={L("tt_author")}>{L("col_author")}</th>
               <th className="px-3 py-2 text-left">{L("col_created")}</th>
               <th className="px-3 py-2 text-right">{L("col_actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
             {filtered.length === 0 ? (
-              <tr><td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">{L("empty_list")}</td></tr>
+              <tr><td colSpan={12} className="px-3 py-6 text-center text-muted-foreground">{L("empty_list")}</td></tr>
             ) : filtered.map((it) => (
               <tr key={it.id} className={`hover:bg-muted/30 ${selected.has(it.id) ? "bg-primary/5" : ""}`}>
                 <td className="px-3 py-2">
@@ -478,19 +560,34 @@ export function CatalogPage() {
                 <td className="px-3 py-2"><span className="inline-flex items-center gap-1">{typeIcon(it.type)}{L("type_" + it.type)}</span></td>
                 <td className="px-3 py-2"><StatusPill status={deriveDisplayStatus(it)} L={L} /></td>
                 <td className="px-3 py-2 text-right tabular-nums">{it.credits}</td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex flex-col items-end gap-0.5 leading-none">
+                    <span className="text-[11px] tabular-nums" title={L("tt_views")}>
+                      <Eye className="mr-1 inline h-3 w-3" />{formatCompact(it.stats.views)}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground" title={L("tt_purchases")}>
+                      {formatCompact(it.stats.purchases ?? it.stats.uses)} · {L("col_purchases").toLowerCase()}
+                    </span>
+                    <PerformancePill item={it} L={L} />
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  <div className="font-medium">{it.author?.displayName ?? "—"}</div>
+                  <div className="text-[10px] text-muted-foreground">{L("author_" + (it.author?.type ?? "project_joy"))}</div>
+                </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(it.createdAt, lang)}</td>
                 <td className="px-3 py-2">
                   <div className="flex justify-end gap-1">
                     <button className={btnBase} title={L("act_view")} onClick={() => setViewing(it)}><Eye className="h-3.5 w-3.5" /></button>
-                    <button className={btnBase} title={L("act_preview_customer")} onClick={() => setPreviewing(it)}><Sparkles className="h-3.5 w-3.5" /></button>
+                    <button className={btnBase} title={L("tt_open_customer")} onClick={() => setPreviewing(it)}><Sparkles className="h-3.5 w-3.5" /></button>
                     <button className={btnBase} title={L("act_edit")} onClick={() => setEditing(it)}><Pencil className="h-3.5 w-3.5" /></button>
                     <button className={btnBase} title={L("act_duplicate")} onClick={() => doDuplicate(it)}><Copy className="h-3.5 w-3.5" /></button>
                     {it.status === "archived" ? (
                       <button className={btnBase} title={L("act_restore")} onClick={() => doRestore(it)}><RotateCcw className="h-3.5 w-3.5" /></button>
                     ) : (
-                      <button className={btnBase} title={L("act_archive")} onClick={() => doArchive(it)}><Archive className="h-3.5 w-3.5" /></button>
+                      <button className={btnBase} title={L("tt_archive")} onClick={() => doArchive(it)}><Archive className="h-3.5 w-3.5" /></button>
                     )}
-                    <button className={btnDanger} title={L("act_delete")} onClick={() => setConfirmDelete(it)}><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button className={btnDanger} title={L("tt_delete")} onClick={() => setConfirmDelete(it)}><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </td>
               </tr>
@@ -520,6 +617,13 @@ export function CatalogPage() {
                   {L("cat_" + it.category)} · {L("type_" + it.type)}
                 </div>
                 <div className="mt-1 text-xs">{L("col_credits")}: <b>{it.credits}</b> · {formatDate(it.createdAt, lang)}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                  <Eye className="h-3 w-3" /><span className="tabular-nums">{formatCompact(it.stats.views)}</span>
+                  <span>·</span>
+                  <span className="tabular-nums">{formatCompact(it.stats.purchases ?? it.stats.uses)} {L("col_purchases").toLowerCase()}</span>
+                  <PerformancePill item={it} L={L} />
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">{L("col_author")}: {it.author?.displayName ?? "—"}</div>
                 <div className="mt-1"><FlagBadges flags={it.flags} L={L} /></div>
               </div>
             </div>
@@ -701,12 +805,23 @@ function ViewModal({ item, L, lang, onClose, onEdit, onPreview }: {
   item: CatalogItem; L: LocalCatalog; lang: Lang; onClose: () => void; onEdit: () => void; onPreview: () => void;
 }) {
   const ds = deriveDisplayStatus(item);
+  const warnKey = missingMediaWarning(item);
   return (
     <Modal title={L("view_title")} onClose={onClose} wide>
+      {warnKey && (
+        <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-100">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div>
+            <div className="font-semibold">{L("warn_title")}</div>
+            <div>{L(warnKey)}</div>
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-[220px_1fr]">
         <div className="flex flex-col items-center gap-3">
           <TypedPreview it={item} L={L} size="lg" />
           <FlagBadges flags={item.flags} L={L} max={6} />
+          <PerformancePill item={item} L={L} />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <Section title={L("sec_basic")}>
@@ -754,14 +869,29 @@ function ViewModal({ item, L, lang, onClose, onEdit, onPreview }: {
           <Section title={L("sec_stats")}>
             <div className="grid grid-cols-2 gap-1 text-xs">
               <StatRow label={L("st_views")} value={item.stats.views} />
+              <StatRow label={L("st_unique_views")} value={item.stats.uniqueViews ?? Math.round(item.stats.views * 0.72)} />
               <StatRow label={L("st_opens")} value={item.stats.opens} />
               <StatRow label={L("st_uses")} value={item.stats.uses} />
+              <StatRow label={L("st_purchases")} value={item.stats.purchases ?? item.stats.uses} />
               <StatRow label={L("st_favorites")} value={item.stats.favorites} />
               <StatRow label={L("st_shares")} value={item.stats.shares} />
               <StatRow label={L("st_conversion")} value={`${item.stats.conversion}%`} />
+              <StatRow label={L("st_credits_earned")} value={item.stats.creditsEarned ?? (item.stats.purchases ?? item.stats.uses) * item.credits} />
             </div>
-            <div className="pt-1 text-[10px] text-muted-foreground">{L("st_last_used")}: {formatDate(item.stats.lastUsed, lang)}</div>
-            <div className="pt-1 text-[10px] italic text-muted-foreground">{L("st_demo_note")}</div>
+            <div className="pt-1 text-[10px] text-muted-foreground">{L("st_last_viewed")}: {formatDate(item.stats.lastViewed ?? item.stats.lastUsed, lang)}</div>
+            <div className="text-[10px] text-muted-foreground">{L("st_last_purchased")}: {formatDate(item.stats.lastUsed, lang)}</div>
+            <div className="pt-1 text-[10px] italic text-muted-foreground">{L("st_backend_note")}</div>
+          </Section>
+          <Section title={L("au_section")}>
+            <Field label={L("au_type")} value={L("author_" + (item.author?.type ?? "project_joy"))} />
+            <Field label={L("au_display_name")} value={item.author?.displayName || "—"} />
+            <Field label={L("au_owner")} value={item.author?.internalOwner || "—"} />
+            <Field label={L("au_source")} value={item.author?.creationSource || "—"} />
+            <Field label={L("au_last_edited_by")} value={item.author?.lastEditedBy || "—"} />
+            <Field label={L("au_last_edited_at")} value={item.author?.lastEditedAt ? formatDateTime(item.author.lastEditedAt, lang) : "—"} />
+            <div className="text-[10px] italic text-muted-foreground">
+              {item.author?.showToCustomer ? L("au_show_customer") : L("au_hidden_note")}
+            </div>
           </Section>
           <Section title={L("sec_versions")}>
             {item.versions.length === 0 ? (
@@ -956,6 +1086,40 @@ function EditModal({ item, isNew, L, lang, onClose, onSave }: {
             <span className="mb-1 block text-xs text-muted-foreground">{L("f_internal_notes")}</span>
             <textarea rows={2} className={inputCls} value={draft.internalNotes} onChange={(e) => update("internalNotes", e.target.value)} />
           </label>
+          {/* Author & owner */}
+          <div className="md:col-span-2 rounded-md border border-border/60 bg-muted/20 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{L("au_section")}</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_type")}</span>
+                <select className={inputCls} value={draft.author?.type ?? "project_joy"}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), type: e.target.value as AuthorType } }))}>
+                  {AUTHOR_TYPES.map((a) => <option key={a} value={a}>{L("author_" + a)}</option>)}
+                </select>
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_display_name")}</span>
+                <input className={inputCls} value={draft.author?.displayName ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), displayName: e.target.value } }))} />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_owner")}</span>
+                <input className={inputCls} value={draft.author?.internalOwner ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), internalOwner: e.target.value } }))} />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-xs text-muted-foreground">{L("au_source")}</span>
+                <input className={inputCls} value={draft.author?.creationSource ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), creationSource: e.target.value } }))} />
+              </label>
+              <label className="flex items-center gap-2 text-sm md:col-span-2">
+                <input type="checkbox" checked={!!draft.author?.showToCustomer}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: { ...(d.author ?? defaultAuthor()), showToCustomer: e.target.checked } }))} />
+                <span>{L("au_show_customer")}</span>
+              </label>
+              <div className="text-[11px] italic text-muted-foreground md:col-span-2">{L("au_hidden_note")}</div>
+            </div>
+          </div>
           {errors.title && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.title}</span>}
           {errors.translations && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.translations}</span>}
           {errors.pin && <span className="mt-1 block text-xs text-rose-600 md:col-span-2">{errors.pin}</span>}
