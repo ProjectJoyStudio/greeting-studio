@@ -580,3 +580,128 @@ export function computeBalancerLive(generators: GeneratorRecord[]) {
     ),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Load Balancer — extended dashboard (frontend demo state).
+// ---------------------------------------------------------------------------
+
+export const CONTENT_TYPES = [
+  "images", "videos", "animation", "music", "voice", "translation", "text",
+] as const;
+export type ContentType = (typeof CONTENT_TYPES)[number];
+
+export const PRIORITY_TIERS = [
+  "vip", "premium", "paid", "scheduled", "free", "manual", "admin",
+] as const;
+export type PriorityTier = (typeof PRIORITY_TIERS)[number];
+
+export interface SmartRoutingRule {
+  content: ContentType;
+  targetType: GeneratorType;
+  enabled: boolean;
+}
+
+export interface BalancerLimits {
+  maxJobsPerGenerator: number;
+  maxQueue: number;
+  maxCpuPercent: number;
+  maxMemoryPercent: number;
+  maxDailyRequests: number;
+  maxHourlyRequests: number;
+}
+
+export type BalancerEventKind =
+  | "overload" | "disconnected" | "switch" | "queue_moved"
+  | "emergency_on" | "emergency_off" | "recovered";
+export type BalancerEventSeverity = "info" | "warning" | "critical";
+
+export interface BalancerEvent {
+  id: string;
+  at: string;
+  kind: BalancerEventKind;
+  generator?: string;
+  severity: BalancerEventSeverity;
+  detail: string;
+}
+
+export interface BalancerDashboardSettings {
+  smartRouting: SmartRoutingRule[];
+  priorityOrder: PriorityTier[];
+  limits: BalancerLimits;
+  emergencyMode: boolean;
+  backupGenerators: number;
+  queueThreshold: number;
+  events: BalancerEvent[];
+}
+
+export const DEFAULT_BALANCER_DASHBOARD: BalancerDashboardSettings = {
+  smartRouting: [
+    { content: "images",      targetType: "images",      enabled: true },
+    { content: "videos",      targetType: "video",       enabled: true },
+    { content: "animation",   targetType: "animation",   enabled: true },
+    { content: "music",       targetType: "music",       enabled: true },
+    { content: "voice",       targetType: "voice",       enabled: true },
+    { content: "translation", targetType: "translation", enabled: true },
+    { content: "text",        targetType: "text",        enabled: true },
+  ],
+  priorityOrder: ["vip", "premium", "paid", "scheduled", "admin", "manual", "free"],
+  limits: {
+    maxJobsPerGenerator: 12,
+    maxQueue: 80,
+    maxCpuPercent: 85,
+    maxMemoryPercent: 80,
+    maxDailyRequests: 25000,
+    maxHourlyRequests: 2400,
+  },
+  emergencyMode: false,
+  backupGenerators: 2,
+  queueThreshold: 60,
+  events: [
+    { id: "bev_010", at: isoAgo(2),   kind: "switch",       generator: "Prism Video",    severity: "warning",  detail: "Rerouted 4 waiting jobs to Wisp Animation." },
+    { id: "bev_009", at: isoAgo(8),   kind: "overload",     generator: "Prism Video",    severity: "warning",  detail: "Load reached 78% — throttling free tier." },
+    { id: "bev_008", at: isoAgo(21),  kind: "queue_moved",  generator: "Vox Voice",      severity: "info",     detail: "Queue rebalanced: 3 jobs → Quill Text buffer." },
+    { id: "bev_007", at: isoAgo(48),  kind: "recovered",    generator: "Chord Music",    severity: "info",     detail: "Provider recovered after transient error." },
+    { id: "bev_006", at: isoAgo(96),  kind: "disconnected", generator: "Nova Images",    severity: "critical", detail: "Generator unreachable — marked offline." },
+    { id: "bev_005", at: isoAgo(180), kind: "emergency_on", severity: "critical", detail: "Emergency Mode enabled by administrator." },
+    { id: "bev_004", at: isoAgo(200), kind: "emergency_off",severity: "info",     detail: "Emergency Mode disabled — normal traffic resumed." },
+  ],
+};
+
+export function computeBalancerStats(
+  generators: GeneratorRecord[],
+  dash: BalancerDashboardSettings,
+) {
+  const total = generators.length;
+  const active = generators.filter((g) => g.enabled && g.status !== "offline");
+  const offline = generators.filter((g) => g.status === "offline").length;
+  const running = active.reduce((s, g) => s + Math.max(0, Math.round(g.loadPercent / 10)), 0);
+  const waiting = active.reduce((s, g) => s + g.queue, 0);
+  const daily = active.reduce((s, g) => s + g.dailyRequests, 0) || 1;
+  const avgProcessingSec = Math.round(
+    active.reduce((s, g) => s + g.avgSeconds * g.dailyRequests, 0) / daily,
+  );
+  const avgLoadPercent = active.length
+    ? Math.round(active.reduce((s, g) => s + g.loadPercent, 0) / active.length)
+    : 0;
+  const errorRate = Number(
+    (active.reduce((s, g) => s + g.errorRatePercent * g.dailyRequests, 0) / daily).toFixed(2),
+  );
+  const completedToday = active.reduce((s, g) => s + g.dailyRequests, 0);
+  const failedToday = Math.round(
+    active.reduce((s, g) => s + g.dailyRequests * (g.errorRatePercent / 100), 0),
+  );
+  return {
+    total,
+    active: active.length,
+    offline,
+    backup: dash.backupGenerators,
+    currentQueue: waiting + running,
+    activeJobs: running,
+    waitingJobs: waiting,
+    avgProcessingSec,
+    avgLoadPercent,
+    errorRate,
+    completedToday,
+    failedToday,
+  };
+}
