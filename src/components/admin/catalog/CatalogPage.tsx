@@ -185,6 +185,9 @@ export function CatalogPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("any");
   const [creditsMin, setCreditsMin] = useState<string>("");
   const [creditsMax, setCreditsMax] = useState<string>("");
+  const [authorFilter, setAuthorFilter] = useState<"all" | AuthorType>("all");
+  const [perfFilter, setPerfFilter] = useState<"all" | PerformanceStatus>("all");
+  const [mediaFilter, setMediaFilter] = useState<MediaFilter>("any");
 
   // Modals
   const [viewing, setViewing] = useState<CatalogItem | null>(null);
@@ -202,6 +205,7 @@ export function CatalogPage() {
     setTypeFilter("all"); setFlagFeatured(false); setFlagRecommended(false); setFlagPremium(false);
     setTransFilter("any"); setPeriodFilter("any"); setActiveFilter("any");
     setCreditsMin(""); setCreditsMax("");
+    setAuthorFilter("all"); setPerfFilter("all"); setMediaFilter("any");
   };
 
   const filtered = useMemo(() => {
