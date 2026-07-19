@@ -23,10 +23,51 @@ export type PromoDiscountType = "percentage" | "fixed" | "bonus_credits";
 
 export type PackageStatus = "draft" | "active" | "inactive";
 
+/**
+ * Derived, presentation-only status. It is a superset of {@link PackageStatus}
+ * and folds in the current date + active-period rules so the table and
+ * customer preview can show Scheduled / Expired without persisting them.
+ */
+export type EffectiveStatus =
+  | "draft"
+  | "scheduled"
+  | "active"
+  | "inactive"
+  | "expired";
+
+/** Demonstration country roster for the visibility picker. */
+export interface CountryOption {
+  code: string;
+  labels: Record<string, string>;
+}
+export const COUNTRY_OPTIONS: CountryOption[] = [
+  { code: "DE", labels: { en: "Germany", ru: "Германия", de: "Deutschland", uk: "Німеччина", fr: "Allemagne", pl: "Niemcy" } },
+  { code: "UA", labels: { en: "Ukraine", ru: "Украина", de: "Ukraine", uk: "Україна", fr: "Ukraine", pl: "Ukraina" } },
+  { code: "PL", labels: { en: "Poland", ru: "Польша", de: "Polen", uk: "Польща", fr: "Pologne", pl: "Polska" } },
+  { code: "FR", labels: { en: "France", ru: "Франция", de: "Frankreich", uk: "Франція", fr: "France", pl: "Francja" } },
+  { code: "AT", labels: { en: "Austria", ru: "Австрия", de: "Österreich", uk: "Австрія", fr: "Autriche", pl: "Austria" } },
+  { code: "CH", labels: { en: "Switzerland", ru: "Швейцария", de: "Schweiz", uk: "Швейцарія", fr: "Suisse", pl: "Szwajcaria" } },
+  { code: "GB", labels: { en: "United Kingdom", ru: "Великобритания", de: "Vereinigtes Königreich", uk: "Велика Британія", fr: "Royaume-Uni", pl: "Wielka Brytania" } },
+  { code: "US", labels: { en: "United States", ru: "США", de: "USA", uk: "США", fr: "États-Unis", pl: "USA" } },
+  { code: "CA", labels: { en: "Canada", ru: "Канада", de: "Kanada", uk: "Канада", fr: "Canada", pl: "Kanada" } },
+];
+
+export const LANGUAGE_CODES = ["en", "de", "ru", "uk", "fr", "pl"] as const;
+
 export interface CreditPackage {
   id: string;
   internalId: string;
   name: string;
+  /** Public-facing display name shown on the customer card. */
+  customerName: string;
+  /** Short customer-facing description shown under the name. */
+  description: string;
+  /** Optional original price used to compute savings; null = no strike-through. */
+  originalPriceEUR: number | null;
+  /** Icon placeholder shown on the customer card. */
+  iconEmoji: string;
+  /** Only one package may be highlighted at a time (enforced in the UI). */
+  highlighted: boolean;
   credits: number;
   bonusCredits: number;
   priceEUR: number;
@@ -92,6 +133,11 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
     id: "pkg_starter",
     internalId: "STARTER",
     name: "Starter",
+    customerName: "Starter",
+    description: "A gentle way to try Project Joy.",
+    originalPriceEUR: null,
+    iconEmoji: "✨",
+    highlighted: false,
     credits: 20,
     bonusCredits: 0,
     priceEUR: 9,
@@ -112,6 +158,11 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
     id: "pkg_popular",
     internalId: "POPULAR",
     name: "Popular",
+    customerName: "Popular",
+    description: "Most chosen by our customers.",
+    originalPriceEUR: 24,
+    iconEmoji: "💛",
+    highlighted: true,
     credits: 50,
     bonusCredits: 5,
     priceEUR: 19,
@@ -132,6 +183,11 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
     id: "pkg_value",
     internalId: "VALUE",
     name: "Best Value",
+    customerName: "Best Value",
+    description: "Best price for every credit.",
+    originalPriceEUR: 49,
+    iconEmoji: "🌟",
+    highlighted: false,
     credits: 100,
     bonusCredits: 15,
     priceEUR: 39,
@@ -152,6 +208,11 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
     id: "pkg_premium",
     internalId: "PREMIUM",
     name: "Premium",
+    customerName: "Premium",
+    description: "For studios and heavy users.",
+    originalPriceEUR: 109,
+    iconEmoji: "👑",
+    highlighted: false,
     credits: 250,
     bonusCredits: 50,
     priceEUR: 89,
@@ -286,3 +347,67 @@ export const BONUS_KINDS: BonusKind[] = [
 export const DISCOUNT_KINDS: DiscountKind[] = ["percentage", "fixed"];
 export const DISCOUNT_SCOPES: DiscountScope[] = ["global", "country", "language", "package"];
 export const PROMO_DISCOUNT_TYPES: PromoDiscountType[] = ["percentage", "fixed", "bonus_credits"];
+
+// ---------------------------------------------------------------------------
+// Effective status, visibility & savings helpers
+// ---------------------------------------------------------------------------
+
+function toDate(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/** Derive the presentation status from stored status + active window. */
+export function computeEffectiveStatus(
+  p: Pick<CreditPackage, "status" | "startDate" | "endDate">,
+  now: number = Date.now(),
+): EffectiveStatus {
+  if (p.status === "draft") return "draft";
+  if (p.status === "inactive") return "inactive";
+  const end = toDate(p.endDate);
+  if (end !== null && end < now) return "expired";
+  const start = toDate(p.startDate);
+  if (start !== null && start > now) return "scheduled";
+  return "active";
+}
+
+/** Whether a package should appear in the public-facing customer preview. */
+export function isVisibleToCustomer(
+  p: CreditPackage,
+  ctx: { country?: string; language?: string; now?: number } = {},
+): boolean {
+  const eff = computeEffectiveStatus(p, ctx.now);
+  if (eff !== "active") return false;
+  if (
+    ctx.country &&
+    p.visibleCountries.length > 0 &&
+    !p.visibleCountries.includes(ctx.country)
+  )
+    return false;
+  if (
+    ctx.language &&
+    p.visibleLanguages.length > 0 &&
+    !p.visibleLanguages.includes(ctx.language)
+  )
+    return false;
+  return true;
+}
+
+/** Savings vs. original price. Returns zeros when no valid original is set. */
+export function computeSavings(
+  customerPrice: number,
+  originalPrice: number | null,
+): { amount: number; percent: number } {
+  if (
+    originalPrice === null ||
+    !Number.isFinite(originalPrice) ||
+    !Number.isFinite(customerPrice) ||
+    originalPrice <= 0 ||
+    originalPrice <= customerPrice
+  ) {
+    return { amount: 0, percent: 0 };
+  }
+  const amount = originalPrice - customerPrice;
+  return { amount, percent: (amount / originalPrice) * 100 };
+}
