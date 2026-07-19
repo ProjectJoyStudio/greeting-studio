@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminPlaceholder } from "@/components/admin/Placeholder";
+import { CalendarSettingsPage } from "@/components/admin/calendar-settings/CalendarSettingsPage";
 
 export const Route = createFileRoute("/admin/calendar-settings")({
-  component: () => <AdminPlaceholder titleKey="admin_nav_calendar_settings" />,
+  component: CalendarSettingsPage,
 });
