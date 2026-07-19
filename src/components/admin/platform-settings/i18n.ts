@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Lang } from "@/lib/i18n";
+import { INFRA_DICT } from "./infrastructure-i18n";
 
 type Row = Record<Lang, string>;
 
@@ -487,6 +488,7 @@ const B: Record<string, Row> = {
   bal_ev_sev_critical: { en: "Critical", ru: "Критично",   de: "Kritisch",  uk: "Критично", fr: "Critique", pl: "Krytyczne" },
 };
 Object.assign(D, B);
+Object.assign(D, INFRA_DICT);
 
 export function useLocalPlatform(lang: Lang) {
   return useMemo(() => ({
