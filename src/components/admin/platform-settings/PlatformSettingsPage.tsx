@@ -6,6 +6,7 @@ import {
   Cpu, Scale, GitBranch, Languages, Type, Cloud, Plug, HeartPulse, Gauge, ScrollText,
   Plus, Power, Play, ArrowRightLeft,
   Zap, ListOrdered, Siren, GripVertical, TrendingUp, Route,
+  CreditCard, UserCog, Boxes, Plug2, Beaker, Pause, Rocket,
 } from "lucide-react";
 
 import { useI18n, LANGS } from "@/lib/i18n";
@@ -25,6 +26,13 @@ import {
   type BalancerEvent, type BalancerEventSeverity,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
+import {
+  DEFAULT_INFRASTRUCTURE, type InfrastructureState,
+} from "@/lib/admin/platform-infrastructure";
+import {
+  PaymentsTab, AuthTab, StorageMgmtTab, ServicesTab,
+  SandboxTab, ControlTab, LaunchTab,
+} from "./InfrastructureTabs";
 
 // ---------- shared classes ----------
 const inputCls =
@@ -41,7 +49,9 @@ type TabKey =
   | "general" | "domain" | "server" | "maintenance"
   | "backup" | "security" | "monitoring" | "info"
   | "generators" | "balancer" | "fallback" | "translations"
-  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs";
+  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs"
+  | "payments" | "auth" | "storage_mgmt" | "services"
+  | "sandbox" | "control" | "launch";
 
 const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }[] = [
   { key: "general",     icon: Wrench,      labelKey: "tab_general",     catKey: "cat_general" },
@@ -62,6 +72,13 @@ const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }
   { key: "health",      icon: HeartPulse,  labelKey: "tab_health",      catKey: "cat_health" },
   { key: "scaling",     icon: Gauge,       labelKey: "tab_scaling",     catKey: "cat_scaling" },
   { key: "logs",        icon: ScrollText,  labelKey: "tab_logs",        catKey: "cat_logs" },
+  { key: "payments",    icon: CreditCard,  labelKey: "tab_payments",    catKey: "tab_payments" },
+  { key: "auth",        icon: UserCog,     labelKey: "tab_auth",        catKey: "tab_auth" },
+  { key: "storage_mgmt",icon: Boxes,       labelKey: "tab_storage_mgmt",catKey: "tab_storage_mgmt" },
+  { key: "services",    icon: Plug2,       labelKey: "tab_services",    catKey: "tab_services" },
+  { key: "sandbox",     icon: Beaker,      labelKey: "tab_sandbox",     catKey: "tab_sandbox" },
+  { key: "control",     icon: Pause,       labelKey: "tab_control",     catKey: "tab_control" },
+  { key: "launch",      icon: Rocket,      labelKey: "tab_launch",      catKey: "tab_launch" },
 ];
 
 function StatusPill({ status, label }: { status: IndicatorStatus; label: string }) {
