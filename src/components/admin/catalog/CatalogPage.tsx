@@ -617,6 +617,13 @@ export function CatalogPage() {
                   {L("cat_" + it.category)} · {L("type_" + it.type)}
                 </div>
                 <div className="mt-1 text-xs">{L("col_credits")}: <b>{it.credits}</b> · {formatDate(it.createdAt, lang)}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                  <Eye className="h-3 w-3" /><span className="tabular-nums">{formatCompact(it.stats.views)}</span>
+                  <span>·</span>
+                  <span className="tabular-nums">{formatCompact(it.stats.purchases ?? it.stats.uses)} {L("col_purchases").toLowerCase()}</span>
+                  <PerformancePill item={it} L={L} />
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">{L("col_author")}: {it.author?.displayName ?? "—"}</div>
                 <div className="mt-1"><FlagBadges flags={it.flags} L={L} /></div>
               </div>
             </div>
