@@ -310,3 +310,273 @@ export function progressTone(p: number): string {
   if (p >= 65) return "bg-amber-500";
   return "bg-emerald-500";
 }
+
+// ---------------------------------------------------------------------------
+// Part 2 — advanced integrations & scaling. All frontend demonstration data.
+// ---------------------------------------------------------------------------
+
+export const GENERATOR_TYPES = [
+  "images", "video", "animation", "music", "voice", "text", "translation",
+] as const;
+export type GeneratorType = (typeof GENERATOR_TYPES)[number];
+
+export type GeneratorStatus = "online" | "offline" | "busy" | "maintenance";
+
+export interface GeneratorRecord {
+  id: string;
+  name: string;
+  type: GeneratorType;
+  status: GeneratorStatus;
+  priority: number; // 1..10 (higher = preferred)
+  loadPercent: number;
+  queue: number;
+  avgSeconds: number;
+  dailyRequests: number;
+  errorRatePercent: number;
+  enabled: boolean;
+}
+
+export type BalancerMode =
+  | "lowest_queue" | "fastest" | "round_robin" | "priority" | "cheapest";
+
+export interface BalancerSettings {
+  enabled: boolean;
+  mode: BalancerMode;
+  maxQueueLength: number;
+  maxConcurrent: number;
+  autoOverflow: boolean;
+  autoFailover: boolean;
+  retryFailed: boolean;
+  queueTimeoutSeconds: number;
+}
+
+export interface FailoverSettings {
+  primaryId: string;
+  secondaryId: string;
+  tertiaryId: string;
+  history: {
+    id: string;
+    at: string;
+    from: string;
+    to: string;
+    reason: string;
+  }[];
+}
+
+export const TRANSLATION_PROVIDERS = [
+  "google", "deepl", "microsoft", "openai", "custom",
+] as const;
+export type TranslationProvider = (typeof TRANSLATION_PROVIDERS)[number];
+
+export interface TranslationSettings {
+  enabled: boolean;
+  primary: TranslationProvider;
+  backup: TranslationProvider;
+  maxRetries: number;
+  dailyLimit: number;
+  autoDetectLanguage: boolean;
+  translateTitle: boolean;
+  translateDescription: boolean;
+  translateGreeting: boolean;
+  translateGeneratedText: boolean;
+}
+
+export interface OverlaySettings {
+  autoPosition: boolean;
+  autoFontSize: boolean;
+  autoWrap: boolean;
+  safeMarginPercent: number;
+  shadow: boolean;
+  outline: boolean;
+  opacityPercent: number;
+  languageSpecificFonts: boolean;
+}
+
+export interface StorageProviderRecord {
+  id: string;
+  name: string;
+  status: IndicatorStatus;
+  usedGb: number;
+  totalGb: number;
+  files: number;
+  videos: number;
+  images: number;
+  music: number;
+  backups: number;
+  primary: boolean;
+}
+
+export interface ApiConnectionRecord {
+  id: string;
+  service: string;
+  status: IndicatorStatus;
+  apiKeyMasked: string;
+  lastCheck: string;
+  avgResponseMs: number;
+  connected: boolean;
+}
+
+export type HealthKind =
+  | "generators" | "translation" | "storage" | "api"
+  | "queue" | "database" | "server";
+export type HealthStatus = "healthy" | "warning" | "critical";
+export interface HealthCard {
+  kind: HealthKind;
+  status: HealthStatus;
+  message: string;
+}
+
+export interface ScalingSettings {
+  enabled: boolean;
+  minGenerators: number;
+  maxGenerators: number;
+  autoBalancing: boolean;
+  peakMode: boolean;
+  nightMode: boolean;
+  holidayMode: boolean;
+}
+
+export type LogCategory =
+  | "generation" | "translation" | "storage" | "api" | "balancer";
+export type LogResult = "success" | "warning" | "error";
+export interface LogRecord {
+  id: string;
+  at: string;
+  category: LogCategory;
+  service: string;
+  action: string;
+  durationMs: number;
+  result: LogResult;
+}
+
+export interface PlatformAdvancedState {
+  generators: GeneratorRecord[];
+  balancer: BalancerSettings;
+  failover: FailoverSettings;
+  translation: TranslationSettings;
+  overlay: OverlaySettings;
+  storage: StorageProviderRecord[];
+  apis: ApiConnectionRecord[];
+  health: HealthCard[];
+  scaling: ScalingSettings;
+  logs: LogRecord[];
+}
+
+const isoAgo = (min: number) =>
+  new Date(Date.now() - min * 60 * 1000).toISOString();
+
+export const DEFAULT_PLATFORM_ADVANCED: PlatformAdvancedState = {
+  generators: [
+    { id: "gen_lyra",   name: "Lyra Images",    type: "images",      status: "online",      priority: 9, loadPercent: 42, queue: 3, avgSeconds: 14,  dailyRequests: 4820, errorRatePercent: 0.4, enabled: true },
+    { id: "gen_prism",  name: "Prism Video",    type: "video",       status: "busy",        priority: 8, loadPercent: 78, queue: 11,avgSeconds: 82,  dailyRequests: 1240, errorRatePercent: 1.1, enabled: true },
+    { id: "gen_wisp",   name: "Wisp Animation", type: "animation",   status: "online",      priority: 7, loadPercent: 31, queue: 2, avgSeconds: 46,  dailyRequests:  980, errorRatePercent: 0.7, enabled: true },
+    { id: "gen_chord",  name: "Chord Music",    type: "music",       status: "online",      priority: 8, loadPercent: 25, queue: 1, avgSeconds: 38,  dailyRequests: 1560, errorRatePercent: 0.3, enabled: true },
+    { id: "gen_vox",    name: "Vox Voice",      type: "voice",       status: "online",      priority: 8, loadPercent: 54, queue: 4, avgSeconds: 22,  dailyRequests: 2100, errorRatePercent: 0.5, enabled: true },
+    { id: "gen_quill",  name: "Quill Text",     type: "text",        status: "online",      priority: 6, loadPercent: 18, queue: 0, avgSeconds:  6,  dailyRequests: 6420, errorRatePercent: 0.2, enabled: true },
+    { id: "gen_beacon", name: "Beacon Translate", type: "translation", status: "maintenance", priority: 5, loadPercent:  0, queue: 0, avgSeconds:  4,  dailyRequests: 3210, errorRatePercent: 0.0, enabled: false },
+    { id: "gen_nova",   name: "Nova Images",    type: "images",      status: "offline",     priority: 4, loadPercent:  0, queue: 0, avgSeconds: 18,  dailyRequests:    0, errorRatePercent: 0.0, enabled: false },
+  ],
+  balancer: {
+    enabled: true,
+    mode: "lowest_queue",
+    maxQueueLength: 80,
+    maxConcurrent: 24,
+    autoOverflow: true,
+    autoFailover: true,
+    retryFailed: true,
+    queueTimeoutSeconds: 180,
+  },
+  failover: {
+    primaryId: "gen_lyra",
+    secondaryId: "gen_nova",
+    tertiaryId: "gen_wisp",
+    history: [
+      { id: "fo_004", at: isoAgo(35),   from: "gen_prism", to: "gen_wisp",  reason: "queue_timeout" },
+      { id: "fo_003", at: isoAgo(210),  from: "gen_nova",  to: "gen_lyra",  reason: "provider_offline" },
+      { id: "fo_002", at: isoAgo(1240), from: "gen_beacon",to: "gen_quill", reason: "maintenance" },
+      { id: "fo_001", at: isoAgo(3060), from: "gen_prism", to: "gen_wisp",  reason: "error_spike" },
+    ],
+  },
+  translation: {
+    enabled: true,
+    primary: "deepl",
+    backup: "google",
+    maxRetries: 3,
+    dailyLimit: 50000,
+    autoDetectLanguage: true,
+    translateTitle: true,
+    translateDescription: true,
+    translateGreeting: true,
+    translateGeneratedText: false,
+  },
+  overlay: {
+    autoPosition: true,
+    autoFontSize: true,
+    autoWrap: true,
+    safeMarginPercent: 8,
+    shadow: true,
+    outline: false,
+    opacityPercent: 100,
+    languageSpecificFonts: true,
+  },
+  storage: [
+    { id: "st_a", name: "Cloud Storage A", status: "online",  usedGb: 812,  totalGb: 2048, files: 128400, videos: 5240, images: 96210, music: 21050, backups: 5900,  primary: true  },
+    { id: "st_b", name: "Cloud Storage B", status: "online",  usedGb: 420,  totalGb: 1024, files:  62100, videos: 3120, images: 41800, music: 12700, backups: 4480,  primary: false },
+    { id: "st_c", name: "Cloud Storage C", status: "warning", usedGb: 940,  totalGb: 1024, files:  84300, videos: 4620, images: 58200, music: 15300, backups: 6180,  primary: false },
+    { id: "st_local", name: "Local Storage", status: "online", usedGb: 62,  totalGb:  256, files:   4820, videos:  310, images:  3200, music:   860, backups:  450,  primary: false },
+  ],
+  apis: [
+    { id: "api_mail",   service: "Email Delivery",    status: "online",  apiKeyMasked: "sk_live_••••••1428", lastCheck: isoAgo(2),  avgResponseMs: 148, connected: true  },
+    { id: "api_sms",    service: "SMS Gateway",       status: "warning", apiKeyMasked: "sk_live_••••••9032", lastCheck: isoAgo(4),  avgResponseMs: 512, connected: true  },
+    { id: "api_pay",    service: "Payments",          status: "online",  apiKeyMasked: "sk_live_••••••7215", lastCheck: isoAgo(1),  avgResponseMs: 220, connected: true  },
+    { id: "api_push",   service: "Push Notifications",status: "online",  apiKeyMasked: "sk_live_••••••3388", lastCheck: isoAgo(3),  avgResponseMs: 96,  connected: true  },
+    { id: "api_maps",   service: "Maps & Geo",        status: "online",  apiKeyMasked: "sk_live_••••••6104", lastCheck: isoAgo(9),  avgResponseMs: 172, connected: true  },
+    { id: "api_meta",   service: "Metadata Enrichment", status: "error", apiKeyMasked: "sk_live_••••••2277", lastCheck: isoAgo(28), avgResponseMs: 0,   connected: false },
+  ],
+  health: [
+    { kind: "generators",  status: "healthy",  message: "8/8 providers reachable" },
+    { kind: "translation", status: "healthy",  message: "Primary and backup online" },
+    { kind: "storage",     status: "warning",  message: "Storage C above 90% usage" },
+    { kind: "api",         status: "warning",  message: "1 external API offline" },
+    { kind: "queue",       status: "healthy",  message: "Queue within limits" },
+    { kind: "database",    status: "healthy",  message: "Read/write latency normal" },
+    { kind: "server",      status: "healthy",  message: "CPU and RAM within thresholds" },
+  ],
+  scaling: {
+    enabled: true,
+    minGenerators: 2,
+    maxGenerators: 12,
+    autoBalancing: true,
+    peakMode: true,
+    nightMode: true,
+    holidayMode: false,
+  },
+  logs: [
+    { id: "log_020", at: isoAgo(1),   category: "generation", service: "Lyra Images",    action: "generate_card_image",  durationMs: 12400, result: "success" },
+    { id: "log_019", at: isoAgo(2),   category: "generation", service: "Prism Video",    action: "render_short_video",   durationMs: 84200, result: "success" },
+    { id: "log_018", at: isoAgo(3),   category: "translation",service: "DeepL",          action: "translate_greeting",   durationMs:   410, result: "success" },
+    { id: "log_017", at: isoAgo(5),   category: "storage",    service: "Cloud Storage C",action: "upload_media",         durationMs:  1820, result: "warning" },
+    { id: "log_016", at: isoAgo(7),   category: "api",        service: "SMS Gateway",    action: "send_reminder",        durationMs:   730, result: "warning" },
+    { id: "log_015", at: isoAgo(11),  category: "balancer",   service: "Load Balancer",  action: "reroute_queue",        durationMs:    24, result: "success" },
+    { id: "log_014", at: isoAgo(14),  category: "generation", service: "Wisp Animation", action: "render_animation",     durationMs: 46200, result: "success" },
+    { id: "log_013", at: isoAgo(18),  category: "api",        service: "Metadata API",   action: "enrich_order",         durationMs:  6000, result: "error"   },
+    { id: "log_012", at: isoAgo(22),  category: "generation", service: "Chord Music",    action: "compose_song",         durationMs: 38400, result: "success" },
+    { id: "log_011", at: isoAgo(28),  category: "translation",service: "Google",         action: "translate_title",      durationMs:   210, result: "success" },
+    { id: "log_010", at: isoAgo(35),  category: "balancer",   service: "Load Balancer",  action: "failover_trigger",     durationMs:    18, result: "warning" },
+    { id: "log_009", at: isoAgo(46),  category: "storage",    service: "Cloud Storage A",action: "sync_media",           durationMs:  4200, result: "success" },
+  ],
+};
+
+export function computeBalancerLive(generators: GeneratorRecord[]) {
+  const active = generators.filter((g) => g.enabled && g.status !== "offline");
+  return {
+    total: generators.length,
+    active: active.length,
+    running: active.reduce((s, g) => s + Math.max(0, Math.round(g.loadPercent / 10)), 0),
+    waiting: active.reduce((s, g) => s + g.queue, 0),
+    completedToday: active.reduce((s, g) => s + g.dailyRequests, 0),
+    failedToday: Math.round(
+      active.reduce((s, g) => s + g.dailyRequests * (g.errorRatePercent / 100), 0),
+    ),
+  };
+}
