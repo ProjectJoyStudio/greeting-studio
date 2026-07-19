@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminPlaceholder } from "@/components/admin/Placeholder";
+import { CatalogPage } from "@/components/admin/catalog/CatalogPage";
 
 export const Route = createFileRoute("/admin/catalog")({
-  component: () => <AdminPlaceholder titleKey="admin_nav_catalog" />,
+  component: CatalogPage,
 });
