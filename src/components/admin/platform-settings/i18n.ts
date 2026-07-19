@@ -380,6 +380,114 @@ const D: Record<string, Row> = {
   logs_res_error:   { en: "Error",   ru: "Ошибка",   de: "Fehler",  uk: "Помилка",  fr: "Erreur",       pl: "Błąd" },
 };
 
+// Load Balancer extended dashboard --------------------------------------------
+const B: Record<string, Row> = {
+  bal_section_dashboard: { en: "Real-time monitoring", ru: "Мониторинг в реальном времени", de: "Live-Überwachung", uk: "Моніторинг у реальному часі", fr: "Suivi en direct", pl: "Monitoring na żywo" },
+  bal_section_modes:     { en: "Distribution modes",   ru: "Режимы распределения",         de: "Verteilmodi",     uk: "Режими розподілу",             fr: "Modes de répartition", pl: "Tryby dystrybucji" },
+  bal_section_smart:     { en: "Smart routing",        ru: "Умная маршрутизация",           de: "Intelligentes Routing", uk: "Розумна маршрутизація", fr: "Routage intelligent",  pl: "Inteligentne trasowanie" },
+  bal_section_failover:  { en: "Automatic failover",   ru: "Автопереключение",              de: "Automatischer Failover", uk: "Автоматичне перемикання", fr: "Bascule automatique", pl: "Automatyczne przełączanie" },
+  bal_section_priority:  { en: "Queue priority",       ru: "Приоритет очереди",             de: "Warteschlangenpriorität", uk: "Пріоритет черги",      fr: "Priorité de file",     pl: "Priorytet kolejki" },
+  bal_section_limits:    { en: "Load limits",          ru: "Лимиты нагрузки",               de: "Lastgrenzen",     uk: "Ліміти навантаження",           fr: "Limites de charge",   pl: "Limity obciążenia" },
+  bal_section_emergency: { en: "Emergency Mode",       ru: "Аварийный режим",               de: "Notfallmodus",    uk: "Аварійний режим",               fr: "Mode d'urgence",       pl: "Tryb awaryjny" },
+  bal_section_scaling:   { en: "Automatic scaling",    ru: "Автомасштабирование",           de: "Automatische Skalierung", uk: "Автомасштабування",   fr: "Mise à l'échelle",     pl: "Autoskalowanie" },
+  bal_section_events:    { en: "System events",        ru: "Системные события",             de: "Systemereignisse", uk: "Системні події",               fr: "Événements système",   pl: "Zdarzenia systemowe" },
+
+  // Dashboard stats
+  bal_stat_total:       { en: "Total generators",       ru: "Всего генераторов",     de: "Generatoren gesamt",   uk: "Усього генераторів",     fr: "Générateurs au total", pl: "Wszystkie generatory" },
+  bal_stat_active:      { en: "Active",                 ru: "Активные",              de: "Aktiv",                uk: "Активні",                fr: "Actifs",               pl: "Aktywne" },
+  bal_stat_offline:     { en: "Offline",                ru: "Офлайн",                de: "Offline",              uk: "Офлайн",                 fr: "Hors ligne",           pl: "Offline" },
+  bal_stat_backup:      { en: "Backup",                 ru: "Резервные",             de: "Reserve",              uk: "Резервні",               fr: "Réserve",              pl: "Rezerwowe" },
+  bal_stat_queue:       { en: "Current queue",          ru: "Текущая очередь",       de: "Aktuelle Warteschlange", uk: "Поточна черга",        fr: "File actuelle",        pl: "Aktualna kolejka" },
+  bal_stat_jobs_active: { en: "Active jobs",            ru: "Активные задачи",       de: "Aktive Jobs",          uk: "Активні завдання",       fr: "Tâches actives",       pl: "Aktywne zadania" },
+  bal_stat_jobs_wait:   { en: "Waiting jobs",           ru: "Задачи в ожидании",     de: "Wartende Jobs",        uk: "Завдання в очікуванні",  fr: "Tâches en attente",    pl: "Zadania oczekujące" },
+  bal_stat_avg_time:    { en: "Average processing time", ru: "Среднее время обработки", de: "Ø Bearbeitungszeit", uk: "Середній час обробки",  fr: "Temps moyen",          pl: "Śr. czas przetwarzania" },
+  bal_stat_avg_load:    { en: "Average server load",    ru: "Средняя нагрузка сервера", de: "Ø Serverauslastung", uk: "Середнє навантаження",  fr: "Charge moyenne",       pl: "Śr. obciążenie serwera" },
+  bal_stat_error_rate:  { en: "Error rate",             ru: "Частота ошибок",        de: "Fehlerquote",          uk: "Частота помилок",        fr: "Taux d'erreur",        pl: "Wskaźnik błędów" },
+  bal_stat_completed:   { en: "Completed today",        ru: "Завершено сегодня",     de: "Heute abgeschlossen",  uk: "Завершено сьогодні",     fr: "Terminées aujourd'hui",pl: "Ukończone dzisiaj" },
+  bal_stat_failed:      { en: "Failed today",           ru: "Ошибок сегодня",        de: "Fehler heute",         uk: "Помилок сьогодні",       fr: "Échecs aujourd'hui",   pl: "Nieudane dzisiaj" },
+
+  // Modes (extended)
+  bal_mode_lowest_cost:   { en: "Lowest cost",  ru: "Наименьшая стоимость", de: "Niedrigste Kosten", uk: "Найнижча вартість", fr: "Coût le plus bas", pl: "Najniższy koszt" },
+  bal_mode_custom:        { en: "Custom rules", ru: "Свои правила",         de: "Eigene Regeln",     uk: "Власні правила",    fr: "Règles personnalisées", pl: "Reguły niestandardowe" },
+  bal_mode_only_one:      { en: "Only one distribution mode can be active.", ru: "Одновременно может быть активен только один режим.", de: "Es kann nur ein Verteilmodus aktiv sein.", uk: "Активним може бути лише один режим.", fr: "Un seul mode peut être actif.", pl: "Aktywny może być tylko jeden tryb." },
+
+  // Smart routing
+  bal_smart_intro:  { en: "Route each content type to the matching generator family.", ru: "Направляйте каждый тип контента к нужной группе генераторов.", de: "Weise jedem Inhaltstyp die passende Generatorfamilie zu.", uk: "Направляйте кожен тип контенту до відповідної групи генераторів.", fr: "Acheminez chaque type de contenu vers la bonne famille de générateurs.", pl: "Kieruj każdy typ treści do właściwej rodziny generatorów." },
+  bal_smart_content:{ en: "Content type", ru: "Тип контента",   de: "Inhaltstyp",    uk: "Тип контенту",   fr: "Type de contenu", pl: "Typ treści" },
+  bal_smart_target: { en: "Target family",ru: "Целевая группа", de: "Zielgruppe",    uk: "Цільова група",  fr: "Famille cible",   pl: "Grupa docelowa" },
+  bal_smart_enabled:{ en: "Enabled",      ru: "Включено",       de: "Aktiviert",     uk: "Увімкнено",      fr: "Activé",          pl: "Włączone" },
+  ct_images:      { en: "Images",      ru: "Изображения", de: "Bilder",      uk: "Зображення",   fr: "Images",       pl: "Obrazy" },
+  ct_videos:      { en: "Videos",      ru: "Видео",       de: "Videos",      uk: "Відео",        fr: "Vidéos",       pl: "Wideo" },
+  ct_animation:   { en: "Animation",   ru: "Анимация",    de: "Animation",   uk: "Анімація",     fr: "Animation",    pl: "Animacja" },
+  ct_music:       { en: "Music",       ru: "Музыка",      de: "Musik",       uk: "Музика",       fr: "Musique",      pl: "Muzyka" },
+  ct_voice:       { en: "Voice",       ru: "Голос",       de: "Stimme",      uk: "Голос",        fr: "Voix",         pl: "Głos" },
+  ct_translation: { en: "Translation", ru: "Перевод",     de: "Übersetzung", uk: "Переклад",     fr: "Traduction",   pl: "Tłumaczenie" },
+  ct_text:        { en: "Text",        ru: "Текст",       de: "Text",        uk: "Текст",        fr: "Texte",        pl: "Tekst" },
+
+  // Failover summary
+  bal_failover_intro: { en: "Never lose an active customer order. Requests move automatically when a generator goes offline, exceeds errors, stops responding, or hits its queue limit.", ru: "Ни один активный заказ не будет потерян. Запросы автоматически переносятся, если генератор офлайн, превысил лимит ошибок, не отвечает или переполнил очередь.", de: "Kein aktiver Auftrag geht verloren. Anfragen werden verschoben, wenn ein Generator offline geht, Fehlerlimits überschreitet, nicht antwortet oder die Warteschlange füllt.", uk: "Жоден активний запит клієнта не втрачається. Запити автоматично переносяться, коли генератор офлайн, перевищив ліміт помилок, не відповідає або заповнив чергу.", fr: "Aucune commande active n'est perdue. Les requêtes basculent si un générateur est hors ligne, dépasse les erreurs, ne répond plus ou sature la file.", pl: "Żadne aktywne zamówienie nie zostanie utracone. Żądania są przenoszone, gdy generator jest offline, przekroczy błędy, nie odpowiada lub kolejka jest pełna." },
+  bal_failover_open:  { en: "Open failover settings", ru: "Открыть настройки резерва", de: "Failover-Einstellungen öffnen", uk: "Відкрити налаштування резерву", fr: "Ouvrir les réglages de bascule", pl: "Otwórz ustawienia przełączania" },
+  bal_failover_triggers: { en: "Automatic triggers", ru: "Автоматические триггеры", de: "Automatische Auslöser", uk: "Автоматичні тригери", fr: "Déclencheurs automatiques", pl: "Automatyczne wyzwalacze" },
+  bal_trigger_offline: { en: "Generator offline",       ru: "Генератор офлайн",         de: "Generator offline",       uk: "Генератор офлайн",         fr: "Générateur hors ligne",   pl: "Generator offline" },
+  bal_trigger_errors:  { en: "Error limit exceeded",    ru: "Превышен лимит ошибок",    de: "Fehlergrenze überschritten", uk: "Перевищено ліміт помилок", fr: "Limite d'erreurs dépassée", pl: "Przekroczono limit błędów" },
+  bal_trigger_timeout: { en: "Stopped responding",      ru: "Не отвечает",              de: "Reagiert nicht",          uk: "Не відповідає",             fr: "Ne répond plus",          pl: "Brak odpowiedzi" },
+  bal_trigger_queue:   { en: "Maximum queue reached",   ru: "Достигнут лимит очереди",  de: "Warteschlange voll",      uk: "Досягнуто ліміту черги",   fr: "File maximale atteinte",  pl: "Osiągnięto maks. kolejkę" },
+
+  // Priority
+  bal_priority_intro: { en: "Drag to reorder — the topmost tier is served first.", ru: "Перетащите, чтобы изменить порядок — верхний уровень обслуживается первым.", de: "Ziehen zum Sortieren — oberste Stufe wird zuerst bedient.", uk: "Перетягніть, щоб змінити порядок — верхній рівень обслуговується першим.", fr: "Glissez pour réordonner — le niveau supérieur est servi en premier.", pl: "Przeciągnij, aby zmienić kolejność — najwyższy poziom obsługiwany jest pierwszy." },
+  pri_vip:       { en: "VIP",                ru: "VIP",              de: "VIP",                uk: "VIP",              fr: "VIP",                pl: "VIP" },
+  pri_premium:   { en: "Premium",            ru: "Premium",          de: "Premium",            uk: "Premium",          fr: "Premium",            pl: "Premium" },
+  pri_paid:      { en: "Paid orders",        ru: "Платные заказы",   de: "Bezahlte Aufträge",  uk: "Платні замовлення",fr: "Commandes payantes", pl: "Płatne zamówienia" },
+  pri_scheduled: { en: "Scheduled orders",   ru: "Отложенные заказы",de: "Geplante Aufträge",  uk: "Заплановані замовлення", fr: "Commandes planifiées", pl: "Zamówienia zaplanowane" },
+  pri_free:      { en: "Free users",         ru: "Бесплатные пользователи", de: "Kostenlose Nutzer", uk: "Безкоштовні користувачі", fr: "Utilisateurs gratuits", pl: "Użytkownicy darmowi" },
+  pri_manual:    { en: "Manual queue",       ru: "Ручная очередь",   de: "Manuelle Warteschlange", uk: "Ручна черга",  fr: "File manuelle",      pl: "Kolejka ręczna" },
+  pri_admin:     { en: "Administrator jobs", ru: "Задачи администратора", de: "Administrator-Jobs", uk: "Задачі адміністратора", fr: "Tâches administrateur", pl: "Zadania administratora" },
+
+  // Limits
+  bal_lim_intro:      { en: "Placeholder values — will bind to real backend counters on integration.", ru: "Заполнители — при подключении к бэкенду свяжутся с реальными счётчиками.", de: "Platzhalterwerte — werden bei Backend-Anbindung an echte Zähler gebunden.", uk: "Заповнювачі — при інтеграції прив'яжуться до реальних лічильників.", fr: "Valeurs d'exemple — reliées à des compteurs réels lors de l'intégration.", pl: "Wartości zastępcze — zostaną powiązane z licznikami po integracji." },
+  bal_lim_jobs_per_gen: { en: "Max jobs per generator", ru: "Макс. задач на генератор", de: "Max. Jobs pro Generator", uk: "Макс. завдань на генератор", fr: "Tâches max. par générateur", pl: "Maks. zadań na generator" },
+  bal_lim_queue:        { en: "Max total queue",        ru: "Макс. общая очередь",       de: "Max. Gesamt-Warteschlange", uk: "Макс. загальна черга",   fr: "File totale max.",           pl: "Maks. cała kolejka" },
+  bal_lim_cpu:          { en: "Max CPU (%)",            ru: "Макс. CPU (%)",             de: "Max. CPU (%)",              uk: "Макс. CPU (%)",           fr: "CPU max. (%)",              pl: "Maks. CPU (%)" },
+  bal_lim_mem:          { en: "Max memory (%)",         ru: "Макс. память (%)",          de: "Max. Speicher (%)",         uk: "Макс. памʼять (%)",       fr: "Mémoire max. (%)",          pl: "Maks. pamięć (%)" },
+  bal_lim_daily:        { en: "Max daily requests",     ru: "Макс. запросов в день",     de: "Max. Anfragen/Tag",         uk: "Макс. запитів на день",   fr: "Requêtes max./jour",         pl: "Maks. zapytań dziennie" },
+  bal_lim_hourly:       { en: "Max hourly requests",    ru: "Макс. запросов в час",      de: "Max. Anfragen/Std.",        uk: "Макс. запитів на годину", fr: "Requêtes max./heure",        pl: "Maks. zapytań na godzinę" },
+
+  // Emergency mode
+  bal_em_enable:  { en: "Enable Emergency Mode",  ru: "Включить аварийный режим",   de: "Notfallmodus aktivieren",   uk: "Увімкнути аварійний режим", fr: "Activer le mode d'urgence", pl: "Włącz tryb awaryjny" },
+  bal_em_desc:    { en: "When enabled: free generations are disabled, non-critical scheduled jobs are paused, capacity is reserved for Premium.", ru: "При включении: бесплатные генерации отключены, некритические отложенные задачи приостановлены, мощности резервируются для Premium.", de: "Aktiviert: kostenlose Generierungen deaktiviert, unkritische geplante Jobs pausiert, Kapazität für Premium reserviert.", uk: "Увімкнено: безкоштовні генерації вимкнено, некритичні відкладені завдання призупинено, потужності резервуються для Premium.", fr: "Activé : générations gratuites désactivées, tâches non critiques suspendues, capacité réservée à Premium.", pl: "Włączony: darmowe generacje wyłączone, niekrytyczne zadania wstrzymane, moc zarezerwowana dla Premium." },
+  bal_em_free:    { en: "Free generations disabled", ru: "Бесплатные генерации отключены", de: "Kostenlose Generierung deaktiviert", uk: "Безкоштовні генерації вимкнено", fr: "Générations gratuites désactivées", pl: "Darmowe generacje wyłączone" },
+  bal_em_paused:  { en: "Scheduled non-critical jobs paused", ru: "Отложенные некритические задачи приостановлены", de: "Nicht-kritische geplante Jobs pausiert", uk: "Некритичні відкладені завдання призупинено", fr: "Tâches non critiques suspendues", pl: "Niekrytyczne zadania wstrzymane" },
+  bal_em_reserve: { en: "Capacity reserved for Premium",     ru: "Мощности зарезервированы для Premium", de: "Kapazität für Premium reserviert", uk: "Потужності зарезервовано для Premium", fr: "Capacité réservée à Premium", pl: "Moc zarezerwowana dla Premium" },
+  bal_em_state_on:  { en: "Emergency Mode is ACTIVE",   ru: "Аварийный режим АКТИВЕН",  de: "Notfallmodus AKTIV",    uk: "Аварійний режим АКТИВНИЙ", fr: "Mode d'urgence ACTIF",  pl: "Tryb awaryjny AKTYWNY" },
+  bal_em_state_off: { en: "Emergency Mode is off",     ru: "Аварийный режим отключён", de: "Notfallmodus deaktiviert", uk: "Аварійний режим вимкнено", fr: "Mode d'urgence désactivé", pl: "Tryb awaryjny wyłączony" },
+
+  // Scaling
+  bal_scaling_threshold: { en: "Queue threshold to recommend scaling", ru: "Порог очереди для рекомендации масштабирования", de: "Warteschlangenschwelle für Skalierungsempfehlung", uk: "Поріг черги для рекомендації масштабування", fr: "Seuil de file pour recommander la mise à l'échelle", pl: "Próg kolejki dla rekomendacji skalowania" },
+  bal_scaling_backup:    { en: "Backup generator slots",              ru: "Резервные слоты генераторов",                       de: "Reserve-Generator-Slots",                          uk: "Резервні слоти генераторів",                       fr: "Slots de générateurs de secours",                       pl: "Sloty rezerwowych generatorów" },
+  bal_scaling_healthy:   { en: "Queue is within limits.",              ru: "Очередь в пределах нормы.",                         de: "Warteschlange innerhalb der Grenzen.",              uk: "Черга в межах норми.",                             fr: "File dans les limites.",                                pl: "Kolejka w granicach normy." },
+  bal_scaling_warn:      { en: "Queue exceeds threshold — connect an additional generator.", ru: "Очередь превышает порог — подключите дополнительный генератор.", de: "Warteschlange über Schwelle — zusätzlichen Generator anbinden.", uk: "Черга перевищує поріг — підключіть додатковий генератор.", fr: "File au-dessus du seuil — connectez un générateur supplémentaire.", pl: "Kolejka powyżej progu — podłącz dodatkowy generator." },
+  bal_scaling_action:    { en: "Prepare additional generator",         ru: "Подготовить дополнительный генератор",              de: "Zusätzlichen Generator vorbereiten",                uk: "Підготувати додатковий генератор",                 fr: "Préparer un générateur supplémentaire",                pl: "Przygotuj dodatkowy generator" },
+  bal_scaling_placeholder: { en: "Backend integration point — no external calls yet.", ru: "Точка интеграции с бэкендом — без внешних вызовов.", de: "Backend-Integrationspunkt — noch keine externen Aufrufe.", uk: "Точка інтеграції з бекендом — зовнішніх викликів поки немає.", fr: "Point d'intégration backend — sans appels externes.", pl: "Punkt integracji z backendem — bez wywołań zewnętrznych." },
+
+  // Events
+  bal_ev_time:      { en: "Time",     ru: "Время",     de: "Zeit",      uk: "Час",       fr: "Heure",     pl: "Czas" },
+  bal_ev_kind:      { en: "Event",    ru: "Событие",   de: "Ereignis",  uk: "Подія",     fr: "Événement", pl: "Zdarzenie" },
+  bal_ev_generator: { en: "Generator",ru: "Генератор", de: "Generator", uk: "Генератор", fr: "Générateur",pl: "Generator" },
+  bal_ev_detail:    { en: "Details",  ru: "Детали",    de: "Details",   uk: "Деталі",    fr: "Détails",   pl: "Szczegóły" },
+  bal_ev_severity:  { en: "Severity", ru: "Уровень",   de: "Schwere",   uk: "Рівень",    fr: "Gravité",   pl: "Poziom" },
+  bal_ev_kind_overload:      { en: "Generator overloaded",  ru: "Генератор перегружен",     de: "Generator überlastet",     uk: "Генератор перевантажений",  fr: "Générateur surchargé",     pl: "Generator przeciążony" },
+  bal_ev_kind_disconnected:  { en: "Generator disconnected",ru: "Генератор отключён",       de: "Generator getrennt",       uk: "Генератор відключено",      fr: "Générateur déconnecté",    pl: "Generator odłączony" },
+  bal_ev_kind_switch:        { en: "Automatic switch",       ru: "Автопереключение",         de: "Automatischer Wechsel",    uk: "Автоматичне перемикання",   fr: "Bascule automatique",       pl: "Automatyczne przełączenie" },
+  bal_ev_kind_queue_moved:   { en: "Queue moved",            ru: "Очередь перенесена",       de: "Warteschlange verschoben", uk: "Черга перенесена",          fr: "File déplacée",            pl: "Kolejka przeniesiona" },
+  bal_ev_kind_emergency_on:  { en: "Emergency Mode enabled", ru: "Аварийный режим включён",  de: "Notfallmodus aktiviert",   uk: "Аварійний режим увімкнено", fr: "Mode d'urgence activé",    pl: "Tryb awaryjny włączony" },
+  bal_ev_kind_emergency_off: { en: "Emergency Mode disabled",ru: "Аварийный режим выключен", de: "Notfallmodus deaktiviert", uk: "Аварійний режим вимкнено",  fr: "Mode d'urgence désactivé", pl: "Tryb awaryjny wyłączony" },
+  bal_ev_kind_recovered:     { en: "Generator recovered",    ru: "Генератор восстановлен",   de: "Generator wiederhergestellt", uk: "Генератор відновлено",   fr: "Générateur rétabli",       pl: "Generator przywrócony" },
+  bal_ev_sev_info:     { en: "Info",     ru: "Инфо",       de: "Info",      uk: "Інфо",     fr: "Info",     pl: "Info" },
+  bal_ev_sev_warning:  { en: "Warning",  ru: "Внимание",   de: "Warnung",   uk: "Увага",    fr: "Alerte",   pl: "Ostrzeżenie" },
+  bal_ev_sev_critical: { en: "Critical", ru: "Критично",   de: "Kritisch",  uk: "Критично", fr: "Critique", pl: "Krytyczne" },
+};
+Object.assign(D, B);
+
 export function useLocalPlatform(lang: Lang) {
   return useMemo(() => ({
     t: (k: string) => D[k]?.[lang] ?? D[k]?.en ?? k,
