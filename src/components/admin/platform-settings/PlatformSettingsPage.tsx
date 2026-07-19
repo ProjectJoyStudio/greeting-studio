@@ -769,9 +769,12 @@ export function PlatformSettingsPage() {
       )}
 
       {tab === "balancer" && (() => {
-        const live = computeBalancerLive(adv.generators);
+        const stats = computeBalancerStats(adv.generators, balDash);
+        const scalingWarn = stats.currentQueue >= balDash.queueThreshold;
+        const modes: BalancerMode[] = ["lowest_queue","fastest","cheapest","priority","round_robin"];
         return (
           <div className="space-y-4">
+            {/* Enable + core settings (kept from Part 2) */}
             <div className={cardCls}>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={adv.balancer.enabled}
@@ -779,14 +782,6 @@ export function PlatformSettingsPage() {
                 {t("bal_enable")}
               </label>
               <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label={t("bal_mode")}>
-                  <select className={inputCls} value={adv.balancer.mode}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, mode: e.target.value as BalancerMode }))}>
-                    {(["lowest_queue","fastest","round_robin","priority","cheapest"] as const).map((m) => (
-                      <option key={m} value={m}>{t(`bal_mode_${m}`)}</option>
-                    ))}
-                  </select>
-                </Field>
                 <Field label={t("bal_max_queue")}>
                   <input type="number" min={1} className={inputCls} value={adv.balancer.maxQueueLength}
                     onChange={(e) => updateAdv("balancer", (b) => ({ ...b, maxQueueLength: Number(e.target.value) || 1 }))} />
@@ -816,15 +811,314 @@ export function PlatformSettingsPage() {
                 </label>
               </div>
             </div>
+
+            {/* Real-time monitoring dashboard */}
             <div>
-              <div className={`${labelCls} mb-2`}>{t("bal_live")}</div>
+              <div className="mb-2 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                <div className={labelCls}>{t("bal_section_dashboard")}</div>
+              </div>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                <InfoStat label={t("bal_total")}     value={String(live.total)} />
-                <InfoStat label={t("bal_active")}    value={String(live.active)} />
-                <InfoStat label={t("bal_waiting")}   value={String(live.waiting)} />
-                <InfoStat label={t("bal_running")}   value={String(live.running)} />
-                <InfoStat label={t("bal_completed")} value={live.completedToday.toLocaleString()} />
-                <InfoStat label={t("bal_failed")}    value={live.failedToday.toLocaleString()} />
+                <InfoStat label={t("bal_stat_total")}       value={String(stats.total)} />
+                <InfoStat label={t("bal_stat_active")}      value={String(stats.active)} />
+                <InfoStat label={t("bal_stat_offline")}     value={String(stats.offline)} />
+                <InfoStat label={t("bal_stat_backup")}      value={String(stats.backup)} />
+                <InfoStat label={t("bal_stat_queue")}       value={String(stats.currentQueue)} />
+                <InfoStat label={t("bal_stat_jobs_active")} value={String(stats.activeJobs)} />
+                <InfoStat label={t("bal_stat_jobs_wait")}   value={String(stats.waitingJobs)} />
+                <InfoStat label={t("bal_stat_avg_time")}    value={`${stats.avgProcessingSec}s`} />
+                <InfoStat label={t("bal_stat_avg_load")}    value={`${stats.avgLoadPercent}%`} />
+                <InfoStat label={t("bal_stat_error_rate")}  value={`${stats.errorRate}%`} />
+                <InfoStat label={t("bal_stat_completed")}   value={stats.completedToday.toLocaleString()} />
+                <InfoStat label={t("bal_stat_failed")}      value={stats.failedToday.toLocaleString()} />
+              </div>
+            </div>
+
+            {/* Distribution modes */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <Scale className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_modes")}</div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("bal_mode_only_one")}</p>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {modes.map((m) => {
+                  const active = adv.balancer.mode === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => updateAdv("balancer", (b) => ({ ...b, mode: m }))}
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${active ? "border-primary bg-primary/5 text-foreground" : "border-border/60 bg-background hover:bg-muted/40"}`}
+                    >
+                      <span className="font-medium">{t(`bal_mode_${m}`)}</span>
+                      <span className={`h-3.5 w-3.5 rounded-full border ${active ? "border-primary bg-primary" : "border-border/60"}`} />
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center justify-between rounded-xl border border-dashed border-border/60 bg-background/60 px-3 py-2.5 text-left text-sm text-muted-foreground"
+                >
+                  <span className="font-medium">{t("bal_mode_custom")}</span>
+                  <span className="text-[10px] uppercase tracking-wide">{t("demo_notice") ? "soon" : "soon"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Smart routing */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <Route className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_smart")}</div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("bal_smart_intro")}</p>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[560px] text-xs">
+                  <thead className="text-muted-foreground">
+                    <tr className="border-b border-border/60">
+                      <th className="px-2 py-2 text-left">{t("bal_smart_content")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_smart_target")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_smart_enabled")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {balDash.smartRouting.map((rule, i) => (
+                      <tr key={rule.content} className="border-b border-border/40">
+                        <td className="px-2 py-2 font-medium text-foreground">{t(`ct_${rule.content}`)}</td>
+                        <td className="px-2 py-2">
+                          <select
+                            className={inputCls}
+                            value={rule.targetType}
+                            onChange={(e) => setBalDash((d) => {
+                              const smart = [...d.smartRouting];
+                              smart[i] = { ...smart[i], targetType: e.target.value as typeof rule.targetType };
+                              return { ...d, smartRouting: smart };
+                            })}
+                          >
+                            {(["images","video","animation","music","voice","text","translation"] as const).map((tg) => (
+                              <option key={tg} value={tg}>{t(`gen_type_${tg}`)}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-2 py-2">
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={rule.enabled}
+                              onChange={(e) => setBalDash((d) => {
+                                const smart = [...d.smartRouting];
+                                smart[i] = { ...smart[i], enabled: e.target.checked };
+                                return { ...d, smartRouting: smart };
+                              })}
+                            />
+                            <span className="text-muted-foreground">{rule.enabled ? t("bal_smart_enabled") : "—"}</span>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Automatic failover summary */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_failover")}</div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("bal_failover_intro")}</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ["bal_trigger_offline", XCircle],
+                  ["bal_trigger_errors", AlertTriangle],
+                  ["bal_trigger_timeout", RefreshCw],
+                  ["bal_trigger_queue", ListOrdered],
+                ].map(([k, Icon]) => {
+                  const IconComp = Icon as typeof XCircle;
+                  return (
+                    <div key={k as string} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-xs">
+                      <IconComp className="h-3.5 w-3.5 text-amber-600" />
+                      <span className="font-medium">{t(k as string)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button className={btnBase} onClick={() => setTab("fallback")}>
+                  <ArrowRightLeft className="h-3.5 w-3.5" />{t("bal_failover_open")}
+                </button>
+              </div>
+            </div>
+
+            {/* Queue priority (drag-and-drop) */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <ListOrdered className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_priority")}</div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("bal_priority_intro")}</p>
+              <ul className="mt-3 space-y-1.5">
+                {balDash.priorityOrder.map((tier, idx) => (
+                  <li
+                    key={tier}
+                    draggable
+                    onDragStart={() => setDragTier(tier)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (!dragTier || dragTier === tier) return;
+                      setBalDash((d) => {
+                        const list = d.priorityOrder.filter((x) => x !== dragTier);
+                        const targetIdx = list.indexOf(tier);
+                        list.splice(targetIdx, 0, dragTier);
+                        return { ...d, priorityOrder: list };
+                      });
+                      setDragTier(null);
+                    }}
+                    onDragEnd={() => setDragTier(null)}
+                    className={`flex items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm ${dragTier === tier ? "border-primary" : "border-border/60"}`}
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <span className="w-6 text-xs font-semibold text-muted-foreground tabular-nums">{idx + 1}</span>
+                    <span className="font-medium text-foreground">{t(`pri_${tier}`)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Load limits */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <Gauge className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_limits")}</div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("bal_lim_intro")}</p>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {([
+                  ["maxJobsPerGenerator", "bal_lim_jobs_per_gen", 1],
+                  ["maxQueue",             "bal_lim_queue",        1],
+                  ["maxCpuPercent",        "bal_lim_cpu",          1],
+                  ["maxMemoryPercent",     "bal_lim_mem",          1],
+                  ["maxDailyRequests",     "bal_lim_daily",        1],
+                  ["maxHourlyRequests",    "bal_lim_hourly",       1],
+                ] as const).map(([field, key, min]) => (
+                  <Field key={field} label={t(key)}>
+                    <input
+                      type="number"
+                      min={min}
+                      className={inputCls}
+                      value={balDash.limits[field]}
+                      onChange={(e) => setBalDash((d) => ({
+                        ...d,
+                        limits: { ...d.limits, [field]: Number(e.target.value) || min },
+                      }))}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </div>
+
+            {/* Emergency mode */}
+            <div className={cardCls}>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-2">
+                  <Siren className={`h-4 w-4 ${balDash.emergencyMode ? "text-rose-600" : "text-primary"}`} />
+                  <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_emergency")}</div>
+                </div>
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={balDash.emergencyMode}
+                    onChange={(e) => {
+                      setBalDash((d) => ({ ...d, emergencyMode: e.target.checked }));
+                      showToast("saved_toast");
+                    }}
+                  />
+                  {t("bal_em_enable")}
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">{t("bal_em_desc")}</p>
+              <div className={`mt-3 rounded-lg border px-3 py-2 text-xs font-semibold ${balDash.emergencyMode ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                {balDash.emergencyMode ? t("bal_em_state_on") : t("bal_em_state_off")}
+              </div>
+              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 text-xs">
+                {["bal_em_free","bal_em_paused","bal_em_reserve"].map((k) => (
+                  <li key={k} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                    <CheckCircle2 className={`h-3.5 w-3.5 ${balDash.emergencyMode ? "text-rose-600" : "text-muted-foreground"}`} />
+                    <span>{t(k)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Automatic scaling */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_scaling")}</div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label={t("bal_scaling_threshold")}>
+                  <input
+                    type="number" min={1} className={inputCls}
+                    value={balDash.queueThreshold}
+                    onChange={(e) => setBalDash((d) => ({ ...d, queueThreshold: Number(e.target.value) || 1 }))}
+                  />
+                </Field>
+                <Field label={t("bal_scaling_backup")}>
+                  <input
+                    type="number" min={0} className={inputCls}
+                    value={balDash.backupGenerators}
+                    onChange={(e) => setBalDash((d) => ({ ...d, backupGenerators: Math.max(0, Number(e.target.value) || 0) }))}
+                  />
+                </Field>
+              </div>
+              <div className={`mt-4 rounded-lg border px-3 py-2 text-xs ${scalingWarn ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                <div className="font-semibold">{scalingWarn ? t("bal_scaling_warn") : t("bal_scaling_healthy")}</div>
+                <div className="mt-0.5 text-[11px] opacity-80">{t("bal_scaling_placeholder")}</div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  className={btnBase}
+                  disabled={!scalingWarn}
+                  onClick={() => showToast("saved_toast")}
+                >
+                  <Plus className="h-3.5 w-3.5" />{t("bal_scaling_action")}
+                </button>
+              </div>
+            </div>
+
+            {/* System events */}
+            <div className={cardCls}>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_events")}</div>
+              </div>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[640px] text-xs">
+                  <thead className="text-muted-foreground">
+                    <tr className="border-b border-border/60">
+                      <th className="px-2 py-2 text-left">{t("bal_ev_time")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_ev_kind")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_ev_generator")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_ev_detail")}</th>
+                      <th className="px-2 py-2 text-left">{t("bal_ev_severity")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {balDash.events.map((ev) => (
+                      <tr key={ev.id} className="border-b border-border/40">
+                        <td className="px-2 py-2 whitespace-nowrap">{formatDateTime(ev.at)}</td>
+                        <td className="px-2 py-2 font-medium text-foreground">{t(`bal_ev_kind_${ev.kind}`)}</td>
+                        <td className="px-2 py-2 text-muted-foreground">{ev.generator ?? "—"}</td>
+                        <td className="px-2 py-2 text-muted-foreground">{ev.detail}</td>
+                        <td className="px-2 py-2"><BalEventSeverityBadge severity={ev.severity} t={t} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
