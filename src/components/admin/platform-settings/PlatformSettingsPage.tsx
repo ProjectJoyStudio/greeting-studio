@@ -217,6 +217,26 @@ export function PlatformSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {infra.control.mode !== "normal" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-amber-900">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Pause className="h-4 w-4" />
+            <span>
+              {infra.control.mode === "full_maintenance"
+                ? t("tab_control") + " — " + t("badge_live")
+                : t("tab_control")}
+            </span>
+            <span className="text-xs opacity-80">· {infra.control.mode}</span>
+          </div>
+          <button
+            type="button"
+            className={btnBase}
+            onClick={() => setTab("control")}
+          >
+            <Play className="h-3.5 w-3.5" />{t("btn_check")}
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
