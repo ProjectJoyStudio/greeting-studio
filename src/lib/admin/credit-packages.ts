@@ -347,3 +347,67 @@ export const BONUS_KINDS: BonusKind[] = [
 export const DISCOUNT_KINDS: DiscountKind[] = ["percentage", "fixed"];
 export const DISCOUNT_SCOPES: DiscountScope[] = ["global", "country", "language", "package"];
 export const PROMO_DISCOUNT_TYPES: PromoDiscountType[] = ["percentage", "fixed", "bonus_credits"];
+
+// ---------------------------------------------------------------------------
+// Effective status, visibility & savings helpers
+// ---------------------------------------------------------------------------
+
+function toDate(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/** Derive the presentation status from stored status + active window. */
+export function computeEffectiveStatus(
+  p: Pick<CreditPackage, "status" | "startDate" | "endDate">,
+  now: number = Date.now(),
+): EffectiveStatus {
+  if (p.status === "draft") return "draft";
+  if (p.status === "inactive") return "inactive";
+  const end = toDate(p.endDate);
+  if (end !== null && end < now) return "expired";
+  const start = toDate(p.startDate);
+  if (start !== null && start > now) return "scheduled";
+  return "active";
+}
+
+/** Whether a package should appear in the public-facing customer preview. */
+export function isVisibleToCustomer(
+  p: CreditPackage,
+  ctx: { country?: string; language?: string; now?: number } = {},
+): boolean {
+  const eff = computeEffectiveStatus(p, ctx.now);
+  if (eff !== "active") return false;
+  if (
+    ctx.country &&
+    p.visibleCountries.length > 0 &&
+    !p.visibleCountries.includes(ctx.country)
+  )
+    return false;
+  if (
+    ctx.language &&
+    p.visibleLanguages.length > 0 &&
+    !p.visibleLanguages.includes(ctx.language)
+  )
+    return false;
+  return true;
+}
+
+/** Savings vs. original price. Returns zeros when no valid original is set. */
+export function computeSavings(
+  customerPrice: number,
+  originalPrice: number | null,
+): { amount: number; percent: number } {
+  if (
+    originalPrice === null ||
+    !Number.isFinite(originalPrice) ||
+    !Number.isFinite(customerPrice) ||
+    originalPrice <= 0 ||
+    originalPrice <= customerPrice
+  ) {
+    return { amount: 0, percent: 0 };
+  }
+  const amount = originalPrice - customerPrice;
+  return { amount, percent: (amount / originalPrice) * 100 };
+}
