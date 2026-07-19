@@ -5,13 +5,15 @@ import {
   AlertTriangle, CheckCircle2, XCircle, LogOut, ChevronRight,
   Cpu, Scale, GitBranch, Languages, Type, Cloud, Plug, HeartPulse, Gauge, ScrollText,
   Plus, Power, Play, ArrowRightLeft,
+  Zap, ListOrdered, Siren, GripVertical, TrendingUp, Route,
 } from "lucide-react";
 
 import { useI18n, LANGS } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n/types";
 import {
   DEFAULT_PLATFORM_SETTINGS, DEFAULT_PLATFORM_ADVANCED,
-  TRANSLATION_PROVIDERS, computeBalancerLive,
+  TRANSLATION_PROVIDERS, computeBalancerLive, computeBalancerStats,
+  DEFAULT_BALANCER_DASHBOARD, CONTENT_TYPES, PRIORITY_TIERS,
   SUPPORTED_CURRENCIES, SUPPORTED_TIMEZONES, DATE_FORMATS, TIME_FORMATS,
   WEEK_STARTS, COUNTRY_CODES,
   validateGeneral, formatDate, formatDateTime, statusTone, progressTone,
@@ -19,6 +21,8 @@ import {
   type BackupRecord, type MonitoringCheck, type BackupType,
   type BalancerMode, type TranslationProvider,
   type HealthStatus, type LogCategory, type LogResult,
+  type BalancerDashboardSettings, type PriorityTier, type ContentType,
+  type BalancerEvent, type BalancerEventSeverity,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
 
