@@ -43,7 +43,7 @@ const NAV: NavItem[] = [
   { to: "/admin/calendar-settings", key: "admin_nav_calendar_settings", icon: CalendarDays },
   { to: "/admin/reports", key: "admin_nav_reports", icon: BarChart3 },
   { to: "/admin/audit-log", key: "admin_nav_audit_log", icon: ScrollText },
-  { to: "/admin/platform", key: "admin_nav_platform", icon: Settings },
+  { to: "/admin/platform-settings", key: "admin_nav_platform", icon: Settings },
 ];
 
 export function AdminGate({ children }: { children: ReactNode }) {
