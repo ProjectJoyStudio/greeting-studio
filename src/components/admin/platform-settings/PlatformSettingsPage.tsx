@@ -11,13 +11,13 @@ import { useI18n, LANGS } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n/types";
 import {
   DEFAULT_PLATFORM_SETTINGS, DEFAULT_PLATFORM_ADVANCED,
-  GENERATOR_TYPES, TRANSLATION_PROVIDERS, computeBalancerLive,
+  TRANSLATION_PROVIDERS, computeBalancerLive,
   SUPPORTED_CURRENCIES, SUPPORTED_TIMEZONES, DATE_FORMATS, TIME_FORMATS,
   WEEK_STARTS, COUNTRY_CODES,
   validateGeneral, formatDate, formatDateTime, statusTone, progressTone,
   type PlatformSettingsState, type PlatformAdvancedState, type IndicatorStatus,
   type BackupRecord, type MonitoringCheck, type BackupType,
-  type GeneratorRecord, type BalancerMode, type TranslationProvider,
+  type BalancerMode, type TranslationProvider,
   type HealthStatus, type LogCategory, type LogResult,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
