@@ -686,8 +686,513 @@ export function PlatformSettingsPage() {
         </div>
       )}
 
+      {tab === "generators" && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button className={btnPrimary} onClick={() => showToast("saved_toast")}>
+              <Plus className="h-3.5 w-3.5" />{t("gen_add")}
+            </button>
+          </div>
+          <div className={cardCls}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-xs">
+                <thead className="text-muted-foreground">
+                  <tr className="border-b border-border/60">
+                    <th className="px-2 py-2 text-left">{t("gen_name")}</th>
+                    <th className="px-2 py-2 text-left">{t("gen_type")}</th>
+                    <th className="px-2 py-2 text-left">{t("gen_status")}</th>
+                    <th className="px-2 py-2 text-right">{t("gen_priority")}</th>
+                    <th className="px-2 py-2 text-left">{t("gen_load")}</th>
+                    <th className="px-2 py-2 text-right">{t("gen_queue")}</th>
+                    <th className="px-2 py-2 text-right">{t("gen_avg")}</th>
+                    <th className="px-2 py-2 text-right">{t("gen_daily")}</th>
+                    <th className="px-2 py-2 text-right">{t("gen_errors")}</th>
+                    <th className="px-2 py-2 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adv.generators.map((g) => (
+                    <tr key={g.id} className="border-b border-border/40">
+                      <td className="px-2 py-2 font-medium text-foreground">{g.name}</td>
+                      <td className="px-2 py-2">{t(`gen_type_${g.type}`)}</td>
+                      <td className="px-2 py-2">
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(
+                          g.status === "online" ? "online" : g.status === "busy" || g.status === "maintenance" ? "warning" : "error",
+                        )}`}>
+                          {t(`gen_status_${g.status}`)}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2 text-right">{g.priority}</td>
+                      <td className="px-2 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                            <div className={`h-full ${progressTone(g.loadPercent)}`} style={{ width: `${g.loadPercent}%` }} />
+                          </div>
+                          <span className="tabular-nums">{g.loadPercent}%</span>
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 text-right tabular-nums">{g.queue}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{g.avgSeconds}s</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{g.dailyRequests.toLocaleString()}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{g.errorRatePercent.toFixed(1)}%</td>
+                      <td className="px-2 py-2 text-right">
+                        <div className="inline-flex gap-1">
+                          <button className={btnBase} onClick={() =>
+                            updateAdv("generators", (list) => list.map((x) =>
+                              x.id === g.id ? { ...x, enabled: !x.enabled, status: !x.enabled ? "online" : "offline" } : x,
+                            ))}>
+                            <Power className="h-3 w-3" />{g.enabled ? t("btn_disable") : t("btn_enable")}
+                          </button>
+                          <button className={btnBase} onClick={() => showToast("check_toast")}>
+                            <Activity className="h-3 w-3" />{t("gen_test")}
+                          </button>
+                          <button className={btnBase} onClick={() => showToast("saved_toast")}>
+                            <Info className="h-3 w-3" />{t("gen_stats")}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "balancer" && (() => {
+        const live = computeBalancerLive(adv.generators);
+        return (
+          <div className="space-y-4">
+            <div className={cardCls}>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={adv.balancer.enabled}
+                  onChange={(e) => updateAdv("balancer", (b) => ({ ...b, enabled: e.target.checked }))} />
+                {t("bal_enable")}
+              </label>
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label={t("bal_mode")}>
+                  <select className={inputCls} value={adv.balancer.mode}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, mode: e.target.value as BalancerMode }))}>
+                    {(["lowest_queue","fastest","round_robin","priority","cheapest"] as const).map((m) => (
+                      <option key={m} value={m}>{t(`bal_mode_${m}`)}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label={t("bal_max_queue")}>
+                  <input type="number" min={1} className={inputCls} value={adv.balancer.maxQueueLength}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, maxQueueLength: Number(e.target.value) || 1 }))} />
+                </Field>
+                <Field label={t("bal_max_conc")}>
+                  <input type="number" min={1} className={inputCls} value={adv.balancer.maxConcurrent}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, maxConcurrent: Number(e.target.value) || 1 }))} />
+                </Field>
+                <Field label={t("bal_timeout")}>
+                  <input type="number" min={5} className={inputCls} value={adv.balancer.queueTimeoutSeconds}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, queueTimeoutSeconds: Number(e.target.value) || 5 }))} />
+                </Field>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={adv.balancer.autoOverflow}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, autoOverflow: e.target.checked }))} />
+                  {t("bal_overflow")}
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={adv.balancer.autoFailover}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, autoFailover: e.target.checked }))} />
+                  {t("bal_failover")}
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={adv.balancer.retryFailed}
+                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, retryFailed: e.target.checked }))} />
+                  {t("bal_retry")}
+                </label>
+              </div>
+            </div>
+            <div>
+              <div className={`${labelCls} mb-2`}>{t("bal_live")}</div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+                <InfoStat label={t("bal_total")}     value={String(live.total)} />
+                <InfoStat label={t("bal_active")}    value={String(live.active)} />
+                <InfoStat label={t("bal_waiting")}   value={String(live.waiting)} />
+                <InfoStat label={t("bal_running")}   value={String(live.running)} />
+                <InfoStat label={t("bal_completed")} value={live.completedToday.toLocaleString()} />
+                <InfoStat label={t("bal_failed")}    value={live.failedToday.toLocaleString()} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {tab === "fallback" && (
+        <div className="space-y-4">
+          <div className={cardCls}>
+            <p className="text-sm text-muted-foreground">{t("fb_intro")}</p>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {(["primaryId","secondaryId","tertiaryId"] as const).map((slot, idx) => (
+                <Field key={slot} label={t(idx === 0 ? "fb_primary" : idx === 1 ? "fb_secondary" : "fb_tertiary")}>
+                  <select className={inputCls} value={adv.failover[slot]}
+                    onChange={(e) => updateAdv("failover", (f) => ({ ...f, [slot]: e.target.value }))}>
+                    {adv.generators.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name} · {t(`gen_type_${g.type}`)}</option>
+                    ))}
+                  </select>
+                </Field>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button className={btnBase} onClick={() => showToast("check_toast")}>
+                <Play className="h-3.5 w-3.5" />{t("fb_test")}
+              </button>
+              <button className={btnBase} onClick={() => showToast("saved_toast")}>
+                <ArrowRightLeft className="h-3.5 w-3.5" />{t("fb_manual")}
+              </button>
+            </div>
+          </div>
+          <div className={cardCls}>
+            <div className={labelCls}>{t("fb_history")}</div>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-xs">
+                <thead className="text-muted-foreground">
+                  <tr className="border-b border-border/60">
+                    <th className="px-2 py-2 text-left">{t("b_date")}</th>
+                    <th className="px-2 py-2 text-left">{t("fb_from")}</th>
+                    <th className="px-2 py-2 text-left">{t("fb_to")}</th>
+                    <th className="px-2 py-2 text-left">{t("fb_reason")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adv.failover.history.map((h) => {
+                    const from = adv.generators.find((x) => x.id === h.from)?.name ?? h.from;
+                    const to = adv.generators.find((x) => x.id === h.to)?.name ?? h.to;
+                    return (
+                      <tr key={h.id} className="border-b border-border/40">
+                        <td className="px-2 py-2">{formatDateTime(h.at)}</td>
+                        <td className="px-2 py-2">{from}</td>
+                        <td className="px-2 py-2">{to}</td>
+                        <td className="px-2 py-2">{t(`fb_reason_${h.reason}`)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "translations" && (
+        <div className={cardCls}>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={adv.translation.enabled}
+              onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, enabled: e.target.checked }))} />
+            {t("tr_enable")}
+          </label>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label={t("tr_primary")}>
+              <select className={inputCls} value={adv.translation.primary}
+                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, primary: e.target.value as TranslationProvider }))}>
+                {TRANSLATION_PROVIDERS.map((p) => <option key={p} value={p}>{t(`tr_prov_${p}`)}</option>)}
+              </select>
+            </Field>
+            <Field label={t("tr_backup")}>
+              <select className={inputCls} value={adv.translation.backup}
+                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, backup: e.target.value as TranslationProvider }))}>
+                {TRANSLATION_PROVIDERS.map((p) => <option key={p} value={p}>{t(`tr_prov_${p}`)}</option>)}
+              </select>
+            </Field>
+            <Field label={t("tr_retries")}>
+              <input type="number" min={0} max={10} className={inputCls} value={adv.translation.maxRetries}
+                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, maxRetries: Number(e.target.value) || 0 }))} />
+            </Field>
+            <Field label={t("tr_limit")}>
+              <input type="number" min={0} className={inputCls} value={adv.translation.dailyLimit}
+                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, dailyLimit: Number(e.target.value) || 0 }))} />
+            </Field>
+            {([
+              ["autoDetectLanguage","tr_detect"],
+              ["translateTitle","tr_title"],
+              ["translateDescription","tr_desc"],
+              ["translateGreeting","tr_greeting"],
+              ["translateGeneratedText","tr_generated"],
+            ] as const).map(([field, key]) => (
+              <label key={field} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={adv.translation[field] as boolean}
+                  onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, [field]: e.target.checked }))} />
+                {t(key)}
+              </label>
+            ))}
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button className={btnPrimary} onClick={handleSave}><Save className="h-3.5 w-3.5" />{t("btn_save")}</button>
+          </div>
+        </div>
+      )}
+
+      {tab === "overlay" && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+          <div className={cardCls}>
+            <p className="text-sm text-muted-foreground">{t("ov_intro")}</p>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {([
+                ["autoPosition","ov_auto_pos"],
+                ["autoFontSize","ov_auto_font"],
+                ["autoWrap","ov_auto_wrap"],
+                ["shadow","ov_shadow"],
+                ["outline","ov_outline"],
+                ["languageSpecificFonts","ov_langfonts"],
+              ] as const).map(([field, key]) => (
+                <label key={field} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={adv.overlay[field] as boolean}
+                    onChange={(e) => updateAdv("overlay", (o) => ({ ...o, [field]: e.target.checked }))} />
+                  {t(key)}
+                </label>
+              ))}
+              <Field label={t("ov_safe")}>
+                <input type="number" min={0} max={40} className={inputCls} value={adv.overlay.safeMarginPercent}
+                  onChange={(e) => updateAdv("overlay", (o) => ({ ...o, safeMarginPercent: Number(e.target.value) || 0 }))} />
+              </Field>
+              <Field label={t("ov_opacity")}>
+                <input type="number" min={0} max={100} className={inputCls} value={adv.overlay.opacityPercent}
+                  onChange={(e) => updateAdv("overlay", (o) => ({ ...o, opacityPercent: Number(e.target.value) || 0 }))} />
+              </Field>
+            </div>
+          </div>
+          <div className={cardCls}>
+            <div className={labelCls}>{t("ov_preview")}</div>
+            <div className="relative mt-3 aspect-[4/5] w-full overflow-hidden rounded-xl bg-gradient-to-br from-amber-200 via-rose-300 to-plum-400" style={{ background: "linear-gradient(135deg,#f6d5a7,#f4a6a0,#b58bbf)" }}>
+              <div className="absolute inset-0" style={{ padding: `${adv.overlay.safeMarginPercent}%` }}>
+                <div className="flex h-full w-full items-center justify-center text-center">
+                  <span
+                    className="font-[Fraunces] text-white"
+                    style={{
+                      textShadow: adv.overlay.shadow ? "0 2px 6px rgba(0,0,0,0.55)" : "none",
+                      WebkitTextStroke: adv.overlay.outline ? "1px rgba(0,0,0,0.55)" : "0",
+                      opacity: adv.overlay.opacityPercent / 100,
+                      fontSize: adv.overlay.autoFontSize ? "1.5rem" : "1.25rem",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {t("ov_sample")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "storage" && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {adv.storage.map((s) => {
+            const pct = Math.round((s.usedGb / s.totalGb) * 100);
+            return (
+              <div key={s.id} className={cardCls}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-[Fraunces] text-lg font-semibold">{s.name}</div>
+                    {s.primary && <div className="mt-0.5 text-[10px] uppercase tracking-wider text-amber-700">{t("st_primary")}</div>}
+                  </div>
+                  <StatusPill status={s.status} label={t(`status_${s.status}`)} />
+                </div>
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{t("st_used")}</span>
+                    <span className="tabular-nums font-medium">{s.usedGb} / {s.totalGb} GB</span>
+                  </div>
+                  <Progress value={pct} />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_files")}</span><span className="tabular-nums">{s.files.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_videos")}</span><span className="tabular-nums">{s.videos.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_images")}</span><span className="tabular-nums">{s.images.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_music")}</span><span className="tabular-nums">{s.music.toLocaleString()}</span></div>
+                  <div className="flex justify-between col-span-2"><span className="text-muted-foreground">{t("st_backups")}</span><span className="tabular-nums">{s.backups.toLocaleString()}</span></div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  <button className={btnBase} onClick={() => showToast("check_toast")}><Activity className="h-3 w-3" />{t("st_test")}</button>
+                  <button className={btnBase} onClick={() => showToast("saved_toast")}><RefreshCw className="h-3 w-3" />{t("st_reconnect")}</button>
+                  <button className={btnBase} onClick={() => showToast("saved_toast")}><RotateCcw className="h-3 w-3" />{t("st_sync")}</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "api" && (
+        <div className={cardCls}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-xs">
+              <thead className="text-muted-foreground">
+                <tr className="border-b border-border/60">
+                  <th className="px-2 py-2 text-left">{t("api_service")}</th>
+                  <th className="px-2 py-2 text-left">{t("gen_status")}</th>
+                  <th className="px-2 py-2 text-left">{t("api_key")}</th>
+                  <th className="px-2 py-2 text-left">{t("api_last")}</th>
+                  <th className="px-2 py-2 text-right">{t("api_response")}</th>
+                  <th className="px-2 py-2 text-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {adv.apis.map((a) => (
+                  <tr key={a.id} className="border-b border-border/40">
+                    <td className="px-2 py-2 font-medium text-foreground">{a.service}</td>
+                    <td className="px-2 py-2"><StatusPill status={a.status} label={t(`status_${a.status}`)} /></td>
+                    <td className="px-2 py-2 font-mono text-muted-foreground">{a.apiKeyMasked}</td>
+                    <td className="px-2 py-2">{formatDateTime(a.lastCheck)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{a.avgResponseMs ? `${a.avgResponseMs} ms` : "—"}</td>
+                    <td className="px-2 py-2 text-right">
+                      <div className="inline-flex gap-1">
+                        <button className={btnBase} onClick={() =>
+                          updateAdv("apis", (list) => list.map((x) => x.id === a.id ? { ...x, connected: !x.connected } : x))}>
+                          <Plug className="h-3 w-3" />{a.connected ? t("api_disconnect") : t("api_connect")}
+                        </button>
+                        <button className={btnBase} onClick={() => showToast("check_toast")}><Activity className="h-3 w-3" />{t("api_test")}</button>
+                        <button className={btnBase} onClick={() => { setTab("logs"); }}><ScrollText className="h-3 w-3" />{t("api_logs")}</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab === "health" && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {adv.health.map((h) => (
+            <div key={h.kind} className={cardCls}>
+              <div className="flex items-center justify-between">
+                <div className="font-[Fraunces] text-base font-semibold text-foreground">{t(`h_${h.kind}`)}</div>
+                <HealthPill status={h.status} t={t} />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">{h.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "scaling" && (
+        <div className={cardCls}>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={adv.scaling.enabled}
+              onChange={(e) => updateAdv("scaling", (s) => ({ ...s, enabled: e.target.checked }))} />
+            {t("sc_enable")}
+          </label>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label={t("sc_min")}>
+              <input type="number" min={1} className={inputCls} value={adv.scaling.minGenerators}
+                onChange={(e) => updateAdv("scaling", (s) => ({ ...s, minGenerators: Number(e.target.value) || 1 }))} />
+            </Field>
+            <Field label={t("sc_max")}>
+              <input type="number" min={1} className={inputCls} value={adv.scaling.maxGenerators}
+                onChange={(e) => updateAdv("scaling", (s) => ({ ...s, maxGenerators: Number(e.target.value) || 1 }))} />
+            </Field>
+            {([
+              ["autoBalancing","sc_balance"],
+              ["peakMode","sc_peak"],
+              ["nightMode","sc_night"],
+              ["holidayMode","sc_holiday"],
+            ] as const).map(([field, key]) => (
+              <label key={field} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={adv.scaling[field] as boolean}
+                  onChange={(e) => updateAdv("scaling", (s) => ({ ...s, [field]: e.target.checked }))} />
+                {t(key)}
+              </label>
+            ))}
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button className={btnPrimary} onClick={handleSave}><Save className="h-3.5 w-3.5" />{t("btn_save")}</button>
+          </div>
+        </div>
+      )}
+
+      {tab === "logs" && <LogsPanel logs={adv.logs} t={t} />}
+
       {toast && <Toast msg={toast} onDone={() => { /* auto */ }} />}
     </div>
+  );
+}
+
+function HealthPill({ status, t }: { status: HealthStatus; t: (k: string) => string }) {
+  const tone =
+    status === "healthy" ? statusTone("online")
+    : status === "warning" ? statusTone("warning")
+    : statusTone("error");
+  const Icon = status === "healthy" ? CheckCircle2 : status === "warning" ? AlertTriangle : XCircle;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${tone}`}>
+      <Icon className="h-3 w-3" />{t(`h_${status}`)}
+    </span>
+  );
+}
+
+function LogsPanel({ logs, t }: { logs: PlatformAdvancedState["logs"]; t: (k: string) => string }) {
+  const CATS: LogCategory[] = ["generation", "translation", "storage", "api", "balancer"];
+  const [cat, setCat] = useState<LogCategory>("generation");
+  const filtered = logs.filter((l) => l.category === cat);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-1.5 border-b border-border/60 pb-1">
+        {CATS.map((c) => {
+          const active = cat === c;
+          return (
+            <button key={c} type="button" onClick={() => setCat(c)}
+              className={`rounded-t-md border border-b-0 px-3 py-1.5 text-xs font-medium transition ${
+                active ? "border-border/60 bg-card text-foreground shadow-sm" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}>
+              {t(`logs_cat_${c}`)}
+            </button>
+          );
+        })}
+      </div>
+      <div className={cardCls}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-xs">
+            <thead className="text-muted-foreground">
+              <tr className="border-b border-border/60">
+                <th className="px-2 py-2 text-left">{t("logs_time")}</th>
+                <th className="px-2 py-2 text-left">{t("logs_service")}</th>
+                <th className="px-2 py-2 text-left">{t("logs_action")}</th>
+                <th className="px-2 py-2 text-right">{t("logs_duration")}</th>
+                <th className="px-2 py-2 text-left">{t("logs_result")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="px-2 py-6 text-center text-muted-foreground">—</td></tr>
+              )}
+              {filtered.map((l) => (
+                <tr key={l.id} className="border-b border-border/40">
+                  <td className="px-2 py-2">{formatDateTime(l.at)}</td>
+                  <td className="px-2 py-2 font-medium text-foreground">{l.service}</td>
+                  <td className="px-2 py-2 font-mono text-muted-foreground">{l.action}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">
+                    {l.durationMs >= 1000 ? `${(l.durationMs / 1000).toFixed(1)}s` : `${l.durationMs} ms`}
+                  </td>
+                  <td className="px-2 py-2">
+                    <LogResultBadge result={l.result} t={t} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogResultBadge({ result, t }: { result: LogResult; t: (k: string) => string }) {
+  const tone =
+    result === "success" ? statusTone("online")
+    : result === "warning" ? statusTone("warning")
+    : statusTone("error");
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>
+      {t(`logs_res_${result}`)}
+    </span>
   );
 }
 
