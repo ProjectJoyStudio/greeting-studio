@@ -237,7 +237,31 @@ export function UsersPage() {
         )}
       </div>
 
-      {viewing && <ViewModal user={viewing} L={L} lang={lang} onClose={() => setViewing(null)} onEdit={() => { setEditing({ ...viewing }); setViewing(null); }} />}
+      {viewing && (
+        <ViewModal
+          user={viewing}
+          L={L}
+          lang={lang}
+          notes={notesByUser[viewing.id] ?? []}
+          onNotesChange={(next) => setNotesByUser((m) => ({ ...m, [viewing.id]: next }))}
+          onStatusChange={(s) => {
+            setStatus(viewing.id, s);
+            setViewing((v) => (v ? { ...v, status: s } : v));
+          }}
+          onGrantCredits={(amount) => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === viewing.id
+                  ? { ...u, creditsBalance: u.creditsBalance + amount, creditsPurchased: u.creditsPurchased + amount }
+                  : u,
+              ),
+            );
+            setViewing((v) => (v ? { ...v, creditsBalance: v.creditsBalance + amount, creditsPurchased: v.creditsPurchased + amount } : v));
+          }}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing({ ...viewing }); setViewing(null); }}
+        />
+      )}
       {editing && (
         <EditModal
           initial={editing}
