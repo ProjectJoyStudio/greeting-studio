@@ -138,6 +138,9 @@ export function PlatformSettingsPage() {
   const [balDash, setBalDash] = useState<BalancerDashboardSettings>(() =>
     JSON.parse(JSON.stringify(DEFAULT_BALANCER_DASHBOARD)),
   );
+  const [infra, setInfra] = useState<InfrastructureState>(() =>
+    JSON.parse(JSON.stringify(DEFAULT_INFRASTRUCTURE)),
+  );
   const [dragTier, setDragTier] = useState<PriorityTier | null>(null);
   const [tab, setTab] = useState<TabKey>("general");
   const [query, setQuery] = useState("");
