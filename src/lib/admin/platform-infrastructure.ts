@@ -439,7 +439,7 @@ export const DEFAULT_SERVICES: ServicesState = {
       { role: "primary", priority: 1, maxConcurrent: 8, maxQueue: 200, hourlyLimit: 800, dailyLimit: 12000, monthlyBudget: 400, costPerUnit: "≈ €0.008", supportedFormats: ["1024","1536","1920"], supportedLanguages: ["*"], autoFailover: true, autoDisableOnErrors: true, manualReviewAfterFail: true }),
     svc("srv_img_b", "Image Provider B", "image", "connected", "test",
       { role: "backup", priority: 2, maxConcurrent: 4, maxQueue: 120, hourlyLimit: 400, dailyLimit: 8000, monthlyBudget: 200, costPerUnit: "≈ €0.010", supportedFormats: ["1024","1536"], supportedLanguages: ["*"], autoFailover: true, autoDisableOnErrors: true, manualReviewAfterFail: true }),
-    svc("srv_vid_a", "Video Provider A", "video", "test", "test",
+    svc("srv_vid_a", "Video Provider A", "video", "connected", "test",
       { role: "primary", priority: 1, maxConcurrent: 3, maxQueue: 60, supportedDurations: ["15s","30s","60s"], supportedFormats: ["1080p","720p"], autoFailover: true }),
     svc("srv_anim_a", "Animation Provider A", "animation", "connected", "test",
       { role: "primary", priority: 1, maxConcurrent: 4, maxQueue: 80, supportedFormats: ["mp4","webm"] }),
