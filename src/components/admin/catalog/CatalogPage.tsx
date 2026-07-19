@@ -17,6 +17,9 @@ import {
   type CatalogItem, type CatalogCategory, type CatalogType, type CatalogStatus,
   type CatalogValidation, type CatalogTranslation, type DisplayStatus,
   type TranslationStatus, type CatalogFlags,
+  AUTHOR_TYPES, PERFORMANCE_STATUSES, derivePerformance, formatCompact,
+  defaultAuthor, missingMediaWarning,
+  type AuthorType, type PerformanceStatus, type CatalogAuthor,
 } from "@/lib/admin/catalog";
 import { useLocalCatalog, type LocalCatalog } from "./i18n";
 
@@ -29,10 +32,34 @@ const btnPrimary =
 const btnDanger =
   "inline-flex items-center gap-1.5 rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-500/20 dark:text-rose-200";
 
-type SortKey = "title" | "created" | "credits" | "views" | "uses" | "favorites";
+type SortKey =
+  | "title" | "created" | "credits"
+  | "views" | "uses" | "favorites"
+  | "most_viewed" | "least_viewed" | "most_purchased" | "least_purchased";
 type TransFilter = "any" | "complete" | "incomplete" | "missing_primary";
 type PeriodFilter = "any" | "upcoming" | "live" | "past";
 type ActiveFilter = "any" | "active" | "archived";
+type MediaFilter =
+  | "any" | "has_thumb" | "missing_thumb" | "has_views"
+  | "never_viewed" | "has_purchases" | "never_purchased"
+  | "published_missing_media";
+
+const PERF_TONE: Record<PerformanceStatus, string> = {
+  new: "bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30",
+  growing: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 border-indigo-500/30",
+  popular: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30",
+  top: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30",
+  low_activity: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200 border-zinc-500/30",
+};
+
+function PerformancePill({ item, L }: { item: CatalogItem; L: LocalCatalog }) {
+  const p = derivePerformance(item.stats);
+  return (
+    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${PERF_TONE[p]}`}>
+      {L("perf_" + p)}
+    </span>
+  );
+}
 
 function formatDate(iso: string, lang: Lang): string {
   try {
