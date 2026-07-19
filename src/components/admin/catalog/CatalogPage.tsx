@@ -409,8 +409,10 @@ export function CatalogPage() {
           <option value="created">{L("sort_created")}</option>
           <option value="title">{L("sort_title")}</option>
           <option value="credits">{L("sort_credits")}</option>
-          <option value="views">{L("sort_views")}</option>
-          <option value="uses">{L("sort_uses")}</option>
+          <option value="most_viewed">{L("sort_most_viewed")}</option>
+          <option value="least_viewed">{L("sort_least_viewed")}</option>
+          <option value="most_purchased">{L("sort_most_purchased")}</option>
+          <option value="least_purchased">{L("sort_least_purchased")}</option>
           <option value="favorites">{L("sort_favorites")}</option>
         </select>
         <button className={btnBase} onClick={resetFilters}><RotateCcw className="h-3.5 w-3.5" />{L("filter_reset")}</button>
