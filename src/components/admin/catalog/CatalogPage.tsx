@@ -257,6 +257,11 @@ export function CatalogPage() {
         case "views": return b.stats.views - a.stats.views;
         case "uses": return b.stats.uses - a.stats.uses;
         case "favorites": return b.stats.favorites - a.stats.favorites;
+        case "most_viewed": return b.stats.views - a.stats.views;
+        case "least_viewed": return a.stats.views - b.stats.views;
+        case "most_purchased": return (b.stats.purchases ?? b.stats.uses) - (a.stats.purchases ?? a.stats.uses);
+        case "least_purchased": return (a.stats.purchases ?? a.stats.uses) - (b.stats.purchases ?? b.stats.uses);
+        default: return 0;
       }
     });
     return list;
