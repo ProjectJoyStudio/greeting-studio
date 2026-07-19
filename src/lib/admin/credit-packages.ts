@@ -21,8 +21,11 @@ export type DiscountScope = "global" | "country" | "language" | "package";
 
 export type PromoDiscountType = "percentage" | "fixed" | "bonus_credits";
 
+export type PackageStatus = "draft" | "active" | "inactive";
+
 export interface CreditPackage {
   id: string;
+  internalId: string;
   name: string;
   credits: number;
   bonusCredits: number;
@@ -31,6 +34,7 @@ export interface CreditPackage {
   badge: BadgeKind;
   color: string; // hex — used by the customer preview card
   active: boolean;
+  status: PackageStatus;
   visibleCountries: string[]; // ISO codes; empty = all
   visibleLanguages: string[]; // Lang codes; empty = all
   startDate: string | null; // ISO date (yyyy-mm-dd)
@@ -86,6 +90,7 @@ export const nowIso = () => new Date().toISOString();
 export const DEFAULT_PACKAGES: CreditPackage[] = [
   {
     id: "pkg_starter",
+    internalId: "STARTER",
     name: "Starter",
     credits: 20,
     bonusCredits: 0,
@@ -94,6 +99,7 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
     badge: "new",
     color: "#F7C873",
     active: true,
+    status: "active",
     visibleCountries: [],
     visibleLanguages: [],
     startDate: null,
@@ -104,14 +110,16 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
   },
   {
     id: "pkg_popular",
+    internalId: "POPULAR",
     name: "Popular",
     credits: 50,
-    bonusCredits: 10,
+    bonusCredits: 5,
     priceEUR: 19,
     productionCostPerCreditEUR: 0.14,
     badge: "popular",
     color: "#E58BA6",
     active: true,
+    status: "active",
     visibleCountries: [],
     visibleLanguages: [],
     startDate: null,
@@ -122,14 +130,16 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
   },
   {
     id: "pkg_value",
+    internalId: "VALUE",
     name: "Best Value",
-    credits: 120,
-    bonusCredits: 30,
+    credits: 100,
+    bonusCredits: 15,
     priceEUR: 39,
     productionCostPerCreditEUR: 0.13,
     badge: "best_value",
     color: "#B58BE0",
     active: true,
+    status: "active",
     visibleCountries: [],
     visibleLanguages: [],
     startDate: null,
@@ -140,14 +150,16 @@ export const DEFAULT_PACKAGES: CreditPackage[] = [
   },
   {
     id: "pkg_premium",
+    internalId: "PREMIUM",
     name: "Premium",
-    credits: 300,
-    bonusCredits: 90,
+    credits: 250,
+    bonusCredits: 50,
     priceEUR: 89,
     productionCostPerCreditEUR: 0.12,
     badge: "limited",
     color: "#8FB8A7",
     active: true,
+    status: "active",
     visibleCountries: [],
     visibleLanguages: [],
     startDate: null,
