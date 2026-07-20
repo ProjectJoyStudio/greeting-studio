@@ -50,6 +50,7 @@ import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calend
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
 import { Route as AdminCatalogVariantsRouteImport } from './routes/admin.catalog.variants'
+import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
 import { Route as AdminCatalogPublishedRouteImport } from './routes/admin.catalog.published'
@@ -266,6 +267,11 @@ const AdminCatalogVariantsRoute = AdminCatalogVariantsRouteImport.update({
   path: '/variants',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
 const AdminCatalogTranslationsRoute =
   AdminCatalogTranslationsRouteImport.update({
     id: '/translations',
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/published': typeof AdminCatalogPublishedRoute
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/published': typeof AdminCatalogPublishedRoute
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -470,6 +478,7 @@ export interface FileRoutesById {
   '/admin/catalog/published': typeof AdminCatalogPublishedRoute
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -525,6 +534,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/published'
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
+    | '/admin/catalog/upload'
     | '/admin/catalog/variants'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
@@ -575,6 +585,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/published'
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
+    | '/admin/catalog/upload'
     | '/admin/catalog/variants'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
@@ -628,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/published'
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
+    | '/admin/catalog/upload'
     | '/admin/catalog/variants'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
@@ -947,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogVariantsRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/admin/catalog/upload': {
+      id: '/admin/catalog/upload'
+      path: '/upload'
+      fullPath: '/admin/catalog/upload'
+      preLoaderRoute: typeof AdminCatalogUploadRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
     '/admin/catalog/translations': {
       id: '/admin/catalog/translations'
       path: '/translations'
@@ -1056,6 +1075,7 @@ interface AdminCatalogRouteChildren {
   AdminCatalogPublishedRoute: typeof AdminCatalogPublishedRoute
   AdminCatalogTaxonomyRoute: typeof AdminCatalogTaxonomyRoute
   AdminCatalogTranslationsRoute: typeof AdminCatalogTranslationsRoute
+  AdminCatalogUploadRoute: typeof AdminCatalogUploadRoute
   AdminCatalogVariantsRoute: typeof AdminCatalogVariantsRouteWithChildren
   AdminCatalogIndexRoute: typeof AdminCatalogIndexRoute
 }
@@ -1067,6 +1087,7 @@ const AdminCatalogRouteChildren: AdminCatalogRouteChildren = {
   AdminCatalogPublishedRoute: AdminCatalogPublishedRoute,
   AdminCatalogTaxonomyRoute: AdminCatalogTaxonomyRoute,
   AdminCatalogTranslationsRoute: AdminCatalogTranslationsRoute,
+  AdminCatalogUploadRoute: AdminCatalogUploadRoute,
   AdminCatalogVariantsRoute: AdminCatalogVariantsRouteWithChildren,
   AdminCatalogIndexRoute: AdminCatalogIndexRoute,
 }
