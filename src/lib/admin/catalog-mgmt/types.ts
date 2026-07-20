@@ -101,7 +101,9 @@ export type TaxonomyKind =
   | "mood"
   | "visualObject"
   | "ageGroup"
-  | "orientation";
+  | "orientation"
+  | "season"
+  | "theme";
 
 export interface Taxonomy {
   occasion: TaxonomyItem[];
@@ -111,6 +113,8 @@ export interface Taxonomy {
   visualObject: TaxonomyItem[];
   ageGroup: TaxonomyItem[];
   orientation: TaxonomyItem[];
+  season: TaxonomyItem[];
+  theme: TaxonomyItem[];
 }
 
 export function defaultTextDesign(): TextDesign {

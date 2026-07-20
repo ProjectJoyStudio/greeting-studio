@@ -7,7 +7,7 @@ import { LANGS, useI18n } from "@/lib/i18n";
 import type { TaxonomyItem, TaxonomyKind } from "@/lib/admin/catalog-mgmt/types";
 import { Section, useConfirm } from "./shared";
 
-const KINDS: TaxonomyKind[] = ["occasion", "recipient", "style", "mood", "visualObject", "ageGroup", "orientation"];
+const KINDS: TaxonomyKind[] = ["occasion", "recipient", "style", "mood", "visualObject", "season", "theme"];
 
 export function TaxonomyPage() {
   const { taxonomy, addTaxonomy, updateTaxonomy, deleteTaxonomy, reorderTaxonomy, taxonomyUsage, t } = useCatalogMgmt();
