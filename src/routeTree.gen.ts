@@ -48,6 +48,18 @@ import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-p
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
+import { Route as AdminCatalogVariantsRouteImport } from './routes/admin.catalog.variants'
+import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
+import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
+import { Route as AdminCatalogPublishedRouteImport } from './routes/admin.catalog.published'
+import { Route as AdminCatalogHiddenRouteImport } from './routes/admin.catalog.hidden'
+import { Route as AdminCatalogDraftsRouteImport } from './routes/admin.catalog.drafts'
+import { Route as AdminCatalogBackgroundsRouteImport } from './routes/admin.catalog.backgrounds'
+import { Route as AdminCatalogVariantsNewRouteImport } from './routes/admin.catalog.variants.new'
+import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catalog.variants.$id'
+import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
+import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -244,6 +256,69 @@ const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogVariantsRoute = AdminCatalogVariantsRouteImport.update({
+  id: '/variants',
+  path: '/variants',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogTranslationsRoute =
+  AdminCatalogTranslationsRouteImport.update({
+    id: '/translations',
+    path: '/translations',
+    getParentRoute: () => AdminCatalogRoute,
+  } as any)
+const AdminCatalogTaxonomyRoute = AdminCatalogTaxonomyRouteImport.update({
+  id: '/taxonomy',
+  path: '/taxonomy',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogPublishedRoute = AdminCatalogPublishedRouteImport.update({
+  id: '/published',
+  path: '/published',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogHiddenRoute = AdminCatalogHiddenRouteImport.update({
+  id: '/hidden',
+  path: '/hidden',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogDraftsRoute = AdminCatalogDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogBackgroundsRoute = AdminCatalogBackgroundsRouteImport.update({
+  id: '/backgrounds',
+  path: '/backgrounds',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogVariantsNewRoute = AdminCatalogVariantsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminCatalogVariantsRoute,
+} as any)
+const AdminCatalogVariantsIdRoute = AdminCatalogVariantsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminCatalogVariantsRoute,
+} as any)
+const AdminCatalogBackgroundsNewRoute =
+  AdminCatalogBackgroundsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AdminCatalogBackgroundsRoute,
+  } as any)
+const AdminCatalogBackgroundsIdRoute =
+  AdminCatalogBackgroundsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AdminCatalogBackgroundsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -267,7 +342,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
-  '/admin/catalog': typeof AdminCatalogRoute
+  '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -285,6 +360,18 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
+  '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
+  '/admin/catalog/hidden': typeof AdminCatalogHiddenRoute
+  '/admin/catalog/published': typeof AdminCatalogPublishedRoute
+  '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
+  '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
+  '/admin/catalog/': typeof AdminCatalogIndexRoute
+  '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
+  '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
+  '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
+  '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -306,7 +393,6 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
-  '/admin/catalog': typeof AdminCatalogRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -324,6 +410,18 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
+  '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
+  '/admin/catalog/hidden': typeof AdminCatalogHiddenRoute
+  '/admin/catalog/published': typeof AdminCatalogPublishedRoute
+  '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
+  '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
+  '/admin/catalog': typeof AdminCatalogIndexRoute
+  '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
+  '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
+  '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
+  '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -348,7 +446,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
-  '/admin/catalog': typeof AdminCatalogRoute
+  '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -366,6 +464,18 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
+  '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
+  '/admin/catalog/hidden': typeof AdminCatalogHiddenRoute
+  '/admin/catalog/published': typeof AdminCatalogPublishedRoute
+  '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
+  '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
+  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
+  '/admin/catalog/': typeof AdminCatalogIndexRoute
+  '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
+  '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
+  '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
+  '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -409,6 +519,18 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/admin/'
     | '/dashboard/'
+    | '/admin/catalog/backgrounds'
+    | '/admin/catalog/drafts'
+    | '/admin/catalog/hidden'
+    | '/admin/catalog/published'
+    | '/admin/catalog/taxonomy'
+    | '/admin/catalog/translations'
+    | '/admin/catalog/variants'
+    | '/admin/catalog/'
+    | '/admin/catalog/backgrounds/$id'
+    | '/admin/catalog/backgrounds/new'
+    | '/admin/catalog/variants/$id'
+    | '/admin/catalog/variants/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -430,7 +552,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
-    | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/economy'
     | '/admin/languages'
@@ -448,6 +569,18 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/admin'
     | '/dashboard'
+    | '/admin/catalog/backgrounds'
+    | '/admin/catalog/drafts'
+    | '/admin/catalog/hidden'
+    | '/admin/catalog/published'
+    | '/admin/catalog/taxonomy'
+    | '/admin/catalog/translations'
+    | '/admin/catalog/variants'
+    | '/admin/catalog'
+    | '/admin/catalog/backgrounds/$id'
+    | '/admin/catalog/backgrounds/new'
+    | '/admin/catalog/variants/$id'
+    | '/admin/catalog/variants/new'
   id:
     | '__root__'
     | '/'
@@ -489,6 +622,18 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/admin/'
     | '/dashboard/'
+    | '/admin/catalog/backgrounds'
+    | '/admin/catalog/drafts'
+    | '/admin/catalog/hidden'
+    | '/admin/catalog/published'
+    | '/admin/catalog/taxonomy'
+    | '/admin/catalog/translations'
+    | '/admin/catalog/variants'
+    | '/admin/catalog/'
+    | '/admin/catalog/backgrounds/$id'
+    | '/admin/catalog/backgrounds/new'
+    | '/admin/catalog/variants/$id'
+    | '/admin/catalog/variants/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -788,13 +933,152 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/catalog/': {
+      id: '/admin/catalog/'
+      path: '/'
+      fullPath: '/admin/catalog/'
+      preLoaderRoute: typeof AdminCatalogIndexRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/variants': {
+      id: '/admin/catalog/variants'
+      path: '/variants'
+      fullPath: '/admin/catalog/variants'
+      preLoaderRoute: typeof AdminCatalogVariantsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/translations': {
+      id: '/admin/catalog/translations'
+      path: '/translations'
+      fullPath: '/admin/catalog/translations'
+      preLoaderRoute: typeof AdminCatalogTranslationsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/taxonomy': {
+      id: '/admin/catalog/taxonomy'
+      path: '/taxonomy'
+      fullPath: '/admin/catalog/taxonomy'
+      preLoaderRoute: typeof AdminCatalogTaxonomyRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/published': {
+      id: '/admin/catalog/published'
+      path: '/published'
+      fullPath: '/admin/catalog/published'
+      preLoaderRoute: typeof AdminCatalogPublishedRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/hidden': {
+      id: '/admin/catalog/hidden'
+      path: '/hidden'
+      fullPath: '/admin/catalog/hidden'
+      preLoaderRoute: typeof AdminCatalogHiddenRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/drafts': {
+      id: '/admin/catalog/drafts'
+      path: '/drafts'
+      fullPath: '/admin/catalog/drafts'
+      preLoaderRoute: typeof AdminCatalogDraftsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/backgrounds': {
+      id: '/admin/catalog/backgrounds'
+      path: '/backgrounds'
+      fullPath: '/admin/catalog/backgrounds'
+      preLoaderRoute: typeof AdminCatalogBackgroundsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/variants/new': {
+      id: '/admin/catalog/variants/new'
+      path: '/new'
+      fullPath: '/admin/catalog/variants/new'
+      preLoaderRoute: typeof AdminCatalogVariantsNewRouteImport
+      parentRoute: typeof AdminCatalogVariantsRoute
+    }
+    '/admin/catalog/variants/$id': {
+      id: '/admin/catalog/variants/$id'
+      path: '/$id'
+      fullPath: '/admin/catalog/variants/$id'
+      preLoaderRoute: typeof AdminCatalogVariantsIdRouteImport
+      parentRoute: typeof AdminCatalogVariantsRoute
+    }
+    '/admin/catalog/backgrounds/new': {
+      id: '/admin/catalog/backgrounds/new'
+      path: '/new'
+      fullPath: '/admin/catalog/backgrounds/new'
+      preLoaderRoute: typeof AdminCatalogBackgroundsNewRouteImport
+      parentRoute: typeof AdminCatalogBackgroundsRoute
+    }
+    '/admin/catalog/backgrounds/$id': {
+      id: '/admin/catalog/backgrounds/$id'
+      path: '/$id'
+      fullPath: '/admin/catalog/backgrounds/$id'
+      preLoaderRoute: typeof AdminCatalogBackgroundsIdRouteImport
+      parentRoute: typeof AdminCatalogBackgroundsRoute
+    }
   }
 }
+
+interface AdminCatalogBackgroundsRouteChildren {
+  AdminCatalogBackgroundsIdRoute: typeof AdminCatalogBackgroundsIdRoute
+  AdminCatalogBackgroundsNewRoute: typeof AdminCatalogBackgroundsNewRoute
+}
+
+const AdminCatalogBackgroundsRouteChildren: AdminCatalogBackgroundsRouteChildren =
+  {
+    AdminCatalogBackgroundsIdRoute: AdminCatalogBackgroundsIdRoute,
+    AdminCatalogBackgroundsNewRoute: AdminCatalogBackgroundsNewRoute,
+  }
+
+const AdminCatalogBackgroundsRouteWithChildren =
+  AdminCatalogBackgroundsRoute._addFileChildren(
+    AdminCatalogBackgroundsRouteChildren,
+  )
+
+interface AdminCatalogVariantsRouteChildren {
+  AdminCatalogVariantsIdRoute: typeof AdminCatalogVariantsIdRoute
+  AdminCatalogVariantsNewRoute: typeof AdminCatalogVariantsNewRoute
+}
+
+const AdminCatalogVariantsRouteChildren: AdminCatalogVariantsRouteChildren = {
+  AdminCatalogVariantsIdRoute: AdminCatalogVariantsIdRoute,
+  AdminCatalogVariantsNewRoute: AdminCatalogVariantsNewRoute,
+}
+
+const AdminCatalogVariantsRouteWithChildren =
+  AdminCatalogVariantsRoute._addFileChildren(AdminCatalogVariantsRouteChildren)
+
+interface AdminCatalogRouteChildren {
+  AdminCatalogBackgroundsRoute: typeof AdminCatalogBackgroundsRouteWithChildren
+  AdminCatalogDraftsRoute: typeof AdminCatalogDraftsRoute
+  AdminCatalogHiddenRoute: typeof AdminCatalogHiddenRoute
+  AdminCatalogPublishedRoute: typeof AdminCatalogPublishedRoute
+  AdminCatalogTaxonomyRoute: typeof AdminCatalogTaxonomyRoute
+  AdminCatalogTranslationsRoute: typeof AdminCatalogTranslationsRoute
+  AdminCatalogVariantsRoute: typeof AdminCatalogVariantsRouteWithChildren
+  AdminCatalogIndexRoute: typeof AdminCatalogIndexRoute
+}
+
+const AdminCatalogRouteChildren: AdminCatalogRouteChildren = {
+  AdminCatalogBackgroundsRoute: AdminCatalogBackgroundsRouteWithChildren,
+  AdminCatalogDraftsRoute: AdminCatalogDraftsRoute,
+  AdminCatalogHiddenRoute: AdminCatalogHiddenRoute,
+  AdminCatalogPublishedRoute: AdminCatalogPublishedRoute,
+  AdminCatalogTaxonomyRoute: AdminCatalogTaxonomyRoute,
+  AdminCatalogTranslationsRoute: AdminCatalogTranslationsRoute,
+  AdminCatalogVariantsRoute: AdminCatalogVariantsRouteWithChildren,
+  AdminCatalogIndexRoute: AdminCatalogIndexRoute,
+}
+
+const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
+  AdminCatalogRouteChildren,
+)
 
 interface AdminRouteChildren {
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCalendarSettingsRoute: typeof AdminCalendarSettingsRoute
-  AdminCatalogRoute: typeof AdminCatalogRoute
+  AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
@@ -810,7 +1094,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCalendarSettingsRoute: AdminCalendarSettingsRoute,
-  AdminCatalogRoute: AdminCatalogRoute,
+  AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
