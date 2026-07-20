@@ -1,6 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CatalogPage } from "@/components/admin/catalog/CatalogPage";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
+
+import { CatalogMgmtProvider } from "@/lib/admin/catalog-mgmt/store";
+import { CatalogShell } from "@/components/admin/catalog-mgmt/CatalogShell";
 
 export const Route = createFileRoute("/admin/catalog")({
-  component: CatalogPage,
+  component: CatalogLayout,
 });
+
+function CatalogLayout() {
+  return (
+    <CatalogMgmtProvider>
+      <CatalogShell>
+        <Outlet />
+      </CatalogShell>
+    </CatalogMgmtProvider>
+  );
+}
