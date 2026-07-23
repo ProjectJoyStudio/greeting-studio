@@ -265,6 +265,20 @@ export async function softDeleteBackground(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function hardDeleteBackground(id: string): Promise<void> {
+  const { error } = await supabase.from("catalog_backgrounds").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Convert a data URL to a File so we can reuse the upload path.
+export async function dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const ext = blob.type.split("/")[1] || "png";
+  const name = filename.match(/\.[a-z0-9]+$/i) ? filename : `${filename}.${ext}`;
+  return new File([blob], name, { type: blob.type });
+}
+
 // ---------------------------------------------------------------------------
 // Card variants (with junctions, translations, text designs)
 // ---------------------------------------------------------------------------
