@@ -49,7 +49,6 @@ import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
-import { Route as AdminCatalogVariantsRouteImport } from './routes/admin.catalog.variants'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -57,6 +56,7 @@ import { Route as AdminCatalogPublishedRouteImport } from './routes/admin.catalo
 import { Route as AdminCatalogHiddenRouteImport } from './routes/admin.catalog.hidden'
 import { Route as AdminCatalogDraftsRouteImport } from './routes/admin.catalog.drafts'
 import { Route as AdminCatalogBackgroundsRouteImport } from './routes/admin.catalog.backgrounds'
+import { Route as AdminCatalogVariantsIndexRouteImport } from './routes/admin.catalog.variants.index'
 import { Route as AdminCatalogVariantsNewRouteImport } from './routes/admin.catalog.variants.new'
 import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catalog.variants.$id'
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
@@ -262,11 +262,6 @@ const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
-const AdminCatalogVariantsRoute = AdminCatalogVariantsRouteImport.update({
-  id: '/variants',
-  path: '/variants',
-  getParentRoute: () => AdminCatalogRoute,
-} as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -303,15 +298,21 @@ const AdminCatalogBackgroundsRoute = AdminCatalogBackgroundsRouteImport.update({
   path: '/backgrounds',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const AdminCatalogVariantsIndexRoute =
+  AdminCatalogVariantsIndexRouteImport.update({
+    id: '/variants/',
+    path: '/variants/',
+    getParentRoute: () => AdminCatalogRoute,
+  } as any)
 const AdminCatalogVariantsNewRoute = AdminCatalogVariantsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminCatalogVariantsRoute,
+  id: '/variants/new',
+  path: '/variants/new',
+  getParentRoute: () => AdminCatalogRoute,
 } as any)
 const AdminCatalogVariantsIdRoute = AdminCatalogVariantsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminCatalogVariantsRoute,
+  id: '/variants/$id',
+  path: '/variants/$id',
+  getParentRoute: () => AdminCatalogRoute,
 } as any)
 const AdminCatalogBackgroundsNewRoute =
   AdminCatalogBackgroundsNewRouteImport.update({
@@ -373,12 +374,12 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
-  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
   '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
+  '/admin/catalog/variants/': typeof AdminCatalogVariantsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -424,12 +425,12 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
-  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
   '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
+  '/admin/catalog/variants': typeof AdminCatalogVariantsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -479,12 +480,12 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
-  '/admin/catalog/variants': typeof AdminCatalogVariantsRouteWithChildren
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
   '/admin/catalog/variants/new': typeof AdminCatalogVariantsNewRoute
+  '/admin/catalog/variants/': typeof AdminCatalogVariantsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -535,12 +536,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
-    | '/admin/catalog/variants'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
     | '/admin/catalog/variants/new'
+    | '/admin/catalog/variants/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -586,12 +587,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
-    | '/admin/catalog/variants'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
     | '/admin/catalog/variants/new'
+    | '/admin/catalog/variants'
   id:
     | '__root__'
     | '/'
@@ -640,12 +641,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
-    | '/admin/catalog/variants'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
     | '/admin/catalog/variants/new'
+    | '/admin/catalog/variants/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -952,13 +953,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
-    '/admin/catalog/variants': {
-      id: '/admin/catalog/variants'
-      path: '/variants'
-      fullPath: '/admin/catalog/variants'
-      preLoaderRoute: typeof AdminCatalogVariantsRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
       path: '/upload'
@@ -1008,19 +1002,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogBackgroundsRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/admin/catalog/variants/': {
+      id: '/admin/catalog/variants/'
+      path: '/variants'
+      fullPath: '/admin/catalog/variants/'
+      preLoaderRoute: typeof AdminCatalogVariantsIndexRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
     '/admin/catalog/variants/new': {
       id: '/admin/catalog/variants/new'
-      path: '/new'
+      path: '/variants/new'
       fullPath: '/admin/catalog/variants/new'
       preLoaderRoute: typeof AdminCatalogVariantsNewRouteImport
-      parentRoute: typeof AdminCatalogVariantsRoute
+      parentRoute: typeof AdminCatalogRoute
     }
     '/admin/catalog/variants/$id': {
       id: '/admin/catalog/variants/$id'
-      path: '/$id'
+      path: '/variants/$id'
       fullPath: '/admin/catalog/variants/$id'
       preLoaderRoute: typeof AdminCatalogVariantsIdRouteImport
-      parentRoute: typeof AdminCatalogVariantsRoute
+      parentRoute: typeof AdminCatalogRoute
     }
     '/admin/catalog/backgrounds/new': {
       id: '/admin/catalog/backgrounds/new'
@@ -1055,19 +1056,6 @@ const AdminCatalogBackgroundsRouteWithChildren =
     AdminCatalogBackgroundsRouteChildren,
   )
 
-interface AdminCatalogVariantsRouteChildren {
-  AdminCatalogVariantsIdRoute: typeof AdminCatalogVariantsIdRoute
-  AdminCatalogVariantsNewRoute: typeof AdminCatalogVariantsNewRoute
-}
-
-const AdminCatalogVariantsRouteChildren: AdminCatalogVariantsRouteChildren = {
-  AdminCatalogVariantsIdRoute: AdminCatalogVariantsIdRoute,
-  AdminCatalogVariantsNewRoute: AdminCatalogVariantsNewRoute,
-}
-
-const AdminCatalogVariantsRouteWithChildren =
-  AdminCatalogVariantsRoute._addFileChildren(AdminCatalogVariantsRouteChildren)
-
 interface AdminCatalogRouteChildren {
   AdminCatalogBackgroundsRoute: typeof AdminCatalogBackgroundsRouteWithChildren
   AdminCatalogDraftsRoute: typeof AdminCatalogDraftsRoute
@@ -1076,8 +1064,10 @@ interface AdminCatalogRouteChildren {
   AdminCatalogTaxonomyRoute: typeof AdminCatalogTaxonomyRoute
   AdminCatalogTranslationsRoute: typeof AdminCatalogTranslationsRoute
   AdminCatalogUploadRoute: typeof AdminCatalogUploadRoute
-  AdminCatalogVariantsRoute: typeof AdminCatalogVariantsRouteWithChildren
   AdminCatalogIndexRoute: typeof AdminCatalogIndexRoute
+  AdminCatalogVariantsIdRoute: typeof AdminCatalogVariantsIdRoute
+  AdminCatalogVariantsNewRoute: typeof AdminCatalogVariantsNewRoute
+  AdminCatalogVariantsIndexRoute: typeof AdminCatalogVariantsIndexRoute
 }
 
 const AdminCatalogRouteChildren: AdminCatalogRouteChildren = {
@@ -1088,8 +1078,10 @@ const AdminCatalogRouteChildren: AdminCatalogRouteChildren = {
   AdminCatalogTaxonomyRoute: AdminCatalogTaxonomyRoute,
   AdminCatalogTranslationsRoute: AdminCatalogTranslationsRoute,
   AdminCatalogUploadRoute: AdminCatalogUploadRoute,
-  AdminCatalogVariantsRoute: AdminCatalogVariantsRouteWithChildren,
   AdminCatalogIndexRoute: AdminCatalogIndexRoute,
+  AdminCatalogVariantsIdRoute: AdminCatalogVariantsIdRoute,
+  AdminCatalogVariantsNewRoute: AdminCatalogVariantsNewRoute,
+  AdminCatalogVariantsIndexRoute: AdminCatalogVariantsIndexRoute,
 }
 
 const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
@@ -1178,13 +1170,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
