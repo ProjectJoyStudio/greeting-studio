@@ -624,6 +624,9 @@ export function rowToBackground(bg: BgRow, asset: MaRow | null, signedUrl: strin
     createdAt: bg.created_at,
     updatedAt: bg.updated_at,
     gradientIndex: Math.floor((asset?.file_size ?? 0) % 8),
+    mediaAssetId: bg.primary_media_asset_id ?? null,
+    storageBucket: asset?.storage_bucket ?? null,
+    storagePath: asset?.storage_path ?? null,
   };
 }
 
