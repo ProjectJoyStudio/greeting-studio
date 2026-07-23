@@ -270,6 +270,112 @@ export async function hardDeleteBackground(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// Shallow patch (no junctions / no translations) — used for bulk status/flag changes.
+export async function patchVariantShallow(
+  id: string,
+  patch: {
+    status?: CvRow["status"];
+    is_new?: boolean;
+    is_popular?: boolean;
+    is_recommended?: boolean;
+    is_hidden?: boolean;
+    is_archived?: boolean;
+    allow_sharing?: boolean;
+    allow_downloading?: boolean;
+    display_order?: number;
+    internal_name?: string;
+    internal_notes?: string | null;
+    publication_date?: string | null;
+    primary_occasion_id?: string | null;
+    background_id?: string;
+  },
+): Promise<void> {
+  const { error } = await supabase.from("catalog_card_variants").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function patchBackgroundShallow(
+  id: string,
+  patch: {
+    internal_name?: string;
+    orientation?: Orientation;
+    status?: BgRow["status"];
+    internal_notes?: string | null;
+  },
+): Promise<void> {
+  const { error } = await supabase.from("catalog_backgrounds").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomy CRUD (single item)
+// ---------------------------------------------------------------------------
+import type { TaxonomyItem } from "./types";
+
+export async function insertTaxonomyItemDb(
+  dbKind: TaxKind,
+  item: TaxonomyItem,
+): Promise<string | null> {
+  const { table, trans, fk } = TAX_TABLES[dbKind];
+  const langs: Lang[] = ["ru", "en", "de", "uk", "fr", "pl"];
+  const insertRow: Record<string, unknown> = {
+    slug: item.key,
+    sort_order: item.displayOrder,
+    is_active: item.active,
+  };
+  if (hasIconCol(dbKind)) insertRow.icon = item.icon ?? null;
+  const { data, error } = await supabase.from(table as never).insert(insertRow as never).select("id").single();
+  if (error || !data) return null;
+  const id = (data as { id: string }).id;
+  const trRows = langs.map((l) => ({
+    [fk]: id,
+    language_code: l,
+    name: item.names[l] || item.names.en || item.key,
+  }));
+  await supabase.from(trans as never).insert(trRows as never);
+  return id;
+}
+
+export async function updateTaxonomyItemDb(
+  dbKind: TaxKind,
+  id: string,
+  patch: Partial<TaxonomyItem>,
+): Promise<void> {
+  const { table, trans, fk } = TAX_TABLES[dbKind];
+  const rowPatch: Record<string, unknown> = {};
+  if (patch.displayOrder !== undefined) rowPatch.sort_order = patch.displayOrder;
+  if (patch.active !== undefined) rowPatch.is_active = patch.active;
+  if (patch.icon !== undefined && hasIconCol(dbKind)) rowPatch.icon = patch.icon ?? null;
+  if (Object.keys(rowPatch).length > 0) {
+    await supabase.from(table as never).update(rowPatch as never).eq("id", id);
+  }
+  if (patch.names) {
+    const trRows = Object.entries(patch.names)
+      .filter(([, v]) => v !== undefined)
+      .map(([lang, name]) => ({ [fk]: id, language_code: lang, name: name ?? "" }));
+    if (trRows.length) {
+      await supabase.from(trans as never).upsert(trRows as never, { onConflict: `${fk},language_code` });
+    }
+  }
+}
+
+export async function deleteTaxonomyItemDb(dbKind: TaxKind, id: string): Promise<void> {
+  const { table } = TAX_TABLES[dbKind];
+  await supabase.from(table as never).delete().eq("id", id);
+}
+
+export async function reorderTaxonomyItemsDb(
+  dbKind: TaxKind,
+  orderedIds: string[],
+): Promise<void> {
+  const { table } = TAX_TABLES[dbKind];
+  await Promise.all(
+    orderedIds.map((id, idx) =>
+      supabase.from(table as never).update({ sort_order: idx + 1 } as never).eq("id", id),
+    ),
+  );
+}
+
 // Convert a data URL to a File so we can reuse the upload path.
 export async function dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
   const res = await fetch(dataUrl);
