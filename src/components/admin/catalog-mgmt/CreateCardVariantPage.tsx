@@ -91,7 +91,7 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     return errs;
   }
 
-  function save(nextStatus?: VariantStatus) {
+  async function save(nextStatus?: VariantStatus) {
     const errs = validate(nextStatus === "published");
     if (errs.length) {
       errs.forEach((e) => toast.error(e));
@@ -99,10 +99,10 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     }
     const payload = nextStatus ? { ...form, status: nextStatus } : form;
     if (existing) {
-      updateVariant(existing.id, payload);
+      await updateVariant(existing.id, payload);
       toast.success(nextStatus === "published" ? t("cm_published_toast") : t("cm_saved"));
     } else {
-      const created = addVariant(payload);
+      const created = await addVariant(payload);
       toast.success(t("cm_saved"));
       nav({ to: "/admin/catalog/variants/$id", params: { id: created.id } });
       return;
@@ -346,8 +346,8 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
           {existing && (
             <button
               type="button"
-              onClick={() => {
-                const c = duplicateVariant(existing.id);
+              onClick={async () => {
+                const c = await duplicateVariant(existing.id);
                 if (c) {
                   toast.success(t("cm_duplicated"));
                   nav({ to: "/admin/catalog/variants/$id", params: { id: c.id } });

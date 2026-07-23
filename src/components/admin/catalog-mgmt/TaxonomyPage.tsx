@@ -124,8 +124,8 @@ export function TaxonomyPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            ask(t("cm_confirm_delete"), () => {
-                              const res = deleteTaxonomy(kind, it.key);
+                            ask(t("cm_confirm_delete"), async () => {
+                              const res = await deleteTaxonomy(kind, it.key);
                               if (!res.ok) toast.error(`${t("cm_confirm_delete_used")} (${res.usage})`);
                               else toast.success(t("cm_deleted"));
                             }, t("cm_confirm_delete_used"))

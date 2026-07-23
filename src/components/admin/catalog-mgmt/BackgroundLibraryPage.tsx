@@ -149,8 +149,8 @@ export function BackgroundLibraryPage() {
                       type="button"
                       className="rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-destructive hover:bg-destructive/20"
                       onClick={() =>
-                        ask(t("cm_confirm_delete"), () => {
-                          const ok = deleteBackground(bg.id);
+                        ask(t("cm_confirm_delete"), async () => {
+                          const ok = await deleteBackground(bg.id);
                           if (!ok) toast.error(t("cm_confirm_delete_used"));
                           else toast.success(t("cm_deleted"));
                         })

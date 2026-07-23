@@ -56,7 +56,7 @@ export function UploadCardsPage() {
       const { w, h } = await measure(url);
       const orientation: Orientation = w > h ? "horizontal" : w < h ? "vertical" : "square";
       const stem = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "card";
-      const bg = addBackground({
+      const bg = await addBackground({
         internalName: stem,
         sourceImageUrl: url,
         thumbnailUrl: url,
@@ -69,7 +69,7 @@ export function UploadCardsPage() {
       });
       const translations: Partial<Record<string, Translation>> = {};
       for (const l of LANGS) translations[l.code] = emptyTranslation(l.code);
-      const variant = addVariant({
+      const variant = await addVariant({
         backgroundId: bg.id,
         internalName: stem,
         primaryOccasion: "",
