@@ -27,6 +27,10 @@ export interface Background {
   updatedAt: string;
   // demo-only placeholder gradient index when no image is uploaded
   gradientIndex?: number;
+  // Media asset row id in Supabase (present once uploaded)
+  mediaAssetId?: string | null;
+  storageBucket?: string | null;
+  storagePath?: string | null;
 }
 
 export interface TextDesign {
