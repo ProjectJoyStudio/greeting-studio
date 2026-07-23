@@ -212,8 +212,8 @@ export function CardVariantsPage({ statusFilter, title, subtitle }: Props) {
                     <Link to="/admin/catalog/variants/$id" params={{ id: v.id }} className="rounded border border-border/60 bg-background px-2 py-1 hover:bg-muted/50">{t("cm_edit")}</Link>
                     <button
                       type="button"
-                      onClick={() => {
-                        const c = duplicateVariant(v.id);
+                      onClick={async () => {
+                        const c = await duplicateVariant(v.id);
                         if (c) toast.success(t("cm_duplicated"));
                       }}
                       className="rounded border border-border/60 bg-background px-2 py-1 hover:bg-muted/50"

@@ -70,19 +70,19 @@ export function AddBackgroundPage({ editId }: { editId?: string }) {
     reader.readAsDataURL(file);
   }
 
-  function save(nextStatus?: BackgroundStatus, thenCreateVariant = false) {
+  async function save(nextStatus?: BackgroundStatus, thenCreateVariant = false) {
     if (!form.internalName.trim()) {
       setNameError(t("cm_v_internal_required"));
       return;
     }
     const patch = nextStatus ? { ...form, status: nextStatus } : form;
     if (existing) {
-      updateBackground(existing.id, patch);
+      await updateBackground(existing.id, patch);
       toast.success(t("cm_bg_saved"));
       if (thenCreateVariant) nav({ to: "/admin/catalog/variants/new", search: { backgroundId: existing.id } });
       else nav({ to: "/admin/catalog/backgrounds" });
     } else {
-      const created = addBackground(patch);
+      const created = await addBackground(patch);
       toast.success(t("cm_bg_saved"));
       if (thenCreateVariant) nav({ to: "/admin/catalog/variants/new", search: { backgroundId: created.id } });
       else nav({ to: "/admin/catalog/backgrounds" });
