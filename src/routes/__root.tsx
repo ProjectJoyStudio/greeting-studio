@@ -15,6 +15,7 @@ import { I18nProvider } from "../lib/i18n";
 import { AuthProvider } from "../lib/auth/AuthContext";
 import { AdminRoleProvider } from "../lib/admin/role";
 import { EconomyProvider } from "../lib/admin/economy";
+import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -134,6 +135,7 @@ function RootComponent() {
             <EconomyProvider>
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
+              <Toaster position="top-center" richColors />
             </EconomyProvider>
           </AdminRoleProvider>
         </AuthProvider>
