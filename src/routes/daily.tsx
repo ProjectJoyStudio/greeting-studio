@@ -45,7 +45,8 @@ function DailyPage() {
           {EVERYDAY_ITEMS.map((it) => (
             <Link
               key={it.key}
-              to="/studio"
+              to="/catalog"
+              search={{ occasion: it.key }}
               className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm"
             >
               <div className="h-40" style={{ backgroundImage: it.grad }} />
