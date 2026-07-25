@@ -28,6 +28,7 @@ import { cmT } from "./i18n";
 import {
   ensureTaxonomyForLocal,
   fetchAllTaxonomyIds,
+  fetchAllTaxonomyItems,
   listBackgrounds,
   listVariants,
   insertBackground,
