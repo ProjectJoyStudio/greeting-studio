@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       const u = data.session?.user;
       if (u) {
-        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as User);
+        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as unknown as User);
         setStatus("authenticated");
       } else {
         setStatus("unauthenticated");
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       const u = session?.user;
       if (u) {
-        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as User);
+        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as unknown as User);
         setStatus("authenticated");
       } else {
         setUser(null);
