@@ -1,11 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
-import { Heart, Search } from "lucide-react";
+import { Heart, Search, X, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/catalog")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    occasion:
+      typeof search.occasion === "string" && search.occasion.length > 0
+        ? search.occasion
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Greeting Catalog — Project Joy" },
@@ -29,6 +35,8 @@ const gradients = [
 
 function CatalogPage() {
   const { t } = useI18n();
+  const { occasion } = Route.useSearch();
+  const navigate = useNavigate({ from: "/catalog" });
   const filterKeys = [
     "cat_birthday", "cat_mother", "cat_father", "cat_wife", "cat_husband",
     "cat_children", "cat_friends", "cat_love", "cat_wedding", "cat_anniversary",
@@ -45,13 +53,33 @@ function CatalogPage() {
 
   const visible = items.filter((it) => {
     const inCat = active === "all" || it.key === active;
+    const inOccasion = !occasion || it.key === occasion;
     const inQuery = !query.trim() || it.label.toLowerCase().includes(query.trim().toLowerCase());
-    return inCat && inQuery;
+    return inCat && inOccasion && inQuery;
   });
+
+  const clearOccasion = () =>
+    navigate({ search: (prev) => ({ ...prev, occasion: undefined }) });
+
   return (
     <SiteLayout>
       <PageHeader eyebrow={t("nav_catalog")} title={t("page_catalog_title")} subtitle={t("page_catalog_sub")}>
         <div className="flex flex-col gap-4">
+          {occasion && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                {t("nav_occasions")}:
+              </span>
+              <button
+                type="button"
+                onClick={clearOccasion}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-warm transition hover:opacity-90"
+              >
+                {t(occasion)}
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           <div className="relative w-full max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -84,7 +112,27 @@ function CatalogPage() {
 
       <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
         {visible.length === 0 ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">{t("catalog_no_results")}</p>
+          <div className="flex flex-col items-center gap-5 py-16 text-center">
+            <p className="text-sm text-muted-foreground">{t("catalog_no_results")}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {occasion && (
+                <button
+                  type="button"
+                  onClick={clearOccasion}
+                  className="rounded-full border border-border bg-card/70 px-4 py-2 text-sm text-foreground/80 transition hover:border-primary/40"
+                >
+                  {t("catalog_all")}
+                </button>
+              )}
+              <Link
+                to="/studio"
+                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+              >
+                <Sparkles className="h-4 w-4" />
+                {t("cta_create_gift")}
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
             {visible.map((it, i) => (
