@@ -8,6 +8,7 @@ import { useI18n, LANGS } from "@/lib/i18n";
 import type { Background, CardVariant, Orientation, Translation } from "@/lib/admin/catalog-mgmt/types";
 import { emptyTranslation } from "@/lib/admin/catalog-mgmt/types";
 import { Section } from "./shared";
+import { supabase } from "@/integrations/supabase/client";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -45,56 +46,95 @@ export function UploadCardsPage() {
   const [items, setItems] = useState<UploadedItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [permError, setPermError] = useState<string | null>(null);
+
+  async function checkPermission(): Promise<string | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return "You must sign in before uploading files.";
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+    if (error) return error.message;
+    const roles = (data ?? []).map((r) => r.role as string);
+    const ok = roles.some((r) => r === "editor" || r === "admin" || r === "super_admin");
+    if (!ok) return "You do not have permission to upload catalog files.";
+    return null;
+  }
 
   async function handleFiles(files: FileList | File[]) {
+    if (busy) return;
+    setPermError(null);
     setBusy(true);
-    const arr = Array.from(files);
     const created: UploadedItem[] = [];
-    for (const file of arr) {
-      if (!ACCEPTED.includes(file.type) || file.size > MAX_SIZE) continue;
-      const url = await readFileAsDataURL(file);
-      const { w, h } = await measure(url);
-      const orientation: Orientation = w > h ? "horizontal" : w < h ? "vertical" : "square";
-      const stem = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "card";
-      const bg = await addBackground({
-        internalName: stem,
-        sourceImageUrl: url,
-        thumbnailUrl: url,
-        orientation,
-        aspectRatio: w && h ? `${w}:${h}` : "4:5",
-        visualStyles: [],
-        visualObjects: [],
-        mood: [],
-        status: "active",
-      });
-      const translations: Partial<Record<string, Translation>> = {};
-      for (const l of LANGS) translations[l.code] = emptyTranslation(l.code);
-      const variant = await addVariant({
-        backgroundId: bg.id,
-        internalName: stem,
-        primaryOccasion: "",
-        additionalOccasions: [],
-        recipients: [],
-        styles: [],
-        visualObjects: [],
-        mood: [],
-        ageGroup: "",
-        orientation,
-        translations: translations as CardVariant["translations"],
-        textDesign: defaultTextDesign(),
-        displayOrder: 0,
-        isNew: true,
-        isPopular: false,
-        isRecommended: false,
-        allowSharing: true,
-        allowDownloading: true,
-        status: "draft",
-      });
-      created.push({ variant, background: bg, thumb: url });
+    try {
+      const permMsg = await checkPermission();
+      if (permMsg) {
+        setPermError(permMsg);
+        toast.error(permMsg);
+        return;
+      }
+      const arr = Array.from(files);
+      for (const file of arr) {
+        if (!ACCEPTED.includes(file.type) || file.size > MAX_SIZE) {
+          toast.error(`${file.name}: unsupported type or too large`);
+          continue;
+        }
+        try {
+          const url = await readFileAsDataURL(file);
+          const { w, h } = await measure(url);
+          const orientation: Orientation = w > h ? "horizontal" : w < h ? "vertical" : "square";
+          const stem = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "card";
+          const bg = await addBackground({
+            internalName: stem,
+            sourceImageUrl: url,
+            thumbnailUrl: url,
+            orientation,
+            aspectRatio: w && h ? `${w}:${h}` : "4:5",
+            visualStyles: [],
+            visualObjects: [],
+            mood: [],
+            status: "active",
+          });
+          const translations: Partial<Record<string, Translation>> = {};
+          for (const l of LANGS) translations[l.code] = emptyTranslation(l.code);
+          const variant = await addVariant({
+            backgroundId: bg.id,
+            internalName: stem,
+            primaryOccasion: "",
+            additionalOccasions: [],
+            recipients: [],
+            styles: [],
+            visualObjects: [],
+            mood: [],
+            ageGroup: "",
+            orientation,
+            translations: translations as CardVariant["translations"],
+            textDesign: defaultTextDesign(),
+            displayOrder: 0,
+            isNew: true,
+            isPopular: false,
+            isRecommended: false,
+            allowSharing: true,
+            allowDownloading: true,
+            status: "draft",
+          });
+          created.push({ variant, background: bg, thumb: url });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[UploadCardsPage] upload failed:", err);
+          toast.error(`${file.name}: ${msg}`);
+        }
+      }
+      if (created.length > 0) {
+        setItems((prev) => [...created, ...prev]);
+        toast.success(t("cm_up_added").replace("{n}", String(created.length)));
+      }
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+      if (cameraRef.current) cameraRef.current.value = "";
     }
-    setItems((prev) => [...created, ...prev]);
-    if (created.length > 0) toast.success(t("cm_up_added").replace("{n}", String(created.length)));
-    setBusy(false);
   }
 
   function removeItem(item: UploadedItem) {
@@ -107,6 +147,11 @@ export function UploadCardsPage() {
     <div className="space-y-4">
       <Section title={t("cm_up_title")}>
         <p className="mb-3 text-sm text-muted-foreground">{t("cm_up_subtitle")}</p>
+        {permError && (
+          <p role="alert" className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {permError}
+          </p>
+        )}
         <div
           onDragOver={(e) => {
             e.preventDefault();
