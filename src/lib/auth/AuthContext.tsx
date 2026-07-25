@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { User } from "@/types/models";
+import { supabase } from "@/integrations/supabase/client";
 
 // ---------------------------------------------------------------------------
 // Frontend-only authentication context.
@@ -29,23 +30,51 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("unauthenticated");
+  const [status, setStatus] = useState<AuthStatus>("loading");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      const u = data.session?.user;
+      if (u) {
+        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as User);
+        setStatus("authenticated");
+      } else {
+        setStatus("unauthenticated");
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      const u = session?.user;
+      if (u) {
+        setUser({ id: u.id, email: u.email ?? "", displayName: (u.user_metadata?.display_name as string) ?? u.email ?? "" } as User);
+        setStatus("authenticated");
+      } else {
+        setUser(null);
+        setStatus("unauthenticated");
+      }
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
       isAuthenticated: status === "authenticated" && user !== null,
-      signIn: async () => {
-        // Placeholder — wire to Lovable Cloud / Supabase auth here.
-        setStatus("unauthenticated");
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
       },
-      signUp: async () => {
-        setStatus("unauthenticated");
+      signUp: async (email, password) => {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
       },
       signOut: async () => {
-        setUser(null);
-        setStatus("unauthenticated");
+        await supabase.auth.signOut();
       },
       requestPasswordReset: async () => {
         // Placeholder — will call Supabase resetPasswordForEmail here.
