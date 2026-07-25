@@ -154,6 +154,54 @@ export async function fetchAllTaxonomyIds(): Promise<SlugIdMap> {
   return result as SlugIdMap;
 }
 
+// Fetch the full taxonomy (rows + all translations) from DB, grouped by local kind.
+// Orientation is stored as a column, not a table — callers merge it from local defaults.
+export async function fetchAllTaxonomyItems(): Promise<Partial<Record<TaxonomyKind, TaxonomyItem[]>>> {
+  const kinds = (Object.keys(LOCAL_TAX_KIND) as TaxonomyKind[]).filter(
+    (k) => LOCAL_TAX_KIND[k] !== null,
+  );
+  const result: Partial<Record<TaxonomyKind, TaxonomyItem[]>> = {};
+  await Promise.all(
+    kinds.map(async (localKind) => {
+      const dbKind = LOCAL_TAX_KIND[localKind]!;
+      const { table, trans, fk } = TAX_TABLES[dbKind];
+      const [rowsRes, transRes] = await Promise.all([
+        supabase.from(table as never).select("*").order("sort_order", { ascending: true }),
+        supabase.from(trans as never).select("*"),
+      ]);
+      const rows = (rowsRes.data ?? []) as Array<{
+        id: string;
+        slug: string;
+        sort_order: number | null;
+        is_active: boolean | null;
+        icon?: string | null;
+      }>;
+      const trRows = (transRes.data ?? []) as Array<Record<string, unknown>>;
+      const byId = new Map<string, Record<string, string>>();
+      for (const tr of trRows) {
+        const id = tr[fk] as string;
+        const lang = tr.language_code as string;
+        const name = (tr.name as string) ?? "";
+        const cur = byId.get(id) ?? {};
+        cur[lang] = name;
+        byId.set(id, cur);
+      }
+      const items: TaxonomyItem[] = rows.map((r, idx) => {
+        const names = byId.get(r.id) ?? {};
+        return {
+          key: r.slug,
+          names: names as TaxonomyItem["names"],
+          icon: hasIconCol(dbKind) ? r.icon ?? undefined : undefined,
+          displayOrder: r.sort_order ?? idx + 1,
+          active: r.is_active ?? true,
+        };
+      });
+      result[localKind] = items;
+    }),
+  );
+  return result;
+}
+
 // Ensure every locally-known slug exists in DB (with an English fallback name).
 // Safe to call repeatedly — uses ON CONFLICT (slug) DO NOTHING semantics.
 export async function ensureTaxonomyForLocal(local: Taxonomy): Promise<SlugIdMap> {
