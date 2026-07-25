@@ -59,7 +59,7 @@ function CatalogPage() {
   });
 
   const clearOccasion = () =>
-    navigate({ search: (prev) => ({ ...prev, occasion: undefined }) });
+    navigate({ search: (prev: { occasion?: string }) => ({ ...prev, occasion: undefined }) });
 
   return (
     <SiteLayout>
