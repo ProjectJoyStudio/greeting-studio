@@ -177,6 +177,13 @@ export function CardPreview({
 }
 
 /** Simple multi-select popover; keys are internal, labels are localized taxonomy names. */
+const dropdownListeners = new Set<(id: string | null) => void>();
+let currentOpenDropdownId: string | null = null;
+function openDropdown(id: string | null) {
+  currentOpenDropdownId = id;
+  dropdownListeners.forEach((l) => l(id));
+}
+
 export function TaxonomyMultiSelect({
   items,
   value,
@@ -190,7 +197,31 @@ export function TaxonomyMultiSelect({
   lang: Lang;
   placeholder?: string;
 }) {
+  const uid = useId();
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const listener = (id: string | null) => setOpen(id === uid);
+    dropdownListeners.add(listener);
+    return () => {
+      dropdownListeners.delete(listener);
+    };
+  }, [uid]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") openDropdown(null);
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) openDropdown(null);
+    };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+  }, [open]);
   const label = useMemo(() => {
     if (value.length === 0) return placeholder ?? "—";
     return value
@@ -199,19 +230,17 @@ export function TaxonomyMultiSelect({
       .join(", ") + (value.length > 3 ? ` +${value.length - 3}` : "");
   }, [value, items, lang, placeholder]);
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => openDropdown(currentOpenDropdownId === uid ? null : uid)}
         className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background px-3 py-2 text-left text-sm hover:border-primary/50"
       >
         <span className="truncate">{label}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
       {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-border/60 bg-popover p-1 shadow-lg">
+        <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-md border border-border/60 bg-popover p-1 shadow-lg">
             {items.map((it) => {
               const checked = value.includes(it.key);
               return (
@@ -235,8 +264,7 @@ export function TaxonomyMultiSelect({
                 </button>
               );
             })}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
