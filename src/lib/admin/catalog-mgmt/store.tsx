@@ -99,7 +99,20 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
       slugIdsRef.current = await fetchAllTaxonomyIds();
     }
     const idSlug = reverseSlugMap(slugIdsRef.current);
-    const [bgList, cvData] = await Promise.all([listBackgrounds(), listVariants()]);
+    const [bgList, cvData, taxItems] = await Promise.all([
+      listBackgrounds(),
+      listVariants(),
+      fetchAllTaxonomyItems(),
+    ]);
+    // Merge DB taxonomy into state; orientation stays from local defaults (column, not table).
+    setTaxonomy((prev) => {
+      const next: Taxonomy = { ...prev };
+      for (const k of Object.keys(taxItems) as TaxonomyKind[]) {
+        const items = taxItems[k];
+        if (items) next[k] = items;
+      }
+      return next;
+    });
     // Hydrate backgrounds with signed URLs in parallel
     const localBgs = await Promise.all(
       bgList.map(async ({ row, asset }) => {
@@ -460,9 +473,11 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
     try {
       const id = await insertTaxonomyItemDb(dbKind, item);
       if (id && slugIdsRef.current) slugIdsRef.current[dbKind].set(item.key, id);
+      await refreshTaxonomyOnly();
     } catch (e) {
       console.error(e);
       toast.error("Save failed");
+      await refreshTaxonomyOnly();
     }
   };
   const updateTaxonomy: Ctx["updateTaxonomy"] = async (kind, key, patch) => {
@@ -475,9 +490,11 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
     if (!dbKind || !id) return;
     try {
       await updateTaxonomyItemDb(dbKind, id, patch);
+      await refreshTaxonomyOnly();
     } catch (e) {
       console.error(e);
       toast.error("Save failed");
+      await refreshTaxonomyOnly();
     }
   };
   const taxonomyUsage: Ctx["taxonomyUsage"] = (kind, key) => {
@@ -527,9 +544,11 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
       try {
         await deleteTaxonomyItemDb(dbKind, id);
         slugIdsRef.current?.[dbKind].delete(key);
+        await refreshTaxonomyOnly();
       } catch (e) {
         console.error(e);
         toast.error("Delete failed");
+        await refreshTaxonomyOnly();
       }
     }
     return { ok: true, usage: 0 };
@@ -552,9 +571,11 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
       .filter((v): v is string => Boolean(v));
     try {
       await reorderTaxonomyItemsDb(dbKind, ids);
+      await refreshTaxonomyOnly();
     } catch (e) {
       console.error(e);
       toast.error("Save failed");
+      await refreshTaxonomyOnly();
     }
   };
 
