@@ -8,13 +8,11 @@ import {
   type ReactNode,
 } from "react";
 
-// ---------------------------------------------------------------------------
-// Frontend-only admin role placeholder. There is no real auth here — the
-// role is stored in localStorage so the UI can gate admin routes for the
-// current browser session. Backend integration will replace this entirely.
-// ---------------------------------------------------------------------------
+import { supabase } from "@/integrations/supabase/client";
 
 export type AdminRole =
+  | "customer"
+  | "editor"
   | "super_admin"
   | "admin"
   | "manager"
@@ -23,6 +21,8 @@ export type AdminRole =
   | "finance_manager";
 
 export const ADMIN_ROLES: AdminRole[] = [
+  "customer",
+  "editor",
   "super_admin",
   "admin",
   "manager",
@@ -31,35 +31,101 @@ export const ADMIN_ROLES: AdminRole[] = [
   "finance_manager",
 ];
 
-const STORAGE_KEY = "pj_admin_role";
+const ACCESS_ROLES = new Set<AdminRole>(["editor", "admin", "super_admin"]);
+const ROLE_PRIORITY: AdminRole[] = [
+  "super_admin",
+  "admin",
+  "editor",
+  "manager",
+  "content_manager",
+  "support_manager",
+  "finance_manager",
+  "customer",
+];
 
 type Ctx = {
   role: AdminRole | null;
+  email: string | null;
+  loading: boolean;
+  error: string | null;
   isAdmin: boolean;
-  setRole: (r: AdminRole | null) => void;
+  refreshRole: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AdminRoleCtx = createContext<Ctx | null>(null);
 
 export function AdminRoleProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<AdminRole | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshRole = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const user = session?.user;
+      setEmail(user?.email ?? null);
+
+      if (!user) {
+        setRoleState(null);
+        return;
+      }
+
+      const { data, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      if (roleError) throw roleError;
+
+      const roles = (data ?? [])
+        .map((row) => row.role as AdminRole)
+        .filter((value): value is AdminRole => ADMIN_ROLES.includes(value));
+      const bestRole = ROLE_PRIORITY.find((candidate) => roles.includes(candidate)) ?? null;
+      setRoleState(bestRole);
+    } catch (err) {
+      setRoleState(null);
+      setError(err instanceof Error ? err.message : "Unable to load account permissions.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) as AdminRole | null;
-      if (stored && ADMIN_ROLES.includes(stored)) setRoleState(stored);
-    } catch {}
+    void refreshRole();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      void refreshRole();
+    });
+    return () => data.subscription.unsubscribe();
+  }, [refreshRole]);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setRoleState(null);
+    setEmail(null);
   }, []);
 
-  const setRole = useCallback((r: AdminRole | null) => {
-    setRoleState(r);
-    try {
-      if (r) localStorage.setItem(STORAGE_KEY, r);
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-  }, []);
-
-  const value = useMemo(() => ({ role, isAdmin: role !== null, setRole }), [role, setRole]);
+  const value = useMemo(
+    () => ({
+      role,
+      email,
+      loading,
+      error,
+      isAdmin: role !== null && ACCESS_ROLES.has(role),
+      refreshRole,
+      signOut,
+    }),
+    [email, error, loading, refreshRole, role, signOut],
+  );
   return <AdminRoleCtx.Provider value={value}>{children}</AdminRoleCtx.Provider>;
 }
 
