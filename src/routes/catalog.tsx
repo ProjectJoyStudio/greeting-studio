@@ -4,6 +4,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
 import { Heart, Search, X, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -46,42 +47,13 @@ type CardRow = {
   is_hidden: boolean | null;
   is_archived: boolean | null;
   deleted_at: string | null;
-  background: BackgroundRow | null;
-  primary_occasion: { slug: string } | null;
-  additional: { occasion: { slug: string } | null }[];
+  background: PublicCatalogCard["background"];
+  primary_occasion: PublicCatalogCard["primary_occasion"];
+  additional: PublicCatalogCard["additional"];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
 };
 
 type OccasionRow = { id: string; slug: string };
-
-type VariantQueryRow = {
-  id: string;
-  internal_name: string;
-  background_id: string | null;
-  primary_occasion_id: string | null;
-  status: string;
-  is_hidden: boolean | null;
-  is_archived: boolean | null;
-  deleted_at: string | null;
-  display_order: number | null;
-  created_at: string | null;
-};
-
-type OccasionLookupRow = { id: string; slug: string; is_active: boolean | null };
-type AdditionalOccasionRow = { card_variant_id: string; occasion_id: string };
-type TranslationRow = {
-  card_variant_id: string;
-  language_code: string;
-  title: string | null;
-  greeting_text: string | null;
-};
-type BackgroundRow = {
-  id: string;
-  status: string | null;
-  is_hidden: boolean | null;
-  is_archived: boolean | null;
-  deleted_at: string | null;
-};
 
 const normalizeOccasionSlug = (value: string) => value.trim().toLowerCase().replace(/-/g, "_");
 
@@ -119,123 +91,14 @@ function CatalogPage() {
   const cardsQuery = useQuery({
     queryKey: ["public-catalog-cards"],
     queryFn: async (): Promise<CardRow[]> => {
-      logCatalogDebug("catalog_card_variants query filters", {
+      logCatalogDebug("catalog_card_variants server query filters", {
         status: "published",
         is_hidden: "false or null",
         is_archived: "false or null",
         deleted_at: null,
         note: "Rows logged here are returned by the database before client-side occasion/search filtering.",
       });
-
-      const { data: variantData, error: variantError } = await supabase
-        .from("catalog_card_variants")
-        .select("id, internal_name, background_id, primary_occasion_id, status, is_hidden, is_archived, deleted_at, display_order, created_at")
-        .eq("status", "published")
-        .or("is_hidden.eq.false,is_hidden.is.null")
-        .or("is_archived.eq.false,is_archived.is.null")
-        .is("deleted_at", null)
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false });
-
-      if (variantError) {
-        logCatalogError("catalog_card_variants query error", variantError);
-        throw variantError;
-      }
-
-      const variantRows = (variantData ?? []) as VariantQueryRow[];
-      logCatalogDebug(
-        "catalog_card_variants returned rows before client filtering",
-        variantRows.map((row) => ({
-          id: row.id,
-          internal_name: row.internal_name,
-          status: row.status,
-          is_hidden: row.is_hidden,
-          is_archived: row.is_archived,
-          deleted_at: row.deleted_at,
-          primary_occasion_id: row.primary_occasion_id,
-          background_id: row.background_id,
-        })),
-      );
-
-      const variantIds = variantRows.map((row) => row.id);
-      if (variantIds.length === 0) return [];
-
-      const primaryOccasionIds = variantRows
-        .map((row) => row.primary_occasion_id)
-        .filter((id): id is string => Boolean(id));
-      const backgroundIds = variantRows
-        .map((row) => row.background_id)
-        .filter((id): id is string => Boolean(id));
-
-      const [additionalResult, translationsResult, backgroundsResult] = await Promise.all([
-        supabase
-          .from("card_variant_additional_occasions")
-          .select("card_variant_id, occasion_id")
-          .in("card_variant_id", variantIds),
-        supabase
-          .from("catalog_card_translations")
-          .select("card_variant_id, language_code, title, greeting_text")
-          .in("card_variant_id", variantIds),
-        backgroundIds.length > 0
-          ? supabase
-              .from("catalog_backgrounds")
-              .select("id, status, is_hidden, is_archived, deleted_at")
-              .in("id", backgroundIds)
-          : Promise.resolve({ data: [] as BackgroundRow[], error: null }),
-      ]);
-
-      if (additionalResult.error) logCatalogError("additional occasions query error", additionalResult.error);
-      if (translationsResult.error) logCatalogError("translations query error", translationsResult.error);
-      if (backgroundsResult.error) logCatalogError("background query error", backgroundsResult.error);
-
-      const additionalRows = (additionalResult.data ?? []) as AdditionalOccasionRow[];
-      const translationRows = (translationsResult.data ?? []) as TranslationRow[];
-      const backgroundRows = (backgroundsResult.data ?? []) as BackgroundRow[];
-      const occasionIds = Array.from(
-        new Set([
-          ...primaryOccasionIds,
-          ...additionalRows.map((row) => row.occasion_id),
-        ]),
-      );
-
-      const occasionsResult = occasionIds.length > 0
-        ? await supabase
-            .from("catalog_occasions")
-            .select("id, slug, is_active")
-            .in("id", occasionIds)
-        : { data: [] as OccasionLookupRow[], error: null };
-
-      if (occasionsResult.error) logCatalogError("occasion lookup query error", occasionsResult.error);
-
-      const occasionsById = new Map(
-        ((occasionsResult.data ?? []) as OccasionLookupRow[]).map((row) => [row.id, row]),
-      );
-      const backgroundsById = new Map(backgroundRows.map((row) => [row.id, row]));
-
-      const cards = variantRows.map((variant) => {
-        const primaryOccasion = variant.primary_occasion_id
-          ? occasionsById.get(variant.primary_occasion_id)
-          : undefined;
-        const additional = additionalRows
-          .filter((row) => row.card_variant_id === variant.id)
-          .map((row) => {
-            const occasionRow = occasionsById.get(row.occasion_id);
-            return { occasion: occasionRow ? { slug: occasionRow.slug } : null };
-          });
-
-        return {
-          id: variant.id,
-          internal_name: variant.internal_name,
-          status: variant.status,
-          is_hidden: variant.is_hidden,
-          is_archived: variant.is_archived,
-          deleted_at: variant.deleted_at,
-          background: variant.background_id ? backgroundsById.get(variant.background_id) ?? null : null,
-          primary_occasion: primaryOccasion ? { slug: primaryOccasion.slug } : null,
-          additional,
-          translations: translationRows.filter((row) => row.card_variant_id === variant.id),
-        } satisfies CardRow;
-      });
+      const cards = await getPublicCatalogCards();
 
       logCatalogDebug(
         "assembled catalog rows before client filtering",
