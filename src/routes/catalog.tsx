@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 import { Heart, Search, X, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -33,33 +35,98 @@ const gradients = [
   "linear-gradient(160deg, oklch(0.85 0.05 200), oklch(0.5 0.08 220))",
 ];
 
+type CardRow = {
+  id: string;
+  internal_name: string;
+  primary_occasion: { slug: string } | null;
+  additional: { occasion: { slug: string } | null }[];
+  translations: { language_code: string; title: string | null; greeting_text: string | null }[];
+};
+
+type OccasionRow = { id: string; slug: string };
+
 function CatalogPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { occasion } = Route.useSearch();
   const navigate = useNavigate({ from: "/catalog" });
-  const filterKeys = [
-    "cat_birthday", "cat_mother", "cat_father", "cat_wife", "cat_husband",
-    "cat_children", "cat_friends", "cat_love", "cat_wedding", "cat_anniversary",
-    "cat_newborn", "cat_congrats", "cat_graduation", "cat_teacher",
-    "cat_christmas", "cat_newyear", "cat_easter", "cat_holiday",
-    "cat_thanks", "cat_getwell", "cat_luck", "cat_corporate",
-  ];
   const [active, setActive] = useState<string>("all");
   const [query, setQuery] = useState("");
 
-  const items = useMemo(() => {
-    return filterKeys.map((k, i) => ({ key: k, label: t(k), index: i }));
-  }, [filterKeys, t]);
-
-  const visible = items.filter((it) => {
-    const inCat = active === "all" || it.key === active;
-    const inOccasion = !occasion || it.key === occasion;
-    const inQuery = !query.trim() || it.label.toLowerCase().includes(query.trim().toLowerCase());
-    return inCat && inOccasion && inQuery;
+  const occasionsQuery = useQuery({
+    queryKey: ["public-occasions"],
+    queryFn: async (): Promise<OccasionRow[]> => {
+      const { data, error } = await supabase
+        .from("catalog_occasions")
+        .select("id, slug")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
+
+  const cardsQuery = useQuery({
+    queryKey: ["public-catalog-cards"],
+    queryFn: async (): Promise<CardRow[]> => {
+      const { data, error } = await supabase
+        .from("catalog_card_variants")
+        .select(
+          `id, internal_name,
+           primary_occasion:catalog_occasions!catalog_card_variants_primary_occasion_id_fkey(slug),
+           additional:card_variant_additional_occasions(occasion:catalog_occasions(slug)),
+           translations:catalog_card_translations(language_code,title,greeting_text)`,
+        )
+        .eq("status", "published")
+        .eq("is_hidden", false)
+        .eq("is_archived", false)
+        .is("deleted_at", null)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as CardRow[];
+    },
+  });
+
+  const occasionSlugs = useMemo(
+    () => (occasionsQuery.data ?? []).map((o) => o.slug),
+    [occasionsQuery.data],
+  );
+
+  const cards = cardsQuery.data ?? [];
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return cards.filter((c) => {
+      const slugs = [
+        c.primary_occasion?.slug,
+        ...c.additional.map((a) => a.occasion?.slug),
+      ].filter(Boolean) as string[];
+      if (occasion && !slugs.includes(occasion)) return false;
+      if (active !== "all" && !slugs.includes(active)) return false;
+      if (q) {
+        const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
+        const hay = [c.internal_name, tr?.title, tr?.greeting_text]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [cards, occasion, active, query, lang]);
 
   const clearOccasion = () =>
     navigate({ search: (prev: { occasion?: string }) => ({ ...prev, occasion: undefined }) });
+
+  const loading = cardsQuery.isLoading || occasionsQuery.isLoading;
+  const occasionLabel = (slug: string) => {
+    const key = `cat_${slug}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+    const alt = t(slug);
+    if (alt !== slug) return alt;
+    return slug.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+  };
 
   return (
     <SiteLayout>
@@ -75,7 +142,7 @@ function CatalogPage() {
                 onClick={clearOccasion}
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-warm transition hover:opacity-90"
               >
-                {t(occasion)}
+                {occasionLabel(occasion)}
                 <X className="h-3 w-3" />
               </button>
             </div>
@@ -97,13 +164,13 @@ function CatalogPage() {
             >
               {t("catalog_all")}
             </button>
-            {filterKeys.map((k) => (
+            {occasionSlugs.map((slug) => (
               <button
-                key={k}
-                onClick={() => setActive(k)}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${active === k ? "bg-primary text-primary-foreground" : "border border-border bg-card/70 text-foreground/80 hover:border-primary/40"}`}
+                key={slug}
+                onClick={() => setActive(slug)}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${active === slug ? "bg-primary text-primary-foreground" : "border border-border bg-card/70 text-foreground/80 hover:border-primary/40"}`}
               >
-                {t(k)}
+                {occasionLabel(slug)}
               </button>
             ))}
           </div>
@@ -111,7 +178,9 @@ function CatalogPage() {
       </PageHeader>
 
       <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-        {visible.length === 0 ? (
+        {loading ? (
+          <p className="py-16 text-center text-sm text-muted-foreground">…</p>
+        ) : visible.length === 0 ? (
           <div className="flex flex-col items-center gap-5 py-16 text-center">
             <p className="text-sm text-muted-foreground">{t("catalog_no_results")}</p>
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -135,30 +204,35 @@ function CatalogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
-            {visible.map((it, i) => (
-              <article key={it.key} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
-                <div className="aspect-[4/5]" style={{ backgroundImage: gradients[it.index % gradients.length] }}>
-                  <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-                    <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest backdrop-blur">
-                      {t("catalog_card_tag")} {String(it.index + 1).padStart(2, "0")}
-                    </span>
-                    <div>
-                      <div className="font-display text-2xl italic">{t("catalog_card_wish")}</div>
-                      <div className="mt-1 text-xs opacity-80">{t("catalog_card_sub")}</div>
+            {visible.map((c, i) => {
+              const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
+              const title = tr?.title || c.internal_name;
+              const wish = tr?.greeting_text || t("catalog_card_wish");
+              const slug = c.primary_occasion?.slug ?? "";
+              return (
+                <article key={c.id} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
+                  <div className="aspect-[4/5]" style={{ backgroundImage: gradients[i % gradients.length] }}>
+                    <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
+                      <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest backdrop-blur">
+                        {slug ? occasionLabel(slug) : t("catalog_card_tag")}
+                      </span>
+                      <div>
+                        <div className="font-display text-2xl italic line-clamp-3">{wish}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between p-4">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold">{t("catalog_card_wish")}</div>
-                    <div className="truncate text-xs text-muted-foreground">{it.label}</div>
+                  <div className="flex items-center justify-between p-4">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">{title}</div>
+                      <div className="truncate text-xs text-muted-foreground">{slug ? occasionLabel(slug) : ""}</div>
+                    </div>
+                    <button aria-label="favorite" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary">
+                      <Heart className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button aria-label="favorite" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary">
-                    <Heart className="h-4 w-4" />
-                  </button>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
