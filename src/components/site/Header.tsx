@@ -16,8 +16,6 @@ type NavLeaf = { to: string; key: string };
 const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/daily", key: "nav_daily" },
   { to: "/calendar", key: "nav_calendar" },
-  { to: "/catalog", key: "nav_popular" },
-  { to: "/catalog", key: "nav_new" },
 ];
 
 const STUDIO_MENU: NavLeaf[] = [
