@@ -166,6 +166,21 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
     setVariants(localVariants);
   }, []);
 
+  // Refresh only taxonomy items from DB — used after taxonomy CRUD so every
+  // dropdown that reads `taxonomy` reflects the change without a full reload.
+  const refreshTaxonomyOnly = useCallback(async () => {
+    slugIdsRef.current = await fetchAllTaxonomyIds();
+    const taxItems = await fetchAllTaxonomyItems();
+    setTaxonomy((prev) => {
+      const next: Taxonomy = { ...prev };
+      for (const k of Object.keys(taxItems) as TaxonomyKind[]) {
+        const items = taxItems[k];
+        if (items) next[k] = items;
+      }
+      return next;
+    });
+  }, []);
+
   // Hydrate on mount: ensure the local taxonomy exists in DB, then load rows.
   useEffect(() => {
     let cancelled = false;
