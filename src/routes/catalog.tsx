@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Heart, Search, X, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/catalog")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -18,6 +18,10 @@ export const Route = createFileRoute("/catalog")({
     meta: [
       { title: "Greeting Catalog — Project Joy" },
       { name: "description", content: "Browse hundreds of premium digital greeting designs across every occasion." },
+      { property: "og:title", content: "Greeting Catalog — Project Joy" },
+      { property: "og:description", content: "Browse premium digital greeting designs by occasion, style, and language." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CatalogPage,
@@ -38,6 +42,11 @@ const gradients = [
 type CardRow = {
   id: string;
   internal_name: string;
+  status: string;
+  is_hidden: boolean | null;
+  is_archived: boolean | null;
+  deleted_at: string | null;
+  background: BackgroundRow | null;
   primary_occasion: { slug: string } | null;
   additional: { occasion: { slug: string } | null }[];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
@@ -45,9 +54,51 @@ type CardRow = {
 
 type OccasionRow = { id: string; slug: string };
 
+type VariantQueryRow = {
+  id: string;
+  internal_name: string;
+  background_id: string | null;
+  primary_occasion_id: string | null;
+  status: string;
+  is_hidden: boolean | null;
+  is_archived: boolean | null;
+  deleted_at: string | null;
+  display_order: number | null;
+  created_at: string | null;
+};
+
+type OccasionLookupRow = { id: string; slug: string; is_active: boolean | null };
+type AdditionalOccasionRow = { card_variant_id: string; occasion_id: string };
+type TranslationRow = {
+  card_variant_id: string;
+  language_code: string;
+  title: string | null;
+  greeting_text: string | null;
+};
+type BackgroundRow = {
+  id: string;
+  status: string | null;
+  is_hidden: boolean | null;
+  is_archived: boolean | null;
+  deleted_at: string | null;
+};
+
+const normalizeOccasionSlug = (value: string) => value.trim().toLowerCase().replace(/-/g, "_");
+
+const logCatalogDebug = (label: string, payload: unknown) => {
+  if (typeof window === "undefined") return;
+  console.info(`[Catalog debug] ${label}`, payload);
+};
+
+const logCatalogError = (label: string, payload: unknown) => {
+  if (typeof window === "undefined") return;
+  console.error(`[Catalog debug] ${label}`, payload);
+};
+
 function CatalogPage() {
   const { t, lang } = useI18n();
-  const { occasion } = Route.useSearch();
+  const { occasion: rawOccasion } = Route.useSearch();
+  const occasion = rawOccasion ? normalizeOccasionSlug(rawOccasion) : undefined;
   const navigate = useNavigate({ from: "/catalog" });
   const [active, setActive] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -68,22 +119,141 @@ function CatalogPage() {
   const cardsQuery = useQuery({
     queryKey: ["public-catalog-cards"],
     queryFn: async (): Promise<CardRow[]> => {
-      const { data, error } = await supabase
+      logCatalogDebug("catalog_card_variants query filters", {
+        status: "published",
+        is_hidden: "false or null",
+        is_archived: "false or null",
+        deleted_at: null,
+        note: "Rows logged here are returned by the database before client-side occasion/search filtering.",
+      });
+
+      const { data: variantData, error: variantError } = await supabase
         .from("catalog_card_variants")
-        .select(
-          `id, internal_name,
-           primary_occasion:catalog_occasions!catalog_card_variants_primary_occasion_id_fkey(slug),
-           additional:card_variant_additional_occasions(occasion:catalog_occasions(slug)),
-           translations:catalog_card_translations(language_code,title,greeting_text)`,
-        )
+        .select("id, internal_name, background_id, primary_occasion_id, status, is_hidden, is_archived, deleted_at, display_order, created_at")
         .eq("status", "published")
-        .eq("is_hidden", false)
-        .eq("is_archived", false)
+        .or("is_hidden.eq.false,is_hidden.is.null")
+        .or("is_archived.eq.false,is_archived.is.null")
         .is("deleted_at", null)
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as CardRow[];
+
+      if (variantError) {
+        logCatalogError("catalog_card_variants query error", variantError);
+        throw variantError;
+      }
+
+      const variantRows = (variantData ?? []) as VariantQueryRow[];
+      logCatalogDebug(
+        "catalog_card_variants returned rows before client filtering",
+        variantRows.map((row) => ({
+          id: row.id,
+          internal_name: row.internal_name,
+          status: row.status,
+          is_hidden: row.is_hidden,
+          is_archived: row.is_archived,
+          deleted_at: row.deleted_at,
+          primary_occasion_id: row.primary_occasion_id,
+          background_id: row.background_id,
+        })),
+      );
+
+      const variantIds = variantRows.map((row) => row.id);
+      if (variantIds.length === 0) return [];
+
+      const primaryOccasionIds = variantRows
+        .map((row) => row.primary_occasion_id)
+        .filter((id): id is string => Boolean(id));
+      const backgroundIds = variantRows
+        .map((row) => row.background_id)
+        .filter((id): id is string => Boolean(id));
+
+      const [additionalResult, translationsResult, backgroundsResult] = await Promise.all([
+        supabase
+          .from("card_variant_additional_occasions")
+          .select("card_variant_id, occasion_id")
+          .in("card_variant_id", variantIds),
+        supabase
+          .from("catalog_card_translations")
+          .select("card_variant_id, language_code, title, greeting_text")
+          .in("card_variant_id", variantIds),
+        backgroundIds.length > 0
+          ? supabase
+              .from("catalog_backgrounds")
+              .select("id, status, is_hidden, is_archived, deleted_at")
+              .in("id", backgroundIds)
+          : Promise.resolve({ data: [] as BackgroundRow[], error: null }),
+      ]);
+
+      if (additionalResult.error) logCatalogError("additional occasions query error", additionalResult.error);
+      if (translationsResult.error) logCatalogError("translations query error", translationsResult.error);
+      if (backgroundsResult.error) logCatalogError("background query error", backgroundsResult.error);
+
+      const additionalRows = (additionalResult.data ?? []) as AdditionalOccasionRow[];
+      const translationRows = (translationsResult.data ?? []) as TranslationRow[];
+      const backgroundRows = (backgroundsResult.data ?? []) as BackgroundRow[];
+      const occasionIds = Array.from(
+        new Set([
+          ...primaryOccasionIds,
+          ...additionalRows.map((row) => row.occasion_id),
+        ]),
+      );
+
+      const occasionsResult = occasionIds.length > 0
+        ? await supabase
+            .from("catalog_occasions")
+            .select("id, slug, is_active")
+            .in("id", occasionIds)
+        : { data: [] as OccasionLookupRow[], error: null };
+
+      if (occasionsResult.error) logCatalogError("occasion lookup query error", occasionsResult.error);
+
+      const occasionsById = new Map(
+        ((occasionsResult.data ?? []) as OccasionLookupRow[]).map((row) => [row.id, row]),
+      );
+      const backgroundsById = new Map(backgroundRows.map((row) => [row.id, row]));
+
+      const cards = variantRows.map((variant) => {
+        const primaryOccasion = variant.primary_occasion_id
+          ? occasionsById.get(variant.primary_occasion_id)
+          : undefined;
+        const additional = additionalRows
+          .filter((row) => row.card_variant_id === variant.id)
+          .map((row) => {
+            const occasionRow = occasionsById.get(row.occasion_id);
+            return { occasion: occasionRow ? { slug: occasionRow.slug } : null };
+          });
+
+        return {
+          id: variant.id,
+          internal_name: variant.internal_name,
+          status: variant.status,
+          is_hidden: variant.is_hidden,
+          is_archived: variant.is_archived,
+          deleted_at: variant.deleted_at,
+          background: variant.background_id ? backgroundsById.get(variant.background_id) ?? null : null,
+          primary_occasion: primaryOccasion ? { slug: primaryOccasion.slug } : null,
+          additional,
+          translations: translationRows.filter((row) => row.card_variant_id === variant.id),
+        } satisfies CardRow;
+      });
+
+      logCatalogDebug(
+        "assembled catalog rows before client filtering",
+        cards.map((card) => ({
+          id: card.id,
+          internal_name: card.internal_name,
+          status: card.status,
+          is_hidden: card.is_hidden,
+          is_archived: card.is_archived,
+          deleted_at: card.deleted_at,
+          primary_slug: card.primary_occasion?.slug ?? null,
+          additional_slugs: card.additional.map((row) => row.occasion?.slug).filter(Boolean),
+          translation_languages: card.translations.map((row) => row.language_code),
+          background: card.background,
+        })),
+      );
+
+      return cards;
     },
   });
 
@@ -100,9 +270,11 @@ function CatalogPage() {
       const slugs = [
         c.primary_occasion?.slug,
         ...c.additional.map((a) => a.occasion?.slug),
-      ].filter(Boolean) as string[];
+      ]
+        .filter(Boolean)
+        .map((slug) => normalizeOccasionSlug(slug as string));
       if (occasion && !slugs.includes(occasion)) return false;
-      if (active !== "all" && !slugs.includes(active)) return false;
+      if (active !== "all" && !slugs.includes(normalizeOccasionSlug(active))) return false;
       if (q) {
         const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
         const hay = [c.internal_name, tr?.title, tr?.greeting_text]
@@ -114,6 +286,44 @@ function CatalogPage() {
       return true;
     });
   }, [cards, occasion, active, query, lang]);
+
+  useEffect(() => {
+    if (cardsQuery.isLoading) return;
+    const q = query.trim().toLowerCase();
+    logCatalogDebug(
+      "client filter evaluation",
+      cards.map((card) => {
+        const slugs = [card.primary_occasion?.slug, ...card.additional.map((row) => row.occasion?.slug)]
+          .filter(Boolean)
+          .map((slug) => normalizeOccasionSlug(slug as string));
+        const tr = card.translations.find((row) => row.language_code === lang) ?? card.translations[0];
+        const haystack = [card.internal_name, tr?.title, tr?.greeting_text]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const checks = {
+          status: card.status === "published",
+          hidden: card.is_hidden !== true,
+          archived: card.is_archived !== true,
+          deleted: card.deleted_at === null,
+          occasion: !occasion || slugs.includes(occasion),
+          activeChip: active === "all" || slugs.includes(normalizeOccasionSlug(active)),
+          language: !q || Boolean(tr),
+          search: !q || haystack.includes(q),
+        };
+        return {
+          id: card.id,
+          internal_name: card.internal_name,
+          slugs,
+          selected_occasion: occasion ?? null,
+          active_chip: active,
+          translation_languages: card.translations.map((row) => row.language_code),
+          checks,
+          visible: Object.values(checks).every(Boolean),
+        };
+      }),
+    );
+  }, [active, cards, cardsQuery.isLoading, lang, occasion, query]);
 
   const clearOccasion = () =>
     navigate({ search: (prev: { occasion?: string }) => ({ ...prev, occasion: undefined }) });
