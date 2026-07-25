@@ -4,8 +4,9 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
 import { Heart, Search, X, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/catalog")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -18,6 +19,10 @@ export const Route = createFileRoute("/catalog")({
     meta: [
       { title: "Greeting Catalog — Project Joy" },
       { name: "description", content: "Browse hundreds of premium digital greeting designs across every occasion." },
+      { property: "og:title", content: "Greeting Catalog — Project Joy" },
+      { property: "og:description", content: "Browse premium digital greeting designs by occasion, style, and language." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CatalogPage,
@@ -38,16 +43,34 @@ const gradients = [
 type CardRow = {
   id: string;
   internal_name: string;
-  primary_occasion: { slug: string } | null;
-  additional: { occasion: { slug: string } | null }[];
+  status: string;
+  is_hidden: boolean | null;
+  is_archived: boolean | null;
+  deleted_at: string | null;
+  background: PublicCatalogCard["background"];
+  primary_occasion: PublicCatalogCard["primary_occasion"];
+  additional: PublicCatalogCard["additional"];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
 };
 
 type OccasionRow = { id: string; slug: string };
 
+const normalizeOccasionSlug = (value: string) => value.trim().toLowerCase().replace(/-/g, "_");
+
+const logCatalogDebug = (label: string, payload: unknown) => {
+  if (typeof window === "undefined") return;
+  console.info(`[Catalog debug] ${label}`, payload);
+};
+
+const logCatalogError = (label: string, payload: unknown) => {
+  if (typeof window === "undefined") return;
+  console.error(`[Catalog debug] ${label}`, payload);
+};
+
 function CatalogPage() {
   const { t, lang } = useI18n();
-  const { occasion } = Route.useSearch();
+  const { occasion: rawOccasion } = Route.useSearch();
+  const occasion = rawOccasion ? normalizeOccasionSlug(rawOccasion) : undefined;
   const navigate = useNavigate({ from: "/catalog" });
   const [active, setActive] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -68,22 +91,32 @@ function CatalogPage() {
   const cardsQuery = useQuery({
     queryKey: ["public-catalog-cards"],
     queryFn: async (): Promise<CardRow[]> => {
-      const { data, error } = await supabase
-        .from("catalog_card_variants")
-        .select(
-          `id, internal_name,
-           primary_occasion:catalog_occasions!catalog_card_variants_primary_occasion_id_fkey(slug),
-           additional:card_variant_additional_occasions(occasion:catalog_occasions(slug)),
-           translations:catalog_card_translations(language_code,title,greeting_text)`,
-        )
-        .eq("status", "published")
-        .eq("is_hidden", false)
-        .eq("is_archived", false)
-        .is("deleted_at", null)
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as CardRow[];
+      logCatalogDebug("catalog_card_variants server query filters", {
+        status: "published",
+        is_hidden: "false or null",
+        is_archived: "false or null",
+        deleted_at: null,
+        note: "Rows logged here are returned by the database before client-side occasion/search filtering.",
+      });
+      const cards = await getPublicCatalogCards();
+
+      logCatalogDebug(
+        "assembled catalog rows before client filtering",
+        cards.map((card) => ({
+          id: card.id,
+          internal_name: card.internal_name,
+          status: card.status,
+          is_hidden: card.is_hidden,
+          is_archived: card.is_archived,
+          deleted_at: card.deleted_at,
+          primary_slug: card.primary_occasion?.slug ?? null,
+          additional_slugs: card.additional.map((row) => row.occasion?.slug).filter(Boolean),
+          translation_languages: card.translations.map((row) => row.language_code),
+          background: card.background,
+        })),
+      );
+
+      return cards;
     },
   });
 
@@ -100,9 +133,11 @@ function CatalogPage() {
       const slugs = [
         c.primary_occasion?.slug,
         ...c.additional.map((a) => a.occasion?.slug),
-      ].filter(Boolean) as string[];
+      ]
+        .filter(Boolean)
+        .map((slug) => normalizeOccasionSlug(slug as string));
       if (occasion && !slugs.includes(occasion)) return false;
-      if (active !== "all" && !slugs.includes(active)) return false;
+      if (active !== "all" && !slugs.includes(normalizeOccasionSlug(active))) return false;
       if (q) {
         const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
         const hay = [c.internal_name, tr?.title, tr?.greeting_text]
@@ -114,6 +149,44 @@ function CatalogPage() {
       return true;
     });
   }, [cards, occasion, active, query, lang]);
+
+  useEffect(() => {
+    if (cardsQuery.isLoading) return;
+    const q = query.trim().toLowerCase();
+    logCatalogDebug(
+      "client filter evaluation",
+      cards.map((card) => {
+        const slugs = [card.primary_occasion?.slug, ...card.additional.map((row) => row.occasion?.slug)]
+          .filter(Boolean)
+          .map((slug) => normalizeOccasionSlug(slug as string));
+        const tr = card.translations.find((row) => row.language_code === lang) ?? card.translations[0];
+        const haystack = [card.internal_name, tr?.title, tr?.greeting_text]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const checks = {
+          status: card.status === "published",
+          hidden: card.is_hidden !== true,
+          archived: card.is_archived !== true,
+          deleted: card.deleted_at === null,
+          occasion: !occasion || slugs.includes(occasion),
+          activeChip: active === "all" || slugs.includes(normalizeOccasionSlug(active)),
+          language: !q || Boolean(tr),
+          search: !q || haystack.includes(q),
+        };
+        return {
+          id: card.id,
+          internal_name: card.internal_name,
+          slugs,
+          selected_occasion: occasion ?? null,
+          active_chip: active,
+          translation_languages: card.translations.map((row) => row.language_code),
+          checks,
+          visible: Object.values(checks).every(Boolean),
+        };
+      }),
+    );
+  }, [active, cards, cardsQuery.isLoading, lang, occasion, query]);
 
   const clearOccasion = () =>
     navigate({ search: (prev: { occasion?: string }) => ({ ...prev, occasion: undefined }) });
