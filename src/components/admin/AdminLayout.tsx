@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
-import { useAdminRole, ADMIN_ROLES } from "@/lib/admin/role";
+import { useAdminRole } from "@/lib/admin/role";
 import { LanguageSelector } from "@/components/site/LanguageSelector";
 
 interface NavItem {
@@ -48,8 +48,15 @@ const NAV: NavItem[] = [
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const { isAdmin, setRole } = useAdminRole();
+  const { isAdmin, loading, role, email, error, refreshRole } = useAdminRole();
   if (isAdmin) return <>{children}</>;
+  const message = loading
+    ? t("admin_gate_loading")
+    : error
+      ? error
+      : email
+        ? t("admin_gate_denied")
+        : t("admin_gate_signed_out");
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-amber-50/60 via-background to-rose-50/40 px-4">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/90 p-8 shadow-lg backdrop-blur">
@@ -57,21 +64,29 @@ export function AdminGate({ children }: { children: ReactNode }) {
           {t("admin_enable_gate_title")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("admin_enable_gate_body")}</p>
-        <div className="mt-6 space-y-2">
-          {ADMIN_ROLES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background px-4 py-2.5 text-sm text-foreground transition hover:border-primary/50 hover:bg-primary/5"
-            >
-              <span>{t(`admin_role_${r}`)}</span>
-              <span className="text-xs text-muted-foreground">{t("admin_enter")} →</span>
-            </button>
-          ))}
+        <div className="mt-6 rounded-lg border border-border/60 bg-background px-4 py-3 text-sm">
+          {email && <div className="font-medium text-foreground">{email}</div>}
+          {role && <div className="mt-1 text-xs text-muted-foreground">{t(`admin_role_${role}`)}</div>}
+          <p className="mt-2 text-muted-foreground">{message}</p>
         </div>
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {email ? (
+            <button
+              type="button"
+              onClick={() => void refreshRole()}
+              className="rounded-md border border-border/60 bg-background px-3 py-2 text-xs text-foreground transition hover:bg-muted/50"
+            >
+              {t("admin_refresh_permissions")}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90"
+            >
+              {t("admin_sign_in")}
+            </Link>
+          )}
+          <Link to="/" className="rounded-md border border-border/60 bg-background px-3 py-2 text-xs text-muted-foreground transition hover:bg-muted/50 hover:text-foreground">
             {t("admin_return_home")}
           </Link>
         </div>
@@ -82,7 +97,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const { role, setRole } = useAdminRole();
+  const { role, email, signOut } = useAdminRole();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -169,12 +184,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </button>
             <LanguageSelector />
             <div className="hidden text-right text-xs sm:block">
-              <div className="font-medium text-foreground">{t("admin_profile")}</div>
+              <div className="font-medium text-foreground">{email ?? t("admin_profile")}</div>
               <div className="text-muted-foreground">{role ? t(`admin_role_${role}`) : ""}</div>
             </div>
             <button
               type="button"
-              onClick={() => setRole(null)}
+              onClick={() => void signOut()}
               className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/50"
             >
               <LogOut className="h-3.5 w-3.5" />
