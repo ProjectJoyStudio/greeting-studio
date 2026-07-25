@@ -224,8 +224,8 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
         const up = await uploadBackgroundImage(file);
         mediaAssetId = up.mediaAssetId;
       } catch (e) {
-        console.error("Background upload failed", e);
-        toast.error("Upload failed");
+        console.error("Background upload failedddd", e);
+        toast.error("Upload faileds");
         throw e;
       }
     }
