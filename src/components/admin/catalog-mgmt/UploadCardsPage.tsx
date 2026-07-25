@@ -197,8 +197,9 @@ export function UploadCardsPage() {
             multiple
             hidden
             onChange={(e) => {
-              if (e.target.files?.length) void handleFiles(e.target.files);
+              const selected = e.target.files ? Array.from(e.target.files) : [];
               e.target.value = "";
+              if (selected.length) void handleFiles(selected);
             }}
           />
           <input
@@ -208,8 +209,9 @@ export function UploadCardsPage() {
             capture="environment"
             hidden
             onChange={(e) => {
-              if (e.target.files?.length) void handleFiles(e.target.files);
+              const selected = e.target.files ? Array.from(e.target.files) : [];
               e.target.value = "";
+              if (selected.length) void handleFiles(selected);
             }}
           />
         </div>
