@@ -14,6 +14,7 @@ import type {
   TextDesign,
 } from "./types";
 import { defaultTextDesign, emptyTranslation } from "./types";
+import { dbStatusToState, stateToDbStatus } from "@/lib/translation/types";
 import type { Lang } from "@/lib/i18n";
 
 // Buckets
@@ -579,7 +580,10 @@ export async function upsertVariant(
       greeting_text: t.textOnCard || null,
       description: t.shortDescription || null,
       search_keywords: t.searchKeywords ?? [],
-      translation_status: t.catalogTitle || t.textOnCard ? "draft" : "missing",
+      translation_status: stateToDbStatus(
+        t.state ?? "empty",
+        Boolean((t.catalogTitle || "").trim() || (t.textOnCard || "").trim()),
+      ),
     });
   }
   if (trRows.length) {
@@ -713,6 +717,7 @@ export function rowsToVariant(
       shortDescription: t.description ?? "",
       textOnCard: t.greeting_text ?? "",
       searchKeywords: t.search_keywords ?? [],
+      state: dbStatusToState(t.translation_status),
     };
   }
   if (Object.keys(translations).length === 0) translations.en = emptyTranslation("en");

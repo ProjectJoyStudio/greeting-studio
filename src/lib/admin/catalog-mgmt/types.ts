@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Lang } from "@/lib/i18n";
+import { REQUIRED_LOCALES, type TranslationState } from "@/lib/translation/types";
 
 export type Orientation = "vertical" | "square" | "horizontal";
 
@@ -55,6 +56,8 @@ export interface Translation {
   shortDescription: string;
   textOnCard: string;
   searchKeywords: string[];
+  /** Review state — "empty" | "auto" | "confirmed". */
+  state?: TranslationState;
   // Optional per-language text design override
   textDesignOverride?: Partial<TextDesign>;
 }
@@ -146,6 +149,7 @@ export function emptyTranslation(locale: Lang): Translation {
     shortDescription: "",
     textOnCard: "",
     searchKeywords: [],
+    state: "empty",
   };
 }
 
@@ -157,6 +161,26 @@ export function translationCompleteness(t: Translation | undefined): Translation
   if (n === 0) return "missing";
   if (n === flags.length) return "complete";
   return "incomplete";
+}
+
+/** Publish readiness across the six mandatory languages. */
+export interface MultilingualReadiness {
+  missing: Lang[];
+  unconfirmed: Lang[];
+  ready: boolean;
+}
+
+export function multilingualReadiness(
+  translations: Partial<Record<Lang, Translation>>,
+): MultilingualReadiness {
+  const missing: Lang[] = [];
+  const unconfirmed: Lang[] = [];
+  for (const l of REQUIRED_LOCALES) {
+    const t = translations[l];
+    if (translationCompleteness(t) !== "complete") missing.push(l);
+    else if ((t?.state ?? "empty") !== "confirmed") unconfirmed.push(l);
+  }
+  return { missing, unconfirmed, ready: missing.length === 0 && unconfirmed.length === 0 };
 }
 
 // Placeholder gradients when no image is uploaded — reuses existing look.

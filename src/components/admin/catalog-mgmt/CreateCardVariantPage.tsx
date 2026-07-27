@@ -6,12 +6,13 @@ import { AlertTriangle, Info } from "lucide-react";
 import { useCatalogMgmt } from "@/lib/admin/catalog-mgmt/store";
 import { LANGS, useI18n, type Lang } from "@/lib/i18n";
 import type { Background, CardVariant, Orientation, TextDesign, Translation, VariantStatus } from "@/lib/admin/catalog-mgmt/types";
-import { defaultTextDesign, emptyTranslation, translationCompleteness } from "@/lib/admin/catalog-mgmt/types";
+import { defaultTextDesign, emptyTranslation, multilingualReadiness } from "@/lib/admin/catalog-mgmt/types";
+import { REQUIRED_LOCALES } from "@/lib/translation/types";
+import { TranslationsStep } from "./TranslationsStep";
 import {
   CardPreview,
   Section,
   TaxonomyMultiSelect,
-  TagInput,
   VariantStatusBadge,
   taxonomyLabel,
 } from "./shared";
@@ -39,7 +40,9 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     mood: existing?.mood ?? [],
     ageGroup: existing?.ageGroup ?? "all_ages",
     orientation: existing?.orientation ?? "vertical",
-    translations: existing?.translations ?? { en: emptyTranslation("en") },
+    translations:
+      existing?.translations ??
+      (Object.fromEntries(REQUIRED_LOCALES.map((l) => [l, emptyTranslation(l)])) as Record<Lang, Translation>),
     textDesign: existing?.textDesign ?? defaultTextDesign(),
     displayOrder: existing?.displayOrder ?? 999,
     isNew: existing?.isNew ?? true,
@@ -53,6 +56,8 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
   }));
 
   const bg = useMemo(() => (form.backgroundId ? getBackground(form.backgroundId) : undefined), [form.backgroundId, getBackground]);
+
+  const readiness = useMemo(() => multilingualReadiness(form.translations), [form.translations]);
 
   const [bgSearch, setBgSearch] = useState("");
   const bgList = useMemo(() => {
@@ -85,8 +90,12 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     if (!form.internalName.trim()) errs.push(t("cm_v_internal_required"));
     if (!form.primaryOccasion) errs.push(t("cm_v_occasion_required"));
     if (publishing) {
-      const anyComplete = LANGS.some((l) => translationCompleteness(form.translations[l.code]) === "complete");
-      if (!anyComplete) errs.push(t("cm_v_at_least_one_language"));
+      if (readiness.missing.length > 0) {
+        errs.push(`${t("cm_v_missing_languages")}: ${readiness.missing.map((l) => l.toUpperCase()).join(", ")}`);
+      }
+      if (readiness.unconfirmed.length > 0) {
+        errs.push(`${t("cm_v_unconfirmed_languages")}: ${readiness.unconfirmed.map((l) => l.toUpperCase()).join(", ")}`);
+      }
     }
     return errs;
   }
@@ -249,48 +258,30 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
               </button>
             }
           >
-            <div className="mb-2 flex items-start gap-2 rounded-md border border-sky-500/30 bg-sky-500/5 p-2.5 text-xs text-sky-900 dark:text-sky-200">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{t("cm_tr_no_auto")}</span>
-            </div>
-            <div className="mb-3 flex flex-wrap gap-1">
-              {LANGS.map((l) => {
-                const c = translationCompleteness(form.translations[l.code]);
-                const dot = c === "complete" ? "bg-emerald-500" : c === "incomplete" ? "bg-amber-500" : "bg-slate-300";
-                return (
-                  <button
-                    key={l.code}
-                    type="button"
-                    onClick={() => setPreviewLang(l.code)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
-                      previewLang === l.code ? "border-primary/40 bg-primary/10 text-primary" : "border-border/60 bg-background text-muted-foreground"
-                    }`}
-                  >
-                    <span className={`h-2 w-2 rounded-full ${dot}`} />
-                    {l.label}
-                  </button>
-                );
-              })}
-            </div>
-            {(() => {
-              const trE = form.translations[previewLang] ?? emptyTranslation(previewLang);
-              return (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label={t("cm_tr_title")}>
-                    <input value={trE.catalogTitle} onChange={(e) => setTr(previewLang, { catalogTitle: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_short")}>
-                    <input value={trE.shortDescription} onChange={(e) => setTr(previewLang, { shortDescription: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_text_on_card")}>
-                    <textarea rows={3} value={trE.textOnCard} onChange={(e) => setTr(previewLang, { textOnCard: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_keywords")}>
-                    <TagInput value={trE.searchKeywords} onChange={(v) => setTr(previewLang, { searchKeywords: v })} />
-                  </Field>
-                </div>
-              );
-            })()}
+            <TranslationsStep
+              translations={form.translations}
+              activeLang={previewLang}
+              onActiveLang={setPreviewLang}
+              onPatch={setTr}
+              t={t}
+            />
+            {!readiness.ready && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {readiness.missing.length > 0 && (
+                    <>
+                      {t("cm_v_missing_languages")}: {readiness.missing.map((l) => l.toUpperCase()).join(", ")}.{" "}
+                    </>
+                  )}
+                  {readiness.unconfirmed.length > 0 && (
+                    <>
+                      {t("cm_v_unconfirmed_languages")}: {readiness.unconfirmed.map((l) => l.toUpperCase()).join(", ")}.
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             {hasPersonalName && (
               <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -340,7 +331,13 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
           <button type="button" onClick={() => save()} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
             {t("cm_save")}
           </button>
-          <button type="button" onClick={() => save("published")} className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300">
+          <button
+            type="button"
+            disabled={!readiness.ready}
+            title={readiness.ready ? undefined : t("cm_v_publish_blocked")}
+            onClick={() => save("published")}
+            className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
+          >
             {t("cm_publish")}
           </button>
           {existing && (
