@@ -6,8 +6,9 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
 import { PublicCardText } from "@/components/card/PublicCardText";
-import { Heart, Search, X, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CardLightbox, type LightboxCard } from "@/components/card/CardLightbox";
+import { Search, X, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export const Route = createFileRoute("/catalog")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -51,6 +52,7 @@ type CardRow = {
   background: PublicCatalogCard["background"];
   primary_occasion: PublicCatalogCard["primary_occasion"];
   additional: PublicCatalogCard["additional"];
+  facets?: string[];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
   text_designs?: PublicCatalogCard["text_designs"];
 };
@@ -58,6 +60,19 @@ type CardRow = {
 type OccasionRow = { id: string; slug: string };
 
 const normalizeOccasionSlug = (value: string) => value.trim().toLowerCase().replace(/-/g, "_");
+
+/** Cards are rendered in their stored aspect ratio — never cropped or stretched. */
+const aspectOf = (card: CardRow) => {
+  const w = card.background?.width ?? 0;
+  const h = card.background?.height ?? 0;
+  if (w > 0 && h > 0) return `${w}:${h}`;
+  const o = card.background?.orientation;
+  if (o === "square") return "1:1";
+  if (o === "horizontal") return "5:4";
+  return "4:5";
+};
+
+const PAGE_SIZE = 48;
 
 const logCatalogDebug = (label: string, payload: unknown) => {
   if (typeof window === "undefined") return;
@@ -76,6 +91,9 @@ function CatalogPage() {
   const navigate = useNavigate({ from: "/catalog" });
   const [active, setActive] = useState<string>("all");
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [preview, setPreview] = useState<LightboxCard | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const occasionsQuery = useQuery({
     queryKey: ["public-occasions"],
@@ -131,15 +149,20 @@ function CatalogPage() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const seen = new Set<string>();
     return cards.filter((c) => {
+      // Deduplicate by catalog card id: multi-category cards appear once in "All".
+      if (seen.has(c.id)) return false;
       const slugs = [
         c.primary_occasion?.slug,
         ...c.additional.map((a) => a.occasion?.slug),
       ]
         .filter(Boolean)
         .map((slug) => normalizeOccasionSlug(slug as string));
-      if (occasion && !slugs.includes(occasion)) return false;
-      if (active !== "all" && !slugs.includes(normalizeOccasionSlug(active))) return false;
+      // Facets carry category / theme / season / recipient ids and slugs from the DB.
+      const keys = [...slugs, ...(c.facets ?? []).map((f) => normalizeOccasionSlug(f))];
+      if (occasion && !keys.includes(occasion)) return false;
+      if (active !== "all" && !keys.includes(normalizeOccasionSlug(active))) return false;
       if (q) {
         const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
         const hay = [c.internal_name, tr?.title, tr?.greeting_text]
@@ -148,9 +171,41 @@ function CatalogPage() {
           .toLowerCase();
         if (!hay.includes(q)) return false;
       }
+      seen.add(c.id);
       return true;
     });
   }, [cards, occasion, active, query, lang]);
+
+  const isAllView = !occasion && active === "all";
+  const shown = visible.slice(0, limit);
+
+  useEffect(() => {
+    setLimit(PAGE_SIZE);
+  }, [occasion, active, query]);
+
+  // Continuous (infinite) loading rather than discrete pages.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) setLimit((n) => n + PAGE_SIZE);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown.length]);
+
+  const openPreview = useCallback(
+    (card: CardRow, gradient: string, text: string) =>
+      setPreview({
+        id: card.id,
+        imageUrl: card.background?.image_url ?? null,
+        gradient,
+        aspectRatio: aspectOf(card),
+        text,
+        designs: card.text_designs,
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (cardsQuery.isLoading) return;
@@ -278,42 +333,61 @@ function CatalogPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
-            {visible.map((c, i) => {
-              const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
-              const title = tr?.title || c.internal_name;
-              const wish = tr?.greeting_text || t("catalog_card_wish");
-              const slug = c.primary_occasion?.slug ?? "";
-              return (
-                <article key={c.id} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
-                  <div
-                    className="relative aspect-[4/5] bg-cover bg-center"
-                    style={{
-                      backgroundImage: c.background?.image_url
-                        ? `url(${c.background.image_url})`
-                        : gradients[i % gradients.length],
-                    }}
+          <>
+            <div
+              className={
+                isAllView
+                  ? "grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7"
+                  : "grid grid-cols-2 gap-4 md:grid-cols-3"
+              }
+            >
+              {shown.map((c, i) => {
+                const tr = c.translations.find((x) => x.language_code === lang) ?? c.translations[0];
+                const wish = tr?.greeting_text || t("catalog_card_wish");
+                const gradient = gradients[i % gradients.length];
+                const ratio = aspectOf(c);
+                return (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => openPreview(c, gradient, wish)}
+                    className="group relative block w-full overflow-hidden rounded-xl border border-border/60 bg-muted transition hover:-translate-y-0.5 hover:shadow-warm"
+                    style={{ aspectRatio: ratio.replace(":", " / ") }}
                   >
-                    <PublicCardText text={wish} designs={c.text_designs} lang={lang} aspectRatio="4:5" />
-                    <span className="absolute left-6 top-6 rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest text-primary-foreground backdrop-blur">
-                      {slug ? occasionLabel(slug) : t("catalog_card_tag")}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-4">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{title}</div>
-                      <div className="truncate text-xs text-muted-foreground">{slug ? occasionLabel(slug) : ""}</div>
-                    </div>
-                    <button aria-label="favorite" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary">
-                      <Heart className="h-4 w-4" />
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                    {c.background?.thumb_url || c.background?.image_url ? (
+                      <img
+                        src={c.background.thumb_url ?? c.background.image_url ?? ""}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="absolute inset-0" style={{ backgroundImage: gradient }} />
+                    )}
+                    <PublicCardText text={wish} designs={c.text_designs} lang={lang} aspectRatio={ratio} />
+                  </button>
+                );
+              })}
+            </div>
+            <div ref={sentinelRef} className="h-12" />
+          </>
         )}
       </section>
+
+      {preview && (
+        <CardLightbox
+          card={preview}
+          lang={lang}
+          onClose={() => setPreview(null)}
+          labels={{
+            send: t("cta_send") !== "cta_send" ? t("cta_send") : "Send",
+            download: t("cta_download") !== "cta_download" ? t("cta_download") : "Download",
+            favorite: t("cta_favorite") !== "cta_favorite" ? t("cta_favorite") : "Favorite",
+            close: t("close") !== "close" ? t("close") : "Close",
+          }}
+        />
+      )}
     </SiteLayout>
   );
 }
