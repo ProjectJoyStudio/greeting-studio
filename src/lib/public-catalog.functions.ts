@@ -200,7 +200,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
   if (assetIds.length > 0) {
     const { data: assets } = await supabaseAdmin
       .from("media_assets")
-      .select("id, storage_bucket, storage_path")
+      .select("id, storage_bucket, storage_path, width, height")
       .in("id", assetIds);
 
     const signed = await Promise.all(
@@ -219,10 +219,19 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
       }),
     );
     const urlByAsset = new Map(signed);
+    const dimsByAsset = new Map(
+      (assets ?? []).map((a) => [a.id, { width: a.width, height: a.height }] as const),
+    );
     for (const row of backgroundRows) {
       const urls = row.primary_media_asset_id ? urlByAsset.get(row.primary_media_asset_id) : undefined;
       row.image_url = urls?.full ?? null;
       row.thumb_url = urls?.thumb ?? urls?.full ?? null;
+      // Prefer the true asset dimensions so tiles keep the original aspect ratio.
+      const dims = row.primary_media_asset_id ? dimsByAsset.get(row.primary_media_asset_id) : undefined;
+      if (dims?.width && dims?.height) {
+        row.width = dims.width;
+        row.height = dims.height;
+      }
     }
   }
 
