@@ -4,7 +4,7 @@ import { Check, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Lang } from "@/lib/i18n";
-import { LANGS } from "@/lib/i18n";
+import { LANGS, useI18n } from "@/lib/i18n";
 import { defaultTaxonomyName, slugLabel } from "@/lib/taxonomy-labels";
 import type {
   Background,
@@ -294,6 +294,7 @@ export function TagInput({
   onChange: (v: string[]) => void;
   placeholder?: string;
 }) {
+  const { t } = useI18n();
   const [input, setInput] = useState("");
   const commit = () => {
     const s = input.trim();
