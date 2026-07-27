@@ -10,6 +10,7 @@ import pl from "./locales/pl";
 import { AUTH_DASHBOARD } from "./locales/auth-dashboard";
 import { STUDIO } from "./locales/studio";
 import { ADMIN_I18N } from "./locales/admin";
+import { CATALOG_PAGES } from "./locales/catalog-pages";
 import { CM_DICT } from "@/lib/admin/catalog-mgmt/i18n";
 
 export { LANGS };
@@ -18,12 +19,12 @@ export type { Lang, Dict };
 // Merge the auth/dashboard namespace into each locale so `t()` resolves
 // every UI string from a single flat dictionary per language.
 const DICTS: Record<Lang, Dict> = {
-  en: { ...en, ...AUTH_DASHBOARD.en, ...STUDIO.en, ...ADMIN_I18N.en, ...CM_DICT.en },
-  ru: { ...ru, ...AUTH_DASHBOARD.ru, ...STUDIO.ru, ...ADMIN_I18N.ru, ...CM_DICT.ru },
-  de: { ...de, ...AUTH_DASHBOARD.de, ...STUDIO.de, ...ADMIN_I18N.de, ...CM_DICT.de },
-  uk: { ...uk, ...AUTH_DASHBOARD.uk, ...STUDIO.uk, ...ADMIN_I18N.uk, ...CM_DICT.uk },
-  fr: { ...fr, ...AUTH_DASHBOARD.fr, ...STUDIO.fr, ...ADMIN_I18N.fr, ...CM_DICT.fr },
-  pl: { ...pl, ...AUTH_DASHBOARD.pl, ...STUDIO.pl, ...ADMIN_I18N.pl, ...CM_DICT.pl },
+  en: { ...en, ...AUTH_DASHBOARD.en, ...STUDIO.en, ...ADMIN_I18N.en, ...CM_DICT.en, ...CATALOG_PAGES.en },
+  ru: { ...ru, ...AUTH_DASHBOARD.ru, ...STUDIO.ru, ...ADMIN_I18N.ru, ...CM_DICT.ru, ...CATALOG_PAGES.ru },
+  de: { ...de, ...AUTH_DASHBOARD.de, ...STUDIO.de, ...ADMIN_I18N.de, ...CM_DICT.de, ...CATALOG_PAGES.de },
+  uk: { ...uk, ...AUTH_DASHBOARD.uk, ...STUDIO.uk, ...ADMIN_I18N.uk, ...CM_DICT.uk, ...CATALOG_PAGES.uk },
+  fr: { ...fr, ...AUTH_DASHBOARD.fr, ...STUDIO.fr, ...ADMIN_I18N.fr, ...CM_DICT.fr, ...CATALOG_PAGES.fr },
+  pl: { ...pl, ...AUTH_DASHBOARD.pl, ...STUDIO.pl, ...ADMIN_I18N.pl, ...CM_DICT.pl, ...CATALOG_PAGES.pl },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
