@@ -29,6 +29,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
@@ -36,6 +37,7 @@ import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
 import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
+import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
@@ -162,6 +164,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const CatalogIndexRoute = CatalogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CatalogRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -196,6 +203,11 @@ const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
   id: '/credits',
   path: '/credits',
   getParentRoute: () => DashboardRoute,
+} as any)
+const CatalogCategoryRoute = CatalogCategoryRouteImport.update({
+  id: '/$category',
+  path: '/$category',
+  getParentRoute: () => CatalogRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -332,7 +344,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
-  '/catalog': typeof CatalogRoute
+  '/catalog': typeof CatalogRouteWithChildren
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
@@ -359,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -366,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
   '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
@@ -385,7 +399,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/calendar': typeof CalendarRoute
-  '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
@@ -410,6 +423,7 @@ export interface FileRoutesByTo {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -417,6 +431,7 @@ export interface FileRoutesByTo {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin': typeof AdminIndexRoute
+  '/catalog': typeof CatalogIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
   '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
@@ -438,7 +453,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
-  '/catalog': typeof CatalogRoute
+  '/catalog': typeof CatalogRouteWithChildren
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
@@ -465,6 +480,7 @@ export interface FileRoutesById {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -472,6 +488,7 @@ export interface FileRoutesById {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/admin/catalog/backgrounds': typeof AdminCatalogBackgroundsRouteWithChildren
   '/admin/catalog/drafts': typeof AdminCatalogDraftsRoute
@@ -521,6 +538,7 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
+    | '/catalog/$category'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -528,6 +546,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/admin/'
+    | '/catalog/'
     | '/dashboard/'
     | '/admin/catalog/backgrounds'
     | '/admin/catalog/drafts'
@@ -547,7 +566,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/calendar'
-    | '/catalog'
     | '/contact'
     | '/corporate-orders'
     | '/create'
@@ -572,6 +590,7 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
+    | '/catalog/$category'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -579,6 +598,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/admin'
+    | '/catalog'
     | '/dashboard'
     | '/admin/catalog/backgrounds'
     | '/admin/catalog/drafts'
@@ -626,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/users'
+    | '/catalog/$category'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -633,6 +654,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/admin/'
+    | '/catalog/'
     | '/dashboard/'
     | '/admin/catalog/backgrounds'
     | '/admin/catalog/drafts'
@@ -654,7 +676,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   CalendarRoute: typeof CalendarRoute
-  CatalogRoute: typeof CatalogRoute
+  CatalogRoute: typeof CatalogRouteWithChildren
   ContactRoute: typeof ContactRoute
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
@@ -813,6 +835,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/catalog/': {
+      id: '/catalog/'
+      path: '/'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof CatalogIndexRouteImport
+      parentRoute: typeof CatalogRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -861,6 +890,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/credits'
       preLoaderRoute: typeof DashboardCreditsRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/catalog/$category': {
+      id: '/catalog/$category'
+      path: '/$category'
+      fullPath: '/catalog/$category'
+      preLoaderRoute: typeof CatalogCategoryRouteImport
+      parentRoute: typeof CatalogRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -1122,6 +1158,19 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CatalogRouteChildren {
+  CatalogCategoryRoute: typeof CatalogCategoryRoute
+  CatalogIndexRoute: typeof CatalogIndexRoute
+}
+
+const CatalogRouteChildren: CatalogRouteChildren = {
+  CatalogCategoryRoute: CatalogCategoryRoute,
+  CatalogIndexRoute: CatalogIndexRoute,
+}
+
+const CatalogRouteWithChildren =
+  CatalogRoute._addFileChildren(CatalogRouteChildren)
+
 interface DashboardRouteChildren {
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
@@ -1151,7 +1200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   CalendarRoute: CalendarRoute,
-  CatalogRoute: CatalogRoute,
+  CatalogRoute: CatalogRouteWithChildren,
   ContactRoute: ContactRoute,
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
