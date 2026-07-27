@@ -286,7 +286,14 @@ function CatalogPage() {
               const slug = c.primary_occasion?.slug ?? "";
               return (
                 <article key={c.id} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
-                  <div className="relative aspect-[4/5]" style={{ backgroundImage: gradients[i % gradients.length] }}>
+                  <div
+                    className="relative aspect-[4/5] bg-cover bg-center"
+                    style={{
+                      backgroundImage: c.background?.image_url
+                        ? `url(${c.background.image_url})`
+                        : gradients[i % gradients.length],
+                    }}
+                  >
                     <PublicCardText text={wish} designs={c.text_designs} lang={lang} aspectRatio="4:5" />
                     <span className="absolute left-6 top-6 rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest text-primary-foreground backdrop-blur">
                       {slug ? occasionLabel(slug) : t("catalog_card_tag")}
