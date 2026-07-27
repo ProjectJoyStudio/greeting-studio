@@ -13,7 +13,6 @@ import {
   CardPreview,
   Section,
   TaxonomyMultiSelect,
-  TagInput,
   VariantStatusBadge,
   taxonomyLabel,
 } from "./shared";
@@ -332,7 +331,13 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
           <button type="button" onClick={() => save()} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
             {t("cm_save")}
           </button>
-          <button type="button" onClick={() => save("published")} className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300">
+          <button
+            type="button"
+            disabled={!readiness.ready}
+            title={readiness.ready ? undefined : t("cm_v_publish_blocked")}
+            onClick={() => save("published")}
+            className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
+          >
             {t("cm_publish")}
           </button>
           {existing && (
