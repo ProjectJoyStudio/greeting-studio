@@ -6,7 +6,9 @@ import { AlertTriangle, Info } from "lucide-react";
 import { useCatalogMgmt } from "@/lib/admin/catalog-mgmt/store";
 import { LANGS, useI18n, type Lang } from "@/lib/i18n";
 import type { Background, CardVariant, Orientation, TextDesign, Translation, VariantStatus } from "@/lib/admin/catalog-mgmt/types";
-import { defaultTextDesign, emptyTranslation, translationCompleteness } from "@/lib/admin/catalog-mgmt/types";
+import { defaultTextDesign, emptyTranslation, multilingualReadiness } from "@/lib/admin/catalog-mgmt/types";
+import { REQUIRED_LOCALES } from "@/lib/translation/types";
+import { TranslationsStep } from "./TranslationsStep";
 import {
   CardPreview,
   Section,
@@ -39,7 +41,9 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     mood: existing?.mood ?? [],
     ageGroup: existing?.ageGroup ?? "all_ages",
     orientation: existing?.orientation ?? "vertical",
-    translations: existing?.translations ?? { en: emptyTranslation("en") },
+    translations:
+      existing?.translations ??
+      (Object.fromEntries(REQUIRED_LOCALES.map((l) => [l, emptyTranslation(l)])) as Record<Lang, Translation>),
     textDesign: existing?.textDesign ?? defaultTextDesign(),
     displayOrder: existing?.displayOrder ?? 999,
     isNew: existing?.isNew ?? true,
@@ -53,6 +57,8 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
   }));
 
   const bg = useMemo(() => (form.backgroundId ? getBackground(form.backgroundId) : undefined), [form.backgroundId, getBackground]);
+
+  const readiness = useMemo(() => multilingualReadiness(form.translations), [form.translations]);
 
   const [bgSearch, setBgSearch] = useState("");
   const bgList = useMemo(() => {
@@ -85,8 +91,12 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     if (!form.internalName.trim()) errs.push(t("cm_v_internal_required"));
     if (!form.primaryOccasion) errs.push(t("cm_v_occasion_required"));
     if (publishing) {
-      const anyComplete = LANGS.some((l) => translationCompleteness(form.translations[l.code]) === "complete");
-      if (!anyComplete) errs.push(t("cm_v_at_least_one_language"));
+      if (readiness.missing.length > 0) {
+        errs.push(`${t("cm_v_missing_languages")}: ${readiness.missing.map((l) => l.toUpperCase()).join(", ")}`);
+      }
+      if (readiness.unconfirmed.length > 0) {
+        errs.push(`${t("cm_v_unconfirmed_languages")}: ${readiness.unconfirmed.map((l) => l.toUpperCase()).join(", ")}`);
+      }
     }
     return errs;
   }
