@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
+import { PublicCardText } from "@/components/card/PublicCardText";
 import { Heart, Search, X, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -51,6 +52,7 @@ type CardRow = {
   primary_occasion: PublicCatalogCard["primary_occasion"];
   additional: PublicCatalogCard["additional"];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
+  text_designs?: PublicCatalogCard["text_designs"];
 };
 
 type OccasionRow = { id: string; slug: string };
