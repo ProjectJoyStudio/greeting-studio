@@ -593,31 +593,50 @@ export async function upsertVariant(
     if (error) throw error;
   }
 
-  // Text design (single row per variant, language-agnostic default)
-  const td = input.textDesign;
+  // Text design: one shared base row (language_code = null) plus one row per
+  // language that the administrator switched to manual. Languages left on
+  // automatic fitting store no row — their layout is derived at render time.
+  const designRow = (design: TextDesign, language: string | null) => ({
+    card_variant_id: variantId,
+    language_code: language,
+    text_x: design.x,
+    text_y: design.y,
+    text_width: design.width,
+    alignment: design.alignment,
+    font_family: design.fontFamily,
+    font_size: design.fontSize,
+    font_weight: design.fontWeight,
+    line_height: design.lineHeight,
+    text_color: design.textColor,
+    background_opacity: design.backgroundOverlay,
+    text_shadow: design.textShadow,
+    rotation: design.rotation,
+    max_lines: design.maxLines,
+  });
+
+  const designRows: Array<ReturnType<typeof designRow>> = [designRow(input.textDesign, null)];
+  const autoLangs: string[] = [];
+  for (const [lang, t] of Object.entries(input.translations)) {
+    if (!t) continue;
+    if (t.autoFit === false && t.textDesignOverride) {
+      designRows.push(designRow({ ...input.textDesign, ...t.textDesignOverride }, lang));
+    } else {
+      autoLangs.push(lang);
+    }
+  }
+
   const { error: tdErr } = await supabase
     .from("catalog_text_designs")
-    .upsert(
-      {
-        card_variant_id: variantId,
-        language_code: null,
-        text_x: td.x,
-        text_y: td.y,
-        text_width: td.width,
-        alignment: td.alignment,
-        font_family: td.fontFamily,
-        font_size: td.fontSize,
-        font_weight: td.fontWeight,
-        line_height: td.lineHeight,
-        text_color: td.textColor,
-        background_opacity: td.backgroundOverlay,
-        text_shadow: td.textShadow,
-        rotation: td.rotation,
-        max_lines: td.maxLines,
-      } as never,
-      { onConflict: "card_variant_id,language_code" },
-    );
+    .upsert(designRows as never, { onConflict: "card_variant_id,language_code" });
   if (tdErr) throw tdErr;
+
+  if (autoLangs.length) {
+    await supabase
+      .from("catalog_text_designs")
+      .delete()
+      .eq("card_variant_id", variantId)
+      .in("language_code", autoLangs);
+  }
 
   return variantId;
 }
@@ -695,6 +714,24 @@ export function reverseSlugMap(m: SlugIdMap): IdSlugMap {
 }
 
 // Helper — construct a full local CardVariant from DB row + junctions + translations + text design
+function rowToDesign(td: Database["public"]["Tables"]["catalog_text_designs"]["Row"]): TextDesign {
+  return {
+    x: Number(td.text_x),
+    y: Number(td.text_y),
+    width: Number(td.text_width),
+    alignment: (td.alignment as TextDesign["alignment"]) ?? "center",
+    fontFamily: td.font_family,
+    fontSize: Number(td.font_size),
+    fontWeight: td.font_weight,
+    lineHeight: Number(td.line_height),
+    textColor: td.text_color,
+    textShadow: td.text_shadow,
+    backgroundOverlay: Number(td.background_opacity),
+    rotation: Number(td.rotation),
+    maxLines: td.max_lines,
+  };
+}
+
 export function rowsToVariant(
   v: CvRow,
   idSlug: IdSlugMap,
@@ -706,8 +743,10 @@ export function rowsToVariant(
   themeIds: string[],
   seasonIds: string[],
   trs: Array<Database["public"]["Tables"]["catalog_card_translations"]["Row"]>,
-  td: Database["public"]["Tables"]["catalog_text_designs"]["Row"] | undefined,
+  tds: Array<Database["public"]["Tables"]["catalog_text_designs"]["Row"]>,
 ): CardVariant {
+  const baseRow = tds.find((r) => !r.language_code);
+  const langRows = new Map(tds.filter((r) => r.language_code).map((r) => [r.language_code as Lang, r]));
   const translations: Partial<Record<Lang, Translation>> = {};
   for (const t of trs) {
     const l = t.language_code as Lang;
@@ -718,26 +757,12 @@ export function rowsToVariant(
       textOnCard: t.greeting_text ?? "",
       searchKeywords: t.search_keywords ?? [],
       state: dbStatusToState(t.translation_status),
+      autoFit: !langRows.has(l),
+      textDesignOverride: langRows.has(l) ? rowToDesign(langRows.get(l)!) : undefined,
     };
   }
   if (Object.keys(translations).length === 0) translations.en = emptyTranslation("en");
-  const design: TextDesign = td
-    ? {
-        x: Number(td.text_x),
-        y: Number(td.text_y),
-        width: Number(td.text_width),
-        alignment: (td.alignment as TextDesign["alignment"]) ?? "center",
-        fontFamily: td.font_family,
-        fontSize: Number(td.font_size),
-        fontWeight: td.font_weight,
-        lineHeight: Number(td.line_height),
-        textColor: td.text_color,
-        textShadow: td.text_shadow,
-        backgroundOverlay: Number(td.background_opacity),
-        rotation: Number(td.rotation),
-        maxLines: td.max_lines,
-      }
-    : defaultTextDesign();
+  const design: TextDesign = baseRow ? rowToDesign(baseRow) : defaultTextDesign();
   return {
     id: v.id,
     backgroundId: v.background_id,

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
+import { PublicCardText } from "@/components/card/PublicCardText";
 import { Heart, Search, X, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -51,6 +52,7 @@ type CardRow = {
   primary_occasion: PublicCatalogCard["primary_occasion"];
   additional: PublicCatalogCard["additional"];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
+  text_designs?: PublicCatalogCard["text_designs"];
 };
 
 type OccasionRow = { id: string; slug: string };
@@ -284,15 +286,11 @@ function CatalogPage() {
               const slug = c.primary_occasion?.slug ?? "";
               return (
                 <article key={c.id} className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm">
-                  <div className="aspect-[4/5]" style={{ backgroundImage: gradients[i % gradients.length] }}>
-                    <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-                      <span className="rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest backdrop-blur">
-                        {slug ? occasionLabel(slug) : t("catalog_card_tag")}
-                      </span>
-                      <div>
-                        <div className="font-display text-2xl italic line-clamp-3">{wish}</div>
-                      </div>
-                    </div>
+                  <div className="relative aspect-[4/5]" style={{ backgroundImage: gradients[i % gradients.length] }}>
+                    <PublicCardText text={wish} designs={c.text_designs} lang={lang} aspectRatio="4:5" />
+                    <span className="absolute left-6 top-6 rounded-full bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest text-primary-foreground backdrop-blur">
+                      {slug ? occasionLabel(slug) : t("catalog_card_tag")}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-4">
                     <div className="min-w-0">

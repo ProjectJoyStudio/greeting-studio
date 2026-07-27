@@ -14,7 +14,9 @@ import type {
   Translation,
   VariantStatus,
 } from "@/lib/admin/catalog-mgmt/types";
-import { backgroundBg, translationCompleteness } from "@/lib/admin/catalog-mgmt/types";
+import { backgroundBg, resolveTextDesign, translationCompleteness } from "@/lib/admin/catalog-mgmt/types";
+import { CardTextLayer } from "@/components/card/CardTextLayer";
+import { refHeightFor, type FitResult } from "@/lib/text-fit/engine";
 import { useCatalogMgmt } from "@/lib/admin/catalog-mgmt/store";
 
 export const VARIANT_STATUS_TONE: Record<VariantStatus, string> = {
@@ -115,6 +117,8 @@ export function CardPreview({
   aspect,
   design,
   textOverride,
+  showSafeArea,
+  onLayout,
 }: {
   background: Background | undefined;
   variant?: Pick<CardVariant, "textDesign" | "translations" | "orientation"> & Partial<CardVariant>;
@@ -123,9 +127,14 @@ export function CardPreview({
   aspect?: string; // css aspect-ratio, e.g. "4 / 5"
   design?: TextDesign;
   textOverride?: string;
+  /** Editor-only safe-area guide. Never shown on published or exported cards. */
+  showSafeArea?: boolean;
+  onLayout?: (fit: FitResult) => void;
 }) {
-  const td = design ?? variant?.textDesign;
   const tr: Translation | undefined = variant?.translations?.[lang];
+  const baseDesign = design ?? variant?.textDesign;
+  const td = baseDesign ? resolveTextDesign(baseDesign, tr) : undefined;
+  const autoFit = tr?.autoFit !== false;
   const fallback = variant?.translations
     ? Object.values(variant.translations).find((x) => x?.textOnCard?.trim())
     : undefined;
@@ -136,41 +145,15 @@ export function CardPreview({
       className={cn("relative w-full overflow-hidden rounded-xl border border-border/60 bg-slate-100 dark:bg-slate-900", className)}
       style={{ aspectRatio: ratio, background: backgroundBg(background) }}
     >
-      {td && text && (
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            left: `${td.x}%`,
-            top: `${td.y}%`,
-            width: `${td.width}%`,
-            transform: `rotate(${td.rotation}deg)`,
-          }}
-        >
-          {td.backgroundOverlay > 0 && (
-            <div
-              className="absolute inset-0 -m-2 rounded-md"
-              style={{ background: `rgba(0,0,0,${td.backgroundOverlay / 100})` }}
-            />
-          )}
-          <div
-            className="relative"
-            style={{
-              color: td.textColor,
-              fontFamily: td.fontFamily,
-              fontSize: `clamp(12px, ${td.fontSize / 6}vw, ${td.fontSize}px)`,
-              fontWeight: td.fontWeight,
-              lineHeight: td.lineHeight,
-              textAlign: td.alignment,
-              textShadow: td.textShadow ? "0 2px 12px rgba(0,0,0,.55)" : "none",
-              display: "-webkit-box",
-              WebkitLineClamp: td.maxLines,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {text}
-          </div>
-        </div>
+      {td && (text || showSafeArea) && (
+        <CardTextLayer
+          text={text}
+          design={td}
+          autoFit={autoFit}
+          refHeight={refHeightFor(ratio)}
+          showSafeArea={showSafeArea}
+          onLayout={onLayout}
+        />
       )}
     </div>
   );

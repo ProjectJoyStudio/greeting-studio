@@ -145,8 +145,12 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
       arr.push(tr);
       trM.set(tr.card_variant_id, arr);
     }
-    const tdM = new Map<string, (typeof cvData.textDesigns)[number]>();
-    for (const td of cvData.textDesigns) tdM.set(td.card_variant_id, td);
+    const tdM = new Map<string, typeof cvData.textDesigns>();
+    for (const td of cvData.textDesigns) {
+      const arr = tdM.get(td.card_variant_id) ?? [];
+      arr.push(td);
+      tdM.set(td.card_variant_id, arr);
+    }
 
     const localVariants = cvData.variants.map((v) =>
       rowsToVariant(
@@ -160,7 +164,7 @@ export function CatalogMgmtProvider({ children }: { children: ReactNode }) {
         themeM.get(v.id) ?? [],
         seasonM.get(v.id) ?? [],
         trM.get(v.id) ?? [],
-        tdM.get(v.id),
+        tdM.get(v.id) ?? [],
       ),
     );
     setVariants(localVariants);
