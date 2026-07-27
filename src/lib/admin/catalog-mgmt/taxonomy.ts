@@ -54,6 +54,9 @@ export const DEFAULT_TAXONOMY: Taxonomy = {
     it("christian_blessing", { en: "Christian Blessing", ru: "Христианское благословение", uk: "Християнське благословення", de: "Christlicher Segen", fr: "Bénédiction chrétienne", pl: "Chrześcijańskie błogosławieństwo" }, 32, "✝️"),
     it("bible_verse", { en: "Bible Verse", ru: "Библейский стих", uk: "Біблійний вірш", de: "Bibelvers", fr: "Verset biblique", pl: "Werset biblijny" }, 33, "📖"),
     it("prayer_support", { en: "Prayer Support", ru: "Молитвенная поддержка", uk: "Молитовна підтримка", de: "Gebetsunterstützung", fr: "Soutien par la prière", pl: "Modlitwa wsparcia" }, 34, "🙌"),
+    it("congratulations", { en: "Congratulations", ru: "Поздравления", uk: "Вітання", de: "Glückwünsche", fr: "Félicitations", pl: "Gratulacje" }, 35, "🎉"),
+    it("farewell", { en: "Farewell", ru: "Прощание", uk: "Прощання", de: "Abschied", fr: "Adieu", pl: "Pożegnanie" }, 36, "👋"),
+    it("love", { en: "Love", ru: "Любовь", uk: "Кохання", de: "Liebe", fr: "Amour", pl: "Miłość" }, 37, "❤️"),
   ],
   recipient: [
     it("universal", { en: "Universal", ru: "Универсально", uk: "Універсально", de: "Universell", fr: "Universel", pl: "Uniwersalny" }, 1, "🌐"),

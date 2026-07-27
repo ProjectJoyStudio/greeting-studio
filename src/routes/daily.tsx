@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { slugToParam } from "@/lib/catalog/categories";
 import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/daily")({
@@ -47,8 +48,8 @@ function DailyPage() {
           {EVERYDAY_ITEMS.map((it) => (
             <Link
               key={it.key}
-              to="/catalog"
-              search={{ occasion: it.slug }}
+              to="/catalog/$category"
+              params={{ category: slugToParam(it.slug) }}
               className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm"
             >
               <div className="h-40" style={{ backgroundImage: it.grad }} />
