@@ -17,22 +17,24 @@ export const Route = createFileRoute("/daily")({
   component: DailyPage,
 });
 
-const EVERYDAY_ITEMS: { key: string; grad: string }[] = [
-  { key: "ev_good_morning", grad: "linear-gradient(160deg, oklch(0.9 0.09 75), oklch(0.6 0.15 45))" },
-  { key: "ev_good_night", grad: "linear-gradient(160deg, oklch(0.7 0.1 260), oklch(0.35 0.12 275))" },
-  { key: "ev_nice_day", grad: "linear-gradient(160deg, oklch(0.9 0.09 95), oklch(0.6 0.14 70))" },
-  { key: "ev_good_luck", grad: "linear-gradient(160deg, oklch(0.88 0.1 145), oklch(0.55 0.13 160))" },
-  { key: "ev_love_you", grad: "linear-gradient(160deg, oklch(0.88 0.1 20), oklch(0.55 0.17 15))" },
-  { key: "ev_miss_you", grad: "linear-gradient(160deg, oklch(0.87 0.08 340), oklch(0.5 0.14 335))" },
-  { key: "ev_thank_you", grad: "linear-gradient(160deg, oklch(0.9 0.09 55), oklch(0.55 0.14 40))" },
-  { key: "ev_sorry", grad: "linear-gradient(160deg, oklch(0.85 0.06 250), oklch(0.5 0.09 255))" },
-  { key: "ev_get_well", grad: "linear-gradient(160deg, oklch(0.88 0.09 180), oklch(0.55 0.12 195))" },
-  { key: "ev_safe_trip", grad: "linear-gradient(160deg, oklch(0.88 0.09 210), oklch(0.5 0.13 225))" },
-  { key: "ev_on_my_way", grad: "linear-gradient(160deg, oklch(0.88 0.08 130), oklch(0.55 0.13 145))" },
-  { key: "ev_running_late", grad: "linear-gradient(160deg, oklch(0.88 0.09 35), oklch(0.55 0.16 25))" },
-  { key: "ev_great_weekend", grad: "linear-gradient(160deg, oklch(0.9 0.09 110), oklch(0.55 0.14 90))" },
-  { key: "ev_wonderful_vacation", grad: "linear-gradient(160deg, oklch(0.9 0.09 200), oklch(0.55 0.15 215))" },
-  { key: "ev_welcome", grad: "linear-gradient(160deg, oklch(0.9 0.09 60), oklch(0.55 0.15 45))" },
+// `slug` is the stable database occasion slug — filtering never uses the
+// translated label, so the same link works in every interface language.
+const EVERYDAY_ITEMS: { key: string; slug: string; grad: string }[] = [
+  { key: "ev_good_morning", slug: "good_morning", grad: "linear-gradient(160deg, oklch(0.9 0.09 75), oklch(0.6 0.15 45))" },
+  { key: "ev_good_night", slug: "good_night", grad: "linear-gradient(160deg, oklch(0.7 0.1 260), oklch(0.35 0.12 275))" },
+  { key: "ev_nice_day", slug: "nice_day", grad: "linear-gradient(160deg, oklch(0.9 0.09 95), oklch(0.6 0.14 70))" },
+  { key: "ev_good_luck", slug: "good_luck", grad: "linear-gradient(160deg, oklch(0.88 0.1 145), oklch(0.55 0.13 160))" },
+  { key: "ev_love_you", slug: "i_love_you", grad: "linear-gradient(160deg, oklch(0.88 0.1 20), oklch(0.55 0.17 15))" },
+  { key: "ev_miss_you", slug: "i_miss_you", grad: "linear-gradient(160deg, oklch(0.87 0.08 340), oklch(0.5 0.14 335))" },
+  { key: "ev_thank_you", slug: "thank_you", grad: "linear-gradient(160deg, oklch(0.9 0.09 55), oklch(0.55 0.14 40))" },
+  { key: "ev_sorry", slug: "forgive_me", grad: "linear-gradient(160deg, oklch(0.85 0.06 250), oklch(0.5 0.09 255))" },
+  { key: "ev_get_well", slug: "get_well", grad: "linear-gradient(160deg, oklch(0.88 0.09 180), oklch(0.55 0.12 195))" },
+  { key: "ev_safe_trip", slug: "safe_travels", grad: "linear-gradient(160deg, oklch(0.88 0.09 210), oklch(0.5 0.13 225))" },
+  { key: "ev_on_my_way", slug: "thinking_of_you", grad: "linear-gradient(160deg, oklch(0.88 0.08 130), oklch(0.55 0.13 145))" },
+  { key: "ev_running_late", slug: "forgive_me", grad: "linear-gradient(160deg, oklch(0.88 0.09 35), oklch(0.55 0.16 25))" },
+  { key: "ev_great_weekend", slug: "happy_weekend", grad: "linear-gradient(160deg, oklch(0.9 0.09 110), oklch(0.55 0.14 90))" },
+  { key: "ev_wonderful_vacation", slug: "safe_travels", grad: "linear-gradient(160deg, oklch(0.9 0.09 200), oklch(0.55 0.15 215))" },
+  { key: "ev_welcome", slug: "congratulations", grad: "linear-gradient(160deg, oklch(0.9 0.09 60), oklch(0.55 0.15 45))" },
 ];
 
 function DailyPage() {
@@ -46,7 +48,7 @@ function DailyPage() {
             <Link
               key={it.key}
               to="/catalog"
-              search={{ occasion: it.key }}
+              search={{ occasion: it.slug }}
               className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm"
             >
               <div className="h-40" style={{ backgroundImage: it.grad }} />
