@@ -9,6 +9,8 @@ import type { Background, CardVariant, Orientation, TextDesign, Translation, Var
 import { defaultTextDesign, emptyTranslation, multilingualReadiness } from "@/lib/admin/catalog-mgmt/types";
 import { REQUIRED_LOCALES } from "@/lib/translation/types";
 import { TranslationsStep } from "./TranslationsStep";
+import { TextDesignStep } from "./TextDesignStep";
+import { reportAllLangs } from "@/lib/text-fit/validate";
 import {
   CardPreview,
   Section,
@@ -28,6 +30,7 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(existing ? 2 : 1);
   const [previewLang, setPreviewLang] = useState<Lang>(lang);
   const [device, setDevice] = useState<"mobile" | "tablet" | "desktop" | "original">("desktop");
+  const [showSafeArea, setShowSafeArea] = useState(true);
 
   const [form, setForm] = useState<Omit<CardVariant, "id" | "createdAt" | "updatedAt">>(() => ({
     backgroundId: existing?.backgroundId ?? initialBackgroundId ?? "",
@@ -79,10 +82,41 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
     setForm((f) => ({ ...f, textDesign: { ...f.textDesign, ...patch } }));
   }
 
+  /**
+   * Copy the shared visual styling (font, colour, shadow, overlay, alignment,
+   * rotation, weight) to every language — but never the geometry, so each
+   * language keeps its own automatically fitted size and position.
+   */
   function copyLayoutToAll() {
-    // No per-language override implemented in UI beyond textDesign — just toast.
+    setForm((f) => {
+      const b = f.textDesign;
+      const shared: Partial<TextDesign> = {
+        fontFamily: b.fontFamily,
+        fontWeight: b.fontWeight,
+        textColor: b.textColor,
+        textShadow: b.textShadow,
+        backgroundOverlay: b.backgroundOverlay,
+        alignment: b.alignment,
+        rotation: b.rotation,
+      };
+      const translations = { ...f.translations };
+      for (const l of REQUIRED_LOCALES) {
+        const tr = translations[l];
+        if (!tr) continue;
+        translations[l] = tr.textDesignOverride
+          ? { ...tr, textDesignOverride: { ...tr.textDesignOverride, ...shared } }
+          : tr;
+      }
+      return { ...f, translations };
+    });
     toast.success(t("cm_tr_copied"));
   }
+
+  const fitReports = useMemo(
+    () => reportAllLangs(form.translations, form.textDesign, bg?.aspectRatio),
+    [form.translations, form.textDesign, bg?.aspectRatio],
+  );
+  const fitBlocking = useMemo(() => fitReports.filter((r) => r.issues.length > 0), [fitReports]);
 
   function validate(publishing = false): string[] {
     const errs: string[] = [];
@@ -95,6 +129,11 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
       }
       if (readiness.unconfirmed.length > 0) {
         errs.push(`${t("cm_v_unconfirmed_languages")}: ${readiness.unconfirmed.map((l) => l.toUpperCase()).join(", ")}`);
+      }
+      for (const r of fitBlocking) {
+        errs.push(
+          `${r.locale.toUpperCase()}: ${r.issues.map((i) => t(`cm_fit_issue_${i}`)).join(" · ")}`,
+        );
       }
     }
     return errs;
@@ -293,7 +332,18 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
 
         {step === 4 && (
           <Section title={t("cm_cv_step_design")}>
-            <TextDesignControls td={form.textDesign} onChange={setTextDesign} t={t} />
+            <TextDesignStep
+              base={form.textDesign}
+              translations={form.translations}
+              activeLang={previewLang}
+              aspectRatio={bg?.aspectRatio}
+              showSafeArea={showSafeArea}
+              onShowSafeArea={setShowSafeArea}
+              onActiveLang={setPreviewLang}
+              onBaseChange={setTextDesign}
+              onTranslationPatch={setTr}
+              t={t}
+            />
           </Section>
         )}
 
@@ -333,8 +383,8 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
           </button>
           <button
             type="button"
-            disabled={!readiness.ready}
-            title={readiness.ready ? undefined : t("cm_v_publish_blocked")}
+            disabled={!readiness.ready || fitBlocking.length > 0}
+            title={readiness.ready && fitBlocking.length === 0 ? undefined : t("cm_v_publish_blocked")}
             onClick={() => save("published")}
             className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
           >
@@ -391,8 +441,25 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
             ))}
           </div>
           <div className="mx-auto" style={{ maxWidth: deviceW }}>
-            <CardPreview background={bg} variant={{ ...form } as CardVariant} lang={previewLang} aspect={bg?.aspectRatio?.replace(":", " / ")} textOverride={tr?.textOnCard} />
+            <CardPreview
+              background={bg}
+              variant={{ ...form } as CardVariant}
+              lang={previewLang}
+              aspect={bg?.aspectRatio?.replace(":", " / ")}
+              textOverride={tr?.textOnCard}
+              showSafeArea={step === 4 && showSafeArea}
+            />
           </div>
+          {fitBlocking.length > 0 && (
+            <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] text-destructive">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                {fitBlocking
+                  .map((r) => `${r.locale.toUpperCase()}: ${r.issues.map((i) => t(`cm_fit_issue_${i}`)).join(", ")}`)
+                  .join(" · ")}
+              </span>
+            </div>
+          )}
           {bg && (
             <p className="mt-2 truncate text-[10px] text-muted-foreground">
               {taxonomyLabel(taxonomy.occasion, form.primaryOccasion || "—", lang)} · {bg.internalName}
@@ -409,55 +476,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <label className="block text-xs">
       <span className="mb-1 block text-muted-foreground">{label}</span>
       {children}
-    </label>
-  );
-}
-
-function TextDesignControls({ td, onChange, t }: { td: TextDesign; onChange: (p: Partial<TextDesign>) => void; t: (k: string) => string }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <NumField label={t("cm_td_position_x") + " %"} value={td.x} onChange={(x) => onChange({ x })} min={0} max={100} />
-      <NumField label={t("cm_td_position_y") + " %"} value={td.y} onChange={(y) => onChange({ y })} min={0} max={100} />
-      <NumField label={t("cm_td_width") + " %"} value={td.width} onChange={(w) => onChange({ width: w })} min={10} max={100} />
-      <label className="block text-xs">
-        <span className="mb-1 block text-muted-foreground">{t("cm_td_alignment")}</span>
-        <select value={td.alignment} onChange={(e) => onChange({ alignment: e.target.value as TextDesign["alignment"] })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
-          <option value="left">left</option>
-          <option value="center">center</option>
-          <option value="right">right</option>
-        </select>
-      </label>
-      <label className="block text-xs">
-        <span className="mb-1 block text-muted-foreground">{t("cm_td_font")}</span>
-        <select value={td.fontFamily} onChange={(e) => onChange({ fontFamily: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
-          {["Fraunces", "Inter", "Playfair Display", "Cormorant", "Georgia", "system-ui"].map((f) => (
-            <option key={f} value={f}>{f}</option>
-          ))}
-        </select>
-      </label>
-      <NumField label={t("cm_td_size")} value={td.fontSize} onChange={(fontSize) => onChange({ fontSize })} min={12} max={128} />
-      <NumField label={t("cm_td_weight")} value={td.fontWeight} onChange={(fontWeight) => onChange({ fontWeight })} min={100} max={900} step={100} />
-      <NumField label={t("cm_td_line_height")} value={td.lineHeight} onChange={(lineHeight) => onChange({ lineHeight })} min={0.8} max={2.5} step={0.1} />
-      <label className="block text-xs">
-        <span className="mb-1 block text-muted-foreground">{t("cm_td_color")}</span>
-        <input type="color" value={td.textColor} onChange={(e) => onChange({ textColor: e.target.value })} className="h-9 w-full rounded-md border border-border/60 bg-background px-1" />
-      </label>
-      <label className="inline-flex items-center gap-2 text-xs">
-        <input type="checkbox" checked={td.textShadow} onChange={(e) => onChange({ textShadow: e.target.checked })} />
-        {t("cm_td_shadow")}
-      </label>
-      <NumField label={t("cm_td_overlay") + " %"} value={td.backgroundOverlay} onChange={(backgroundOverlay) => onChange({ backgroundOverlay })} min={0} max={100} />
-      <NumField label={t("cm_td_rotation") + "°"} value={td.rotation} onChange={(rotation) => onChange({ rotation })} min={-45} max={45} />
-      <NumField label={t("cm_td_max_lines")} value={td.maxLines} onChange={(maxLines) => onChange({ maxLines })} min={1} max={10} />
-    </div>
-  );
-}
-
-function NumField({ label, value, onChange, min, max, step }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number; step?: number }) {
-  return (
-    <label className="block text-xs">
-      <span className="mb-1 flex items-center justify-between text-muted-foreground"><span>{label}</span><span className="tabular-nums text-foreground/70">{value}</span></span>
-      <input type="range" min={min} max={max} step={step ?? 1} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full" />
     </label>
   );
 }

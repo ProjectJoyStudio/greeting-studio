@@ -58,7 +58,12 @@ export interface Translation {
   searchKeywords: string[];
   /** Review state — "empty" | "auto" | "confirmed". */
   state?: TranslationState;
-  // Optional per-language text design override
+  /**
+   * Automatic text fitting for this language. Enabled by default: the renderer
+   * derives font size, wrapping, line height and position from the text itself.
+   */
+  autoFit?: boolean;
+  /** Per-language manual text-design override (applied on top of the base design). */
   textDesignOverride?: Partial<TextDesign>;
 }
 
@@ -150,7 +155,24 @@ export function emptyTranslation(locale: Lang): Translation {
     textOnCard: "",
     searchKeywords: [],
     state: "empty",
+    autoFit: true,
   };
+}
+
+/** Per-language fitting mode shown in the editor. */
+export type TextFitMode = "auto" | "manual";
+
+export function textFitMode(t: Translation | undefined): TextFitMode {
+  return t?.autoFit === false ? "manual" : "auto";
+}
+
+/** Effective design for a language: base design + per-language manual override. */
+export function resolveTextDesign(
+  base: TextDesign,
+  t: Translation | undefined,
+): TextDesign {
+  if (!t || t.autoFit !== false || !t.textDesignOverride) return base;
+  return { ...base, ...t.textDesignOverride };
 }
 
 export function translationCompleteness(t: Translation | undefined): TranslationCompleteness {
