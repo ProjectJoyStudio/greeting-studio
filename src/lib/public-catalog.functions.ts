@@ -28,6 +28,29 @@ type OccasionRow = Pick<
   "id" | "slug" | "is_active"
 >;
 
+/** Text-design rows drive the shared renderer so public cards match the admin preview. */
+export type PublicTextDesignRow = Pick<
+  Database["public"]["Tables"]["catalog_text_designs"]["Row"],
+  | "card_variant_id"
+  | "language_code"
+  | "text_x"
+  | "text_y"
+  | "text_width"
+  | "alignment"
+  | "font_family"
+  | "font_size"
+  | "font_weight"
+  | "line_height"
+  | "text_color"
+  | "text_shadow"
+  | "background_opacity"
+  | "rotation"
+  | "max_lines"
+>;
+
+const TEXT_DESIGN_COLUMNS =
+  "card_variant_id, language_code, text_x, text_y, text_width, alignment, font_family, font_size, font_weight, line_height, text_color, text_shadow, background_opacity, rotation, max_lines";
+
 export type PublicCatalogBackground = Pick<
   Database["public"]["Tables"]["catalog_backgrounds"]["Row"],
   "id" | "status" | "is_hidden" | "is_archived" | "deleted_at"
@@ -44,6 +67,7 @@ export type PublicCatalogCard = {
   primary_occasion: { slug: string; is_active: boolean | null } | null;
   additional: { occasion: { slug: string; is_active: boolean | null } | null }[];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
+  text_designs: PublicTextDesignRow[];
 };
 
 export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(async () => {
@@ -72,7 +96,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
     .map((variant) => variant.background_id)
     .filter((id): id is string => Boolean(id));
 
-  const [additionalResult, translationsResult, backgroundsResult] = await Promise.all([
+  const [additionalResult, translationsResult, backgroundsResult, textDesignsResult] = await Promise.all([
     supabaseAdmin
       .from("card_variant_additional_occasions")
       .select("card_variant_id, occasion_id")
@@ -87,15 +111,21 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
           .select("id, status, is_hidden, is_archived, deleted_at")
           .in("id", backgroundIds)
       : Promise.resolve({ data: [] as PublicCatalogBackground[], error: null }),
+    supabaseAdmin
+      .from("catalog_text_designs")
+      .select(TEXT_DESIGN_COLUMNS)
+      .in("card_variant_id", variantIds),
   ]);
 
   if (additionalResult.error) throw additionalResult.error;
   if (translationsResult.error) throw translationsResult.error;
   if (backgroundsResult.error) throw backgroundsResult.error;
+  if (textDesignsResult.error) throw textDesignsResult.error;
 
   const additionalRows = (additionalResult.data ?? []) as AdditionalOccasionRow[];
   const translationRows = (translationsResult.data ?? []) as TranslationRow[];
   const backgroundRows = (backgroundsResult.data ?? []) as PublicCatalogBackground[];
+  const textDesignRows = (textDesignsResult.data ?? []) as PublicTextDesignRow[];
   const occasionIds = Array.from(
     new Set([
       ...primaryOccasionIds,
@@ -146,6 +176,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
           title: row.title,
           greeting_text: row.greeting_text,
         })),
+      text_designs: textDesignRows.filter((row) => row.card_variant_id === variant.id),
     } satisfies PublicCatalogCard;
   });
 });
