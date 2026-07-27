@@ -118,6 +118,7 @@ const dict: Dict = {
   footer_terms: "Умови",
   footer_privacy: "Конфіденційність",
   footer_cookies: "Cookie",
+  footer_search_ph: "Пошук привітань…",
   home_open_collection: "Відкрити добірку",
   home_daily_body: "Дбайливо підібрана колекція дизайнів для цієї нагоди.",
   hero_card_hb: "З Днем народження",

@@ -118,6 +118,7 @@ const dict: Dict = {
   footer_terms: "AGB",
   footer_privacy: "Datenschutz",
   footer_cookies: "Cookies",
+  footer_search_ph: "Grüße suchen…",
   home_open_collection: "Sammlung öffnen",
   home_daily_body: "Eine handverlesene Auswahl passend zu diesem Anlass.",
   hero_card_hb: "Alles Gute zum Geburtstag",
