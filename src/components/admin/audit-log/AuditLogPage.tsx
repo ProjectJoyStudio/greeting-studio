@@ -419,7 +419,7 @@ function Modal({ children, onClose, title }: { children: React.ReactNode; onClos
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border/60 bg-background shadow-xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
           <h2 className="font-[Fraunces] text-lg font-semibold text-foreground">{title}</h2>
-          <button className="text-muted-foreground hover:text-foreground" onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></button>
+          <button className="text-muted-foreground hover:text-foreground" onClick={onClose} aria-label={L.t("close")}><X className="h-4 w-4" /></button>
         </div>
         <div className="px-5 py-4">{children}</div>
       </div>

@@ -545,7 +545,7 @@ export function CalendarSettingsPage() {
           </div>
 
           <div className="rounded-lg border border-border/60 bg-card/40 p-4">
-            <h3 className="mb-2 text-sm font-semibold">Custom admin events</h3>
+            <h3 className="mb-2 text-sm font-semibold">{T("cs_custom_admin_events")}</h3>
             <ul className="space-y-2 text-sm">
               {adminEvents.map(a => (
                 <li key={a.id} className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-background p-2">

@@ -13,6 +13,7 @@ export const CS_I18N: Record<string, T> = {
                   "Керуйте особистими датами, нагадуваннями, запланованою доставкою та доступом до календаря.",
                   "Gérez les dates personnelles, les rappels, la livraison planifiée et l'accès au calendrier.",
                   "Zarządzaj datami osobistymi, przypomnieniami, zaplanowaną wysyłką i dostępem do kalendarza."),
+  cs_custom_admin_events: t("Custom admin events","Benutzerdefinierte Admin-Ereignisse","Пользовательские админ-события","Користувацькі адмін-події","Événements admin personnalisés","Niestandardowe zdarzenia administratora"),
   cs_demo_note: t("Demonstration data","Demodaten","Демонстрационные данные","Демонстраційні дані","Données de démonstration","Dane demonstracyjne"),
 
   // Top actions
