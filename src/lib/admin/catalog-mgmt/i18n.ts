@@ -1200,6 +1200,7 @@ const ML: Record<Lang, Dict> = {
 };
 
 export const CM_DICT: Record<Lang, Dict> = {
+  // placeholder-anchor
   en: { ...en, ...ML.en, ...GAPS.en },
   ru: { ...ru, ...ML.ru, ...GAPS.ru },
   uk: { ...uk, ...ML.uk, ...GAPS.uk },
