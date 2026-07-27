@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Lang } from "@/lib/i18n";
 import { LANGS } from "@/lib/i18n";
+import { defaultTaxonomyName, slugLabel } from "@/lib/taxonomy-labels";
 import type {
   Background,
   BackgroundStatus,
