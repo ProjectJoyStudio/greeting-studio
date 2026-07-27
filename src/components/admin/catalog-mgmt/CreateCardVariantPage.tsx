@@ -249,48 +249,30 @@ export function CreateCardVariantPage({ editId, initialBackgroundId }: { editId?
               </button>
             }
           >
-            <div className="mb-2 flex items-start gap-2 rounded-md border border-sky-500/30 bg-sky-500/5 p-2.5 text-xs text-sky-900 dark:text-sky-200">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{t("cm_tr_no_auto")}</span>
-            </div>
-            <div className="mb-3 flex flex-wrap gap-1">
-              {LANGS.map((l) => {
-                const c = translationCompleteness(form.translations[l.code]);
-                const dot = c === "complete" ? "bg-emerald-500" : c === "incomplete" ? "bg-amber-500" : "bg-slate-300";
-                return (
-                  <button
-                    key={l.code}
-                    type="button"
-                    onClick={() => setPreviewLang(l.code)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
-                      previewLang === l.code ? "border-primary/40 bg-primary/10 text-primary" : "border-border/60 bg-background text-muted-foreground"
-                    }`}
-                  >
-                    <span className={`h-2 w-2 rounded-full ${dot}`} />
-                    {l.label}
-                  </button>
-                );
-              })}
-            </div>
-            {(() => {
-              const trE = form.translations[previewLang] ?? emptyTranslation(previewLang);
-              return (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label={t("cm_tr_title")}>
-                    <input value={trE.catalogTitle} onChange={(e) => setTr(previewLang, { catalogTitle: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_short")}>
-                    <input value={trE.shortDescription} onChange={(e) => setTr(previewLang, { shortDescription: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_text_on_card")}>
-                    <textarea rows={3} value={trE.textOnCard} onChange={(e) => setTr(previewLang, { textOnCard: e.target.value })} className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-                  </Field>
-                  <Field label={t("cm_tr_keywords")}>
-                    <TagInput value={trE.searchKeywords} onChange={(v) => setTr(previewLang, { searchKeywords: v })} />
-                  </Field>
-                </div>
-              );
-            })()}
+            <TranslationsStep
+              translations={form.translations}
+              activeLang={previewLang}
+              onActiveLang={setPreviewLang}
+              onPatch={setTr}
+              t={t}
+            />
+            {!readiness.ready && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {readiness.missing.length > 0 && (
+                    <>
+                      {t("cm_v_missing_languages")}: {readiness.missing.map((l) => l.toUpperCase()).join(", ")}.{" "}
+                    </>
+                  )}
+                  {readiness.unconfirmed.length > 0 && (
+                    <>
+                      {t("cm_v_unconfirmed_languages")}: {readiness.unconfirmed.map((l) => l.toUpperCase()).join(", ")}.
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             {hasPersonalName && (
               <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
