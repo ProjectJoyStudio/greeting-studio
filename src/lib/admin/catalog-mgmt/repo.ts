@@ -14,6 +14,7 @@ import type {
   TextDesign,
 } from "./types";
 import { defaultTextDesign, emptyTranslation } from "./types";
+import { dbStatusToState, stateToDbStatus } from "@/lib/translation/types";
 import type { Lang } from "@/lib/i18n";
 
 // Buckets
