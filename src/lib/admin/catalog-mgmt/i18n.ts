@@ -1544,13 +1544,22 @@ const GAPS: Record<Lang, Dict> = {
   },
 };
 
+const EXTRA_LABELS: Record<Lang, Dict> = {
+  en: { cm_remove: "Remove", cm_move_up: "Move up", cm_move_down: "Move down", cm_tx_label_en: "Label (EN)" },
+  ru: { cm_remove: "Удалить", cm_move_up: "Вверх", cm_move_down: "Вниз", cm_tx_label_en: "Название (EN)" },
+  uk: { cm_remove: "Видалити", cm_move_up: "Вгору", cm_move_down: "Вниз", cm_tx_label_en: "Назва (EN)" },
+  de: { cm_remove: "Entfernen", cm_move_up: "Nach oben", cm_move_down: "Nach unten", cm_tx_label_en: "Bezeichnung (EN)" },
+  fr: { cm_remove: "Supprimer", cm_move_up: "Monter", cm_move_down: "Descendre", cm_tx_label_en: "Libellé (EN)" },
+  pl: { cm_remove: "Usuń", cm_move_up: "W górę", cm_move_down: "W dół", cm_tx_label_en: "Etykieta (EN)" },
+};
+
 export const CM_DICT: Record<Lang, Dict> = {
-  en: { ...en, ...ML.en, ...GAPS.en },
-  ru: { ...ru, ...ML.ru, ...GAPS.ru },
-  uk: { ...uk, ...ML.uk, ...GAPS.uk },
-  de: { ...de, ...ML.de, ...GAPS.de },
-  fr: { ...fr, ...ML.fr, ...GAPS.fr },
-  pl: { ...pl, ...ML.pl, ...GAPS.pl },
+  en: { ...en, ...ML.en, ...GAPS.en, ...EXTRA_LABELS.en },
+  ru: { ...ru, ...ML.ru, ...GAPS.ru, ...EXTRA_LABELS.ru },
+  uk: { ...uk, ...ML.uk, ...GAPS.uk, ...EXTRA_LABELS.uk },
+  de: { ...de, ...ML.de, ...GAPS.de, ...EXTRA_LABELS.de },
+  fr: { ...fr, ...ML.fr, ...GAPS.fr, ...EXTRA_LABELS.fr },
+  pl: { ...pl, ...ML.pl, ...GAPS.pl, ...EXTRA_LABELS.pl },
 };
 
 export function cmT(lang: Lang, key: string): string {
