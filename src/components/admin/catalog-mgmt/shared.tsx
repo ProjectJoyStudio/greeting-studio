@@ -313,7 +313,7 @@ export function TagInput({
             type="button"
             className="text-muted-foreground hover:text-foreground"
             onClick={() => onChange(value.filter((x) => x !== v))}
-            aria-label="Remove"
+            aria-label={t("cm_remove")}
           >
             <X className="h-3 w-3" />
           </button>

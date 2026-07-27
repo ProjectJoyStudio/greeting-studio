@@ -67,7 +67,7 @@ export function TaxonomyPage() {
       <Section title={t("cm_tx_add")}>
         <div className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
           <input value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder={t("cm_tx_key")} className="rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
-          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label (EN)" className="rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
+          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={t("cm_tx_label_en")} className="rounded-md border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60" />
           <button type="button" onClick={add} className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
             <Plus className="h-4 w-4" /> {t("cm_tx_add")}
           </button>
@@ -119,8 +119,8 @@ export function TaxonomyPage() {
                     <td className="px-2 py-2 tabular-nums">{usage}</td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
-                        <button type="button" onClick={() => move(idx, -1)} className="rounded border border-border/60 bg-background p-1 hover:bg-muted/50" aria-label="Up"><ArrowUp className="h-3 w-3" /></button>
-                        <button type="button" onClick={() => move(idx, 1)} className="rounded border border-border/60 bg-background p-1 hover:bg-muted/50" aria-label="Down"><ArrowDown className="h-3 w-3" /></button>
+                        <button type="button" onClick={() => move(idx, -1)} className="rounded border border-border/60 bg-background p-1 hover:bg-muted/50" aria-label={t("cm_move_up")}><ArrowUp className="h-3 w-3" /></button>
+                        <button type="button" onClick={() => move(idx, 1)} className="rounded border border-border/60 bg-background p-1 hover:bg-muted/50" aria-label={t("cm_move_down")}><ArrowDown className="h-3 w-3" /></button>
                         <button
                           type="button"
                           onClick={() =>
@@ -131,7 +131,7 @@ export function TaxonomyPage() {
                             }, t("cm_confirm_delete_used"))
                           }
                           className="rounded border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
-                          aria-label="Delete"
+                          aria-label={t("cm_delete")}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
