@@ -52,8 +52,8 @@ export function BgStatusBadge({ status }: { status: BackgroundStatus }) {
 
 export function taxonomyLabel(items: TaxonomyItem[], key: string, lang: Lang): string {
   const it = items.find((i) => i.key === key);
-  if (!it) return key;
-  return (it.names[lang] || it.names.en || it.key) as string;
+  if (!it) return slugLabel(key, lang);
+  return (it.names[lang] || defaultTaxonomyName(it.key, lang) || it.names.en || slugLabel(it.key, lang)) as string;
 }
 
 export function TaxonomyLabels({
