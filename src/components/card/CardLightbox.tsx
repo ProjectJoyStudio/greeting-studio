@@ -70,20 +70,22 @@ export function CardLightbox({
         <X className="h-5 w-5" />
       </button>
 
-      <div
-        onClick={dismiss}
-        className="relative w-full max-w-[min(92vw,560px)] overflow-hidden rounded-2xl shadow-2xl"
-        style={{
-          aspectRatio: card.aspectRatio.replace(":", " / "),
-          maxHeight: "76vh",
-          backgroundImage: card.imageUrl ? undefined : card.gradient,
-        }}
-      >
-        {card.imageUrl && (
+      {/* The image itself sizes the box, so the card is never cropped or padded. */}
+      <div onClick={dismiss} className="relative overflow-hidden rounded-2xl leading-none shadow-2xl">
+        {card.imageUrl ? (
           <img
             src={card.imageUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-contain"
+            className="block max-h-[76vh] w-auto max-w-[min(92vw,560px)]"
+          />
+        ) : (
+          <div
+            className="max-w-[min(92vw,560px)]"
+            style={{
+              width: "min(92vw, 560px)",
+              aspectRatio: card.aspectRatio.replace(":", " / "),
+              backgroundImage: card.gradient,
+            }}
           />
         )}
         <PublicCardText text={card.text} designs={card.designs} lang={lang} aspectRatio={card.aspectRatio} />
