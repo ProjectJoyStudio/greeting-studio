@@ -54,7 +54,16 @@ const TEXT_DESIGN_COLUMNS =
 export type PublicCatalogBackground = Pick<
   Database["public"]["Tables"]["catalog_backgrounds"]["Row"],
   "id" | "status" | "is_hidden" | "is_archived" | "deleted_at"
-> & { primary_media_asset_id?: string | null; image_url?: string | null };
+> & {
+  primary_media_asset_id?: string | null;
+  /** Small, lazily-loaded asset used by the catalog grid. */
+  thumb_url?: string | null;
+  /** Full-resolution asset, loaded only by the enlarged preview. */
+  image_url?: string | null;
+  width?: number | null;
+  height?: number | null;
+  orientation?: string | null;
+};
 
 export type PublicCatalogCard = {
   id: string;
@@ -66,6 +75,8 @@ export type PublicCatalogCard = {
   background: PublicCatalogBackground | null;
   primary_occasion: { slug: string; is_active: boolean | null } | null;
   additional: { occasion: { slug: string; is_active: boolean | null } | null }[];
+  /** Stable DB-driven facet keys (ids + slugs) used for public filtering. */
+  facets: string[];
   translations: { language_code: string; title: string | null; greeting_text: string | null }[];
   text_designs: PublicTextDesignRow[];
 };
@@ -96,7 +107,16 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
     .map((variant) => variant.background_id)
     .filter((id): id is string => Boolean(id));
 
-  const [additionalResult, translationsResult, backgroundsResult, textDesignsResult] = await Promise.all([
+  const [
+    additionalResult,
+    translationsResult,
+    backgroundsResult,
+    textDesignsResult,
+    categoryLinks,
+    themeLinks,
+    seasonLinks,
+    recipientLinks,
+  ] = await Promise.all([
     supabaseAdmin
       .from("card_variant_additional_occasions")
       .select("card_variant_id, occasion_id")
@@ -108,12 +128,28 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
     backgroundIds.length > 0
       ? supabaseAdmin
           .from("catalog_backgrounds")
-          .select("id, status, is_hidden, is_archived, deleted_at, primary_media_asset_id")
+          .select("id, status, is_hidden, is_archived, deleted_at, primary_media_asset_id, width, height, orientation")
           .in("id", backgroundIds)
       : Promise.resolve({ data: [] as PublicCatalogBackground[], error: null }),
     supabaseAdmin
       .from("catalog_text_designs")
       .select(TEXT_DESIGN_COLUMNS)
+      .in("card_variant_id", variantIds),
+    supabaseAdmin
+      .from("card_variant_categories")
+      .select("card_variant_id, category_id")
+      .in("card_variant_id", variantIds),
+    supabaseAdmin
+      .from("card_variant_themes")
+      .select("card_variant_id, theme_id")
+      .in("card_variant_id", variantIds),
+    supabaseAdmin
+      .from("card_variant_seasons")
+      .select("card_variant_id, season_id")
+      .in("card_variant_id", variantIds),
+    supabaseAdmin
+      .from("card_variant_recipients")
+      .select("card_variant_id, recipient_id")
       .in("card_variant_id", variantIds),
   ]);
 
@@ -121,6 +157,35 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
   if (translationsResult.error) throw translationsResult.error;
   if (backgroundsResult.error) throw backgroundsResult.error;
   if (textDesignsResult.error) throw textDesignsResult.error;
+
+  // Taxonomy slugs make filtering language-independent (ids are kept too).
+  const [categoryRows, themeRows, seasonRows, recipientRows] = await Promise.all([
+    supabaseAdmin.from("catalog_categories").select("id, slug"),
+    supabaseAdmin.from("catalog_themes").select("id, slug"),
+    supabaseAdmin.from("catalog_seasons").select("id, slug"),
+    supabaseAdmin.from("catalog_recipients").select("id, slug"),
+  ]);
+  const slugById = new Map<string, string>();
+  for (const res of [categoryRows, themeRows, seasonRows, recipientRows]) {
+    for (const row of (res.data ?? []) as { id: string; slug: string }[]) slugById.set(row.id, row.slug);
+  }
+  const facetsByVariant = new Map<string, Set<string>>();
+  const addFacet = (variantId: string, id: string | null | undefined) => {
+    if (!id) return;
+    const set = facetsByVariant.get(variantId) ?? new Set<string>();
+    set.add(id);
+    const slug = slugById.get(id);
+    if (slug) set.add(slug);
+    facetsByVariant.set(variantId, set);
+  };
+  for (const row of (categoryLinks.data ?? []) as { card_variant_id: string; category_id: string }[])
+    addFacet(row.card_variant_id, row.category_id);
+  for (const row of (themeLinks.data ?? []) as { card_variant_id: string; theme_id: string }[])
+    addFacet(row.card_variant_id, row.theme_id);
+  for (const row of (seasonLinks.data ?? []) as { card_variant_id: string; season_id: string }[])
+    addFacet(row.card_variant_id, row.season_id);
+  for (const row of (recipientLinks.data ?? []) as { card_variant_id: string; recipient_id: string }[])
+    addFacet(row.card_variant_id, row.recipient_id);
 
   const additionalRows = (additionalResult.data ?? []) as AdditionalOccasionRow[];
   const translationRows = (translationsResult.data ?? []) as TranslationRow[];
@@ -135,7 +200,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
   if (assetIds.length > 0) {
     const { data: assets } = await supabaseAdmin
       .from("media_assets")
-      .select("id, storage_bucket, storage_path")
+      .select("id, storage_bucket, storage_path, width, height")
       .in("id", assetIds);
 
     const signed = await Promise.all(
@@ -143,14 +208,30 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
         const { data } = await supabaseAdmin.storage
           .from(asset.storage_bucket)
           .createSignedUrl(asset.storage_path, 60 * 60);
-        return [asset.id, data?.signedUrl ?? null] as const;
+        // Ask for a downscaled render for the grid; fall back to the full asset
+        // when image transformation is unavailable on the bucket.
+        const { data: thumb } = await supabaseAdmin.storage
+          .from(asset.storage_bucket)
+          .createSignedUrl(asset.storage_path, 60 * 60, {
+            transform: { width: 480, quality: 70, resize: "contain" },
+          });
+        return [asset.id, { full: data?.signedUrl ?? null, thumb: thumb?.signedUrl ?? data?.signedUrl ?? null }] as const;
       }),
     );
     const urlByAsset = new Map(signed);
+    const dimsByAsset = new Map(
+      (assets ?? []).map((a) => [a.id, { width: a.width, height: a.height }] as const),
+    );
     for (const row of backgroundRows) {
-      row.image_url = row.primary_media_asset_id
-        ? urlByAsset.get(row.primary_media_asset_id) ?? null
-        : null;
+      const urls = row.primary_media_asset_id ? urlByAsset.get(row.primary_media_asset_id) : undefined;
+      row.image_url = urls?.full ?? null;
+      row.thumb_url = urls?.thumb ?? urls?.full ?? null;
+      // Prefer the true asset dimensions so tiles keep the original aspect ratio.
+      const dims = row.primary_media_asset_id ? dimsByAsset.get(row.primary_media_asset_id) : undefined;
+      if (dims?.width && dims?.height) {
+        row.width = dims.width;
+        row.height = dims.height;
+      }
     }
   }
 
@@ -198,6 +279,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
             occasion: occasion ? { slug: occasion.slug, is_active: occasion.is_active } : null,
           };
         }),
+      facets: Array.from(facetsByVariant.get(variant.id) ?? []),
       translations: translationRows
         .filter((row) => row.card_variant_id === variant.id)
         .map((row) => ({
