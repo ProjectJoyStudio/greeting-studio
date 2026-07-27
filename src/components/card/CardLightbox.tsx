@@ -76,13 +76,13 @@ export function CardLightbox({
           <img
             src={card.imageUrl}
             alt=""
-            className="block max-h-[76vh] w-auto max-w-[min(92vw,560px)]"
+            className="block max-h-[80vh] w-auto max-w-[min(88vw,640px)]"
           />
         ) : (
           <div
-            className="max-w-[min(92vw,560px)]"
+            className="max-w-[min(88vw,640px)]"
             style={{
-              width: "min(92vw, 560px)",
+              width: "min(88vw, 640px)",
               aspectRatio: card.aspectRatio.replace(":", " / "),
               backgroundImage: card.gradient,
             }}
