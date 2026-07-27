@@ -386,10 +386,10 @@ function RevenuePanel({ L, revSeries }: { L: Lloc; revSeries: SeriesPoint[] }) {
         <Kpi label={L("h_gross")} value={fmtEUR(gross)} />
         <Kpi label={L("h_discount")} value={fmtEUR(discounts)} />
         <Kpi label={L("h_refund")} value={fmtEUR(refunds)} />
-        <Kpi label="Payment Fees" value={fmtEUR(fees)} tone="muted" />
+        <Kpi label={L("rx_payment_fees")} value={fmtEUR(fees)} tone="muted" />
         <Kpi label={L("h_net")} value={fmtEUR(net)} />
-        <Kpi label="Tax (placeholder)" value={fmtEUR(tax)} tone="muted" />
-        <Kpi label="ARPU" value={fmtEUR(Math.round(net / 620))} tone="muted" />
+        <Kpi label={L("rx_tax_placeholder")} value={fmtEUR(tax)} tone="muted" />
+        <Kpi label={L("rx_arpu")} value={fmtEUR(Math.round(net / 620))} tone="muted" />
         <Kpi label={L("k_aov")} value={fmtEUR(Math.round(gross / 320))} />
       </div>
 
@@ -460,13 +460,13 @@ function OrdersPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Orders Created" value={fmtNum(totals.created)} />
-        <Kpi label="Orders Paid" value={fmtNum(totals.paid)} />
-        <Kpi label="Orders in Queue" value={fmtNum(totals.queue)} tone="muted" />
-        <Kpi label="Processing" value={fmtNum(totals.processing)} tone="muted" />
+        <Kpi label={L("rx_orders_created")} value={fmtNum(totals.created)} />
+        <Kpi label={L("rx_orders_paid")} value={fmtNum(totals.paid)} />
+        <Kpi label={L("rx_orders_in_queue")} value={fmtNum(totals.queue)} tone="muted" />
+        <Kpi label={L("rx_processing")} value={fmtNum(totals.processing)} tone="muted" />
         <Kpi label={L("k_completed")} value={fmtNum(totals.completed)} />
-        <Kpi label="Delivered" value={fmtNum(totals.delivered)} />
-        <Kpi label="Failed" value={fmtNum(totals.failed)} />
+        <Kpi label={L("rx_delivered")} value={fmtNum(totals.delivered)} />
+        <Kpi label={L("rx_failed")} value={fmtNum(totals.failed)} />
         <Kpi label={L("k_cancelled")} value={fmtNum(totals.cancelled)} />
       </div>
 
@@ -551,14 +551,14 @@ function UsersPanel({ L, usrSeries }: { L: Lloc; usrSeries: SeriesPoint[] }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total Users" value={fmtNum(total)} />
+        <Kpi label={L("rx_total_users")} value={fmtNum(total)} />
         <Kpi label={L("k_new_users")} value={fmtNum(nw)} />
-        <Kpi label="Active" value={fmtNum(active)} />
-        <Kpi label="Returning" value={fmtNum(returning)} />
-        <Kpi label="Inactive" value={fmtNum(inactive)} tone="muted" />
-        <Kpi label="Blocked" value={fmtNum(blocked)} tone="muted" />
-        <Kpi label="With Subscription" value={fmtNum(withSub)} />
-        <Kpi label="Without Subscription" value={fmtNum(withoutSub)} tone="muted" />
+        <Kpi label={L("rx_active")} value={fmtNum(active)} />
+        <Kpi label={L("rx_returning")} value={fmtNum(returning)} />
+        <Kpi label={L("rx_inactive")} value={fmtNum(inactive)} tone="muted" />
+        <Kpi label={L("rx_blocked")} value={fmtNum(blocked)} tone="muted" />
+        <Kpi label={L("rx_with_subscription")} value={fmtNum(withSub)} />
+        <Kpi label={L("rx_without_subscription")} value={fmtNum(withoutSub)} tone="muted" />
       </div>
 
       <Card title={`${L("k_new_users")} · ${L("s_over_time")}`}><Spark points={usrSeries} /></Card>
@@ -625,16 +625,16 @@ function SubscriptionsPanel({ L, subSeries }: { L: Lloc; subSeries: SeriesPoint[
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Active Monthly" value={fmtNum(monthly)} />
-        <Kpi label="Active Yearly" value={fmtNum(yearly)} />
-        <Kpi label="New Subscriptions" value={fmtNum(newSubs)} />
-        <Kpi label="Renewals" value={fmtNum(Math.round(newSubs * 0.62))} />
-        <Kpi label="Expired" value={fmtNum(Math.round(newSubs * 0.18))} tone="muted" />
-        <Kpi label="Cancelled" value={fmtNum(Math.round(newSubs * 0.12))} tone="muted" />
-        <Kpi label="Trial (placeholder)" value="—" tone="muted" />
-        <Kpi label="MRR (placeholder)" value={fmtEUR(monthly * 6)} tone="muted" />
-        <Kpi label="ARR (placeholder)" value={fmtEUR(monthly * 72 + yearly * 60)} tone="muted" />
-        <Kpi label="Churn (placeholder)" value="3.4%" tone="muted" />
+        <Kpi label={L("rx_active_monthly")} value={fmtNum(monthly)} />
+        <Kpi label={L("rx_active_yearly")} value={fmtNum(yearly)} />
+        <Kpi label={L("rx_new_subscriptions")} value={fmtNum(newSubs)} />
+        <Kpi label={L("rx_renewals")} value={fmtNum(Math.round(newSubs * 0.62))} />
+        <Kpi label={L("rx_expired")} value={fmtNum(Math.round(newSubs * 0.18))} tone="muted" />
+        <Kpi label={L("rx_cancelled")} value={fmtNum(Math.round(newSubs * 0.12))} tone="muted" />
+        <Kpi label={L("rx_trial_placeholder")} value="—" tone="muted" />
+        <Kpi label={L("rx_mrr_placeholder")} value={fmtEUR(monthly * 6)} tone="muted" />
+        <Kpi label={L("rx_arr_placeholder")} value={fmtEUR(monthly * 72 + yearly * 60)} tone="muted" />
+        <Kpi label={L("rx_churn_placeholder")} value="3.4%" tone="muted" />
       </div>
       <Card title={`${L("rp_tab_subs")} · ${L("s_over_time")}`}><Spark points={subSeries} /></Card>
       <Card title={`${L("s_by_country")}`}>
@@ -657,13 +657,13 @@ function CreditsPanel({ L }: { L: Lloc }) {
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={L("k_credits_sold")} value={fmtNum(totalSold)} />
-        <Kpi label="Bonus Credits Granted" value={fmtNum(bonus)} />
-        <Kpi label="Credits Used" value={fmtNum(Math.round(totalSold * 0.72))} />
-        <Kpi label="Credits Refunded" value={fmtNum(refunded)} tone="muted" />
-        <Kpi label="Credits Expired" value={fmtNum(Math.round(totalSold * 0.03))} tone="muted" />
-        <Kpi label="Current Balance" value={fmtNum(Math.round(totalSold * 0.28))} />
-        <Kpi label="Avg Credit Purchase" value={fmtEUR(Math.round(totalRev / totalSold))} />
-        <Kpi label="Avg Usage / Order" value={fmtNum(18)} tone="muted" />
+        <Kpi label={L("rx_bonus_credits_granted")} value={fmtNum(bonus)} />
+        <Kpi label={L("rx_credits_used")} value={fmtNum(Math.round(totalSold * 0.72))} />
+        <Kpi label={L("rx_credits_refunded")} value={fmtNum(refunded)} tone="muted" />
+        <Kpi label={L("rx_credits_expired")} value={fmtNum(Math.round(totalSold * 0.03))} tone="muted" />
+        <Kpi label={L("rx_current_balance")} value={fmtNum(Math.round(totalSold * 0.28))} />
+        <Kpi label={L("rx_avg_credit_purchase")} value={fmtEUR(Math.round(totalRev / totalSold))} />
+        <Kpi label={L("rx_avg_usage_order")} value={fmtNum(18)} tone="muted" />
       </div>
       <Card title={L("rx_credit_package_sales")}>
         <TableWrap>
@@ -716,10 +716,10 @@ function CatalogPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total Items" value={fmtNum(CATALOG_ROWS.length)} />
-        <Kpi label="Published" value={fmtNum(published)} />
-        <Kpi label="Drafts" value={fmtNum(drafts)} tone="muted" />
-        <Kpi label="Archived" value={fmtNum(archived)} tone="muted" />
+        <Kpi label={L("rx_total_items")} value={fmtNum(CATALOG_ROWS.length)} />
+        <Kpi label={L("rx_published")} value={fmtNum(published)} />
+        <Kpi label={L("rx_drafts")} value={fmtNum(drafts)} tone="muted" />
+        <Kpi label={L("rx_archived")} value={fmtNum(archived)} tone="muted" />
         <Kpi label={L("h_views")} value={fmtNum(views)} />
         <Kpi label={L("h_uses")} value={fmtNum(uses)} />
         <Kpi label={L("h_favorites")} value={fmtNum(favs)} />
@@ -798,9 +798,9 @@ function PromotionsPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Active Promotions" value={fmtNum(activeCount)} />
-        <Kpi label="Promo Codes Used" value={fmtNum(codesUsed)} />
-        <Kpi label="Total Discount Given" value={fmtEUR(discount)} tone="muted" />
+        <Kpi label={L("rx_active_promotions")} value={fmtNum(activeCount)} />
+        <Kpi label={L("rx_promo_codes_used")} value={fmtNum(codesUsed)} />
+        <Kpi label={L("rx_total_discount_given")} value={fmtEUR(discount)} tone="muted" />
         <Kpi label={L("h_revenue")} value={fmtEUR(revenue)} />
       </div>
       <Card title={L("rx_best_performing_promotions")}>
@@ -855,13 +855,13 @@ function NotificationsPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Sent" value={fmtNum(totals.sent)} />
-        <Kpi label="Delivered" value={fmtNum(totals.delivered)} />
-        <Kpi label="Read" value={fmtNum(totals.read)} />
-        <Kpi label="Failed" value={fmtNum(totals.failed)} tone="muted" />
-        <Kpi label="Delivery Rate" value={`${delivRate}%`} />
-        <Kpi label="Read Rate" value={`${readRate}%`} />
-        <Kpi label="Failure Rate" value={`${failRate}%`} tone="muted" />
+        <Kpi label={L("rx_sent")} value={fmtNum(totals.sent)} />
+        <Kpi label={L("rx_delivered")} value={fmtNum(totals.delivered)} />
+        <Kpi label={L("rx_read")} value={fmtNum(totals.read)} />
+        <Kpi label={L("rx_failed")} value={fmtNum(totals.failed)} tone="muted" />
+        <Kpi label={L("rx_delivery_rate")} value={`${delivRate}%`} />
+        <Kpi label={L("rx_read_rate")} value={`${readRate}%`} />
+        <Kpi label={L("rx_failure_rate")} value={`${failRate}%`} tone="muted" />
       </div>
       <Card title={`${L("s_by_channel")}`}>
         <BarChart data={chData} />
@@ -908,14 +908,14 @@ function CalendarPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Active Calendar Users" value={fmtNum(4820)} />
-        <Kpi label="Monthly" value={fmtNum(1240)} />
-        <Kpi label="Yearly" value={fmtNum(620)} />
-        <Kpi label="Personal Events" value={fmtNum(9820)} />
-        <Kpi label="Scheduled Gifts" value={fmtNum(1420)} />
-        <Kpi label="Reminders Sent" value={fmtNum(24820)} />
-        <Kpi label="Failed Deliveries" value={fmtNum(82)} tone="muted" />
-        <Kpi label="Upcoming Deliveries" value={fmtNum(320)} />
+        <Kpi label={L("rx_active_calendar_users")} value={fmtNum(4820)} />
+        <Kpi label={L("rx_monthly")} value={fmtNum(1240)} />
+        <Kpi label={L("rx_yearly")} value={fmtNum(620)} />
+        <Kpi label={L("rx_personal_events")} value={fmtNum(9820)} />
+        <Kpi label={L("rx_scheduled_gifts")} value={fmtNum(1420)} />
+        <Kpi label={L("rx_reminders_sent")} value={fmtNum(24820)} />
+        <Kpi label={L("rx_failed_deliveries")} value={fmtNum(82)} tone="muted" />
+        <Kpi label={L("rx_upcoming_deliveries")} value={fmtNum(320)} />
       </div>
       <Card title={L("rx_upcoming_scheduled_gifts")}>
         <TableWrap>
@@ -963,9 +963,9 @@ function ProductionPanel({ L }: { L: Lloc }) {
         {COST_BREAKDOWN.map((c) => (
           <Kpi key={c.category} label={c.category.replace(/_/g, " ")} value={fmtEUR(c.estimatedEUR)} tone="muted" />
         ))}
-        <Kpi label="Total Estimated Cost" value={fmtEUR(total)} />
+        <Kpi label={L("rx_total_estimated_cost")} value={fmtEUR(total)} />
         <Kpi label={L("k_profit")} value={fmtEUR(profit)} />
-        <Kpi label="Estimated Margin" value={`${margin}%`} />
+        <Kpi label={L("rx_estimated_margin")} value={`${margin}%`} />
       </div>
 
       <Card title={L("rx_cost_breakdown")}>
@@ -1041,14 +1041,14 @@ function LoadPanel({ L }: { L: Lloc }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total Tasks" value={fmtNum(total * 128)} />
-        <Kpi label="Automatically Routed" value={fmtNum(auto * 96)} />
-        <Kpi label="Manually Routed" value={fmtNum(manual * 12)} tone="muted" />
-        <Kpi label="Reassigned" value={fmtNum(reassign * 24)} />
-        <Kpi label="Failover Events" value={fmtNum(failover)} />
-        <Kpi label="Overload Events" value={fmtNum(overload)} tone="muted" />
-        <Kpi label="Avg Queue Time" value="3.4 min" />
-        <Kpi label="Cost Saved (placeholder)" value="—" tone="muted" />
+        <Kpi label={L("rx_total_tasks")} value={fmtNum(total * 128)} />
+        <Kpi label={L("rx_automatically_routed")} value={fmtNum(auto * 96)} />
+        <Kpi label={L("rx_manually_routed")} value={fmtNum(manual * 12)} tone="muted" />
+        <Kpi label={L("rx_reassigned")} value={fmtNum(reassign * 24)} />
+        <Kpi label={L("rx_failover_events")} value={fmtNum(failover)} />
+        <Kpi label={L("rx_overload_events")} value={fmtNum(overload)} tone="muted" />
+        <Kpi label={L("rx_avg_queue_time")} value="3.4 min" />
+        <Kpi label={L("rx_cost_saved_placeholder")} value="—" tone="muted" />
       </div>
 
       <Card title={L("rx_routing_history")}>
