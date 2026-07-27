@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { slugLabel } from "@/lib/taxonomy-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
 import { PublicCardText } from "@/components/card/PublicCardText";
