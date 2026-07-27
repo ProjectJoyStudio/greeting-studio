@@ -159,7 +159,15 @@ export function taxonomyLabel(items: TaxonomyItem[], key: string, lang: string):
   if (!it) return key;
   return (
     it.names[lang as keyof typeof it.names] ||
+    DEFAULT_TAXONOMY_BY_SLUG[it.key]?.[lang as keyof typeof it.names] ||
     it.names.en ||
     it.key
   );
 }
+
+const DEFAULT_TAXONOMY_BY_SLUG: Record<string, TaxonomyItem["names"]> = Object.values(
+  DEFAULT_TAXONOMY,
+).reduce<Record<string, TaxonomyItem["names"]>>((acc, items) => {
+  for (const item of items) if (!acc[item.key]) acc[item.key] = item.names;
+  return acc;
+}, {});

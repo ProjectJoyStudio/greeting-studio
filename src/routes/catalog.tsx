@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { slugLabel } from "@/lib/taxonomy-labels";
 import { supabase } from "@/integrations/supabase/client";
 import { getPublicCatalogCards, type PublicCatalogCard } from "@/lib/public-catalog.functions";
 import { PublicCardText } from "@/components/card/PublicCardText";
@@ -276,7 +277,7 @@ function CatalogPage() {
     if (translated !== key) return translated;
     const alt = t(slug);
     if (alt !== slug) return alt;
-    return slug.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    return slugLabel(slug, lang);
   };
 
   return (
