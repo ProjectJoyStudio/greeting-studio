@@ -276,7 +276,7 @@ function CatalogPage() {
     if (translated !== key) return translated;
     const alt = t(slug);
     if (alt !== slug) return alt;
-    return slug.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    return slugLabel(slug, lang);
   };
 
   return (
