@@ -1454,6 +1454,8 @@ function AlertsPanel({ L, alerts, setAlerts }: {
 function ModalShell({ title, children, onClose }: {
   title: string; children: React.ReactNode; onClose: () => void;
 }) {
+  const { lang } = useI18n();
+  const L = useLocalRP(lang);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="max-h-[85vh] w-full max-w-xl overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl">
