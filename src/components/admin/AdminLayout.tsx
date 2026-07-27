@@ -121,7 +121,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => setMobileOpen(false)}
             className="lg:hidden text-muted-foreground hover:text-foreground"
-            aria-label="Close menu"
+            aria-label={t("menu_close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -161,7 +161,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => setMobileOpen(true)}
             className="lg:hidden text-muted-foreground"
-            aria-label="Open menu"
+            aria-label={t("menu_open")}
           >
             <Menu className="h-5 w-5" />
           </button>

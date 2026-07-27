@@ -119,6 +119,8 @@ const dict: Dict = {
   footer_privacy: "Privacy",
   footer_cookies: "Cookies",
   footer_search_ph: "Search greetings…",
+  menu_open: "Open menu",
+  menu_close: "Close menu",
   nf_title: "Page not found",
   nf_body: "The page you're looking for doesn't exist or has been moved.",
   nf_home: "Go home",

@@ -142,7 +142,7 @@ export function Header() {
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             className="grid h-9 w-9 place-items-center rounded-full border border-border/70 lg:hidden"
-            aria-label="Menu"
+            aria-label={t("menu_open")}
           >
             {mobileOpen ? (
               <X className="h-4 w-4" />

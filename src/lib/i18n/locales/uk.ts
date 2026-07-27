@@ -119,6 +119,8 @@ const dict: Dict = {
   footer_privacy: "Конфіденційність",
   footer_cookies: "Cookie",
   footer_search_ph: "Пошук привітань…",
+  menu_open: "Відкрити меню",
+  menu_close: "Закрити меню",
   nf_title: "Сторінку не знайдено",
   nf_body: "Сторінка, яку ви шукаєте, не існує або була переміщена.",
   nf_home: "На головну",
