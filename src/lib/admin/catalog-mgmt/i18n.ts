@@ -1200,12 +1200,12 @@ const ML: Record<Lang, Dict> = {
 };
 
 export const CM_DICT: Record<Lang, Dict> = {
-  en: { ...en, ...ML.en },
-  ru: { ...ru, ...ML.ru },
-  uk: { ...uk, ...ML.uk },
-  de: { ...de, ...ML.de },
-  fr: { ...fr, ...ML.fr },
-  pl: { ...pl, ...ML.pl },
+  en: { ...en, ...ML.en, ...GAPS.en },
+  ru: { ...ru, ...ML.ru, ...GAPS.ru },
+  uk: { ...uk, ...ML.uk, ...GAPS.uk },
+  de: { ...de, ...ML.de, ...GAPS.de },
+  fr: { ...fr, ...ML.fr, ...GAPS.fr },
+  pl: { ...pl, ...ML.pl, ...GAPS.pl },
 };
 
 export function cmT(lang: Lang, key: string): string {
