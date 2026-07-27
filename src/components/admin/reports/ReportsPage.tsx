@@ -482,8 +482,8 @@ function OrdersPanel({ L }: { L: Lloc }) {
           </select>
           <select className={`${inputCls} !w-auto`} value={prioF} onChange={(e) => setPrioF(e.target.value as any)}>
             <option value="all">{L("lbl_all")} · {L("lbl_priority")}</option>
-            <option value="standard">Standard</option>
-            <option value="priority">Priority</option>
+            <option value="standard">{L("rx_standard")}</option>
+            <option value="priority">{L("rx_priority")}</option>
           </select>
           <select className={`${inputCls} !w-auto`} value={countryF} onChange={(e) => setCountryF(e.target.value)}>
             <option value="">{L("lbl_all")} · {L("lbl_country_filter")}</option>
@@ -501,15 +501,15 @@ function OrdersPanel({ L }: { L: Lloc }) {
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="p-2">{L("h_product")}</th>
-              <th className="p-2 text-right">Created</th>
-              <th className="p-2 text-right">Paid</th>
-              <th className="p-2 text-right">Queue</th>
-              <th className="p-2 text-right">Processing</th>
+              <th className="p-2 text-right">{L("rx_created")}</th>
+              <th className="p-2 text-right">{L("rx_paid")}</th>
+              <th className="p-2 text-right">{L("rx_queue")}</th>
+              <th className="p-2 text-right">{L("rx_processing")}</th>
               <th className="p-2 text-right">{L("k_completed")}</th>
-              <th className="p-2 text-right">Delivered</th>
-              <th className="p-2 text-right">Failed</th>
-              <th className="p-2 text-right">Cancelled</th>
-              <th className="p-2 text-right">Avg Proc (min)</th>
+              <th className="p-2 text-right">{L("rx_delivered")}</th>
+              <th className="p-2 text-right">{L("rx_failed")}</th>
+              <th className="p-2 text-right">{L("rx_cancelled")}</th>
+              <th className="p-2 text-right">{L("rx_avg_proc_min")}</th>
             </tr>
           </thead>
           <tbody>
@@ -564,16 +564,16 @@ function UsersPanel({ L, usrSeries }: { L: Lloc; usrSeries: SeriesPoint[] }) {
       <Card title={`${L("k_new_users")} · ${L("s_over_time")}`}><Spark points={usrSeries} /></Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Top Customers by Revenue">
+        <Card title={L("rx_top_customers_by_revenue")}>
           <UserMiniTable L={L} rows={topRevenue} showRevenue />
         </Card>
-        <Card title="Top Customers by Orders">
+        <Card title={L("rx_top_customers_by_orders")}>
           <UserMiniTable L={L} rows={topOrders} showOrders />
         </Card>
-        <Card title="Users with Low Credit Balance">
+        <Card title={L("rx_users_with_low_credit_balance")}>
           <UserMiniTable L={L} rows={lowCredit} showCredits />
         </Card>
-        <Card title="Recently Inactive Users">
+        <Card title={L("rx_recently_inactive_users")}>
           <UserMiniTable L={L} rows={inactives} />
         </Card>
       </div>
@@ -665,15 +665,15 @@ function CreditsPanel({ L }: { L: Lloc }) {
         <Kpi label="Avg Credit Purchase" value={fmtEUR(Math.round(totalRev / totalSold))} />
         <Kpi label="Avg Usage / Order" value={fmtNum(18)} tone="muted" />
       </div>
-      <Card title="Credit Package Sales">
+      <Card title={L("rx_credit_package_sales")}>
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="p-2">Package</th>
-              <th className="p-2 text-right">Sold</th>
+              <th className="p-2">{L("rx_package")}</th>
+              <th className="p-2 text-right">{L("rx_sold")}</th>
               <th className="p-2 text-right">{L("h_revenue")}</th>
-              <th className="p-2 text-right">Bonus</th>
-              <th className="p-2 text-right">Refunded</th>
+              <th className="p-2 text-right">{L("rx_bonus")}</th>
+              <th className="p-2 text-right">{L("rx_refunded")}</th>
             </tr>
           </thead>
           <tbody>
@@ -730,9 +730,9 @@ function CatalogPanel({ L }: { L: Lloc }) {
         <div className="flex flex-wrap gap-2">
           <select className={`${inputCls} !w-auto`} value={statusF} onChange={(e) => setStatusF(e.target.value as any)}>
             <option value="all">{L("lbl_all")} · {L("lbl_status_filter")}</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+            <option value="published">{L("rx_published")}</option>
+            <option value="draft">{L("rx_draft")}</option>
+            <option value="archived">{L("rx_archived")}</option>
           </select>
           <select className={`${inputCls} !w-auto`} value={typeF} onChange={(e) => setTypeF(e.target.value as any)}>
             <option value="all">{L("lbl_all")} · {L("lbl_type_filter")}</option>
@@ -745,8 +745,8 @@ function CatalogPanel({ L }: { L: Lloc }) {
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="p-2">Title</th>
-              <th className="p-2">Category</th>
+              <th className="p-2">{L("rx_title")}</th>
+              <th className="p-2">{L("rx_category")}</th>
               <th className="p-2">{L("h_type")}</th>
               <th className="p-2 text-right">{L("h_views")}</th>
               <th className="p-2 text-right">{L("h_uses")}</th>
@@ -754,7 +754,7 @@ function CatalogPanel({ L }: { L: Lloc }) {
               <th className="p-2 text-right">{L("h_shares")}</th>
               <th className="p-2 text-right">{L("h_revenue")}</th>
               <th className="p-2">{L("h_status")}</th>
-              <th className="p-2">Notes</th>
+              <th className="p-2">{L("rx_notes")}</th>
             </tr>
           </thead>
           <tbody>
@@ -803,12 +803,12 @@ function PromotionsPanel({ L }: { L: Lloc }) {
         <Kpi label="Total Discount Given" value={fmtEUR(discount)} tone="muted" />
         <Kpi label={L("h_revenue")} value={fmtEUR(revenue)} />
       </div>
-      <Card title="Best Performing Promotions">
+      <Card title={L("rx_best_performing_promotions")}>
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="p-2">Name</th>
-              <th className="p-2">Code</th>
+              <th className="p-2">{L("rx_name")}</th>
+              <th className="p-2">{L("rx_code")}</th>
               <th className="p-2 text-right">{L("h_uses")}</th>
               <th className="p-2 text-right">{L("h_discount")}</th>
               <th className="p-2 text-right">{L("h_revenue")}</th>
@@ -866,7 +866,7 @@ function NotificationsPanel({ L }: { L: Lloc }) {
       <Card title={`${L("s_by_channel")}`}>
         <BarChart data={chData} />
       </Card>
-      <Card title="Failed Notifications">
+      <Card title={L("rx_failed_notifications")}>
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
@@ -875,8 +875,8 @@ function NotificationsPanel({ L }: { L: Lloc }) {
               <th className="p-2">{L("h_customer")}</th>
               <th className="p-2">{L("h_country")}</th>
               <th className="p-2">{L("h_language")}</th>
-              <th className="p-2 text-right">Attempts</th>
-              <th className="p-2">Error</th>
+              <th className="p-2 text-right">{L("rx_attempts")}</th>
+              <th className="p-2">{L("rx_error")}</th>
               <th className="p-2">{L("h_date")}</th>
             </tr>
           </thead>
@@ -917,13 +917,13 @@ function CalendarPanel({ L }: { L: Lloc }) {
         <Kpi label="Failed Deliveries" value={fmtNum(82)} tone="muted" />
         <Kpi label="Upcoming Deliveries" value={fmtNum(320)} />
       </div>
-      <Card title="Upcoming Scheduled Gifts">
+      <Card title={L("rx_upcoming_scheduled_gifts")}>
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="p-2">ID</th>
               <th className="p-2">{L("h_customer")}</th>
-              <th className="p-2">Event</th>
+              <th className="p-2">{L("rx_event")}</th>
               <th className="p-2">{L("h_date")}</th>
               <th className="p-2">{L("h_channel")}</th>
               <th className="p-2">{L("h_country")}</th>
@@ -968,7 +968,7 @@ function ProductionPanel({ L }: { L: Lloc }) {
         <Kpi label="Estimated Margin" value={`${margin}%`} />
       </div>
 
-      <Card title="Cost Breakdown">
+      <Card title={L("rx_cost_breakdown")}>
         <BarChart data={COST_BREAKDOWN.map((c) => ({ label: c.category, value: c.estimatedEUR }))} formatter={fmtEUR} />
       </Card>
     </div>
@@ -986,18 +986,18 @@ function ServicePanel({ L }: { L: Lloc }) {
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="p-2">Service ID</th>
-              <th className="p-2">Category</th>
+              <th className="p-2">{L("rx_service_id")}</th>
+              <th className="p-2">{L("rx_category")}</th>
               <th className="p-2">{L("h_status")}</th>
-              <th className="p-2 text-right">Assigned</th>
-              <th className="p-2 text-right">Completed</th>
-              <th className="p-2 text-right">Failed</th>
-              <th className="p-2 text-right">Avg (ms)</th>
-              <th className="p-2 text-right">Queue</th>
-              <th className="p-2 text-right">Est. Cost</th>
-              <th className="p-2 text-right">Success %</th>
-              <th className="p-2">Last Error</th>
-              <th className="p-2">Last Check</th>
+              <th className="p-2 text-right">{L("rx_assigned")}</th>
+              <th className="p-2 text-right">{L("rx_completed")}</th>
+              <th className="p-2 text-right">{L("rx_failed")}</th>
+              <th className="p-2 text-right">{L("rx_avg_ms")}</th>
+              <th className="p-2 text-right">{L("rx_queue")}</th>
+              <th className="p-2 text-right">{L("rx_est_cost")}</th>
+              <th className="p-2 text-right">{L("rx_success")}</th>
+              <th className="p-2">{L("rx_last_error")}</th>
+              <th className="p-2">{L("rx_last_check")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1051,16 +1051,16 @@ function LoadPanel({ L }: { L: Lloc }) {
         <Kpi label="Cost Saved (placeholder)" value="—" tone="muted" />
       </div>
 
-      <Card title="Routing History">
+      <Card title={L("rx_routing_history")}>
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="p-2">{L("h_date")}</th>
-              <th className="p-2">Kind</th>
-              <th className="p-2">From</th>
+              <th className="p-2">{L("rx_kind")}</th>
+              <th className="p-2">{L("rx_from")}</th>
               <th className="p-2">To</th>
-              <th className="p-2">Task</th>
-              <th className="p-2">Reason</th>
+              <th className="p-2">{L("rx_task")}</th>
+              <th className="p-2">{L("rx_reason")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1105,12 +1105,12 @@ function ProfitPanel({ L }: { L: Lloc }) {
     <div className="space-y-6">
       <Card title={L("rp_tab_profit")} action={
         <select className={`${inputCls} !w-auto`} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          <option value="revenue">Highest Revenue</option>
-          <option value="profit">Highest Profit</option>
-          <option value="margin_hi">Highest Margin</option>
-          <option value="margin_lo">Lowest Margin</option>
-          <option value="orders">Most Orders</option>
-          <option value="cost">Highest Cost</option>
+          <option value="revenue">{L("rx_highest_revenue")}</option>
+          <option value="profit">{L("rx_highest_profit")}</option>
+          <option value="margin_hi">{L("rx_highest_margin")}</option>
+          <option value="margin_lo">{L("rx_lowest_margin")}</option>
+          <option value="orders">{L("rx_most_orders")}</option>
+          <option value="cost">{L("rx_highest_cost")}</option>
         </select>
       }>
         <TableWrap>
@@ -1119,13 +1119,13 @@ function ProfitPanel({ L }: { L: Lloc }) {
               <th className="p-2">{L("h_product")}</th>
               <th className="p-2 text-right">{L("h_orders")}</th>
               <th className="p-2 text-right">{L("h_revenue")}</th>
-              <th className="p-2 text-right">Cost</th>
+              <th className="p-2 text-right">{L("rx_cost")}</th>
               <th className="p-2 text-right">{L("h_refund")}</th>
               <th className="p-2 text-right">{L("h_discount")}</th>
               <th className="p-2 text-right">{L("h_net")}</th>
-              <th className="p-2 text-right">Profit</th>
-              <th className="p-2 text-right">Margin</th>
-              <th className="p-2 text-right">Avg Proc</th>
+              <th className="p-2 text-right">{L("rx_profit")}</th>
+              <th className="p-2 text-right">{L("rx_margin")}</th>
+              <th className="p-2 text-right">{L("rx_avg_proc")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1169,9 +1169,9 @@ function CountryLangPanel({ L }: { L: Lloc }) {
             <tr>
               <th className="p-2">{L("h_country")}</th>
               <th className="p-2 text-right">{L("h_revenue")}</th>
-              <th className="p-2 text-right">Users</th>
+              <th className="p-2 text-right">{L("rx_users")}</th>
               <th className="p-2 text-right">{L("h_orders")}</th>
-              <th className="p-2 text-right">Subs</th>
+              <th className="p-2 text-right">{L("rx_subs")}</th>
               <th className="p-2 text-right">{L("h_credits")}</th>
               <th className="p-2 text-right">{L("k_aov")}</th>
             </tr>
@@ -1295,9 +1295,9 @@ function CustomPanel({ L, open, setOpen }: { L: Lloc; open: boolean; setOpen: (v
                 </select>
                 <select className={inputCls} value={draft.filters.subscription} onChange={(e) => setDraft({ ...draft, filters: { ...draft.filters, subscription: e.target.value as any } })}>
                   <option value="all">{L("lbl_all")} · Subscription</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="none">None</option>
+                  <option value="monthly">{L("rx_monthly")}</option>
+                  <option value="yearly">{L("rx_yearly")}</option>
+                  <option value="none">{L("rx_none")}</option>
                 </select>
                 <select className={inputCls} value={draft.filters.channel} onChange={(e) => setDraft({ ...draft, filters: { ...draft.filters, channel: e.target.value as any } })}>
                   <option value="all">{L("lbl_all")} · {L("h_channel")}</option>
@@ -1385,7 +1385,7 @@ function AlertsPanel({ L, alerts, setAlerts }: {
         <TableWrap>
           <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="p-2">Rule</th>
+              <th className="p-2">{L("rx_rule")}</th>
               <th className="p-2">{L("h_threshold")}</th>
               <th className="p-2">{L("h_severity")}</th>
               <th className="p-2">{L("h_channel")}</th>
@@ -1459,7 +1459,7 @@ function ModalShell({ title, children, onClose }: {
       <div className="max-h-[85vh] w-full max-w-xl overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl">
         <header className="flex items-center justify-between border-b border-border/60 bg-background/70 px-4 py-3">
           <h3 className="font-[Fraunces] text-base font-semibold text-foreground">{title}</h3>
-          <button className={btnBase} onClick={onClose}>Close</button>
+          <button className={btnBase} onClick={onClose}>{L("rx_close")}</button>
         </header>
         <div className="max-h-[70vh] overflow-y-auto p-4">{children}</div>
       </div>
@@ -1474,7 +1474,7 @@ function ExportModal({ L, onClose }: { L: Lloc; onClose: () => void }) {
     <ModalShell title={L("rp_export")} onClose={onClose}>
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Format</label>
+          <label className="text-xs font-medium text-muted-foreground">{L("rx_format")}</label>
           <div className="mt-1 flex gap-2">
             {(["csv","xlsx","pdf"] as const).map((f) => (
               <button key={f}
@@ -1488,7 +1488,7 @@ function ExportModal({ L, onClose }: { L: Lloc; onClose: () => void }) {
           </div>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Scope</label>
+          <label className="text-xs font-medium text-muted-foreground">{L("rx_scope")}</label>
           <div className="mt-1 grid grid-cols-2 gap-2">
             {[
               { k: "current", label: L("exp_current") },
@@ -1519,20 +1519,20 @@ function ScheduleModal({ L, onClose }: { L: Lloc; onClose: () => void }) {
     <ModalShell title={L("rp_schedule")} onClose={onClose}>
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Frequency</label>
+          <label className="text-xs font-medium text-muted-foreground">{L("rx_frequency")}</label>
           <select className={inputCls} value={freq} onChange={(e) => setFreq(e.target.value as any)}>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="quarterly">Quarterly</option>
+            <option value="daily">{L("rx_daily")}</option>
+            <option value="weekly">{L("rx_weekly")}</option>
+            <option value="monthly">{L("rx_monthly")}</option>
+            <option value="quarterly">{L("rx_quarterly")}</option>
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Delivery</label>
+          <label className="text-xs font-medium text-muted-foreground">{L("rx_delivery")}</label>
           <select className={inputCls} value={delivery} onChange={(e) => setDelivery(e.target.value as any)}>
-            <option value="internal">Internal Notification</option>
-            <option value="email">Email (future)</option>
-            <option value="download">Download (placeholder)</option>
+            <option value="internal">{L("rx_internal_notification")}</option>
+            <option value="email">{L("rx_email_future")}</option>
+            <option value="download">{L("rx_download_placeholder")}</option>
           </select>
         </div>
         <p className="text-xs text-muted-foreground">{L("rp_demo_note")}</p>
@@ -1552,11 +1552,11 @@ function SavedReportsModal({ L, rows, onClose }: {
       <TableWrap>
         <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
-            <th className="p-2">Name</th>
-            <th className="p-2">Owner</th>
-            <th className="p-2">Range</th>
-            <th className="p-2">Schedule</th>
-            <th className="p-2">Last Generated</th>
+            <th className="p-2">{L("rx_name")}</th>
+            <th className="p-2">{L("rx_owner")}</th>
+            <th className="p-2">{L("rx_range")}</th>
+            <th className="p-2">{L("rx_schedule")}</th>
+            <th className="p-2">{L("rx_last_generated")}</th>
             <th className="p-2">{L("h_status")}</th>
           </tr>
         </thead>
