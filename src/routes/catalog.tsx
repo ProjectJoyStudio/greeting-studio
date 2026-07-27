@@ -59,7 +59,28 @@ type CardRow = {
 
 type OccasionRow = { id: string; slug: string };
 
-const normalizeOccasionSlug = (value: string) => value.trim().toLowerCase().replace(/-/g, "_");
+// Occasion keys always resolve to the stable database slug, never to a
+// translated label. UI prefixes (ev_/occ_/cat_) and hyphens are stripped so the
+// same URL resolves identically in every interface language.
+const OCCASION_ALIASES: Record<string, string> = {
+  love_you: "i_love_you",
+  miss_you: "i_miss_you",
+  sorry: "forgive_me",
+  apology: "forgive_me",
+  safe_trip: "safe_travels",
+  great_weekend: "happy_weekend",
+  morning: "good_morning",
+  night: "good_night",
+};
+
+const normalizeOccasionSlug = (value: string) => {
+  const base = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+    .replace(/^(ev|occ|cat)_/, "");
+  return OCCASION_ALIASES[base] ?? base;
+};
 
 /** Cards are rendered in their stored aspect ratio — never cropped or stretched. */
 const aspectOf = (card: CardRow) => {
