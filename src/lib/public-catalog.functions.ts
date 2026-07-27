@@ -54,7 +54,7 @@ const TEXT_DESIGN_COLUMNS =
 export type PublicCatalogBackground = Pick<
   Database["public"]["Tables"]["catalog_backgrounds"]["Row"],
   "id" | "status" | "is_hidden" | "is_archived" | "deleted_at"
->;
+> & { primary_media_asset_id?: string | null; image_url?: string | null };
 
 export type PublicCatalogCard = {
   id: string;
@@ -108,7 +108,7 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
     backgroundIds.length > 0
       ? supabaseAdmin
           .from("catalog_backgrounds")
-          .select("id, status, is_hidden, is_archived, deleted_at")
+          .select("id, status, is_hidden, is_archived, deleted_at, primary_media_asset_id")
           .in("id", backgroundIds)
       : Promise.resolve({ data: [] as PublicCatalogBackground[], error: null }),
     supabaseAdmin
@@ -125,6 +125,35 @@ export const getPublicCatalogCards = createServerFn({ method: "GET" }).handler(a
   const additionalRows = (additionalResult.data ?? []) as AdditionalOccasionRow[];
   const translationRows = (translationsResult.data ?? []) as TranslationRow[];
   const backgroundRows = (backgroundsResult.data ?? []) as PublicCatalogBackground[];
+
+  // Background images live in a private bucket — resolve short-lived signed URLs
+  // so published cards render their real artwork on the public catalog.
+  const assetIds = backgroundRows
+    .map((row) => row.primary_media_asset_id)
+    .filter((id): id is string => Boolean(id));
+
+  if (assetIds.length > 0) {
+    const { data: assets } = await supabaseAdmin
+      .from("media_assets")
+      .select("id, storage_bucket, storage_path")
+      .in("id", assetIds);
+
+    const signed = await Promise.all(
+      (assets ?? []).map(async (asset) => {
+        const { data } = await supabaseAdmin.storage
+          .from(asset.storage_bucket)
+          .createSignedUrl(asset.storage_path, 60 * 60);
+        return [asset.id, data?.signedUrl ?? null] as const;
+      }),
+    );
+    const urlByAsset = new Map(signed);
+    for (const row of backgroundRows) {
+      row.image_url = row.primary_media_asset_id
+        ? urlByAsset.get(row.primary_media_asset_id) ?? null
+        : null;
+    }
+  }
+
   const textDesignRows = (textDesignsResult.data ?? []) as PublicTextDesignRow[];
   const occasionIds = Array.from(
     new Set([
