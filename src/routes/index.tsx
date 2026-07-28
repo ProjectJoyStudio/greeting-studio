@@ -1,4 +1,10 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  HERO_FALLBACK_GRADIENTS,
+  fetchPublicHeroCards,
+  type HeroCard,
+} from "@/lib/hero-showcase/hero-cards";
 import {
   ArrowRight,
   Sparkles,
