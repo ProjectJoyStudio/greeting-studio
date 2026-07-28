@@ -3,13 +3,9 @@ import {
   ArrowRight,
   Sparkles,
   Gift,
-  Cake,
   Heart,
-  PartyPopper,
   Briefcase,
-  Baby,
   HandHeart,
-  CalendarHeart,
   Wand2,
   Send,
   Sun,
@@ -18,10 +14,6 @@ import {
   Plane,
   Palmtree,
   Moon,
-  Mic,
-  Music2,
-  Video,
-  Image as ImageIcon,
   Bell,
   CalendarClock,
   CalendarDays,
@@ -247,7 +239,6 @@ function EverydayWishes() {
   return (
     <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
       <SectionHeading
-        eyebrow="03"
         title={t("section_wishes")}
         subtitle={t("section_wishes_sub")}
       />
@@ -284,7 +275,7 @@ function ImportantDates() {
   ] as const;
   return (
     <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-      <SectionHeading eyebrow="05" title={t("section_dates")} subtitle={t("section_dates_sub")} />
+      <SectionHeading title={t("section_dates")} subtitle={t("section_dates_sub")} />
       <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {items.map((it, i) => {
           const Icon = it.icon;
@@ -327,7 +318,7 @@ function HowItWorks() {
   return (
     <section className="border-y border-border/60 bg-secondary/40">
       <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-        <SectionHeading eyebrow="06" title={t("section_how")} subtitle={t("section_how_sub")} />
+        <SectionHeading title={t("section_how")} subtitle={t("section_how_sub")} />
         <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-5">
           {steps.map((s, i) => {
             const Icon = s.icon;
