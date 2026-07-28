@@ -3,6 +3,7 @@ import type { Dict, Lang } from "../types";
 /** Strings for the Home "What Project Joy Can Create" block and the showcase page. */
 export const SHOWCASE_I18N: Record<Lang, Dict> = {
   en: {
+    showcase_create: "Create",
     showcase_nav: "What we can create",
     showcase_title: "What Project Joy Can Create",
     showcase_sub: "A short selection of works crafted by our team — a glimpse of what your gift could become.",
@@ -11,9 +12,9 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     showcase_view: "View",
     showcase_close: "Close",
     sc_cards: "Greeting Cards",
-    sc_animated: "Animated Greetings",
+    sc_animated: "Animated Greeting Cards",
     sc_video: "Video Greetings",
-    sc_clip: "Video Clips",
+    sc_clip: "Music Video Clips",
     sc_cartoon: "Cartoons",
     sc_corporate: "Corporate Greetings",
     sc_premium: "Premium Projects",
@@ -28,6 +29,7 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     cta_create_corporate: "Create Corporate Order",
   },
   ru: {
+    showcase_create: "Создать",
     showcase_nav: "Что мы создаём",
     showcase_title: "Что умеет Project Joy",
     showcase_sub: "Небольшая подборка работ нашей команды — чтобы вы увидели, каким может стать ваш подарок.",
@@ -53,6 +55,7 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     cta_create_corporate: "Создать корпоративный заказ",
   },
   de: {
+    showcase_create: "Erstellen",
     showcase_nav: "Was wir erschaffen",
     showcase_title: "Was Project Joy erschaffen kann",
     showcase_sub: "Eine kleine Auswahl an Arbeiten unseres Teams — ein Vorgeschmack auf Ihr Geschenk.",
@@ -78,6 +81,7 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     cta_create_corporate: "Firmenauftrag erstellen",
   },
   uk: {
+    showcase_create: "Створити",
     showcase_nav: "Що ми створюємо",
     showcase_title: "Що вміє Project Joy",
     showcase_sub: "Невелика добірка робіт нашої команди — щоб ви побачили, яким може стати ваш подарунок.",
@@ -103,6 +107,7 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     cta_create_corporate: "Створити корпоративне замовлення",
   },
   fr: {
+    showcase_create: "Créer",
     showcase_nav: "Ce que nous créons",
     showcase_title: "Ce que Project Joy peut créer",
     showcase_sub: "Une petite sélection de réalisations de notre équipe — un aperçu de ce que votre cadeau peut devenir.",
@@ -128,6 +133,7 @@ export const SHOWCASE_I18N: Record<Lang, Dict> = {
     cta_create_corporate: "Créer une commande entreprise",
   },
   pl: {
+    showcase_create: "Stwórz",
     showcase_nav: "Co tworzymy",
     showcase_title: "Co potrafi Project Joy",
     showcase_sub: "Niewielki wybór prac naszego zespołu — zobacz, czym może stać się Twój prezent.",

@@ -6,7 +6,13 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { useI18n } from "@/lib/i18n";
-import { SHOWCASE, type ShowcaseItem } from "@/lib/showcase/items";
+import {
+  SHOWCASE,
+  visibleCategories,
+  visibleItems,
+  type ShowcaseCategory,
+  type ShowcaseItem,
+} from "@/lib/showcase/items";
 
 export const Route = createFileRoute("/showcase")({
   head: () => ({
@@ -31,7 +37,7 @@ export const Route = createFileRoute("/showcase")({
 
 function ShowcasePage() {
   const { t } = useI18n();
-  const [open, setOpen] = useState<ShowcaseItem | null>(null);
+  const [open, setOpen] = useState<{ item: ShowcaseItem; cat: ShowcaseCategory } | null>(null);
 
   return (
     <SiteLayout>
@@ -49,7 +55,7 @@ function ShowcasePage() {
         </p>
       </div>
 
-      {SHOWCASE.map((cat) => (
+      {visibleCategories(SHOWCASE).map((cat) => (
         <section key={cat.id} className="mx-auto max-w-7xl px-5 py-12 lg:px-8">
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -59,28 +65,31 @@ function ShowcasePage() {
           </div>
 
           <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {cat.items.map((item) => (
+            {visibleItems(cat).map((item) => (
               <article
                 key={item.id}
                 className="overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:shadow-warm"
               >
                 <div
                   className="grid h-44 place-items-center"
-                  style={{ backgroundImage: item.thumb }}
+                  style={
+                    item.imageUrl
+                      ? { backgroundImage: `url(${item.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : { backgroundImage: item.thumb }
+                  }
                   role="img"
-                  aria-label={`${t(cat.titleKey)} — ${t(item.captionKey)}`}
+                  aria-label={t(cat.titleKey)}
                 >
                   <Play className="h-8 w-8 text-primary-foreground/80" />
                 </div>
-                <div className="p-5">
-                  <div className="font-display text-lg font-semibold">{t(item.captionKey)}</div>
+                <div className="p-4">
                   {item.permissionGranted && item.credit && (
-                    <div className="mt-1 text-xs text-muted-foreground">{item.credit}</div>
+                    <div className="mb-3 text-xs text-muted-foreground">{item.credit}</div>
                   )}
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setOpen(item)}
+                      onClick={() => setOpen({ item, cat })}
                       className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:border-primary/40"
                     >
                       <Play className="h-3.5 w-3.5 text-primary" />
@@ -91,7 +100,7 @@ function ShowcasePage() {
                       search={{ gift: cat.gift }}
                       className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
                     >
-                      {t(cat.createKey)}
+                      {t("showcase_create")}
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
@@ -111,13 +120,22 @@ function ShowcasePage() {
             className="w-full max-w-[min(92vw,860px)] overflow-hidden rounded-3xl border border-border/70 bg-card"
             onClick={(e) => e.stopPropagation()}
           >
-            {open.videoUrl ? (
-              <video src={open.videoUrl} controls autoPlay playsInline className="w-full" />
+            {open.item.videoUrl ? (
+              <video src={open.item.videoUrl} controls autoPlay playsInline className="w-full" />
+            ) : open.item.imageUrl ? (
+              <img src={open.item.imageUrl} alt={t(open.cat.titleKey)} className="w-full" />
             ) : (
-              <div className="aspect-video w-full" style={{ backgroundImage: open.thumb }} />
+              <div className="aspect-video w-full" style={{ backgroundImage: open.item.thumb }} />
             )}
-            <div className="flex items-center justify-between gap-3 p-5">
-              <span className="font-display text-lg font-semibold">{t(open.captionKey)}</span>
+            <div className="flex flex-wrap items-center justify-end gap-3 p-5">
+              <Link
+                to="/studio"
+                search={{ gift: open.cat.gift }}
+                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
+              >
+                {t("showcase_create")}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
               <button
                 type="button"
                 onClick={() => setOpen(null)}
