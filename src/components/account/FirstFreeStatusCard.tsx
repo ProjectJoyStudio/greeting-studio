@@ -51,17 +51,23 @@ export function FirstFreeStatusCard() {
                   ? ` · ${t(data.productType === "card" ? "ff_card" : "ff_animated")}`
                   : ""}
               </p>
-            ) : (
-              <p className="mt-1 text-xs text-muted-foreground">{t("ff_sub")}</p>
-            )}
+            ) : null}
           </div>
         </div>
-        <Link
-          to={used ? "/studio" : "/free-greeting"}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-medium transition hover:border-primary/40"
-        >
-          {used ? t("ff_go_studio") : t("ff_claim_cta")}
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to={used ? "/studio" : "/free-greeting"}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-medium transition hover:border-primary/40"
+          >
+            {used ? t("ff_go_studio") : t("ff_claim_cta")}
+          </Link>
+          <Link
+            to="/credits"
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+          >
+            {t("credits_buy")}
+          </Link>
+        </div>
       </div>
     </section>
   );

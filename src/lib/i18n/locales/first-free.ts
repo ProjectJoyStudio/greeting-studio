@@ -34,7 +34,7 @@ export const FIRST_FREE_I18N: Record<Lang, Dict> = {
     ff_used_on: "Used on",
     ff_used_order: "Order",
     ff_used_product: "Product",
-    ff_claim_cta: "Claim it",
+    ff_claim_cta: "Get",
     ff_err_already_used: "This account has already used its first free greeting.",
     ff_err_product: "This product is not part of the first free greeting offer.",
     ff_err_auth: "Please sign in to continue.",
