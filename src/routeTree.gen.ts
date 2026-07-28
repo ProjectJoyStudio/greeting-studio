@@ -22,6 +22,7 @@ import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DailyRouteImport } from './routes/daily'
+import { Route as CreditsRouteImport } from './routes/credits'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -128,6 +129,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DailyRoute = DailyRouteImport.update({
   id: '/daily',
   path: '/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditsRoute = CreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -409,6 +416,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-greeting': typeof FreeGreetingRoute
@@ -465,6 +473,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -524,6 +533,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
@@ -580,6 +590,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/forgot-password'
     | '/free-greeting'
@@ -635,6 +646,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
@@ -693,6 +705,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
+  CreditsRoute: typeof CreditsRoute
   DailyRoute: typeof DailyRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -801,6 +814,13 @@ declare module '@tanstack/react-router' {
       path: '/daily'
       fullPath: '/daily'
       preLoaderRoute: typeof DailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/credits': {
+      id: '/credits'
+      path: '/credits'
+      fullPath: '/credits'
+      preLoaderRoute: typeof CreditsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -1214,6 +1234,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
+  CreditsRoute: CreditsRoute,
   DailyRoute: DailyRoute,
   DashboardRoute: DashboardRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
