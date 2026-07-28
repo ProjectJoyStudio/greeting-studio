@@ -118,9 +118,7 @@ function Hero() {
             </Link>
           </div>
 
-          <div className="mt-6">
-            <GiftBanner />
-          </div>
+          <GiftBanner />
         </div>
 
         <HeroCardStack />
@@ -186,7 +184,7 @@ function HeroCardStack() {
 function GiftBanner() {
   const { t } = useI18n();
   return (
-    <div className="mt-8 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
+    <div className="mt-6 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
         <Gift className="h-5 w-5 text-primary-foreground" />
       </span>
