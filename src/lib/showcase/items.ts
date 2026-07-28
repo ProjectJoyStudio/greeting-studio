@@ -12,12 +12,18 @@ import type { StudioGiftId } from "@/lib/studio/pricing";
 
 export interface ShowcaseItem {
   id: string;
-  /** i18n key of the visible caption. */
-  captionKey: string;
+  /** Internal-only label (admin lists, alt text). Never rendered as a card title. */
+  altKey?: string;
   /** Warm gradient used as the lightweight thumbnail. */
   thumb: string;
+  /** Future admin upload: still image preview replacing the gradient. */
+  imageUrl?: string;
   /** Loaded only after the visitor presses "View". */
   videoUrl?: string;
+  /** Admin-managed: hidden items are never rendered publicly. */
+  hidden?: boolean;
+  /** Admin-managed display order inside its category (ascending). */
+  sortOrder?: number;
   /** Only true for customer work with explicit written permission. */
   permissionGranted?: boolean;
   credit?: string;
@@ -31,10 +37,25 @@ export interface ShowcaseCategory {
   createKey: string;
   /** Studio product preselected when the create button is pressed. */
   gift: StudioGiftId;
+  /** Admin-managed order of the category blocks (ascending). */
+  sortOrder?: number;
+  hidden?: boolean;
   items: ShowcaseItem[];
 }
 
 const g = (a: string, b: string) => `linear-gradient(150deg, ${a}, ${b})`;
+
+/** Visible items for a category, in admin-defined order. */
+export function visibleItems(cat: ShowcaseCategory): ShowcaseItem[] {
+  return cat.items
+    .filter((i) => !i.hidden)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+/** Visible categories, in admin-defined order. */
+export function visibleCategories(cats: ShowcaseCategory[]): ShowcaseCategory[] {
+  return cats.filter((c) => !c.hidden).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
 
 export const SHOWCASE: ShowcaseCategory[] = [
   {
