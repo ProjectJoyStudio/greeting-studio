@@ -2227,6 +2227,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_entitlements: {
+        Row: {
+          created_at: string
+          first_free_greeting_order_id: string | null
+          first_free_greeting_product_type: string | null
+          first_free_greeting_used: boolean
+          first_free_greeting_used_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_free_greeting_order_id?: string | null
+          first_free_greeting_product_type?: string | null
+          first_free_greeting_used?: boolean
+          first_free_greeting_used_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_free_greeting_order_id?: string | null
+          first_free_greeting_product_type?: string | null
+          first_free_greeting_used?: boolean
+          first_free_greeting_used_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_entitlements_first_free_greeting_order_id_fkey"
+            columns: ["first_free_greeting_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2303,6 +2341,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_restore_first_free_greeting: {
+        Args: { _reason: string; _user_id: string }
+        Returns: boolean
+      }
+      claim_first_free_greeting: {
+        Args: {
+          _configuration?: Json
+          _customer_text?: string
+          _language?: string
+          _product_type: string
+          _recipient_data?: Json
+          _title?: string
+        }
+        Returns: {
+          order_id: string
+          order_number: string
+          used_at: string
+        }[]
+      }
+      get_first_free_greeting_status: {
+        Args: { _user_id?: string }
+        Returns: {
+          first_free_greeting_order_id: string
+          first_free_greeting_product_type: string
+          first_free_greeting_used: boolean
+          first_free_greeting_used_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2312,7 +2379,15 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_editor_or_above: { Args: { _user_id: string }; Returns: boolean }
+      is_first_free_eligible_product: {
+        Args: { _product_type: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      release_first_free_greeting: {
+        Args: { _order_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "deleted"

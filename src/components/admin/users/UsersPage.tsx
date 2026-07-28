@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+
+import { FirstFreePanel } from "./FirstFreePanel";
 import {
   Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle,
   Mail, MessageSquare, Bell, KeyRound, Gift, Crown, Star, Trophy, ExternalLink, Copy, XCircle,
@@ -110,6 +112,8 @@ export function UsersPage() {
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <span>{L("demo_notice")}</span>
       </div>
+
+      <FirstFreePanel />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[220px] flex-1">

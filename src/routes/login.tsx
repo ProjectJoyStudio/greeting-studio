@@ -4,9 +4,12 @@ import { toast } from "sonner";
 
 import { AuthField, AuthShell } from "@/components/auth/AuthShell";
 import { useI18n } from "@/lib/i18n";
+import { sanitizeRedirect } from "@/lib/entitlements/first-free";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" ? { redirect: sanitizeRedirect(search.redirect, "/dashboard") } : {},
   head: () => ({
     meta: [
       { title: "Sign in — Project Joy" },
@@ -20,6 +23,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
+  const destination = sanitizeRedirect(redirectTo, "/dashboard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +47,7 @@ function LoginPage() {
         return;
       }
       toast.success("Signed in.");
-      navigate({ to: "/dashboard" });
+      navigate({ to: destination });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error signing in.";
       setError(message);
