@@ -746,6 +746,7 @@ function Step6({
 function Step7({
   gift,
   estimate,
+  balance,
   duration,
   episodes,
   supportsSeries,
@@ -758,6 +759,7 @@ function Step7({
 }: {
   gift: GiftOption | null;
   estimate: Estimate | null;
+  balance: number;
   duration: number | null;
   episodes: number;
   supportsSeries: boolean;
@@ -769,7 +771,6 @@ function Step7({
   onSubmit: () => void;
 }) {
   const { t } = useI18n();
-  const balance = 0;
   const creditsWord = t("studio_credits_word");
 
   let required = 0;
