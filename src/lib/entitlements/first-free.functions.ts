@@ -49,7 +49,7 @@ export const claimFirstFreeGreeting = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc("claim_first_free_greeting", {
       _product_type: data.productType,
-      _title: data.title ?? null,
+      _title: data.title ?? undefined,
       _language: data.language ?? "en",
       _configuration: { source: "first_free_flow", product_type: data.productType },
       _recipient_data: {
@@ -57,7 +57,7 @@ export const claimFirstFreeGreeting = createServerFn({ method: "POST" })
         relationship: data.relationship ?? null,
         occasion: data.occasion ?? null,
       },
-      _customer_text: data.message ?? null,
+      _customer_text: data.message ?? undefined,
     });
     if (error) throw new Error(error.message);
     const row = Array.isArray(rows) ? rows[0] : null;
