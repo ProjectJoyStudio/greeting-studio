@@ -27,9 +27,7 @@ export function Header() {
   const { t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [open, setOpen] = useState<null | "occasions" | "studio" | "business">(
-    null,
-  );
+  const [open, setOpen] = useState<null | "occasions" | "business">(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
