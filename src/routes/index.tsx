@@ -198,29 +198,34 @@ function HeroCardStack() {
 function GiftBanner() {
   const { t } = useI18n();
   return (
-    <section className="mx-auto max-w-7xl px-5 pt-14 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8 shadow-warm md:p-10">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl" style={{ backgroundColor: "var(--gold)", opacity: 0.35 }} />
-        <div className="pointer-events-none absolute -bottom-16 -left-10 h-56 w-56 rounded-full blur-3xl" style={{ backgroundColor: "var(--rose)", opacity: 0.25 }} />
-        <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-5">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
-              <Gift className="h-6 w-6 text-primary-foreground" />
-            </span>
-            <div>
-              <h3 className="font-display text-2xl font-semibold md:text-3xl">
-                {t("gift_title")}
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
-                {t("gift_sub")}
-              </p>
-            </div>
-          </div>
+    <div className="mt-8 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
+        <Gift className="h-5 w-5 text-primary-foreground" />
+      </span>
+      <div>
+        <h2 className="font-display text-lg font-semibold">{t("gift_title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("gift_sub")}</p>
+      </div>
+    </div>
+  );
+}
+
+function Showcase() {
+  const { t } = useI18n();
+  return (
+    <section className="border-y border-border/60 bg-secondary/40">
+      <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
+        <SectionHeading
+          title={t("showcase_title")}
+          subtitle={t("showcase_home_sub")}
+        />
+        <div className="mt-10 flex justify-center">
           <Link
-            to="/create"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gold-gradient px-5 py-3 text-sm font-medium text-primary-foreground shadow-warm"
+            to="/showcase"
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-7 py-3.5 text-base font-medium text-primary-foreground shadow-warm"
           >
-            {t("cta_create")}
+            <Eye className="h-4 w-4" />
+            {t("showcase_view")}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
