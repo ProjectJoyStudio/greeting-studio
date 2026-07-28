@@ -51,7 +51,9 @@ import {
 export const Route = createFileRoute("/studio")({
   validateSearch: (search: Record<string, unknown>): { gift?: StudioGiftId } => {
     const raw = typeof search.gift === "string" ? search.gift : undefined;
-    return raw && raw in STUDIO_PRICING ? { gift: raw as StudioGiftId } : {};
+    return raw && raw in STUDIO_PRICING && !HIDDEN_GIFTS.includes(raw as StudioGiftId)
+      ? { gift: raw as StudioGiftId }
+      : {};
   },
   head: () => ({
     meta: [
@@ -59,7 +61,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Project Joy Studio — craft greeting cards, personal songs, videos, fairy tales and cartoons for the people you love.",
+          "Project Joy Studio — craft greeting cards, animated greetings, videos and cartoons for the people you love.",
       },
       { property: "og:title", content: "Project Joy Studio" },
       {
@@ -80,7 +82,11 @@ interface GiftOption {
   descKey: string;
 }
 
-const GIFTS: GiftOption[] = [
+// Temporarily hidden from the public Studio interface. Pricing, translations
+// and backend support stay intact so these can be re-enabled later.
+const HIDDEN_GIFTS: StudioGiftId[] = ["song", "fairy-tale"];
+
+const ALL_GIFTS: GiftOption[] = [
   { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc" },
   { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc" },
   { id: "song", icon: Music2, titleKey: "gift_song", descKey: "gift_song_desc" },
@@ -90,6 +96,8 @@ const GIFTS: GiftOption[] = [
   { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc" },
   { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc" },
 ];
+
+const GIFTS: GiftOption[] = ALL_GIFTS.filter((g) => !HIDDEN_GIFTS.includes(g.id));
 
 const RELATIONSHIPS = [
   "mother", "father", "grandmother", "grandfather", "wife", "husband",
