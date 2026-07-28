@@ -18,17 +18,6 @@ const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/calendar", key: "nav_calendar" },
 ];
 
-const STUDIO_MENU: NavLeaf[] = [
-  { to: "/studio", key: "gift_card" },
-  { to: "/studio", key: "gift_animated" },
-  { to: "/studio", key: "gift_song" },
-  { to: "/studio", key: "gift_video_greeting" },
-  { to: "/studio", key: "gift_video_clip" },
-  { to: "/studio", key: "gift_fairy_tale" },
-  { to: "/studio", key: "gift_cartoon" },
-  { to: "/studio", key: "gift_premium" },
-];
-
 const BUSINESS_MENU: NavLeaf[] = [
   { to: "/corporate-orders", key: "nav_corporate" },
   { to: "/pricing", key: "nav_pricing" },
