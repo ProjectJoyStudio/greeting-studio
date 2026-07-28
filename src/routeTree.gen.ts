@@ -47,6 +47,7 @@ import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platfo
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
@@ -256,6 +257,11 @@ const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   path: '/languages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomepageHeroRoute = AdminHomepageHeroRouteImport.update({
+  id: '/homepage-hero',
+  path: '/homepage-hero',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEconomyRoute = AdminEconomyRouteImport.update({
   id: '/economy',
   path: '/economy',
@@ -378,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -665,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -991,6 +1003,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLanguagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/homepage-hero': {
+      id: '/admin/homepage-hero'
+      path: '/homepage-hero'
+      fullPath: '/admin/homepage-hero'
+      preLoaderRoute: typeof AdminHomepageHeroRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/economy': {
       id: '/admin/economy'
       path: '/economy'
@@ -1174,6 +1193,7 @@ interface AdminRouteChildren {
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
+  AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1190,6 +1210,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
   AdminEconomyRoute: AdminEconomyRoute,
+  AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
