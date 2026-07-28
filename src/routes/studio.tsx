@@ -38,6 +38,7 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { CreditModal } from "@/components/studio/CreditModal";
+import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   STUDIO_PRICING,
   computeEstimate,
@@ -357,6 +358,22 @@ function StudioPage() {
           <p className="mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
             {t("studio_hero_sub")}
           </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-sm backdrop-blur">
+              <Coins className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">{t("credits_balance")}:</span>
+              <span className="font-semibold text-foreground">
+                {balance} {t("studio_credits_word")}
+              </span>
+            </span>
+            <Link
+              to="/credits"
+              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+            >
+              <Coins className="h-4 w-4" />
+              {t("credits_buy")}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -407,6 +424,7 @@ function StudioPage() {
             <Step7
               gift={selectedGift}
               estimate={estimate}
+              balance={balance}
               duration={duration}
               episodes={effectiveEpisodes}
               supportsSeries={supportsSeries}
@@ -437,7 +455,11 @@ function StudioPage() {
         </div>
       </section>
 
-      <CreditModal open={creditModalOpen} onClose={() => setCreditModalOpen(false)} balance={0} />
+      <CreditModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        balance={balance}
+      />
     </SiteLayout>
   );
 }
