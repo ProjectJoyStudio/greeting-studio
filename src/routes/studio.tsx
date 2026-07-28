@@ -252,6 +252,7 @@ function StudioPage() {
   const [details, setDetails] = useState("");
   const [language, setLanguage] = useState<GiftLang>("en");
   const [creditModalOpen, setCreditModalOpen] = useState(false);
+  const { balance } = useCreditBalance();
   const [premium, setPremium] = useState<PremiumDraft>(emptyPremium);
   const [premiumEstimate, setPremiumEstimate] = useState<PremiumEstimate | null>(null);
   const [order, setOrder] = useState<OrderRecord | null>(null);
