@@ -14,6 +14,7 @@ import {
   HandHeart,
   Wand2,
   Send,
+  Coffee,
   Bell,
   CalendarClock,
   CalendarDays,
@@ -51,7 +52,6 @@ function Index() {
   return (
     <SiteLayout>
       <Hero />
-      <EverydayWishes />
       <Showcase />
       <HowItWorks />
       <CustomOrderCTA />
@@ -228,44 +228,6 @@ function Showcase() {
   );
 }
 
-function EverydayWishes() {
-  const { t } = useI18n();
-  const items = [
-    { icon: Sunrise, key: "wish_morning", grad: "linear-gradient(140deg, oklch(0.94 0.06 80), oklch(0.78 0.12 55))" },
-    { icon: Sun, key: "wish_day", grad: "linear-gradient(140deg, oklch(0.92 0.09 70), oklch(0.7 0.14 50))" },
-    { icon: Sparkles, key: "wish_luck", grad: "linear-gradient(140deg, oklch(0.9 0.08 150), oklch(0.55 0.12 160))" },
-    { icon: Plane, key: "wish_trip", grad: "linear-gradient(140deg, oklch(0.9 0.07 220), oklch(0.55 0.11 220))" },
-    { icon: Palmtree, key: "wish_rest", grad: "linear-gradient(140deg, oklch(0.9 0.09 160), oklch(0.5 0.12 180))" },
-    { icon: Moon, key: "wish_night", grad: "linear-gradient(140deg, oklch(0.7 0.06 270), oklch(0.35 0.09 265))" },
-  ] as const;
-  return (
-    <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-      <SectionHeading
-        title={t("section_wishes")}
-        subtitle={t("section_wishes_sub")}
-      />
-      <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {items.map((it, i) => {
-          const Icon = it.icon;
-          return (
-            <Link
-              key={i}
-              to="/daily"
-              className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm"
-            >
-              <div className="grid h-28 place-items-center" style={{ backgroundImage: it.grad }}>
-                <Icon className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <div className="px-4 py-4 text-center">
-                <div className="font-display text-base font-semibold">{t(it.key)}</div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
 
 function ImportantDates() {
   const { t } = useI18n();
