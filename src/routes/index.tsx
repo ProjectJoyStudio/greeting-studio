@@ -79,13 +79,13 @@ function Hero() {
         <div className="absolute -right-16 top-48 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: "var(--rose)", opacity: 0.3 }} />
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-14 px-5 py-20 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:py-28">
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:py-20">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             {t("hero_eyebrow")}
           </span>
-          <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.03] tracking-tight md:text-6xl lg:text-7xl">
+          <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.03] tracking-tight md:text-6xl lg:text-7xl">
             {title.split("\n").map((line, i) => (
               <span key={i} className="block">
                 {i === 1 ? (
@@ -98,9 +98,9 @@ function Hero() {
               </span>
             ))}
           </h1>
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground">{t("hero_sub")}</p>
+          <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("hero_sub")}</p>
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
               to="/create"
               className="group inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3.5 text-base font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
@@ -184,7 +184,7 @@ function HeroCardStack() {
 function GiftBanner() {
   const { t } = useI18n();
   return (
-    <div className="mt-8 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
+    <div className="mt-6 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
         <Gift className="h-5 w-5 text-primary-foreground" />
       </span>
