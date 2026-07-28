@@ -197,6 +197,13 @@ function GiftBanner() {
       <div>
         <h2 className="font-display text-lg font-semibold">{t("gift_title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("gift_sub")}</p>
+        <Link
+          to="/free-greeting"
+          className="mt-3 inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+        >
+          <Gift className="h-3.5 w-3.5" />
+          {t("ff_claim_cta")}
+        </Link>
       </div>
     </div>
   );
