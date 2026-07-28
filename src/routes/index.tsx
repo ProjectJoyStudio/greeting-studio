@@ -372,10 +372,10 @@ function CustomOrderCTA() {
           <p className="mt-4 text-muted-foreground md:text-lg">{t("section_custom_sub")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/personal-orders"
+              to="/studio"
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm"
             >
-              {t("cta_custom")}
+              {t("cta_create_gift")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -401,10 +401,11 @@ function CorporateCTA() {
           <p className="mt-4 text-muted-foreground md:text-lg">{t("section_corp_sub")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/corporate-orders"
+              to="/studio"
+              search={{ gift: "premium" as const }}
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm"
             >
-              {t("cta_corp")}
+              {t("cta_create_corporate")}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
