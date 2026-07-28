@@ -49,6 +49,10 @@ import {
 } from "@/lib/studio/pricing";
 
 export const Route = createFileRoute("/studio")({
+  validateSearch: (search: Record<string, unknown>): { gift?: StudioGiftId } => {
+    const raw = typeof search.gift === "string" ? search.gift : undefined;
+    return raw && raw in STUDIO_PRICING ? { gift: raw as StudioGiftId } : {};
+  },
   head: () => ({
     meta: [
       { title: "Project Joy Studio — Create unforgettable gifts" },
@@ -224,8 +228,11 @@ interface OrderRecord {
 
 function StudioPage() {
   const { t } = useI18n();
-  const [gift, setGift] = useState<GiftId | null>(null);
-  const [duration, setDuration] = useState<number | null>(null);
+  const { gift: presetGift } = Route.useSearch();
+  const [gift, setGift] = useState<GiftId | null>(presetGift ?? null);
+  const [duration, setDuration] = useState<number | null>(
+    presetGift ? (STUDIO_PRICING[presetGift].duration?.default ?? null) : null,
+  );
   const [tier, setTier] = useState<QueueTier>("standard");
   const [isSeries, setIsSeries] = useState(false);
   const [episodes, setEpisodes] = useState(1);
