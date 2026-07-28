@@ -228,7 +228,7 @@ interface OrderRecord {
 
 function StudioPage() {
   const { t } = useI18n();
-  const { gift: presetGift } = Route.useSearch();
+  const presetGift = (Route.useSearch() as { gift?: StudioGiftId }).gift;
   const [gift, setGift] = useState<GiftId | null>(presetGift ?? null);
   const [duration, setDuration] = useState<number | null>(
     presetGift ? (STUDIO_PRICING[presetGift].duration?.default ?? null) : null,
