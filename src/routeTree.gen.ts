@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShowcaseRouteImport } from './routes/showcase'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -76,6 +77,11 @@ const StudioRoute = StudioRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowcaseRoute = ShowcaseRouteImport.update({
+  id: '/showcase',
+  path: '/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -349,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -457,6 +465,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -514,6 +523,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/reset-password'
+    | '/showcase'
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
@@ -567,6 +577,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/reset-password'
+    | '/showcase'
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
@@ -621,6 +632,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/reset-password'
+    | '/showcase'
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
@@ -677,6 +689,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ShowcaseRoute: typeof ShowcaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -705,6 +718,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showcase': {
+      id: '/showcase'
+      path: '/showcase'
+      fullPath: '/showcase'
+      preLoaderRoute: typeof ShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1182,6 +1202,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ShowcaseRoute: ShowcaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,

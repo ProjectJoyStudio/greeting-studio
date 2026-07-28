@@ -3,13 +3,9 @@ import {
   ArrowRight,
   Sparkles,
   Gift,
-  Cake,
   Heart,
-  PartyPopper,
   Briefcase,
-  Baby,
   HandHeart,
-  CalendarHeart,
   Wand2,
   Send,
   Sun,
@@ -18,10 +14,6 @@ import {
   Plane,
   Palmtree,
   Moon,
-  Mic,
-  Music2,
-  Video,
-  Image as ImageIcon,
   Bell,
   CalendarClock,
   CalendarDays,
@@ -59,15 +51,12 @@ function Index() {
   return (
     <SiteLayout>
       <Hero />
-      <GiftBanner />
-      <Formats />
-      <Categories />
       <EverydayWishes />
-      <DailyGreetings />
-      <ImportantDates />
+      <Showcase />
       <HowItWorks />
       <CustomOrderCTA />
       <CorporateCTA />
+      <ImportantDates />
     </SiteLayout>
   );
 }
@@ -129,6 +118,8 @@ function Hero() {
               {t("cta_browse")}
             </Link>
           </div>
+
+          <GiftBanner />
         </div>
 
         <HeroCardStack />
@@ -199,182 +190,36 @@ function HeroCardStack() {
 function GiftBanner() {
   const { t } = useI18n();
   return (
-    <section className="mx-auto max-w-7xl px-5 pt-14 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8 shadow-warm md:p-10">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl" style={{ backgroundColor: "var(--gold)", opacity: 0.35 }} />
-        <div className="pointer-events-none absolute -bottom-16 -left-10 h-56 w-56 rounded-full blur-3xl" style={{ backgroundColor: "var(--rose)", opacity: 0.25 }} />
-        <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-5">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
-              <Gift className="h-6 w-6 text-primary-foreground" />
-            </span>
-            <div>
-              <h3 className="font-display text-2xl font-semibold md:text-3xl">
-                {t("gift_title")}
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
-                {t("gift_sub")}
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/create"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gold-gradient px-5 py-3 text-sm font-medium text-primary-foreground shadow-warm"
-          >
-            {t("cta_create")}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+    <div className="mt-8 flex max-w-xl items-start gap-4 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-warm backdrop-blur">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold-gradient shadow-warm">
+        <Gift className="h-5 w-5 text-primary-foreground" />
+      </span>
+      <div>
+        <h2 className="font-display text-lg font-semibold">{t("gift_title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("gift_sub")}</p>
       </div>
-    </section>
+    </div>
   );
 }
 
-function Formats() {
-  const { t } = useI18n();
-  const items = [
-    {
-      icon: ImageIcon,
-      titleKey: "fmt1_title",
-      bodyKey: "fmt1_body",
-      grad: "linear-gradient(140deg, oklch(0.92 0.06 80), oklch(0.72 0.12 55))",
-      soon: false,
-    },
-    {
-      icon: Sparkles,
-      titleKey: "fmt2_title",
-      bodyKey: "fmt2_body",
-      grad: "linear-gradient(140deg, oklch(0.88 0.09 30), oklch(0.55 0.15 15))",
-      soon: true,
-    },
-    {
-      icon: MessageSquareHeart,
-      titleKey: "fmt3_title",
-      bodyKey: "fmt3_body",
-      grad: "linear-gradient(140deg, oklch(0.9 0.08 350), oklch(0.6 0.14 340))",
-      soon: true,
-    },
-    {
-      icon: Music2,
-      titleKey: "fmt4_title",
-      bodyKey: "fmt4_body",
-      grad: "linear-gradient(140deg, oklch(0.86 0.06 260), oklch(0.42 0.1 265))",
-      soon: true,
-      badges: [Mic, Music2, Video],
-    },
-    {
-      icon: HandHeart,
-      titleKey: "fmt5_title",
-      bodyKey: "fmt5_body",
-      grad: "linear-gradient(140deg, oklch(0.88 0.07 150), oklch(0.5 0.11 160))",
-      soon: true,
-    },
-  ] as const;
-
-  return (
-    <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-      <SectionHeading
-        eyebrow="01"
-        title={t("section_formats")}
-        subtitle={t("section_formats_sub")}
-      />
-      <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((it, i) => {
-          const Icon = it.icon;
-          return (
-            <article
-              key={i}
-              className="group relative overflow-hidden rounded-3xl border border-border/70 bg-card p-6 transition hover:-translate-y-1 hover:shadow-warm"
-            >
-              <div
-                className="mb-6 grid h-28 place-items-center rounded-2xl"
-                style={{ backgroundImage: it.grad }}
-              >
-                <Icon className="h-9 w-9 text-primary-foreground" />
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="font-display text-xl font-semibold">{t(it.titleKey)}</h3>
-                {it.soon && <SoonBadge />}
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{t(it.bodyKey)}</p>
-              {"badges" in it && it.badges && (
-                <div className="mt-4 flex gap-2">
-                  {it.badges.map((B, k) => (
-                    <span
-                      key={k}
-                      className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-secondary/60 text-muted-foreground"
-                    >
-                      <B className="h-3.5 w-3.5" />
-                    </span>
-                  ))}
-                </div>
-              )}
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-const categoryIcons = [Cake, Heart, PartyPopper, HandHeart, Gift, Briefcase, Baby, Sparkles];
-const categoryKeys = [
-  "cat_birthday",
-  "cat_love",
-  "cat_holiday",
-  "cat_thanks",
-  "cat_congrats",
-  "cat_corporate",
-  "cat_newborn",
-  "cat_wedding",
-] as const;
-
-const categoryGradients = [
-  "linear-gradient(140deg, oklch(0.9 0.08 60), oklch(0.7 0.14 35))",
-  "linear-gradient(140deg, oklch(0.85 0.1 20), oklch(0.55 0.15 15))",
-  "linear-gradient(140deg, oklch(0.88 0.09 90), oklch(0.65 0.13 60))",
-  "linear-gradient(140deg, oklch(0.88 0.07 150), oklch(0.55 0.1 160))",
-  "linear-gradient(140deg, oklch(0.9 0.1 75), oklch(0.6 0.16 55))",
-  "linear-gradient(140deg, oklch(0.86 0.05 260), oklch(0.4 0.08 265))",
-  "linear-gradient(140deg, oklch(0.92 0.06 220), oklch(0.72 0.1 210))",
-  "linear-gradient(140deg, oklch(0.94 0.05 340), oklch(0.7 0.11 340))",
-];
-
-function Categories() {
+function Showcase() {
   const { t } = useI18n();
   return (
     <section className="border-y border-border/60 bg-secondary/40">
       <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
         <SectionHeading
-          eyebrow="02"
-          title={t("section_categories")}
-          subtitle={t("section_categories_sub")}
+          title={t("showcase_title")}
+          subtitle={t("showcase_home_sub")}
         />
-        <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
-          {categoryKeys.map((key, i) => {
-            const Icon = categoryIcons[i];
-            return (
-              <Link
-                key={key}
-                to="/catalog"
-                className="group relative overflow-hidden rounded-3xl border border-border/70 bg-card p-5 transition hover:-translate-y-1 hover:shadow-warm"
-              >
-                <div
-                  className="mb-6 grid h-24 place-items-center rounded-2xl"
-                  style={{ backgroundImage: categoryGradients[i] }}
-                >
-                  <Icon className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="font-display text-lg font-semibold">{t(key)}</div>
-                    <div className="text-xs text-muted-foreground">120+ designs</div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
-                </div>
-              </Link>
-            );
-          })}
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/showcase"
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-7 py-3.5 text-base font-medium text-primary-foreground shadow-warm"
+          >
+            <Eye className="h-4 w-4" />
+            {t("showcase_view")}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
@@ -394,7 +239,6 @@ function EverydayWishes() {
   return (
     <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
       <SectionHeading
-        eyebrow="03"
         title={t("section_wishes")}
         subtitle={t("section_wishes_sub")}
       />
@@ -421,62 +265,6 @@ function EverydayWishes() {
   );
 }
 
-function DailyGreetings() {
-  const { t } = useI18n();
-  const items = [
-    { title: t("evt_friendship"), tag: t("daily_today"), grad: "linear-gradient(160deg, oklch(0.86 0.11 55), oklch(0.55 0.16 30))" },
-    { title: t("evt_grandparents"), tag: t("daily_tomorrow"), grad: "linear-gradient(160deg, oklch(0.88 0.08 150), oklch(0.5 0.1 165))" },
-    { title: t("evt_kindness"), tag: `${t("month_11")} 13`, grad: "linear-gradient(160deg, oklch(0.88 0.09 20), oklch(0.55 0.16 12))" },
-  ];
-  return (
-    <section className="border-y border-border/60 bg-secondary/40">
-      <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">04</span>
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-              {t("section_daily")}
-            </h2>
-            <p className="mt-3 max-w-lg text-muted-foreground">{t("section_daily_sub")}</p>
-          </div>
-          <Link
-            to="/daily"
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium transition hover:border-primary/40"
-          >
-            {t("nav_daily")}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {items.map((it, i) => (
-            <article
-              key={i}
-              className="group overflow-hidden rounded-3xl border border-border/70 bg-card transition hover:-translate-y-1 hover:shadow-warm"
-            >
-              <div className="h-52" style={{ backgroundImage: it.grad }}>
-                <div className="flex h-full items-end justify-between p-6 text-primary-foreground">
-                  <span className="rounded-full bg-black/20 px-3 py-1 text-xs uppercase tracking-widest backdrop-blur">
-                    {it.tag}
-                  </span>
-                  <CalendarHeart className="h-6 w-6 opacity-90" />
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-display text-xl font-semibold">{it.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t("home_daily_body")}</p>
-                <div className="mt-5 flex items-center gap-2 text-sm font-medium text-primary">
-                  {t("home_open_collection")}
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function ImportantDates() {
   const { t } = useI18n();
   const items = [
@@ -487,7 +275,7 @@ function ImportantDates() {
   ] as const;
   return (
     <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-      <SectionHeading eyebrow="05" title={t("section_dates")} subtitle={t("section_dates_sub")} />
+      <SectionHeading title={t("section_dates")} subtitle={t("section_dates_sub")} />
       <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {items.map((it, i) => {
           const Icon = it.icon;
@@ -530,7 +318,7 @@ function HowItWorks() {
   return (
     <section className="border-y border-border/60 bg-secondary/40">
       <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-        <SectionHeading eyebrow="06" title={t("section_how")} subtitle={t("section_how_sub")} />
+        <SectionHeading title={t("section_how")} subtitle={t("section_how_sub")} />
         <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-5">
           {steps.map((s, i) => {
             const Icon = s.icon;
@@ -575,10 +363,10 @@ function CustomOrderCTA() {
           <p className="mt-4 text-muted-foreground md:text-lg">{t("section_custom_sub")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/personal-orders"
+              to="/studio"
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm"
             >
-              {t("cta_custom")}
+              {t("cta_create_gift")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -604,10 +392,11 @@ function CorporateCTA() {
           <p className="mt-4 text-muted-foreground md:text-lg">{t("section_corp_sub")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/corporate-orders"
+              to="/studio"
+              search={{ gift: "premium" as const }}
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm"
             >
-              {t("cta_corp")}
+              {t("cta_create_corporate")}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
