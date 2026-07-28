@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+
+import { FirstFreePanel } from "./FirstFreePanel";
 import {
   Plus, RefreshCw, Search, Eye, Pencil, Ban, ShieldCheck, Trash2, X, AlertTriangle,
   Mail, MessageSquare, Bell, KeyRound, Gift, Crown, Star, Trophy, ExternalLink, Copy, XCircle,
