@@ -126,6 +126,8 @@ function Hero() {
               {t("cta_browse")}
             </Link>
           </div>
+
+          <GiftBanner />
         </div>
 
         <HeroCardStack />
