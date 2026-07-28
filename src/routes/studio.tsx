@@ -829,6 +829,19 @@ function Step7({
         )}
       </div>
 
+      {gift && required > 0 && !enough && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-3">
+          <span className="text-sm font-medium text-destructive">{t("credits_not_enough")}</span>
+          <Link
+            to="/credits"
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+          >
+            <Coins className="h-4 w-4" />
+            {t("credits_buy")}
+          </Link>
+        </div>
+      )}
+
       <div className="mt-6 flex flex-wrap gap-2">
         <button
           type="button"
