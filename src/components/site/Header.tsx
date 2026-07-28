@@ -81,15 +81,7 @@ export function Header() {
             t={t}
             onNavigate={() => setOpen(null)}
           />
-          <Dropdown
-            label={t("nav_studio")}
-            id="studio"
-            open={open === "studio"}
-            onToggle={(v) => setOpen(v ? "studio" : null)}
-            items={STUDIO_MENU}
-            t={t}
-            onNavigate={() => setOpen(null)}
-          />
+          <TopLink to="/studio">{t("nav_studio")}</TopLink>
           <Dropdown
             label={t("nav_business")}
             id="business"
