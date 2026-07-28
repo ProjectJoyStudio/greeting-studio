@@ -85,7 +85,7 @@ function Hero() {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             {t("hero_eyebrow")}
           </span>
-          <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.03] tracking-tight md:text-6xl lg:text-7xl">
+          <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.03] tracking-tight md:text-6xl lg:text-7xl">
             {title.split("\n").map((line, i) => (
               <span key={i} className="block">
                 {i === 1 ? (
@@ -98,9 +98,9 @@ function Hero() {
               </span>
             ))}
           </h1>
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground">{t("hero_sub")}</p>
+          <p className="mt-5 max-w-xl text-lg text-muted-foreground">{t("hero_sub")}</p>
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
               to="/create"
               className="group inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3.5 text-base font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
@@ -118,7 +118,9 @@ function Hero() {
             </Link>
           </div>
 
-          <GiftBanner />
+          <div className="mt-6">
+            <GiftBanner />
+          </div>
         </div>
 
         <HeroCardStack />
