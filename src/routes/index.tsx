@@ -59,15 +59,12 @@ function Index() {
   return (
     <SiteLayout>
       <Hero />
-      <GiftBanner />
-      <Formats />
-      <Categories />
       <EverydayWishes />
-      <DailyGreetings />
-      <ImportantDates />
+      <Showcase />
       <HowItWorks />
       <CustomOrderCTA />
       <CorporateCTA />
+      <ImportantDates />
     </SiteLayout>
   );
 }
