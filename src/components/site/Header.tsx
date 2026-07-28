@@ -155,18 +155,9 @@ export function Header() {
                 </MobileLink>
               ))}
             </MobileGroup>
-            <MobileGroup label={t("nav_studio")}>
-              {STUDIO_MENU.map((n) => (
-                <MobileLink
-                  key={`s-${n.key}`}
-                  to={n.to}
-                  onNav={() => setMobileOpen(false)}
-                  nested
-                >
-                  {t(n.key)}
-                </MobileLink>
-              ))}
-            </MobileGroup>
+            <MobileLink to="/studio" onNav={() => setMobileOpen(false)}>
+              {t("nav_studio")}
+            </MobileLink>
             <MobileGroup label={t("nav_business")}>
               {BUSINESS_MENU.map((n) => (
                 <MobileLink
