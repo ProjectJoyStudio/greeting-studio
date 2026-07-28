@@ -22,6 +22,7 @@ import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DailyRouteImport } from './routes/daily'
+import { Route as CreditsRouteImport } from './routes/credits'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -46,6 +47,7 @@ import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platfo
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
@@ -128,6 +130,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DailyRoute = DailyRouteImport.update({
   id: '/daily',
   path: '/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditsRoute = CreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -250,6 +257,11 @@ const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   path: '/languages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomepageHeroRoute = AdminHomepageHeroRouteImport.update({
+  id: '/homepage-hero',
+  path: '/homepage-hero',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEconomyRoute = AdminEconomyRouteImport.update({
   id: '/economy',
   path: '/economy',
@@ -353,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -371,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -409,6 +423,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/free-greeting': typeof FreeGreetingRoute
@@ -425,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -465,6 +481,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -483,6 +500,7 @@ export interface FileRoutesById {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -524,6 +542,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
@@ -542,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -580,6 +600,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/forgot-password'
     | '/free-greeting'
@@ -596,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -635,6 +657,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/credits'
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
@@ -653,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/economy'
+    | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/notifications'
     | '/admin/orders'
@@ -693,6 +717,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
+  CreditsRoute: typeof CreditsRoute
   DailyRoute: typeof DailyRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -801,6 +826,13 @@ declare module '@tanstack/react-router' {
       path: '/daily'
       fullPath: '/daily'
       preLoaderRoute: typeof DailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/credits': {
+      id: '/credits'
+      path: '/credits'
+      fullPath: '/credits'
+      preLoaderRoute: typeof CreditsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -969,6 +1001,13 @@ declare module '@tanstack/react-router' {
       path: '/languages'
       fullPath: '/admin/languages'
       preLoaderRoute: typeof AdminLanguagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/homepage-hero': {
+      id: '/admin/homepage-hero'
+      path: '/homepage-hero'
+      fullPath: '/admin/homepage-hero'
+      preLoaderRoute: typeof AdminHomepageHeroRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/economy': {
@@ -1154,6 +1193,7 @@ interface AdminRouteChildren {
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
+  AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1170,6 +1210,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
   AdminEconomyRoute: AdminEconomyRoute,
+  AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
@@ -1214,6 +1255,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
+  CreditsRoute: CreditsRoute,
   DailyRoute: DailyRoute,
   DashboardRoute: DashboardRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
@@ -1233,13 +1275,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

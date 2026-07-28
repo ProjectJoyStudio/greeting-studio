@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { X, Coins, Sparkles, Check } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 
 // Placeholder pricing — real prices arrive with the payment integration.
@@ -124,13 +125,14 @@ export function CreditModal({
               <p className="mt-3 text-sm text-muted-foreground">
                 {t(p.descKey)}
               </p>
-              <button
-                type="button"
+              <Link
+                to="/credits"
+                onClick={onClose}
                 className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
               >
                 <Check className="h-4 w-4" />
                 {t("credit_buy")}
-              </button>
+              </Link>
             </article>
           ))}
         </div>

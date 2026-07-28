@@ -1622,6 +1622,54 @@ export type Database = {
           },
         ]
       }
+      hero_showcase_cards: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string | null
+          gradient: string | null
+          id: string
+          image_url: string | null
+          is_enabled: boolean
+          link_to: string
+          sort_order: number
+          storage_bucket: string | null
+          storage_path: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          gradient?: string | null
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          link_to?: string
+          sort_order?: number
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          gradient?: string | null
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          link_to?: string
+          sort_order?: number
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       languages: {
         Row: {
           code: string

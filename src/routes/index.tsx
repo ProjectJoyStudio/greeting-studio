@@ -1,4 +1,10 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  HERO_FALLBACK_GRADIENTS,
+  fetchPublicHeroCards,
+  type HeroCard,
+} from "@/lib/hero-showcase/hero-cards";
 import {
   ArrowRight,
   Sparkles,
@@ -129,60 +135,55 @@ function Hero() {
 }
 
 function HeroCardStack() {
-  const { t } = useI18n();
+  const [cards, setCards] = useState<HeroCard[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetchPublicHeroCards()
+      .then((rows) => {
+        if (alive) setCards(rows.slice(0, 3));
+      })
+      .catch(() => {
+        if (alive) setCards([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const slots = [
+    "absolute left-2 top-6 h-72 w-56 rotate-[-8deg]",
+    "absolute right-2 top-2 h-80 w-60 rotate-[6deg]",
+    "absolute bottom-4 left-1/2 h-64 w-52 -translate-x-1/2 rotate-[2deg]",
+  ];
+
+  const rendered = slots.map((slot, i) => {
+    const card = cards[i];
+    const background =
+      card?.gradient ?? HERO_FALLBACK_GRADIENTS[i % HERO_FALLBACK_GRADIENTS.length];
+    const inner = card?.resolvedImage ? (
+      <img
+        src={card.resolvedImage}
+        alt={card.altText ?? ""}
+        loading="lazy"
+        className="h-full w-full object-cover"
+      />
+    ) : null;
+    const className = `${slot} overflow-hidden rounded-3xl border border-border/70 shadow-warm transition hover:-translate-y-1`;
+    const style = inner ? undefined : { backgroundImage: background };
+
+    return card ? (
+      <Link key={card.id} to={card.linkTo} className={className} style={style}>
+        {inner}
+      </Link>
+    ) : (
+      <div key={`slot-${i}`} className={className} style={style} aria-hidden="true" />
+    );
+  });
+
   return (
     <div className="relative mx-auto flex h-[440px] w-full max-w-md items-center justify-center">
-      <div
-        className="absolute left-2 top-6 h-72 w-56 rotate-[-8deg] rounded-3xl border border-border/70 shadow-warm"
-        style={{
-          backgroundImage:
-            "linear-gradient(160deg, oklch(0.9 0.06 70), oklch(0.72 0.13 45))",
-        }}
-      >
-        <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-          <span className="font-display text-sm italic opacity-90">{t("hero_card_to")}</span>
-          <div>
-            <div className="font-display text-3xl leading-tight">{t("hero_card_hb")}</div>
-            <div className="mt-1 text-xs opacity-80">{t("hero_card_love")}</div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="absolute right-2 top-2 h-80 w-60 rotate-[6deg] rounded-3xl border border-border/70 shadow-warm"
-        style={{
-          backgroundImage:
-            "linear-gradient(160deg, oklch(0.42 0.11 30), oklch(0.28 0.08 20))",
-        }}
-      >
-        <div className="flex h-full flex-col justify-between p-6 text-primary-foreground">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
-            <Heart className="h-3.5 w-3.5" /> {t("hero_card_from")}
-          </div>
-          <div>
-            <div className="font-display text-2xl italic leading-tight">
-              „{t("hero_card_quote")}"
-            </div>
-            <div className="mt-3 text-xs opacity-80">{t("hero_card_sig")}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-4 left-1/2 h-64 w-52 -translate-x-1/2 rotate-[2deg] rounded-3xl border border-border/80 bg-card shadow-warm">
-        <div className="flex h-full flex-col justify-between p-5">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="uppercase tracking-widest">Card · 001</span>
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <div>
-            <div className="font-display text-2xl leading-tight">{t("hero_card_hb")}</div>
-            <div className="mt-2 h-px bg-border" />
-            <div className="mt-2 text-xs italic text-muted-foreground">
-              {t("hero_card_wish")}
-            </div>
-          </div>
-        </div>
-      </div>
+      {rendered}
     </div>
   );
 }

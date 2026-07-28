@@ -38,6 +38,7 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { CreditModal } from "@/components/studio/CreditModal";
+import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   STUDIO_PRICING,
   computeEstimate,
@@ -251,6 +252,7 @@ function StudioPage() {
   const [details, setDetails] = useState("");
   const [language, setLanguage] = useState<GiftLang>("en");
   const [creditModalOpen, setCreditModalOpen] = useState(false);
+  const { balance } = useCreditBalance();
   const [premium, setPremium] = useState<PremiumDraft>(emptyPremium);
   const [premiumEstimate, setPremiumEstimate] = useState<PremiumEstimate | null>(null);
   const [order, setOrder] = useState<OrderRecord | null>(null);
@@ -357,6 +359,22 @@ function StudioPage() {
           <p className="mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
             {t("studio_hero_sub")}
           </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-sm backdrop-blur">
+              <Coins className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">{t("credits_balance")}:</span>
+              <span className="font-semibold text-foreground">
+                {balance} {t("studio_credits_word")}
+              </span>
+            </span>
+            <Link
+              to="/credits"
+              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+            >
+              <Coins className="h-4 w-4" />
+              {t("credits_buy")}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -407,6 +425,7 @@ function StudioPage() {
             <Step7
               gift={selectedGift}
               estimate={estimate}
+              balance={balance}
               duration={duration}
               episodes={effectiveEpisodes}
               supportsSeries={supportsSeries}
@@ -437,7 +456,11 @@ function StudioPage() {
         </div>
       </section>
 
-      <CreditModal open={creditModalOpen} onClose={() => setCreditModalOpen(false)} balance={0} />
+      <CreditModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        balance={balance}
+      />
     </SiteLayout>
   );
 }
@@ -723,6 +746,7 @@ function Step6({
 function Step7({
   gift,
   estimate,
+  balance,
   duration,
   episodes,
   supportsSeries,
@@ -735,6 +759,7 @@ function Step7({
 }: {
   gift: GiftOption | null;
   estimate: Estimate | null;
+  balance: number;
   duration: number | null;
   episodes: number;
   supportsSeries: boolean;
@@ -746,7 +771,6 @@ function Step7({
   onSubmit: () => void;
 }) {
   const { t } = useI18n();
-  const balance = 0;
   const creditsWord = t("studio_credits_word");
 
   let required = 0;
@@ -804,6 +828,19 @@ function Step7({
           <span className="text-xs text-muted-foreground">{t("studio_sum_topup")}</span>
         )}
       </div>
+
+      {gift && required > 0 && !enough && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-3">
+          <span className="text-sm font-medium text-destructive">{t("credits_not_enough")}</span>
+          <Link
+            to="/credits"
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95"
+          >
+            <Coins className="h-4 w-4" />
+            {t("credits_buy")}
+          </Link>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-2">
         <button

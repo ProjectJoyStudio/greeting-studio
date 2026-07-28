@@ -14,6 +14,7 @@ import {
   BarChart3,
   ScrollText,
   Settings,
+  Home,
   LogOut,
   Menu,
   Search,
@@ -32,6 +33,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: "/admin", key: "admin_nav_overview", icon: LayoutDashboard },
+  { to: "/admin/homepage-hero", key: "admin_nav_hero_showcase", icon: Home },
   { to: "/admin/economy", key: "admin_nav_economy", icon: Coins },
   { to: "/admin/orders", key: "admin_nav_orders", icon: ShoppingBag },
   { to: "/admin/users", key: "admin_nav_users", icon: Users },
