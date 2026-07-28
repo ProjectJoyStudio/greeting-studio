@@ -18,17 +18,6 @@ const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/calendar", key: "nav_calendar" },
 ];
 
-const STUDIO_MENU: NavLeaf[] = [
-  { to: "/studio", key: "gift_card" },
-  { to: "/studio", key: "gift_animated" },
-  { to: "/studio", key: "gift_song" },
-  { to: "/studio", key: "gift_video_greeting" },
-  { to: "/studio", key: "gift_video_clip" },
-  { to: "/studio", key: "gift_fairy_tale" },
-  { to: "/studio", key: "gift_cartoon" },
-  { to: "/studio", key: "gift_premium" },
-];
-
 const BUSINESS_MENU: NavLeaf[] = [
   { to: "/corporate-orders", key: "nav_corporate" },
   { to: "/pricing", key: "nav_pricing" },
@@ -38,9 +27,7 @@ export function Header() {
   const { t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [open, setOpen] = useState<null | "occasions" | "studio" | "business">(
-    null,
-  );
+  const [open, setOpen] = useState<null | "occasions" | "business">(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,15 +79,7 @@ export function Header() {
             t={t}
             onNavigate={() => setOpen(null)}
           />
-          <Dropdown
-            label={t("nav_studio")}
-            id="studio"
-            open={open === "studio"}
-            onToggle={(v) => setOpen(v ? "studio" : null)}
-            items={STUDIO_MENU}
-            t={t}
-            onNavigate={() => setOpen(null)}
-          />
+          <TopLink to="/studio">{t("nav_studio")}</TopLink>
           <Dropdown
             label={t("nav_business")}
             id="business"
@@ -174,18 +153,9 @@ export function Header() {
                 </MobileLink>
               ))}
             </MobileGroup>
-            <MobileGroup label={t("nav_studio")}>
-              {STUDIO_MENU.map((n) => (
-                <MobileLink
-                  key={`s-${n.key}`}
-                  to={n.to}
-                  onNav={() => setMobileOpen(false)}
-                  nested
-                >
-                  {t(n.key)}
-                </MobileLink>
-              ))}
-            </MobileGroup>
+            <MobileLink to="/studio" onNav={() => setMobileOpen(false)}>
+              {t("nav_studio")}
+            </MobileLink>
             <MobileGroup label={t("nav_business")}>
               {BUSINESS_MENU.map((n) => (
                 <MobileLink
