@@ -4,9 +4,12 @@ import { toast } from "sonner";
 
 import { AuthField, AuthShell } from "@/components/auth/AuthShell";
 import { useI18n } from "@/lib/i18n";
+import { sanitizeRedirect } from "@/lib/entitlements/first-free";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" ? { redirect: sanitizeRedirect(search.redirect, "/dashboard") } : {},
   head: () => ({
     meta: [
       { title: "Create account — Project Joy" },
@@ -20,6 +23,8 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
+  const destination = sanitizeRedirect(redirectTo, "/dashboard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -57,7 +62,7 @@ function RegisterPage() {
       }
       if (data.session) {
         toast.success("Account created. Welcome to Project Joy!");
-        navigate({ to: "/dashboard" });
+        navigate({ to: destination });
         return;
       }
       // No session returned → email confirmation required.
