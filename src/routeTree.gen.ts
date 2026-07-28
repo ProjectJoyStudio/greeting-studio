@@ -18,6 +18,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DailyRouteImport } from './routes/daily'
@@ -107,6 +108,11 @@ const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FreeGreetingRoute = FreeGreetingRouteImport.update({
+  id: '/free-greeting',
+  path: '/free-greeting',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -350,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-greeting': typeof FreeGreetingRoute
   '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/create': typeof CreateRoute
   '/daily': typeof DailyRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-greeting': typeof FreeGreetingRoute
   '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/free-greeting': typeof FreeGreetingRoute
   '/login': typeof LoginRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
+    | '/free-greeting'
     | '/login'
     | '/personal-orders'
     | '/pricing'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/daily'
     | '/forgot-password'
+    | '/free-greeting'
     | '/login'
     | '/personal-orders'
     | '/pricing'
@@ -627,6 +638,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/dashboard'
     | '/forgot-password'
+    | '/free-greeting'
     | '/login'
     | '/personal-orders'
     | '/pricing'
@@ -684,6 +696,7 @@ export interface RootRouteChildren {
   DailyRoute: typeof DailyRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  FreeGreetingRoute: typeof FreeGreetingRoute
   LoginRoute: typeof LoginRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
@@ -760,6 +773,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/free-greeting': {
+      id: '/free-greeting'
+      path: '/free-greeting'
+      fullPath: '/free-greeting'
+      preLoaderRoute: typeof FreeGreetingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1197,6 +1217,7 @@ const rootRouteChildren: RootRouteChildren = {
   DailyRoute: DailyRoute,
   DashboardRoute: DashboardRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  FreeGreetingRoute: FreeGreetingRoute,
   LoginRoute: LoginRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,

@@ -54,7 +54,7 @@ function FreeGreetingPage() {
 
   return (
     <SiteLayout>
-      <PageHeader titleKey="ff_title" subtitleKey="ff_sub" />
+      <PageHeader title={t("ff_title")} subtitle={t("ff_sub")} />
       <div className="mx-auto w-full max-w-3xl px-4 pb-20">
         {authStatus === "loading" ? (
           <div className="flex justify-center py-16">
