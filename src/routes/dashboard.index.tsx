@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Send, CalendarClock, FileText, Coins } from "lucide-react";
 
 import { DashboardPageHeader } from "@/components/dashboard/DashboardLayout";
+import { FirstFreeStatusCard } from "@/components/account/FirstFreeStatusCard";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -19,6 +20,9 @@ function DashboardHome() {
   return (
     <div>
       <DashboardPageHeader titleKey="dash_title" subtitleKey="dash_sub" />
+      <div className="mb-6">
+        <FirstFreeStatusCard />
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(({ key, icon: Icon }) => (
           <div
