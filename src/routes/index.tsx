@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Sparkles,
   Gift,
-  Heart,
   Briefcase,
   HandHeart,
   Wand2,
