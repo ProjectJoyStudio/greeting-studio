@@ -44,6 +44,7 @@ import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits
 import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
 import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
 import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
@@ -245,6 +246,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUserDraftsRoute = AdminUserDraftsRouteImport.update({
+  id: '/user-drafts',
+  path: '/user-drafts',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -411,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -470,6 +477,7 @@ export interface FileRoutesByTo {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -533,6 +541,7 @@ export interface FileRoutesById {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -597,6 +606,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/user-drafts'
     | '/admin/users'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/user-drafts'
     | '/admin/users'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -718,6 +729,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/user-drafts'
     | '/admin/users'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -1020,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/user-drafts': {
+      id: '/admin/user-drafts'
+      path: '/user-drafts'
+      fullPath: '/admin/user-drafts'
+      preLoaderRoute: typeof AdminUserDraftsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -1259,6 +1278,7 @@ interface AdminRouteChildren {
   AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
   AdminPromotionsRoute: typeof AdminPromotionsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminUserDraftsRoute: typeof AdminUserDraftsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1276,6 +1296,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
   AdminPromotionsRoute: AdminPromotionsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminUserDraftsRoute: AdminUserDraftsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
