@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
-import { generateTestImage, type GenerateTestImageResult } from "@/lib/replicate/generate.functions";
+import {
+  generateTestImage,
+  type AttemptReport,
+  type GenerateTestImageResult,
+} from "@/lib/replicate/generate.functions";
 
 const TEST_PROMPT =
   "Beautiful summer garden with colorful flowers, butterflies, soft sunlight, ultra realistic, high quality.";
@@ -43,8 +47,17 @@ function ReplicateTestPage() {
     } catch (err) {
       setResult({
         ok: false,
-        errorCode: "request_failed",
-        errorMessage: err instanceof Error ? err.message : String(err),
+        attempts: [
+          {
+            model: "-",
+            ok: false,
+            httpStatus: null,
+            predictionId: null,
+            predictionStatus: null,
+            errorCode: "request_failed",
+            errorMessage: err instanceof Error ? err.message : String(err),
+          },
+        ],
       });
     } finally {
       setLoading(false);
@@ -78,12 +91,48 @@ function ReplicateTestPage() {
         </p>
       )}
 
-      {result && !result.ok && (
-        <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
-          <p className="text-sm font-semibold text-destructive">
-            Failed ({result.errorCode})
-          </p>
-          <p className="mt-1 break-words text-sm text-destructive/90">{result.errorMessage}</p>
+      {result && (
+        <div className="mt-6 space-y-3">
+          {result.attempts.map((a: AttemptReport, idx: number) => (
+            <div
+              key={`${a.model}-${idx}`}
+              className={
+                a.ok
+                  ? "rounded-lg border border-border bg-muted/40 p-4"
+                  : "rounded-lg border border-destructive/40 bg-destructive/10 p-4"
+              }
+            >
+              <p className={a.ok ? "text-sm font-semibold text-foreground" : "text-sm font-semibold text-destructive"}>
+                {a.ok ? "Succeeded" : "Failed"} — {a.model}
+              </p>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <dt>HTTP status</dt>
+                <dd>{a.httpStatus ?? "—"}</dd>
+                <dt>Prediction ID</dt>
+                <dd className="break-all">{a.predictionId ?? "—"}</dd>
+                <dt>Prediction status</dt>
+                <dd>{a.predictionStatus ?? "—"}</dd>
+                {a.errorCode ? (
+                  <>
+                    <dt>Error code</dt>
+                    <dd>{a.errorCode}</dd>
+                  </>
+                ) : null}
+                {a.errorMessage ? (
+                  <>
+                    <dt>Error message</dt>
+                    <dd className="break-words">{a.errorMessage}</dd>
+                  </>
+                ) : null}
+                {a.detail ? (
+                  <>
+                    <dt>Detail</dt>
+                    <dd className="break-words">{a.detail}</dd>
+                  </>
+                ) : null}
+              </dl>
+            </div>
+          ))}
         </div>
       )}
 
@@ -95,10 +144,11 @@ function ReplicateTestPage() {
             className="w-full rounded-xl border border-border shadow-lg"
           />
           <p className="mt-3 break-all text-xs text-muted-foreground">
-            Prediction {result.predictionId} · {result.imageUrl}
+            Model {result.model} · {result.imageUrl}
           </p>
         </div>
       )}
+
     </main>
   );
 }
