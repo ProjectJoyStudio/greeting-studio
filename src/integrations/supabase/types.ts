@@ -2275,6 +2275,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_card_drafts: {
+        Row: {
+          created_at: string
+          greeting_text: string
+          id: string
+          keywords: string[]
+          prompt: string
+          source_card_id: string | null
+          storage_bucket: string
+          storage_path: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          greeting_text?: string
+          id?: string
+          keywords?: string[]
+          prompt?: string
+          source_card_id?: string | null
+          storage_bucket?: string
+          storage_path: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          greeting_text?: string
+          id?: string
+          keywords?: string[]
+          prompt?: string
+          source_card_id?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_entitlements: {
         Row: {
           created_at: string
@@ -2312,6 +2351,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_greeting_cards: {
+        Row: {
+          created_at: string
+          greeting_mode: string
+          greeting_text: string
+          id: string
+          keywords: string[]
+          prompt: string
+          status: string
+          storage_bucket: string
+          storage_path: string
+          text_design: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          greeting_mode?: string
+          greeting_text?: string
+          id?: string
+          keywords?: string[]
+          prompt?: string
+          status?: string
+          storage_bucket?: string
+          storage_path: string
+          text_design?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          greeting_mode?: string
+          greeting_text?: string
+          id?: string
+          keywords?: string[]
+          prompt?: string
+          status?: string
+          storage_bucket?: string
+          storage_path?: string
+          text_design?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
