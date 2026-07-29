@@ -172,13 +172,15 @@ function CreateCardPage() {
           {stage === "edit" || stage === "preview" ? (
             <div className="space-y-5 rounded-2xl border border-border/60 bg-card/70 p-5">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">{t("gc_prompt_label")}</label>
+                <label className="mb-2 block font-display text-lg font-semibold text-foreground">
+                  {t("gc_prompt_label")}
+                </label>
                 <textarea
-                  rows={3}
+                  rows={6}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder={t("gc_prompt_ph")}
-                  className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
+                  className="w-full resize-none rounded-2xl border border-border/60 bg-background px-4 py-3 text-base leading-relaxed outline-none focus:border-primary/60"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">{t("gc_prompt_hint")}</p>
               </div>
@@ -312,9 +314,21 @@ function CreateCardPage() {
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-3xl border border-border/60 bg-card/70 p-4">
             {generating ? (
-              <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-2xl bg-muted text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm">{t("gc_generating")}</span>
+              <div className="relative flex aspect-square w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl bg-warm-gradient text-muted-foreground">
+                <div className="absolute inset-0 animate-pulse bg-gold-gradient/10" />
+                <span className="relative grid h-16 w-16 place-items-center rounded-full bg-card/70 shadow-warm backdrop-blur">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </span>
+                <span className="relative text-sm font-medium tracking-wide">{t("gc_generating")}</span>
+                <span className="relative flex gap-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/70"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </span>
               </div>
             ) : (
               <CardPreview

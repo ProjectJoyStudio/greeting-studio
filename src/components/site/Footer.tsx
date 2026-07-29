@@ -35,7 +35,7 @@ export function Footer() {
           <FooterCol title={t("footer_product")} links={[
             { to: "/catalog", label: t("nav_catalog") },
             { to: "/daily", label: t("nav_daily") },
-            { to: "/create", label: t("nav_create") },
+            { to: "/create-card", label: t("nav_create") },
             { to: "/pricing", label: t("nav_pricing") },
           ]} />
           <FooterCol title={t("footer_company")} links={[

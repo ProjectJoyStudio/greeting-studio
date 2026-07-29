@@ -56,7 +56,7 @@ export function FirstFreeStatusCard() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            to={used ? "/studio" : "/free-greeting"}
+            to={used ? "/studio" : "/create-card"}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-medium transition hover:border-primary/40"
           >
             {used ? t("ff_go_studio") : t("ff_claim_cta")}
