@@ -15,7 +15,10 @@ export function CardPreview({
   alt: string;
 }) {
   return (
-    <div className={`relative aspect-square w-full overflow-hidden rounded-2xl bg-muted ${className}`}>
+    <div
+      className={`relative aspect-square w-full overflow-hidden rounded-2xl bg-muted ${className}`}
+      style={{ containerType: "inline-size" }}
+    >
       {imageUrl ? (
         <img src={imageUrl} alt={alt} className="h-full w-full object-cover" crossOrigin="anonymous" />
       ) : null}
@@ -39,7 +42,6 @@ export function CardPreview({
               : undefined,
             padding: design.background ? "0.6em 0.8em" : undefined,
             borderRadius: design.background ? "0.6em" : undefined,
-            containerType: "inline-size",
           }}
         >
           {text}
