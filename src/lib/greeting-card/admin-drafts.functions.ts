@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const DRAFT_BUCKET = "user-card-drafts";
+const CATALOG_BUCKET = "catalog-images";
 
 export type UserDraftRow = {
   id: string;
@@ -14,6 +15,78 @@ export type UserDraftRow = {
   created_at: string;
   image_url: string | null;
 };
+
+/**
+ * Copies ONLY the image of a user draft into the catalogue drafts area
+ * (a draft catalog background). No prompt, email, date or other user
+ * metadata is carried over. The original draft stays untouched.
+ */
+export const addUserDraftToCatalog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { draftId: string }) => {
+    if (!input?.draftId) throw new Error("draftId is required");
+    return { draftId: input.draftId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { data: row, error } = await context.supabase
+      .from("user_card_drafts")
+      .select("id, storage_bucket, storage_path")
+      .eq("id", data.draftId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("draft_not_found");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const download = await supabaseAdmin.storage
+      .from(row.storage_bucket ?? DRAFT_BUCKET)
+      .download(row.storage_path);
+    if (download.error || !download.data) throw new Error(download.error?.message ?? "download_failed");
+
+    const ext = (row.storage_path.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const targetPath = `${crypto.randomUUID()}.${ext}`;
+    const bytes = new Uint8Array(await download.data.arrayBuffer());
+    const contentType = download.data.type || `image/${ext === "jpg" ? "jpeg" : ext}`;
+
+    const upload = await supabaseAdmin.storage
+      .from(CATALOG_BUCKET)
+      .upload(targetPath, bytes, { contentType, upsert: false });
+    if (upload.error) throw new Error(upload.error.message);
+
+    const { data: asset, error: assetErr } = await supabaseAdmin
+      .from("media_assets")
+      .insert({
+        asset_type: "image",
+        purpose: "catalog_background",
+        storage_bucket: CATALOG_BUCKET,
+        storage_path: targetPath,
+        mime_type: contentType,
+        file_size: bytes.byteLength,
+        visibility: "public",
+        processing_status: "ready",
+        moderation_status: "approved",
+      })
+      .select("id")
+      .single();
+    if (assetErr) {
+      await supabaseAdmin.storage.from(CATALOG_BUCKET).remove([targetPath]);
+      throw new Error(assetErr.message);
+    }
+
+    const { data: bg, error: bgErr } = await supabaseAdmin
+      .from("catalog_backgrounds")
+      .insert({
+        internal_name: `Imported background ${targetPath.slice(0, 8)}`,
+        status: "draft",
+        primary_media_asset_id: asset.id,
+        thumbnail_media_asset_id: asset.id,
+      })
+      .select("id")
+      .single();
+    if (bgErr) throw new Error(bgErr.message);
+
+    return { ok: true as const, backgroundId: bg.id };
+  });
 
 /** Administrator-only list of cards users rejected. Never public. */
 export const listUserDrafts = createServerFn({ method: "POST" })
