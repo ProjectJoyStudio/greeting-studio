@@ -132,7 +132,7 @@ export const saveCardDetails = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode,
         keywords: data.keywords,
         prompt: data.prompt,
-        text_design: data.textDesign as unknown as Record<string, unknown>,
+        text_design: JSON.parse(JSON.stringify(data.textDesign)),
         status: data.finalize ? "saved" : "preview",
       })
       .eq("id", data.cardId)
@@ -220,7 +220,7 @@ export type OwnCardRow = {
   greeting_text: string;
   storage_bucket: string;
   storage_path: string;
-  text_design: unknown;
+  text_design: Record<string, number | string | boolean | null>;
   created_at: string;
   image_url: string | null;
 };
@@ -246,7 +246,12 @@ export const listOwnCards = createServerFn({ method: "POST" })
         const signed = await supabaseAdmin.storage
           .from(r.storage_bucket)
           .createSignedUrl(r.storage_path, 60 * 60 * 12);
-        return { ...r, keywords: r.keywords ?? [], image_url: signed.data?.signedUrl ?? null } as OwnCardRow;
+        return {
+          ...r,
+          keywords: r.keywords ?? [],
+          text_design: (r.text_design ?? {}) as OwnCardRow["text_design"],
+          image_url: signed.data?.signedUrl ?? null,
+        } satisfies OwnCardRow;
       }),
     );
   });
