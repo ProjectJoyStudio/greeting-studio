@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, X, Eye } from "lucide-react";
+import { Loader2, Trash2, X, Eye, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
 import {
+  addUserDraftToCatalog,
   deleteAllUserDrafts,
   deleteUserDraft,
   listUserDrafts,
   type UserDraftRow,
 } from "@/lib/greeting-card/admin-drafts.functions";
+
+function shortPrompt(prompt: string): string {
+  const words = prompt.trim().split(/\s+/).slice(0, 5).join(" ");
+  return words.length < prompt.trim().length ? `${words}…` : words;
+}
 
 export function UserDraftsPage() {
   const { t, lang } = useI18n();
@@ -18,6 +24,7 @@ export function UserDraftsPage() {
   const fetchDrafts = useServerFn(listUserDrafts);
   const removeOne = useServerFn(deleteUserDraft);
   const removeAll = useServerFn(deleteAllUserDrafts);
+  const toCatalog = useServerFn(addUserDraftToCatalog);
 
   const [preview, setPreview] = useState<UserDraftRow | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
@@ -46,6 +53,12 @@ export function UserDraftsPage() {
       setConfirmAll(false);
       invalidate();
     },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+  });
+
+  const addToCatalog = useMutation({
+    mutationFn: (draftId: string) => toCatalog({ data: { draftId } }),
+    onSuccess: () => toast.success(t("ud_added_catalog")),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
   });
 
@@ -84,36 +97,32 @@ export function UserDraftsPage() {
           {t("ud_empty")}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(128px,1fr))]">
           {drafts.map((d) => (
-            <article key={d.id} className="overflow-hidden rounded-xl border border-border/60 bg-card/70">
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setPreview(d)}
+              title={d.prompt}
+              className="group flex flex-col overflow-hidden rounded-lg border border-border/60 bg-card/70 text-left transition hover:border-primary/40 hover:bg-secondary/50"
+            >
               {d.image_url ? (
-                <img src={d.image_url} alt={d.prompt} className="aspect-square w-full object-cover" loading="lazy" />
+                <img
+                  src={d.image_url}
+                  alt={shortPrompt(d.prompt)}
+                  className="aspect-square w-full object-cover"
+                  loading="lazy"
+                />
               ) : (
                 <div className="aspect-square w-full bg-muted" />
               )}
-              <div className="space-y-2 p-3 text-xs">
-                <p className="line-clamp-3 text-foreground">{d.prompt}</p>
-                <p className="text-muted-foreground">
-                  {new Date(d.created_at).toLocaleString(lang)}
+              <div className="min-w-0 space-y-0.5 px-2 py-1.5">
+                <p className="truncate text-[11px] leading-tight text-foreground">{shortPrompt(d.prompt)}</p>
+                <p className="truncate text-[10px] text-muted-foreground">
+                  {new Date(d.created_at).toLocaleDateString(lang)}
                 </p>
-                <p className="truncate text-muted-foreground">{d.user_email ?? d.user_id ?? "—"}</p>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => setPreview(d)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary"
-                  >
-                    <Eye className="h-3.5 w-3.5" /> {t("ud_view")}
-                  </button>
-                  <button
-                    onClick={() => delOne.mutate(d.id)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-1.5 text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> {t("ud_delete_one")}
-                  </button>
-                </div>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       )}
@@ -123,23 +132,67 @@ export function UserDraftsPage() {
       </p>
 
       {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
-          <div className="w-full max-w-[min(92vw,680px)] rounded-2xl border border-border/60 bg-card p-4">
-            <button
-              onClick={() => setPreview(null)}
-              className="mb-3 ml-auto flex h-9 w-9 items-center justify-center rounded-full border border-border/60"
-              aria-label={t("ud_close")}
-            >
-              <X className="h-4 w-4" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 p-5 backdrop-blur-sm">
+          <div className="w-full max-w-[min(92vw,760px)] rounded-2xl border border-border/60 bg-card p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="font-display text-lg font-semibold text-foreground">{t("ud_details")}</h3>
+              <button
+                onClick={() => setPreview(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60"
+                aria-label={t("ud_close")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             {preview.image_url && (
               <img src={preview.image_url} alt={preview.prompt} className="w-full rounded-xl" />
             )}
-            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-              <p className="text-foreground">{preview.prompt}</p>
-              {preview.greeting_text && <p className="whitespace-pre-wrap">{preview.greeting_text}</p>}
-              <p>{new Date(preview.created_at).toLocaleString(lang)}</p>
-              <p>{preview.user_email ?? preview.user_id ?? "—"}</p>
+            <dl className="mt-4 space-y-2 text-xs">
+              <div>
+                <dt className="text-muted-foreground">{t("ud_prompt_label")}</dt>
+                <dd className="whitespace-pre-wrap text-foreground">{preview.prompt}</dd>
+              </div>
+              {preview.greeting_text && (
+                <div>
+                  <dt className="text-muted-foreground">{t("gc_greeting_title") || ""}</dt>
+                  <dd className="whitespace-pre-wrap text-foreground">{preview.greeting_text}</dd>
+                </div>
+              )}
+              {preview.keywords.length > 0 && (
+                <div>
+                  <dt className="text-muted-foreground">Keywords</dt>
+                  <dd className="text-foreground">{preview.keywords.join(", ")}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-muted-foreground">{t("ud_email_label")}</dt>
+                <dd className="break-all text-foreground">{preview.user_email ?? preview.user_id ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">{t("ud_date_label")}</dt>
+                <dd className="text-foreground">{new Date(preview.created_at).toLocaleString(lang)}</dd>
+              </div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => addToCatalog.mutate(preview.id)}
+                disabled={addToCatalog.isPending}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs text-primary disabled:opacity-60"
+              >
+                {addToCatalog.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <FolderPlus className="h-3.5 w-3.5" />
+                )}
+                {t("ud_add_catalog")}
+              </button>
+              <button
+                onClick={() => delOne.mutate(preview.id)}
+                disabled={delOne.isPending}
+                className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-60"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> {t("ud_delete_one")}
+              </button>
             </div>
           </div>
         </div>
