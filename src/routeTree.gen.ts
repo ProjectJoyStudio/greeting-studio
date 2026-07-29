@@ -14,6 +14,7 @@ import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShowcaseRouteImport } from './routes/showcase'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
@@ -90,6 +91,11 @@ const ShowcaseRoute = ShowcaseRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReplicateTestRoute = ReplicateTestRouteImport.update({
+  id: '/replicate-test',
+  path: '/replicate-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/replicate-test': typeof ReplicateTestRoute
   '/reset-password': typeof ResetPasswordRoute
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -431,6 +438,7 @@ export interface FileRoutesByTo {
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/replicate-test': typeof ReplicateTestRoute
   '/reset-password': typeof ResetPasswordRoute
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -490,6 +498,7 @@ export interface FileRoutesById {
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/replicate-test': typeof ReplicateTestRoute
   '/reset-password': typeof ResetPasswordRoute
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/personal-orders'
     | '/pricing'
     | '/register'
+    | '/replicate-test'
     | '/reset-password'
     | '/showcase'
     | '/sitemap.xml'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/personal-orders'
     | '/pricing'
     | '/register'
+    | '/replicate-test'
     | '/reset-password'
     | '/showcase'
     | '/sitemap.xml'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/personal-orders'
     | '/pricing'
     | '/register'
+    | '/replicate-test'
     | '/reset-password'
     | '/showcase'
     | '/sitemap.xml'
@@ -726,6 +738,7 @@ export interface RootRouteChildren {
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
+  ReplicateTestRoute: typeof ReplicateTestRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShowcaseRoute: typeof ShowcaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -770,6 +783,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replicate-test': {
+      id: '/replicate-test'
+      path: '/replicate-test'
+      fullPath: '/replicate-test'
+      preLoaderRoute: typeof ReplicateTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -1264,6 +1284,7 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
+  ReplicateTestRoute: ReplicateTestRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShowcaseRoute: ShowcaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -1275,13 +1296,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
