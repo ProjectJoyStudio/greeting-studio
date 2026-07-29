@@ -24,6 +24,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreditsRouteImport } from './routes/credits'
+import { Route as CreateCardRouteImport } from './routes/create-card'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -141,6 +142,11 @@ const DailyRoute = DailyRouteImport.update({
 const CreditsRoute = CreditsRouteImport.update({
   id: '/credits',
   path: '/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateCardRoute = CreateCardRouteImport.update({
+  id: '/create-card',
+  path: '/create-card',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -489,6 +497,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
+  '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
   '/daily': typeof DailyRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/create-card'
     | '/credits'
     | '/daily'
     | '/dashboard'
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/create-card'
     | '/credits'
     | '/daily'
     | '/forgot-password'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/corporate-orders'
     | '/create'
+    | '/create-card'
     | '/credits'
     | '/daily'
     | '/dashboard'
@@ -729,6 +741,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
+  CreateCardRoute: typeof CreateCardRoute
   CreditsRoute: typeof CreditsRoute
   DailyRoute: typeof DailyRoute
   DashboardRoute: typeof DashboardRouteWithChildren
@@ -853,6 +866,13 @@ declare module '@tanstack/react-router' {
       path: '/credits'
       fullPath: '/credits'
       preLoaderRoute: typeof CreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-card': {
+      id: '/create-card'
+      path: '/create-card'
+      fullPath: '/create-card'
+      preLoaderRoute: typeof CreateCardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -1275,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
+  CreateCardRoute: CreateCardRoute,
   CreditsRoute: CreditsRoute,
   DailyRoute: DailyRoute,
   DashboardRoute: DashboardRouteWithChildren,

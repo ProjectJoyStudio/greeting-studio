@@ -72,7 +72,7 @@ function CreateCardPage() {
   const [card, setCard] = useState<{ id: string; imageUrl: string } | null>(null);
 
   const keywordList = useMemo(
-    () => keywords.split(",").map((k) => k.trim()).filter(Boolean),
+    () => keywords.split(",").map((k: string) => k.trim()).filter(Boolean),
     [keywords],
   );
 
