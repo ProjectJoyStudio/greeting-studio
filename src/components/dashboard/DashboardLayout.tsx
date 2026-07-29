@@ -8,6 +8,7 @@ import {
   Coins,
   Package,
   Heart,
+  Image,
 } from "lucide-react";
 
 import { Header } from "@/components/site/Header";
@@ -17,6 +18,7 @@ import { useI18n } from "@/lib/i18n";
 const items = [
   { to: "/dashboard", key: "nav_dashboard", icon: LayoutDashboard },
   { to: "/dashboard/profile", key: "nav_profile", icon: UserRound },
+  { to: "/dashboard/cards", key: "nav_my_cards", icon: Image },
   { to: "/dashboard/settings", key: "nav_settings", icon: Settings },
   { to: "/dashboard/notifications", key: "nav_notifications", icon: Bell },
   { to: "/dashboard/credits", key: "nav_credits", icon: Coins },
