@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, X, Eye, FolderPlus } from "lucide-react";
+import { Loader2, Trash2, X, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -154,7 +154,6 @@ export function UserDraftsPage() {
               </div>
               {preview.greeting_text && (
                 <div>
-                  <dt className="text-muted-foreground">{t("gc_greeting_title") || ""}</dt>
                   <dd className="whitespace-pre-wrap text-foreground">{preview.greeting_text}</dd>
                 </div>
               )}
