@@ -33,13 +33,17 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } = await import(
       "@/lib/replicate/replicate.server"
     );
+    const { toEnglishImagePrompt } = await import("./prompt-translate.server");
+
+    // The person writes in their own language; the engine always receives English.
+    const enginePrompt = await toEnglishImagePrompt(data.prompt);
 
     let imageSource: string | null = null;
     let lastError = { code: "generation_failed", message: "Image generation failed." };
 
     for (const model of [PRIMARY_MODEL, FALLBACK_MODEL]) {
       try {
-        const { imageUrl } = await runModel(model, data.prompt);
+        const { imageUrl } = await runModel(model, enginePrompt);
         imageSource = imageUrl;
         break;
       } catch (err) {
