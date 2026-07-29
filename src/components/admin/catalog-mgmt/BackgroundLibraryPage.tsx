@@ -5,7 +5,8 @@ import { Plus, Search, Copy, Eye, EyeOff, Pencil, Trash2, Layers } from "lucide-
 
 import { useCatalogMgmt } from "@/lib/admin/catalog-mgmt/store";
 import { useI18n } from "@/lib/i18n";
-import type { Background, BackgroundStatus, Orientation } from "@/lib/admin/catalog-mgmt/types";
+import type { Lang } from "@/lib/i18n";
+import type { Background, BackgroundStatus, CardVariant, Orientation } from "@/lib/admin/catalog-mgmt/types";
 import { BgStatusBadge, EmptyState, Section, TaxonomyLabels, useConfirm } from "./shared";
 
 export function BackgroundLibraryPage() {
