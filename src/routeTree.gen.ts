@@ -41,6 +41,7 @@ import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
 import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
+import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
 import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -229,6 +230,11 @@ const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
   path: '/credits',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCardsRoute = DashboardCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const CatalogCategoryRoute = CatalogCategoryRouteImport.update({
   id: '/catalog/$category',
   path: '/catalog/$category',
@@ -407,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
+  '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
+  '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -527,6 +535,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/$category': typeof CatalogCategoryRoute
+  '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -590,6 +599,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/catalog/$category'
+    | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/catalog/$category'
+    | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -709,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/catalog/$category'
+    | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/notifications'
@@ -985,6 +997,13 @@ declare module '@tanstack/react-router' {
       path: '/credits'
       fullPath: '/dashboard/credits'
       preLoaderRoute: typeof DashboardCreditsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cards': {
+      id: '/dashboard/cards'
+      path: '/cards'
+      fullPath: '/dashboard/cards'
+      preLoaderRoute: typeof DashboardCardsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/catalog/$category': {
@@ -1264,6 +1283,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface DashboardRouteChildren {
+  DashboardCardsRoute: typeof DashboardCardsRoute
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
   DashboardNotificationsRoute: typeof DashboardNotificationsRoute
@@ -1274,6 +1294,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCardsRoute: DashboardCardsRoute,
   DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardFavoritesRoute: DashboardFavoritesRoute,
   DashboardNotificationsRoute: DashboardNotificationsRoute,
