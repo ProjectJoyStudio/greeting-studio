@@ -158,7 +158,7 @@ function BackgroundCompactCard({
   bg: Background;
   usedBy: CardVariant[];
   taxonomy: any;
-  lang: string;
+  lang: Lang;
   t: (k: string) => string;
   ask: (title: string, onOk: () => void) => void;
   onDelete: (id: string) => void;
