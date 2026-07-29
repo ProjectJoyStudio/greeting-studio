@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Mail,
@@ -55,6 +55,12 @@ export const Route = createFileRoute("/studio")({
     return raw && raw in STUDIO_PRICING && !HIDDEN_GIFTS.includes(raw as StudioGiftId)
       ? { gift: raw as StudioGiftId }
       : {};
+  },
+  // Greeting cards have one universal creation page.
+  beforeLoad: ({ search }) => {
+    if ((search as { gift?: string }).gift === "card") {
+      throw redirect({ to: "/create-card" });
+    }
   },
   head: () => ({
     meta: [
@@ -237,6 +243,7 @@ interface OrderRecord {
 
 function StudioPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const presetGift = (Route.useSearch() as { gift?: StudioGiftId }).gift;
   const [gift, setGift] = useState<GiftId | null>(presetGift ?? null);
   const [duration, setDuration] = useState<number | null>(
@@ -263,6 +270,10 @@ function StudioPage() {
   const isPremium = gift === "premium";
 
   const handleGiftChange = (id: GiftId) => {
+    if (id === "card") {
+      navigate({ to: "/create-card" });
+      return;
+    }
     setGift(id);
     const s = STUDIO_PRICING[id];
     setDuration(s.duration ? s.duration.default : null);
