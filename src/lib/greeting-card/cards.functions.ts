@@ -246,7 +246,7 @@ export const getSharedCard = createServerFn({ method: "POST" })
       id: row.id,
       title: row.title,
       greetingText: row.greeting_text ?? "",
-      textDesign: row.text_design as Record<string, unknown>,
+      textDesign: (row.text_design ?? {}) as OwnCardRow["text_design"],
       language: row.language,
       /** Already-composed picture when available, otherwise the raw artwork. */
       isComposed: Boolean(row.final_storage_path),
