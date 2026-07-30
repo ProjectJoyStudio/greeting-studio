@@ -2314,6 +2314,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_card_events: {
+        Row: {
+          card_id: string
+          channel: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          owner_user_id: string
+        }
+        Insert: {
+          card_id: string
+          channel?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          owner_user_id: string
+        }
+        Update: {
+          card_id?: string
+          channel?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          owner_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_card_events_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "user_greeting_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_entitlements: {
         Row: {
           created_at: string
@@ -2354,46 +2392,82 @@ export type Database = {
       }
       user_greeting_cards: {
         Row: {
+          card_kind: string
           created_at: string
+          final_storage_bucket: string | null
+          final_storage_path: string | null
           greeting_mode: string
           greeting_text: string
           id: string
+          is_favorite: boolean
+          is_shared: boolean
           keywords: string[]
+          language: string
+          last_viewed_at: string | null
           prompt: string
+          scheduled_send_at: string | null
+          share_slug: string | null
+          source_card_id: string | null
           status: string
           storage_bucket: string
           storage_path: string
           text_design: Json
+          title: string | null
           updated_at: string
           user_id: string
+          view_count: number
         }
         Insert: {
+          card_kind?: string
           created_at?: string
+          final_storage_bucket?: string | null
+          final_storage_path?: string | null
           greeting_mode?: string
           greeting_text?: string
           id?: string
+          is_favorite?: boolean
+          is_shared?: boolean
           keywords?: string[]
+          language?: string
+          last_viewed_at?: string | null
           prompt?: string
+          scheduled_send_at?: string | null
+          share_slug?: string | null
+          source_card_id?: string | null
           status?: string
           storage_bucket?: string
           storage_path: string
           text_design?: Json
+          title?: string | null
           updated_at?: string
           user_id: string
+          view_count?: number
         }
         Update: {
+          card_kind?: string
           created_at?: string
+          final_storage_bucket?: string | null
+          final_storage_path?: string | null
           greeting_mode?: string
           greeting_text?: string
           id?: string
+          is_favorite?: boolean
+          is_shared?: boolean
           keywords?: string[]
+          language?: string
+          last_viewed_at?: string | null
           prompt?: string
+          scheduled_send_at?: string | null
+          share_slug?: string | null
+          source_card_id?: string | null
           status?: string
           storage_bucket?: string
           storage_path?: string
           text_design?: Json
+          title?: string | null
           updated_at?: string
           user_id?: string
+          view_count?: number
         }
         Relationships: []
       }

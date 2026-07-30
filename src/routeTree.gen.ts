@@ -43,6 +43,7 @@ import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favor
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
 import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
 import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -241,6 +242,11 @@ const CatalogCategoryRoute = CatalogCategoryRouteImport.update({
   path: '/catalog/$category',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -419,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
@@ -479,6 +486,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
@@ -543,6 +551,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
@@ -608,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/user-drafts'
     | '/admin/users'
+    | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/user-drafts'
     | '/admin/users'
+    | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/user-drafts'
     | '/admin/users'
+    | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
@@ -781,6 +793,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
 }
@@ -1023,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/catalog/$category'
       fullPath: '/catalog/$category'
       preLoaderRoute: typeof CatalogCategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
@@ -1353,6 +1373,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   CatalogIndexRoute: CatalogIndexRoute,
 }

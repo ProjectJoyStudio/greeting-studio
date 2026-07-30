@@ -6,6 +6,10 @@ import type { CardTextDesign, GreetingMode } from "./types";
 export const USER_CARD_BUCKET = "user-greeting-cards";
 export const USER_DRAFT_BUCKET = "user-card-drafts";
 
+/** Every column the account UI needs to render and re-edit a card. */
+const CARD_COLUMNS =
+  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count";
+
 export type GenerateCardResult =
   | { ok: true; cardId: string; imageUrl: string; storagePath: string }
   | { ok: false; errorCode: string; errorMessage: string };
@@ -100,6 +104,157 @@ export const generateCardImage = createServerFn({ method: "POST" })
       cardId: row.id,
       storagePath,
       imageUrl: signed.data?.signedUrl ?? "",
+    };
+  });
+
+/**
+ * Saves (or re-saves) the whole editable project of one card: greeting, all
+ * design settings, title, language and the rendered final picture. Always an
+ * update of the same record, so repeated clicks can never create duplicates.
+ */
+export const saveCardProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      cardId: string;
+      title?: string;
+      language?: string;
+      greetingText: string;
+      greetingMode: GreetingMode;
+      keywords: string[];
+      prompt: string;
+      textDesign: CardTextDesign;
+      finalStoragePath?: string | null;
+      enableShare?: boolean;
+    }) => {
+      if (!input?.cardId) throw new Error("cardId is required");
+      return {
+        cardId: input.cardId,
+        title: String(input.title ?? "").slice(0, 160),
+        language: String(input.language ?? "en").slice(0, 5),
+        greetingText: String(input.greetingText ?? "").slice(0, 4000),
+        greetingMode: input.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
+        keywords: Array.isArray(input.keywords) ? input.keywords.slice(0, 30) : [],
+        prompt: String(input.prompt ?? "").slice(0, 1000),
+        textDesign: input.textDesign,
+        finalStoragePath: input.finalStoragePath ? String(input.finalStoragePath).slice(0, 400) : null,
+        enableShare: input.enableShare !== false,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { data: existing, error: readError } = await context.supabase
+      .from("user_greeting_cards")
+      .select("id, share_slug, final_storage_path")
+      .eq("id", data.cardId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!existing) throw new Error("card_not_found");
+
+    const shareSlug =
+      existing.share_slug ?? (data.enableShare ? crypto.randomUUID().replace(/-/g, "").slice(0, 22) : null);
+
+    const { error } = await context.supabase
+      .from("user_greeting_cards")
+      .update({
+        title: data.title || null,
+        language: data.language,
+        greeting_text: data.greetingText,
+        greeting_mode: data.greetingMode,
+        keywords: data.keywords,
+        prompt: data.prompt,
+        text_design: JSON.parse(JSON.stringify(data.textDesign)),
+        status: "saved",
+        final_storage_bucket: data.finalStoragePath ? USER_CARD_BUCKET : undefined,
+        final_storage_path: data.finalStoragePath ?? existing.final_storage_path,
+        share_slug: shareSlug,
+        is_shared: data.enableShare,
+      })
+      .eq("id", data.cardId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+
+    return { ok: true as const, cardId: data.cardId, shareSlug };
+  });
+
+/** Records a share, view or download for future history and statistics. */
+export const logCardEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string; eventType: string; channel?: string }) => ({
+    cardId: String(input?.cardId ?? ""),
+    eventType: String(input?.eventType ?? "").slice(0, 40) || "unknown",
+    channel: input?.channel ? String(input.channel).slice(0, 40) : null,
+  }))
+  .handler(async ({ data, context }) => {
+    if (!data.cardId) return { ok: false as const };
+    await context.supabase.from("user_card_events").insert({
+      card_id: data.cardId,
+      owner_user_id: context.userId,
+      event_type: data.eventType,
+      channel: data.channel,
+    });
+    return { ok: true as const };
+  });
+
+/** Loads one of the person's own cards for re-editing. */
+export const getOwnCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string }) => ({ cardId: String(input?.cardId ?? "") }))
+  .handler(async ({ data, context }): Promise<OwnCardRow | null> => {
+    if (!data.cardId) return null;
+    const { data: row, error } = await context.supabase
+      .from("user_greeting_cards")
+      .select(CARD_COLUMNS)
+      .eq("id", data.cardId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const signed = await supabaseAdmin.storage
+      .from(row.storage_bucket)
+      .createSignedUrl(row.storage_path, 60 * 60 * 12);
+    return {
+      ...row,
+      keywords: row.keywords ?? [],
+      text_design: (row.text_design ?? {}) as OwnCardRow["text_design"],
+      image_url: signed.data?.signedUrl ?? null,
+    } as OwnCardRow;
+  });
+
+/** Public read of a shared card by its link code. No sign-in required. */
+export const getSharedCard = createServerFn({ method: "POST" })
+  .inputValidator((input: { slug: string }) => ({ slug: String(input?.slug ?? "").slice(0, 40) }))
+  .handler(async ({ data }) => {
+    if (!data.slug) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("user_greeting_cards")
+      .select("id, title, greeting_text, text_design, language, storage_bucket, storage_path, final_storage_bucket, final_storage_path, view_count")
+      .eq("share_slug", data.slug)
+      .eq("is_shared", true)
+      .maybeSingle();
+    if (!row) return null;
+
+    const bucket = row.final_storage_path ? (row.final_storage_bucket ?? USER_CARD_BUCKET) : row.storage_bucket;
+    const path = row.final_storage_path ?? row.storage_path;
+    const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24);
+
+    await supabaseAdmin
+      .from("user_greeting_cards")
+      .update({ view_count: (row.view_count ?? 0) + 1, last_viewed_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    return {
+      id: row.id,
+      title: row.title,
+      greetingText: row.greeting_text ?? "",
+      textDesign: (row.text_design ?? {}) as OwnCardRow["text_design"],
+      language: row.language,
+      /** Already-composed picture when available, otherwise the raw artwork. */
+      isComposed: Boolean(row.final_storage_path),
+      imageUrl: signed.data?.signedUrl ?? null,
     };
   });
 
@@ -226,6 +381,12 @@ export type OwnCardRow = {
   storage_path: string;
   text_design: Record<string, number | string | boolean | null>;
   created_at: string;
+  title: string | null;
+  language: string;
+  share_slug: string | null;
+  is_shared: boolean;
+  final_storage_path: string | null;
+  view_count: number;
   image_url: string | null;
 };
 
@@ -236,7 +397,7 @@ export const listOwnCards = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<OwnCardRow[]> => {
     let query = context.supabase
       .from("user_greeting_cards")
-      .select("id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at")
+      .select(CARD_COLUMNS)
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(200);
