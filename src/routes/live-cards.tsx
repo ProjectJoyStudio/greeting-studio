@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import {
   generateLiveCardImage,
   listOwnLiveCards,
+  selectLiveCardImage,
   uploadLiveCardImage,
 } from "@/lib/live-cards/live-cards.functions";
 import {
@@ -50,16 +51,18 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
 };
 
 function LiveCardsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
   const generate = useServerFn(generateLiveCardImage);
   const upload = useServerFn(uploadLiveCardImage);
+  const select = useServerFn(selectLiveCardImage);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [prompt, setPrompt] = useState("");
   const [ratio, setRatio] = useState<LiveCardRatio>("1:1");
-  const [busy, setBusy] = useState<null | "generate" | "upload">(null);
+  const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const recent = useQuery({
     queryKey: ["live-cards", "recent"],
@@ -71,13 +74,34 @@ function LiveCardsPage() {
     if (prompt.trim().length < 3) return;
     setBusy("generate");
     try {
-      const result = await generate({ data: { prompt, aspectRatio: ratio } });
+      const result = await generate({ data: { prompt, aspectRatio: ratio, promptLang: lang } });
       if (!result.ok) {
         toast.error(t("lc_failed"));
         return;
       }
       setCurrent(result.card);
+      setSelectedId(null);
       toast.success(t("lc_saved"));
+      void recent.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function useThisImage() {
+    if (!current) return;
+    setBusy("select");
+    try {
+      const result = await select({ data: { cardId: current.id } });
+      if (!result.ok) {
+        toast.error(t("lc_failed"));
+        return;
+      }
+      setCurrent(result.card);
+      setSelectedId(result.card.id);
+      toast.success(t("lc_selected_toast"));
       void recent.refetch();
     } catch {
       toast.error(t("lc_failed"));
@@ -105,6 +129,7 @@ function LiveCardsPage() {
         return;
       }
       setCurrent(result.card);
+      setSelectedId(null);
       toast.success(t("lc_saved"));
       void recent.refetch();
     } catch {
