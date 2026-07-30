@@ -6,6 +6,14 @@ export interface LiveCardAsset {
   id: string;
   status: string;
   prompt: string;
+  /** English wording actually sent to the engine — never shown to the person. */
+  promptEnglish: string | null;
+  /** Groups every version created in one live greeting card session. */
+  sessionId: string | null;
+  aspectRatio: string | null;
+  generatorKey: string | null;
+  /** True when this is the chosen source picture for the animation step. */
+  selected: boolean;
   source: LiveCardSource;
   createdAt: string;
   /** Signed, renderable URL resolved at read time. */

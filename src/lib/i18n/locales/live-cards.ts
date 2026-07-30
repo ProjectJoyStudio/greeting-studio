@@ -34,6 +34,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Use this image",
     lc_selected: "Selected for animation",
     lc_selected_toast: "This image is ready for the next step.",
+    lc_status_selected: "Selected",
+    lc_status_not_selected: "Not selected",
   },
   ru: {
     lc_nav: "Живые открытки",
@@ -67,6 +69,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Использовать это изображение",
     lc_selected: "Выбрано для оживления",
     lc_selected_toast: "Это изображение готово к следующему шагу.",
+    lc_status_selected: "Выбрано",
+    lc_status_not_selected: "Не выбрано",
   },
   de: {
     lc_nav: "Lebendige Grußkarten",
@@ -100,6 +104,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Dieses Bild verwenden",
     lc_selected: "Für die Animation gewählt",
     lc_selected_toast: "Dieses Bild ist bereit für den nächsten Schritt.",
+    lc_status_selected: "Ausgewählt",
+    lc_status_not_selected: "Nicht ausgewählt",
   },
   uk: {
     lc_nav: "Живі листівки",
@@ -133,6 +139,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Використати це зображення",
     lc_selected: "Обрано для оживлення",
     lc_selected_toast: "Це зображення готове до наступного кроку.",
+    lc_status_selected: "Обрано",
+    lc_status_not_selected: "Не обрано",
   },
   fr: {
     lc_nav: "Cartes vivantes",
@@ -166,6 +174,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Utiliser cette image",
     lc_selected: "Choisie pour l’animation",
     lc_selected_toast: "Cette image est prête pour l’étape suivante.",
+    lc_status_selected: "Sélectionnée",
+    lc_status_not_selected: "Non sélectionnée",
   },
   pl: {
     lc_nav: "Żywe kartki",
@@ -199,5 +209,7 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_use_image: "Użyj tego obrazu",
     lc_selected: "Wybrany do ożywienia",
     lc_selected_toast: "Ten obraz jest gotowy na następny krok.",
+    lc_status_selected: "Wybrane",
+    lc_status_not_selected: "Niewybrane",
   },
 };
