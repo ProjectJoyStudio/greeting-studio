@@ -305,11 +305,46 @@ function LiveCardsPage() {
               )}
             </div>
 
+            {current && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={useThisImage}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    selectedId === current.id
+                      ? "border border-primary/60 bg-primary/10 text-primary"
+                      : "bg-gold-gradient text-primary-foreground shadow-warm"
+                  }`}
+                >
+                  {busy === "select" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {selectedId === current.id ? t("lc_selected") : t("lc_use_image")}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy !== null || prompt.trim().length < 3}
+                  onClick={runGenerate}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === "generate" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {t("lc_regenerate")}
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
               disabled
               title={t("lc_animate_soon")}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
             >
               <Play className="h-4 w-4" />
               {t("lc_animate")}
@@ -329,7 +364,11 @@ function LiveCardsPage() {
                   <button
                     key={card.id}
                     type="button"
-                    onClick={() => setCurrent(card)}
+                    onClick={() => {
+                      setCurrent(card);
+                      setSelectedId(card.status === "image_selected" ? card.id : null);
+                      if (card.prompt) setPrompt(card.prompt);
+                    }}
                     className="group overflow-hidden rounded-xl border border-border/50 transition hover:border-primary/50"
                     title={
                       card.source === "upload" ? t("lc_source_upload") : t("lc_source_generated")
