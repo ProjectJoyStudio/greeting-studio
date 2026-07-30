@@ -33,7 +33,12 @@ const DICTS: Record<Lang, Dict> = {
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
-const I18nCtx = createContext<Ctx | null>(null);
+// Keep a single context instance across hot-module reloads. Without this,
+// editing this file (or any locale it imports) creates a brand-new context
+// while the mounted provider still uses the old one, which makes every
+// consumer throw "useI18n must be used inside I18nProvider".
+const g = globalThis as unknown as { __pj_i18n_ctx?: React.Context<Ctx | null> };
+const I18nCtx = (g.__pj_i18n_ctx ??= createContext<Ctx | null>(null));
 
 const STORAGE_KEY = "pj_lang";
 
