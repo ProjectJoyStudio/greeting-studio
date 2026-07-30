@@ -320,7 +320,7 @@ function LiveCardsPage() {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) void onFile(file);
+                  if (file) void uploadFile(file);
                 }}
               />
             </div>
