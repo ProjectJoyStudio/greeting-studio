@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
 import { LiveCardViewer } from "./LiveCardViewer";
+import { LiveGreetingTextStep } from "./LiveGreetingTextStep";
 import {
   getAnimationOptions,
   listLiveCardAnimations,
@@ -51,6 +52,8 @@ export function AnimationStep({
   // Attempts the person has dismissed with "try again" — never restored again.
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
+  // The greeting text is written after the animation is finished.
+  const [textStage, setTextStage] = useState(true);
 
   // The motion description survives reloads and failed attempts.
   useEffect(() => {
@@ -144,6 +147,24 @@ export function AnimationStep({
   const finished = animation?.status === "ready";
 
   if (finished && animation) {
+    if (textStage) {
+      return (
+        <LiveGreetingTextStep
+          animationId={animation.id}
+          videoUrl={animation.videoUrl}
+          onFinish={() => setTextStage(false)}
+          onNewProject={() => {
+            window.localStorage.removeItem(DRAFT_KEY);
+            setTextStage(true);
+            setAnimation(null);
+            setMotion("");
+            setDuration(null);
+            onAnimation(null);
+            onNewProject();
+          }}
+        />
+      );
+    }
     return (
       <div className="space-y-6">
         <div className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center shadow-warm">
@@ -166,6 +187,7 @@ export function AnimationStep({
               type="button"
               onClick={() => {
                 window.localStorage.removeItem(DRAFT_KEY);
+                setTextStage(true);
                 setAnimation(null);
                 setMotion("");
                 setDuration(null);
