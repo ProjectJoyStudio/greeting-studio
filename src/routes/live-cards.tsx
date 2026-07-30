@@ -18,10 +18,11 @@ import {
 } from "@/lib/live-cards/live-cards.functions";
 import {
   LIVE_CARD_RATIOS,
-  PLANNED_VIDEO_DURATIONS,
   type LiveCardAsset,
+  type LiveCardAnimation,
   type LiveCardRatio,
 } from "@/lib/live-cards/types";
+import { AnimationStep } from "@/components/live-cards/AnimationStep";
 
 export const Route = createFileRoute("/live-cards")({
   head: () => ({
@@ -83,6 +84,8 @@ function LiveCardsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [restored, setRestored] = useState(false);
+  const [stage, setStage] = useState<"image" | "motion">("image");
+  const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   const sessionId = useLiveCardSession();
 
   const recent = useQuery({
@@ -98,6 +101,7 @@ function LiveCardsPage() {
     const chosen = recent.data.find((card) => card.selected) ?? recent.data[0];
     setCurrent(chosen);
     setSelectedId(chosen.selected ? chosen.id : null);
+    if (chosen.selected) setStage("motion");
     if (chosen.prompt) setPrompt(chosen.prompt);
     if (chosen.aspectRatio && (LIVE_CARD_RATIOS as readonly string[]).includes(chosen.aspectRatio)) {
       setRatio(chosen.aspectRatio as LiveCardRatio);
@@ -139,6 +143,7 @@ function LiveCardsPage() {
       }
       setCurrent(result.card);
       setSelectedId(result.card.id);
+      setStage("motion");
       toast.success(t("lc_selected_toast"));
       void recent.refetch();
     } catch {
@@ -163,6 +168,7 @@ function LiveCardsPage() {
     }
     setCurrent(null);
     setSelectedId(null);
+    setStage("image");
     toast.success(t("lc_discarded"));
     void recent.refetch();
   }
@@ -205,6 +211,15 @@ function LiveCardsPage() {
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:px-6">
         {/* Composer ------------------------------------------------------- */}
         <div className="space-y-6">
+          {stage === "motion" && current ? (
+            <AnimationStep
+              card={current}
+              sessionId={sessionId}
+              onChangeImage={() => setStage("image")}
+              onAnimation={setAnimation}
+            />
+          ) : (
+          <>
           <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
             <label
               htmlFor="lc-prompt"
@@ -296,25 +311,8 @@ function LiveCardsPage() {
             )}
           </div>
 
-          {/* Reserved panels for the animation phase ---------------------- */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <ReservedPanel
-              icon={<Clock className="h-4 w-4" />}
-              title={t("lc_duration_title")}
-              note={t("lc_duration_soon")}
-              badge={t("lc_soon")}
-            >
-              <div className="flex gap-2">
-                {PLANNED_VIDEO_DURATIONS.map((seconds) => (
-                  <span
-                    key={seconds}
-                    className="rounded-full border border-dashed border-border/60 px-3 py-1 text-xs text-muted-foreground"
-                  >
-                    {seconds}s
-                  </span>
-                ))}
-              </div>
-            </ReservedPanel>
+          {/* Reserved panels for the credit phase -------------------------- */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <ReservedPanel
               icon={<Coins className="h-4 w-4" />}
               title={t("lc_price_title")}
@@ -332,6 +330,8 @@ function LiveCardsPage() {
               <span className="font-display text-2xl text-muted-foreground/60">—</span>
             </ReservedPanel>
           </div>
+          </>
+          )}
         </div>
 
         {/* Preview -------------------------------------------------------- */}
@@ -340,7 +340,16 @@ function LiveCardsPage() {
             <div
               className={`relative w-full overflow-hidden rounded-2xl bg-muted/40 ${RATIO_CLASS[ratio]}`}
             >
-              {current?.imageUrl ? (
+              {animation?.status === "ready" && animation.videoUrl ? (
+                <video
+                  src={animation.videoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="h-full w-full object-cover"
+                />
+              ) : current?.imageUrl ? (
                 <img
                   src={current.imageUrl}
                   alt={current.prompt || t("lc_title")}
@@ -363,7 +372,7 @@ function LiveCardsPage() {
               )}
             </div>
 
-            {current && (
+            {current && stage === "image" && (
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -398,18 +407,16 @@ function LiveCardsPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              disabled
-              title={t("lc_animate_soon")}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
-            >
-              <Play className="h-4 w-4" />
-              {t("lc_animate")}
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide">
-                {t("lc_soon")}
-              </span>
-            </button>
+            {animation?.status === "ready" && animation.videoUrl && (
+              <a
+                href={animation.videoUrl}
+                download
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
+              >
+                <Play className="h-4 w-4" />
+                {t("la_download")}
+              </a>
+            )}
           </div>
 
           {isAuthenticated && (recent.data?.length ?? 0) > 0 && (

@@ -1,0 +1,282 @@
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Clock, Film, Images, Loader2, Play, RefreshCw, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+
+import { useI18n } from "@/lib/i18n";
+import {
+  getAnimationOptions,
+  listLiveCardAnimations,
+  refreshLiveCardAnimation,
+  startLiveCardAnimation,
+} from "@/lib/live-cards/animations.functions";
+import {
+  MOTION_PRESET_KEYS,
+  PLANNED_VIDEO_DURATIONS,
+  type LiveCardAnimation,
+  type LiveCardAsset,
+} from "@/lib/live-cards/types";
+
+const DRAFT_KEY = "joy.live-cards.motion";
+
+/** Statuses that still need to be followed until the engine is done. */
+function isPending(status: string): boolean {
+  return status === "preparing" || status === "queued" || status === "processing" || status === "storing";
+}
+
+export function AnimationStep({
+  card,
+  sessionId,
+  onChangeImage,
+  onAnimation,
+}: {
+  card: LiveCardAsset;
+  sessionId: string | null;
+  onChangeImage: () => void;
+  onAnimation: (animation: LiveCardAnimation | null) => void;
+}) {
+  const { t, lang } = useI18n();
+  const start = useServerFn(startLiveCardAnimation);
+  const refresh = useServerFn(refreshLiveCardAnimation);
+
+  const [motion, setMotion] = useState("");
+  const [duration, setDuration] = useState<number | null>(null);
+  const [sending, setSending] = useState(false);
+  const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
+
+  // The motion description survives reloads and failed attempts.
+  useEffect(() => {
+    const saved = window.localStorage.getItem(DRAFT_KEY);
+    if (saved) setMotion(saved);
+  }, []);
+  useEffect(() => {
+    window.localStorage.setItem(DRAFT_KEY, motion);
+  }, [motion]);
+
+  const options = useQuery({
+    queryKey: ["live-cards", "animation-options"],
+    queryFn: () => getAnimationOptions(),
+  });
+  const durations = options.data?.durations?.length
+    ? options.data.durations
+    : ([...PLANNED_VIDEO_DURATIONS] as number[]);
+  const chosenDuration = duration ?? durations[0] ?? 5;
+
+  // Generation runs in the background: whatever is unfinished for this session
+  // is picked up again when the person returns to the page.
+  const existing = useQuery({
+    queryKey: ["live-cards", "animations", sessionId],
+    queryFn: () => listLiveCardAnimations({ data: { sessionId: sessionId ?? undefined } }),
+    enabled: Boolean(sessionId),
+  });
+  useEffect(() => {
+    if (animation || !existing.data?.length) return;
+    const mine = existing.data.find((a) => a.sourceCardId === card.id);
+    if (!mine) return;
+    setAnimation(mine);
+    onAnimation(mine);
+    if (mine.prompt && !motion) setMotion(mine.prompt);
+    setDuration(mine.durationSeconds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing.data, card.id]);
+
+  // Progress polling — the engine works asynchronously.
+  useEffect(() => {
+    if (!animation || !isPending(animation.status)) return;
+    const id = window.setInterval(async () => {
+      try {
+        const result = await refresh({ data: { animationId: animation.id } });
+        if (!result.ok) return;
+        setAnimation(result.animation);
+        onAnimation(result.animation);
+        if (result.animation.status === "ready") toast.success(t("la_ready_toast"));
+        if (result.animation.status === "failed") toast.error(t("la_failed_toast"));
+      } catch {
+        /* transient — the next tick tries again */
+      }
+    }, 5000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animation?.id, animation?.status]);
+
+  const statusLabel = useMemo(() => {
+    if (!animation) return null;
+    return t(`la_status_${animation.status}`);
+  }, [animation, t]);
+
+  async function animate() {
+    if (motion.trim().length < 3) return;
+    setSending(true);
+    try {
+      const result = await start({
+        data: {
+          cardId: card.id,
+          prompt: motion,
+          promptLang: lang,
+          durationSeconds: chosenDuration,
+          sessionId: sessionId ?? undefined,
+        },
+      });
+      if (!result.ok) {
+        toast.error(result.errorCode === "no_generator" ? t("la_unavailable") : t("la_failed_toast"));
+        return;
+      }
+      setAnimation(result.animation);
+      onAnimation(result.animation);
+    } catch {
+      toast.error(t("la_failed_toast"));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const running = Boolean(animation && isPending(animation.status));
+
+  return (
+    <div className="space-y-6">
+      {/* Chosen image ------------------------------------------------------ */}
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
+        <div className="flex items-center justify-between gap-4">
+          <span className="inline-flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
+            <Images className="h-4 w-4 text-primary" />
+            {t("la_step_image")}
+          </span>
+          <button
+            type="button"
+            onClick={onChangeImage}
+            disabled={running}
+            className="rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t("la_change_image")}
+          </button>
+        </div>
+        {card.imageUrl && (
+          <img
+            src={card.imageUrl}
+            alt={card.prompt || t("la_step_image")}
+            className="mt-4 h-32 w-full rounded-2xl object-cover"
+          />
+        )}
+      </div>
+
+      {/* Motion description ------------------------------------------------ */}
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
+        <label htmlFor="la-motion" className="font-display text-lg font-semibold tracking-tight">
+          {t("la_motion_label")}
+        </label>
+        <textarea
+          id="la-motion"
+          value={motion}
+          onChange={(e) => setMotion(e.target.value)}
+          rows={5}
+          maxLength={1000}
+          placeholder={t("la_motion_ph")}
+          className="mt-3 w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed outline-none transition focus:border-primary/60"
+        />
+
+        <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t("la_presets")}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {MOTION_PRESET_KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() =>
+                setMotion((value) =>
+                  value.trim() ? `${value.trim()} ${t(`la_preset_${key}_text`)}` : t(`la_preset_${key}_text`),
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+            >
+              <Sparkles className="h-3 w-3" />
+              {t(`la_preset_${key}`)}
+            </button>
+          ))}
+        </div>
+
+        {/* Duration — always taken from the generator configuration --------- */}
+        <div className="mt-6">
+          <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            {t("la_duration")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {durations.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                onClick={() => setDuration(seconds)}
+                className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+                  chosenDuration === seconds
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {seconds}
+                {t("la_seconds")}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Summary and confirmation ------------------------------------------ */}
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
+        <h2 className="font-display text-lg font-semibold tracking-tight">{t("la_summary")}</h2>
+        <dl className="mt-4 space-y-2 text-sm">
+          <SummaryRow label={t("la_summary_motion")} value={motion.trim() || "—"} />
+          <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
+          <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
+        </dl>
+
+        <button
+          type="button"
+          onClick={animate}
+          disabled={sending || running || motion.trim().length < 3}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {sending || running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          {sending ? t("la_animate_working") : t("la_animate")}
+        </button>
+
+        {animation && (
+          <div className="mt-4 rounded-2xl border border-border/60 bg-background/60 p-4">
+            <p className="inline-flex items-center gap-2 text-sm font-medium">
+              {running ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <Film className="h-4 w-4 text-primary" />
+              )}
+              {statusLabel}
+            </p>
+            {running && <p className="mt-2 text-xs text-muted-foreground">{t("la_leave_hint")}</p>}
+            {animation.status === "failed" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAnimation(null);
+                  onAnimation(null);
+                }}
+                className="mt-3 inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                {t("la_retry")}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
+    </div>
+  );
+}

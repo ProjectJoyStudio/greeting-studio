@@ -1727,6 +1727,104 @@ export type Database = {
         }
         Relationships: []
       }
+      live_card_animations: {
+        Row: {
+          aspect_ratio: string | null
+          completed_at: string | null
+          created_at: string
+          deleted_at: string | null
+          duration_seconds: number
+          error_code: string | null
+          error_message: string | null
+          generator_key: string | null
+          generator_model: string | null
+          id: string
+          metadata: Json
+          prediction_id: string | null
+          price_credits: number | null
+          prompt: string
+          prompt_en: string | null
+          prompt_lang: string | null
+          purge_after: string | null
+          resolution: string | null
+          session_id: string | null
+          source_bucket: string | null
+          source_card_id: string | null
+          source_path: string | null
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aspect_ratio?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          metadata?: Json
+          prediction_id?: string | null
+          price_credits?: number | null
+          prompt?: string
+          prompt_en?: string | null
+          prompt_lang?: string | null
+          purge_after?: string | null
+          resolution?: string | null
+          session_id?: string | null
+          source_bucket?: string | null
+          source_card_id?: string | null
+          source_path?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aspect_ratio?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          metadata?: Json
+          prediction_id?: string | null
+          price_credits?: number | null
+          prompt?: string
+          prompt_en?: string | null
+          prompt_lang?: string | null
+          purge_after?: string | null
+          resolution?: string | null
+          session_id?: string | null
+          source_bucket?: string | null
+          source_card_id?: string | null
+          source_path?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_card_animations_source_card_id_fkey"
+            columns: ["source_card_id"]
+            isOneToOne: false
+            referencedRelation: "live_greeting_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_greeting_cards: {
         Row: {
           animation_prompt: string | null

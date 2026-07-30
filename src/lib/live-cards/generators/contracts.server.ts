@@ -34,26 +34,40 @@ export interface ImageGenerator {
   generate(request: ImageRequest): Promise<ImageOutput>;
 }
 
-/** Reserved for the next phase: image → video animation engines. */
+// --- Animation (image → video) --------------------------------------------
+
 export interface VideoRequest {
+  /** Publicly reachable URL of the source picture. */
   imageUrl: string;
+  /** English prompt, already prepared by the translation layer. */
   prompt: string;
   durationSeconds: number;
+  aspectRatio: string;
+  resolution: string;
 }
 
-export interface VideoOutput {
-  url: string;
-  contentType: string;
-  fileExtension: string;
-  durationSeconds: number;
+/** Handle of an animation the engine has accepted but not finished. */
+export interface VideoJob {
+  jobId: string;
 }
+
+export type VideoProgress =
+  | { state: "queued" }
+  | { state: "processing" }
+  | { state: "succeeded"; url: string; contentType: string; fileExtension: string }
+  | { state: "failed"; errorCode: string; errorMessage: string };
 
 export interface VideoGenerator {
   key: string;
   model: string;
   metrics: GeneratorMetrics;
+  /** Animation lengths this engine offers, in seconds. Never hardcoded in the UI. */
+  durations(): number[];
   isAvailable(): boolean;
-  animate(request: VideoRequest): Promise<VideoOutput>;
+  /** Accepts the work and returns immediately — generation is asynchronous. */
+  start(request: VideoRequest): Promise<VideoJob>;
+  /** Reads the current state of an accepted animation. */
+  progress(jobId: string): Promise<VideoProgress>;
 }
 
 export class GeneratorError extends Error {
