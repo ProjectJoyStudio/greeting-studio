@@ -6,6 +6,10 @@ import type { CardTextDesign, GreetingMode } from "./types";
 export const USER_CARD_BUCKET = "user-greeting-cards";
 export const USER_DRAFT_BUCKET = "user-card-drafts";
 
+/** Every column the account UI needs to render and re-edit a card. */
+const CARD_COLUMNS =
+  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count";
+
 export type GenerateCardResult =
   | { ok: true; cardId: string; imageUrl: string; storagePath: string }
   | { ok: false; errorCode: string; errorMessage: string };
