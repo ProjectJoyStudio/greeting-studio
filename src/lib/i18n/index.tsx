@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type Context, type ReactNode } from "react";
 
 import { LANGS, type Dict, type Lang } from "./types";
 import en from "./locales/en";
@@ -37,7 +37,7 @@ type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string };
 // editing this file (or any locale it imports) creates a brand-new context
 // while the mounted provider still uses the old one, which makes every
 // consumer throw "useI18n must be used inside I18nProvider".
-const g = globalThis as unknown as { __pj_i18n_ctx?: React.Context<Ctx | null> };
+const g = globalThis as unknown as { __pj_i18n_ctx?: Context<Ctx | null> };
 const I18nCtx = (g.__pj_i18n_ctx ??= createContext<Ctx | null>(null));
 
 const STORAGE_KEY = "pj_lang";
