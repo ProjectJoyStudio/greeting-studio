@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Sparkles, Upload, Wand2, Clock, Coins, Wallet, Play } from "lucide-react";
+import { Check, Loader2, Sparkles, Upload, Wand2, Coins, Wallet, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -23,6 +23,7 @@ import {
   type LiveCardRatio,
 } from "@/lib/live-cards/types";
 import { AnimationStep } from "@/components/live-cards/AnimationStep";
+import { LiveCardViewer } from "@/components/live-cards/LiveCardViewer";
 
 export const Route = createFileRoute("/live-cards")({
   head: () => ({
@@ -55,7 +56,7 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
 const SESSION_KEY = "joy.live-cards.session";
 
 /** Keeps every version of one creation session together, across reloads. */
-function useLiveCardSession(): string | null {
+function useLiveCardSession(): [string | null, () => void] {
   const [sessionId, setSessionId] = useState<string | null>(null);
   useEffect(() => {
     let existing = window.localStorage.getItem(SESSION_KEY);
@@ -65,7 +66,14 @@ function useLiveCardSession(): string | null {
     }
     setSessionId(existing);
   }, []);
-  return sessionId;
+  // A finished live greeting card is kept in the account; the next project
+  // always starts from a completely new, independent session.
+  const reset = () => {
+    const fresh = crypto.randomUUID();
+    window.localStorage.setItem(SESSION_KEY, fresh);
+    setSessionId(fresh);
+  };
+  return [sessionId, reset];
 }
 
 function LiveCardsPage() {
@@ -86,7 +94,8 @@ function LiveCardsPage() {
   const [restored, setRestored] = useState(false);
   const [stage, setStage] = useState<"image" | "motion">("image");
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
-  const sessionId = useLiveCardSession();
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [sessionId, resetSession] = useLiveCardSession();
 
   const recent = useQuery({
     queryKey: ["live-cards", "session", sessionId],
@@ -174,6 +183,26 @@ function LiveCardsPage() {
   }
 
   async function onFile(file: File) {
+    setRestored(true);
+    setBusy("upload");
+
+  }
+
+  /** Everything of the finished project leaves the workspace, nothing is lost. */
+  function startNewProject() {
+    setCurrent(null);
+    setSelectedId(null);
+    setAnimation(null);
+    setViewerOpen(false);
+    setPrompt("");
+    setRatio("1:1");
+    setStage("image");
+    setRestored(true);
+    resetSession();
+    void recent.refetch();
+  }
+
+  async function uploadFile(file: File) {
     setBusy("upload");
     try {
       const buffer = new Uint8Array(await file.arrayBuffer());
