@@ -381,6 +381,12 @@ export type OwnCardRow = {
   storage_path: string;
   text_design: Record<string, number | string | boolean | null>;
   created_at: string;
+  title: string | null;
+  language: string;
+  share_slug: string | null;
+  is_shared: boolean;
+  final_storage_path: string | null;
+  view_count: number;
   image_url: string | null;
 };
 
@@ -391,7 +397,7 @@ export const listOwnCards = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<OwnCardRow[]> => {
     let query = context.supabase
       .from("user_greeting_cards")
-      .select("id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at")
+      .select(CARD_COLUMNS)
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(200);
