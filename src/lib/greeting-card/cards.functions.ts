@@ -208,6 +208,7 @@ export const getOwnCard = createServerFn({ method: "POST" })
       .select(CARD_COLUMNS)
       .eq("id", data.cardId)
       .eq("user_id", context.userId)
+      .is("deleted_at", null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
@@ -415,6 +416,7 @@ export const listOwnCards = createServerFn({ method: "POST" })
       .from("user_greeting_cards")
       .select(CARD_COLUMNS)
       .eq("user_id", context.userId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) query = query.eq("status", data.status);
