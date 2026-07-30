@@ -150,7 +150,6 @@ function LiveCardsPage() {
 
   async function onFile(file: File) {
     setBusy("upload");
-    setBusy("upload");
     try {
       const buffer = new Uint8Array(await file.arrayBuffer());
       let binary = "";
