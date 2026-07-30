@@ -481,6 +481,17 @@ function CreateCardPage() {
           </div>
         </div>
       )}
+
+      {shareUrl && card && (
+        <ShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          url={shareUrl}
+          title={title || t("gc_shared_title")}
+          onShared={(channel) => trackEvent({ data: { cardId: card.id, eventType: "share", channel } })}
+          onDownload={() => downloadFinalCard(card.imageUrl, greeting, design)}
+        />
+      )}
     </SiteLayout>
   );
 }
