@@ -384,8 +384,8 @@ function LiveCardsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy !== null || prompt.trim().length < 3}
-                  onClick={runGenerate}
+                  disabled={busy !== null}
+                  onClick={() => setConfirmReplace(true)}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
