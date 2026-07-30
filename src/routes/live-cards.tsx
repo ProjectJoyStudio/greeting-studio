@@ -340,7 +340,16 @@ function LiveCardsPage() {
             <div
               className={`relative w-full overflow-hidden rounded-2xl bg-muted/40 ${RATIO_CLASS[ratio]}`}
             >
-              {current?.imageUrl ? (
+              {animation?.status === "ready" && animation.videoUrl ? (
+                <video
+                  src={animation.videoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="h-full w-full object-cover"
+                />
+              ) : current?.imageUrl ? (
                 <img
                   src={current.imageUrl}
                   alt={current.prompt || t("lc_title")}
@@ -363,7 +372,7 @@ function LiveCardsPage() {
               )}
             </div>
 
-            {current && (
+            {current && stage === "image" && (
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -398,18 +407,16 @@ function LiveCardsPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              disabled
-              title={t("lc_animate_soon")}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
-            >
-              <Play className="h-4 w-4" />
-              {t("lc_animate")}
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide">
-                {t("lc_soon")}
-              </span>
-            </button>
+            {animation?.status === "ready" && animation.videoUrl && (
+              <a
+                href={animation.videoUrl}
+                download
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
+              >
+                <Play className="h-4 w-4" />
+                {t("la_download")}
+              </a>
+            )}
           </div>
 
           {isAuthenticated && (recent.data?.length ?? 0) > 0 && (
