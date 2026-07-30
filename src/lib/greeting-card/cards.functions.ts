@@ -234,6 +234,7 @@ export const getSharedCard = createServerFn({ method: "POST" })
       .select("id, title, greeting_text, text_design, language, storage_bucket, storage_path, final_storage_bucket, final_storage_path, view_count")
       .eq("share_slug", data.slug)
       .eq("is_shared", true)
+      .is("deleted_at", null)
       .maybeSingle();
     if (!row) return null;
 
