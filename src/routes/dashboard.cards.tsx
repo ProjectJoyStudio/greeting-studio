@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Loader2, Plus, Trash2, Copy, X, Share2, Pencil } from "lucide-react";
+import { Download, Loader2, Plus, Trash2, X, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardPageHeader } from "@/components/dashboard/DashboardLayout";
@@ -156,21 +156,10 @@ function MyCardsPage() {
                     <Download className="h-3.5 w-3.5" /> {t("gc_download")}
                   </button>
                   <button
-                    onClick={() => navigate({ to: "/create-card", search: { cardId: c.id } })}
+                    onClick={() => navigate({ to: "/create-card" })}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary"
                   >
-                    <Pencil className="h-3.5 w-3.5" /> {t("gc_edit")}
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigate({
-                        to: "/create-card",
-                        search: { prompt: c.prompt, text: c.greeting_text, keywords: (c.keywords ?? []).join(", ") },
-                      })
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary"
-                  >
-                    <Copy className="h-3.5 w-3.5" /> {t("gc_create_similar")}
+                    <Plus className="h-3.5 w-3.5" /> {t("gc_new_card")}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(c.id)}
