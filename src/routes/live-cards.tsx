@@ -14,6 +14,7 @@ import {
   listOwnLiveCards,
   selectLiveCardImage,
   uploadLiveCardImage,
+  discardLiveCardImage,
 } from "@/lib/live-cards/live-cards.functions";
 import {
   LIVE_CARD_RATIOS,
@@ -72,6 +73,7 @@ function LiveCardsPage() {
   const generate = useServerFn(generateLiveCardImage);
   const upload = useServerFn(uploadLiveCardImage);
   const select = useServerFn(selectLiveCardImage);
+  const discard = useServerFn(discardLiveCardImage);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [prompt, setPrompt] = useState("");
@@ -79,6 +81,7 @@ function LiveCardsPage() {
   const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
   const [restored, setRestored] = useState(false);
   const sessionId = useLiveCardSession();
 
