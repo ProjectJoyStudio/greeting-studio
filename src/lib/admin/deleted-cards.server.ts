@@ -138,3 +138,45 @@ export async function purgeExpiredLiveCards(): Promise<{ purged: number }> {
   }
   return { purged };
 }
+
+/** Removes one finished live greeting card completely (video + record). */
+export async function purgeLiveAnimationCompletely(animationId: string): Promise<boolean> {
+  const supabaseAdmin = await getAdmin();
+  const { data: row } = await supabaseAdmin
+    .from("live_card_animations")
+    .select("id, storage_bucket, storage_path, music_storage_bucket, music_storage_path")
+    .eq("id", animationId)
+    .maybeSingle();
+  if (!row) return false;
+
+  const byBucket = new Map<string, string[]>();
+  const push = (bucket: string | null, path: string | null) => {
+    if (!bucket || !path) return;
+    byBucket.set(bucket, [...(byBucket.get(bucket) ?? []), path]);
+  };
+  push(row.storage_bucket, row.storage_path);
+  push(row.music_storage_bucket, row.music_storage_path);
+  for (const [bucket, paths] of byBucket) {
+    await supabaseAdmin.storage.from(bucket).remove(paths);
+  }
+
+  await supabaseAdmin.from("live_card_animations").delete().eq("id", row.id);
+  return true;
+}
+
+/** Permanently removes every live greeting card whose retention period expired. */
+export async function purgeExpiredLiveAnimations(): Promise<{ purged: number }> {
+  const supabaseAdmin = await getAdmin();
+  const { data: rows } = await supabaseAdmin
+    .from("live_card_animations")
+    .select("id")
+    .not("deleted_at", "is", null)
+    .lte("purge_after", new Date().toISOString())
+    .limit(500);
+
+  let purged = 0;
+  for (const row of rows ?? []) {
+    if (await purgeLiveAnimationCompletely(row.id)) purged += 1;
+  }
+  return { purged };
+}

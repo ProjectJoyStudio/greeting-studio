@@ -83,6 +83,11 @@ export interface LiveGreetingRecord {
   aspectRatio: string | null;
   imageUrl: string | null;
   videoUrl: string | null;
+  /** Greeting written after the animation, overlaid on the finished video. */
+  greetingText: string;
+  greetingMode: "manual" | "keywords";
+  greetingKeywords: string[];
+  textDesign: import("@/lib/greeting-card/types").CardTextDesign;
   soundEnabled: boolean;
   isShared: boolean;
   shareSlug: string | null;

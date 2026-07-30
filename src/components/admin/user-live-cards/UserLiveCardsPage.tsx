@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Play, X } from "lucide-react";
+import { Loader2, Play, RotateCcw, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
 import {
+  adminDeleteLiveGreeting,
+  adminPurgeLiveGreeting,
+  adminRestoreLiveGreeting,
   listUserLiveGreetings,
   type AdminLiveGreetingRow,
 } from "@/lib/admin/user-live-cards.functions";
@@ -13,7 +17,12 @@ import {
 export function UserLiveCardsPage() {
   const { t, lang } = useI18n();
   const fetchRows = useServerFn(listUserLiveGreetings);
+  const removeRow = useServerFn(adminDeleteLiveGreeting);
+  const restoreRow = useServerFn(adminRestoreLiveGreeting);
+  const purgeRow = useServerFn(adminPurgeLiveGreeting);
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState<AdminLiveGreetingRow | null>(null);
+  const [confirmPurge, setConfirmPurge] = useState<AdminLiveGreetingRow | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-user-live-cards"],
@@ -22,6 +31,33 @@ export function UserLiveCardsPage() {
 
   const rows = data ?? [];
   const fmt = (v: string | null) => (v ? new Date(v).toLocaleString(lang) : "—");
+
+  const done = (message: string) => {
+    toast.success(message);
+    setOpen(null);
+    setConfirmPurge(null);
+    queryClient.invalidateQueries({ queryKey: ["admin-user-live-cards"] });
+  };
+  const fail = (e: unknown) => {
+    const code = e instanceof Error ? e.message : "error";
+    toast.error(code === "retention_active" ? t("ulc_retention_active") : code);
+  };
+
+  const del = useMutation({
+    mutationFn: (id: string) => removeRow({ data: { animationId: id } }),
+    onSuccess: () => done(t("ulc_deleted_toast")),
+    onError: fail,
+  });
+  const restore = useMutation({
+    mutationFn: (id: string) => restoreRow({ data: { animationId: id } }),
+    onSuccess: () => done(t("ulc_restored_toast")),
+    onError: fail,
+  });
+  const purge = useMutation({
+    mutationFn: (id: string) => purgeRow({ data: { animationId: id } }),
+    onSuccess: () => done(t("ulc_purged_toast")),
+    onError: fail,
+  });
 
   return (
     <div>
@@ -73,13 +109,41 @@ export function UserLiveCardsPage() {
                   </td>
                   <td className="p-3 text-muted-foreground">{fmt(row.created_at)}</td>
                   <td className="p-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setOpen(row)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-medium text-primary-foreground"
-                    >
-                      <Play className="h-3.5 w-3.5" /> {t("ulc_open")}
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setOpen(row)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-medium text-primary-foreground"
+                      >
+                        <Play className="h-3.5 w-3.5" /> {t("ulc_open")}
+                      </button>
+                      {row.deleted_at ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => restore.mutate(row.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 font-medium hover:border-primary/50"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" /> {t("ulc_restore")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmPurge(row)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-1.5 font-medium text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> {t("ulc_purge")}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => del.mutate(row.id)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-1.5 font-medium text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> {t("ulc_delete")}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -115,11 +179,42 @@ export function UserLiveCardsPage() {
               <Field label={t("ulc_image_prompt")} value={open.image_prompt || "—"} />
               <Field label={t("ulc_motion")} value={open.motion_prompt || "—"} />
               <Field label={t("ulc_motion_en")} value={open.motion_prompt_en || "—"} />
+              <Field label={t("ulc_greeting")} value={open.greeting_text || "—"} />
               <Field label={t("ulc_duration")} value={`${open.duration_seconds}s`} />
               <Field label={t("ulc_format")} value={open.aspect_ratio ?? "—"} />
               <Field label={t("ulc_generator")} value={open.generator_key ?? "—"} />
               <Field label={t("ulc_created")} value={fmt(open.created_at)} />
+              <Field label={t("ulc_deleted_at")} value={fmt(open.deleted_at)} />
+              <Field label={t("ulc_purge_after")} value={fmt(open.purge_after)} />
             </dl>
+          </div>
+        </div>
+      )}
+
+      {confirmPurge && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
+            <h3 className="font-[Fraunces] text-lg font-semibold text-foreground">
+              {t("ulc_purge_confirm_title")}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("ulc_purge_confirm_desc")}</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmPurge(null)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm hover:bg-secondary"
+              >
+                {t("ulc_cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={purge.isPending}
+                onClick={() => purge.mutate(confirmPurge.id)}
+                className="rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
+              >
+                {t("ulc_purge")}
+              </button>
+            </div>
           </div>
         </div>
       )}

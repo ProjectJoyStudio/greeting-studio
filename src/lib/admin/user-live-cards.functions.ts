@@ -18,8 +18,11 @@ export type AdminLiveGreetingRow = {
   generator_key: string | null;
   image_url: string | null;
   video_url: string | null;
+  greeting_text: string;
   created_at: string;
   deleted_at: string | null;
+  purge_after: string | null;
+  deleted_by_admin: boolean;
 };
 
 async function assertAdmin(context: { supabase: unknown; userId: string }) {
@@ -40,7 +43,7 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("live_card_animations")
       .select(
-        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, created_at, deleted_at",
+        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, greeting_text, created_at, deleted_at, purge_after, deleted_by",
       )
       .order("created_at", { ascending: false })
       .limit(300);
@@ -84,9 +87,130 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
         generator_key: row.generator_key ?? null,
         image_url: await sign(row.source_bucket, row.source_path),
         video_url: await sign(row.storage_bucket, row.storage_path),
+        greeting_text: row.greeting_text ?? "",
         created_at: row.created_at,
         deleted_at: row.deleted_at ?? null,
+        purge_after: row.purge_after ?? null,
+        deleted_by_admin: Boolean(row.deleted_by),
       });
     }
     return out;
+  });
+
+/**
+ * Administration deletion follows exactly the greeting-card rules: the record
+ * is kept for the retention period, can be restored, and is only removed for
+ * good once that period has passed.
+ */
+export const adminDeleteLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return { animationId: input.animationId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, readRetentionDays, recordAdminAction } = await import("./deleted-cards.server");
+    const supabaseAdmin = await getAdmin();
+    const days = await readRetentionDays();
+    const now = new Date();
+
+    const { data: row } = await supabaseAdmin
+      .from("live_card_animations")
+      .select("id, user_id, deleted_at")
+      .eq("id", data.animationId)
+      .maybeSingle();
+    if (!row) throw new Error("animation_not_found");
+
+    const purgeAfter = new Date(now.getTime() + days * 86_400_000).toISOString();
+    const { error } = await supabaseAdmin
+      .from("live_card_animations")
+      .update({ deleted_at: now.toISOString(), purge_after: purgeAfter, deleted_by: context.userId })
+      .eq("id", data.animationId);
+    if (error) throw new Error(error.message);
+
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: "live_greeting.deleted",
+      entityType: "live_card_animation",
+      entityId: row.id,
+      affectedUserId: row.user_id,
+      previous: { deleted_at: row.deleted_at },
+      next: { deleted_at: now.toISOString(), purge_after: purgeAfter },
+    });
+    return { ok: true, purgeAfter };
+  });
+
+/** Brings a deleted live greeting card back into the owner's account. */
+export const adminRestoreLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return { animationId: input.animationId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, recordAdminAction } = await import("./deleted-cards.server");
+    const supabaseAdmin = await getAdmin();
+
+    const { data: row } = await supabaseAdmin
+      .from("live_card_animations")
+      .select("id, user_id, deleted_at, purge_after")
+      .eq("id", data.animationId)
+      .maybeSingle();
+    if (!row) throw new Error("animation_not_found");
+
+    const { error } = await supabaseAdmin
+      .from("live_card_animations")
+      .update({ deleted_at: null, purge_after: null, deleted_by: null })
+      .eq("id", data.animationId);
+    if (error) throw new Error(error.message);
+
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: "live_greeting.restored",
+      entityType: "live_card_animation",
+      entityId: row.id,
+      affectedUserId: row.user_id,
+      previous: { deleted_at: row.deleted_at, purge_after: row.purge_after },
+      next: { deleted_at: null },
+    });
+    return { ok: true };
+  });
+
+/** Irreversible removal — only allowed once the retention period has expired. */
+export const adminPurgeLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return { animationId: input.animationId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, purgeLiveAnimationCompletely, recordAdminAction } = await import(
+      "./deleted-cards.server"
+    );
+    const supabaseAdmin = await getAdmin();
+
+    const { data: row } = await supabaseAdmin
+      .from("live_card_animations")
+      .select("id, user_id, prompt, deleted_at, purge_after")
+      .eq("id", data.animationId)
+      .maybeSingle();
+    if (!row) throw new Error("animation_not_found");
+    if (!row.deleted_at) throw new Error("not_deleted");
+    if (row.purge_after && new Date(row.purge_after).getTime() > Date.now()) {
+      throw new Error("retention_active");
+    }
+
+    await purgeLiveAnimationCompletely(row.id);
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: "live_greeting.purged",
+      entityType: "live_card_animation",
+      entityId: row.id,
+      affectedUserId: row.user_id,
+      previous: { prompt: row.prompt, deleted_at: row.deleted_at },
+    });
+    return { ok: true };
   });

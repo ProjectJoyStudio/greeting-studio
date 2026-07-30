@@ -200,6 +200,7 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       storage_path?: string;
       error_code?: string;
       error_message?: string;
+      sound_enabled?: boolean;
       completed_at?: string;
     };
 
@@ -236,11 +237,14 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       });
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
+    // Project Joy never keeps the sound the engine invents by itself.
+    const { stripAudioTrack } = await import("./mp4-audio.server");
+    const silent = stripAudioTrack(bytes);
     const storagePath = `${context.userId}/${current.id}.${progress.fileExtension}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upload = await supabaseAdmin.storage
       .from(bucket)
-      .upload(storagePath, bytes, { contentType: progress.contentType, upsert: true });
+      .upload(storagePath, silent, { contentType: progress.contentType, upsert: true });
     if (upload.error) {
       return save({ status: "failed", error_code: "storage_failed", error_message: upload.error.message });
     }
@@ -248,6 +252,7 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       status: "ready",
       storage_bucket: bucket,
       storage_path: storagePath,
+      sound_enabled: false,
       completed_at: new Date().toISOString(),
     });
   });
