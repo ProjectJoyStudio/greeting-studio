@@ -1731,6 +1731,7 @@ export type Database = {
         Row: {
           animation_prompt: string | null
           animation_prompt_en: string | null
+          aspect_ratio: string | null
           created_at: string
           deleted_at: string | null
           duration_seconds: number | null
@@ -1744,6 +1745,7 @@ export type Database = {
           prompt_en: string | null
           prompt_lang: string | null
           purge_after: string | null
+          session_id: string | null
           source: string
           status: string
           storage_bucket: string
@@ -1759,6 +1761,7 @@ export type Database = {
         Insert: {
           animation_prompt?: string | null
           animation_prompt_en?: string | null
+          aspect_ratio?: string | null
           created_at?: string
           deleted_at?: string | null
           duration_seconds?: number | null
@@ -1772,6 +1775,7 @@ export type Database = {
           prompt_en?: string | null
           prompt_lang?: string | null
           purge_after?: string | null
+          session_id?: string | null
           source?: string
           status?: string
           storage_bucket: string
@@ -1787,6 +1791,7 @@ export type Database = {
         Update: {
           animation_prompt?: string | null
           animation_prompt_en?: string | null
+          aspect_ratio?: string | null
           created_at?: string
           deleted_at?: string | null
           duration_seconds?: number | null
@@ -1800,6 +1805,7 @@ export type Database = {
           prompt_en?: string | null
           prompt_lang?: string | null
           purge_after?: string | null
+          session_id?: string | null
           source?: string
           status?: string
           storage_bucket?: string
