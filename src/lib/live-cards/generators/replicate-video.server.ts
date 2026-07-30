@@ -99,13 +99,12 @@ export const wanImageToVideoGenerator: VideoGenerator = {
   durations: () => liveCardsDurations(),
   isAvailable: () => Boolean(process.env.REPLICATE_API_TOKEN),
   start(request: VideoRequest) {
-    const allowed = liveCardsDurations();
-    const duration = allowed.includes(request.durationSeconds) ? request.durationSeconds : allowed[0];
+    // Project Joy defaults: fixed 720p, 3 seconds. Never exposed to users.
     return startPrediction(wanImageToVideoGenerator.key, wanImageToVideoGenerator.model, {
       first_frame: request.imageUrl,
       prompt: request.prompt,
-      duration,
-      resolution: request.resolution,
+      duration: 3,
+      resolution: "720p",
       enable_prompt_expansion: true,
     });
   },
