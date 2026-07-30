@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -50,6 +50,22 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
   "16:9": "aspect-[16/9]",
 };
 
+const SESSION_KEY = "joy.live-cards.session";
+
+/** Keeps every version of one creation session together, across reloads. */
+function useLiveCardSession(): string | null {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  useEffect(() => {
+    let existing = window.localStorage.getItem(SESSION_KEY);
+    if (!existing) {
+      existing = crypto.randomUUID();
+      window.localStorage.setItem(SESSION_KEY, existing);
+    }
+    setSessionId(existing);
+  }, []);
+  return sessionId;
+}
+
 function LiveCardsPage() {
   const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
@@ -63,18 +79,37 @@ function LiveCardsPage() {
   const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+  const sessionId = useLiveCardSession();
 
   const recent = useQuery({
-    queryKey: ["live-cards", "recent"],
-    queryFn: () => listOwnLiveCards({ data: undefined }),
-    enabled: isAuthenticated,
+    queryKey: ["live-cards", "session", sessionId],
+    queryFn: () => listOwnLiveCards({ data: { sessionId: sessionId ?? undefined } }),
+    enabled: isAuthenticated && Boolean(sessionId),
   });
+
+  // The database is the source of truth: after a refresh the session is
+  // rebuilt from the stored pictures and their statuses.
+  useEffect(() => {
+    if (restored || !recent.data?.length) return;
+    const chosen = recent.data.find((card) => card.selected) ?? recent.data[0];
+    setCurrent(chosen);
+    setSelectedId(chosen.selected ? chosen.id : null);
+    if (chosen.prompt) setPrompt(chosen.prompt);
+    if (chosen.aspectRatio && (LIVE_CARD_RATIOS as readonly string[]).includes(chosen.aspectRatio)) {
+      setRatio(chosen.aspectRatio as LiveCardRatio);
+    }
+    setRestored(true);
+  }, [recent.data, restored]);
 
   async function runGenerate() {
     if (prompt.trim().length < 3) return;
     setBusy("generate");
+    setRestored(true);
     try {
-      const result = await generate({ data: { prompt, aspectRatio: ratio, promptLang: lang } });
+      const result = await generate({
+        data: { prompt, aspectRatio: ratio, promptLang: lang, sessionId: sessionId ?? undefined },
+      });
       if (!result.ok) {
         toast.error(t("lc_failed"));
         return;
@@ -122,6 +157,7 @@ function LiveCardsPage() {
           contentType: file.type || "image/png",
           prompt,
           aspectRatio: ratio,
+          sessionId: sessionId ?? undefined,
         },
       });
       if (!result.ok) {
@@ -366,10 +402,14 @@ function LiveCardsPage() {
                     type="button"
                     onClick={() => {
                       setCurrent(card);
-                      setSelectedId(card.status === "image_selected" ? card.id : null);
+                      setSelectedId(card.selected ? card.id : null);
                       if (card.prompt) setPrompt(card.prompt);
                     }}
-                    className="group overflow-hidden rounded-xl border border-border/50 transition hover:border-primary/50"
+                    className={`group overflow-hidden rounded-xl border transition ${
+                      card.selected
+                        ? "border-primary ring-2 ring-primary/40"
+                        : "border-border/50 hover:border-primary/50"
+                    }`}
                     title={
                       card.source === "upload" ? t("lc_source_upload") : t("lc_source_generated")
                     }
@@ -384,6 +424,13 @@ function LiveCardsPage() {
                     ) : (
                       <span className="block aspect-square w-full bg-muted/50" />
                     )}
+                    <span
+                      className={`block px-1 py-1 text-[10px] font-medium leading-tight ${
+                        card.selected ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {card.selected ? t("lc_status_selected") : t("lc_status_not_selected")}
+                    </span>
                   </button>
                 ))}
               </div>
