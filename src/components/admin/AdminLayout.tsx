@@ -43,6 +43,7 @@ const NAV: NavItem[] = [
   { to: "/admin/catalog", key: "admin_nav_catalog", icon: BookOpen },
   { to: "/admin/user-drafts", key: "ud_title", icon: ImageOff },
   { to: "/admin/deleted-cards", key: "dc_title", icon: Trash2 },
+  { to: "/admin/deleted-live-cards", key: "dlc_title", icon: Trash2 },
   { to: "/admin/activity-log", key: "al_title", icon: ShieldCheck },
   { to: "/admin/credit-packages", key: "admin_nav_credit_packages", icon: Package },
   { to: "/admin/promotions", key: "admin_nav_promotions", icon: Megaphone },

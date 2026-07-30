@@ -250,3 +250,35 @@ export const selectLiveCardImage = createServerFn({ method: "POST" })
     }
     return { ok: true, card: await toAsset(row as Row) };
   });
+
+/**
+ * "Generate another": the current source image is not destroyed. Exactly like a
+ * rejected greeting card, it is soft-deleted and kept for the configured
+ * retention period, visible to administrators in the recycle bin.
+ */
+export const discardLiveCardImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string }) => {
+    const cardId = String(input?.cardId ?? "");
+    if (!cardId) throw new Error("card_required");
+    return { cardId };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+    const days = await readRetentionDays();
+    const now = new Date();
+    const purgeAfter = new Date(now.getTime() + days * 86_400_000);
+
+    const { error } = await context.supabase
+      .from("live_greeting_cards")
+      .update({
+        status: "discarded",
+        deleted_at: now.toISOString(),
+        purge_after: purgeAfter.toISOString(),
+      })
+      .eq("id", data.cardId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

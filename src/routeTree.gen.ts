@@ -55,6 +55,7 @@ import { Route as AdminNotificationsRouteImport } from './routes/admin.notificat
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
+import { Route as AdminDeletedLiveCardsRouteImport } from './routes/admin.deleted-live-cards'
 import { Route as AdminDeletedCardsRouteImport } from './routes/admin.deleted-cards'
 import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
@@ -306,6 +307,11 @@ const AdminEconomyRoute = AdminEconomyRouteImport.update({
   path: '/economy',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDeletedLiveCardsRoute = AdminDeletedLiveCardsRouteImport.update({
+  id: '/deleted-live-cards',
+  path: '/deleted-live-cards',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDeletedCardsRoute = AdminDeletedCardsRouteImport.update({
   id: '/deleted-cards',
   path: '/deleted-cards',
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/deleted-cards': typeof AdminDeletedCardsRoute
+  '/admin/deleted-live-cards': typeof AdminDeletedLiveCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/deleted-cards': typeof AdminDeletedCardsRoute
+  '/admin/deleted-live-cards': typeof AdminDeletedLiveCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -577,6 +585,7 @@ export interface FileRoutesById {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
   '/admin/deleted-cards': typeof AdminDeletedCardsRoute
+  '/admin/deleted-live-cards': typeof AdminDeletedLiveCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -647,6 +656,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/deleted-cards'
+    | '/admin/deleted-live-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -712,6 +722,7 @@ export interface FileRouteTypes {
     | '/admin/calendar-settings'
     | '/admin/credit-packages'
     | '/admin/deleted-cards'
+    | '/admin/deleted-live-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -780,6 +791,7 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/credit-packages'
     | '/admin/deleted-cards'
+    | '/admin/deleted-live-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -1173,6 +1185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEconomyRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/deleted-live-cards': {
+      id: '/admin/deleted-live-cards'
+      path: '/deleted-live-cards'
+      fullPath: '/admin/deleted-live-cards'
+      preLoaderRoute: typeof AdminDeletedLiveCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/deleted-cards': {
       id: '/admin/deleted-cards'
       path: '/deleted-cards'
@@ -1371,6 +1390,7 @@ interface AdminRouteChildren {
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
   AdminDeletedCardsRoute: typeof AdminDeletedCardsRoute
+  AdminDeletedLiveCardsRoute: typeof AdminDeletedLiveCardsRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
@@ -1391,6 +1411,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
   AdminDeletedCardsRoute: AdminDeletedCardsRoute,
+  AdminDeletedLiveCardsRoute: AdminDeletedLiveCardsRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
