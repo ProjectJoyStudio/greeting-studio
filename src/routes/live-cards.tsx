@@ -185,20 +185,23 @@ function LiveCardsPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
-                onClick={runGenerate}
-                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "generate" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4" />
-                )}
-                {current ? t("lc_regenerate") : t("lc_generate")}
-              </button>
+              {!current && (
+                <button
+                  type="button"
+                  disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
+                  onClick={runGenerate}
+                  className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "generate" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {t("lc_generate")}
+                </button>
+              )}
 
+              {!current && (
               <button
                 type="button"
                 disabled={!isAuthenticated || busy !== null}
@@ -212,6 +215,7 @@ function LiveCardsPage() {
                 )}
                 {busy === "upload" ? t("lc_uploading") : t("lc_upload")}
               </button>
+              )}
               <input
                 ref={fileRef}
                 type="file"
