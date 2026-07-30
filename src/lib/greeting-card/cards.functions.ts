@@ -364,9 +364,24 @@ export const deleteOwnCard = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!card) return { ok: true as const };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.storage.from(USER_CARD_BUCKET).remove([card.storage_path]);
-    await context.supabase.from("user_greeting_cards").delete().eq("id", card.id).eq("user_id", context.userId);
+    // Deleting moves the card into the administrator recycle bin instead of
+    // erasing it, so an accidental deletion can still be restored.
+    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+    const days = await readRetentionDays();
+    const now = new Date();
+    const purgeAfter = new Date(now.getTime() + days * 86_400_000);
+
+    const { error } = await context.supabase
+      .from("user_greeting_cards")
+      .update({
+        deleted_at: now.toISOString(),
+        purge_after: purgeAfter.toISOString(),
+        deleted_by: context.userId,
+        is_shared: false,
+      })
+      .eq("id", card.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
