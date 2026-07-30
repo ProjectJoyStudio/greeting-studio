@@ -182,12 +182,6 @@ function LiveCardsPage() {
     void recent.refetch();
   }
 
-  async function onFile(file: File) {
-    setRestored(true);
-    setBusy("upload");
-
-  }
-
   /** Everything of the finished project leaves the workspace, nothing is lost. */
   function startNewProject() {
     setCurrent(null);
@@ -246,6 +240,7 @@ function LiveCardsPage() {
               sessionId={sessionId}
               onChangeImage={() => setStage("image")}
               onAnimation={setAnimation}
+              onNewProject={startNewProject}
             />
           ) : (
           <>
