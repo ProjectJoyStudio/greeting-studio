@@ -1727,6 +1727,81 @@ export type Database = {
         }
         Relationships: []
       }
+      live_greeting_cards: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          duration_seconds: number | null
+          generator_key: string | null
+          generator_model: string | null
+          height: number | null
+          id: string
+          metadata: Json
+          price_credits: number | null
+          prompt: string
+          purge_after: string | null
+          source: string
+          status: string
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+          video_generator_key: string | null
+          video_status: string | null
+          video_storage_bucket: string | null
+          video_storage_path: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number | null
+          generator_key?: string | null
+          generator_model?: string | null
+          height?: number | null
+          id?: string
+          metadata?: Json
+          price_credits?: number | null
+          prompt?: string
+          purge_after?: string | null
+          source?: string
+          status?: string
+          storage_bucket: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+          video_generator_key?: string | null
+          video_status?: string | null
+          video_storage_bucket?: string | null
+          video_storage_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number | null
+          generator_key?: string | null
+          generator_model?: string | null
+          height?: number | null
+          id?: string
+          metadata?: Json
+          price_credits?: number | null
+          prompt?: string
+          purge_after?: string | null
+          source?: string
+          status?: string
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+          video_generator_key?: string | null
+          video_status?: string | null
+          video_storage_bucket?: string | null
+          video_storage_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           asset_type: Database["public"]["Enums"]["asset_type"]

@@ -80,6 +80,7 @@ export function Header() {
             onNavigate={() => setOpen(null)}
           />
           <TopLink to="/studio">{t("nav_studio")}</TopLink>
+          <TopLink to="/live-cards">{t("lc_nav")}</TopLink>
           <Dropdown
             label={t("nav_business")}
             id="business"
@@ -155,6 +156,9 @@ export function Header() {
             </MobileGroup>
             <MobileLink to="/studio" onNav={() => setMobileOpen(false)}>
               {t("nav_studio")}
+            </MobileLink>
+            <MobileLink to="/live-cards" onNav={() => setMobileOpen(false)}>
+              {t("lc_nav")}
             </MobileLink>
             <MobileGroup label={t("nav_business")}>
               {BUSINESS_MENU.map((n) => (
