@@ -59,6 +59,7 @@ import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
+import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -322,6 +323,12 @@ const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const ApiPublicPurgeDeletedCardsRoute =
+  ApiPublicPurgeDeletedCardsRouteImport.update({
+    id: '/api/public/purge-deleted-cards',
+    path: '/api/public/purge-deleted-cards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -444,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -505,6 +513,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -570,6 +579,7 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -697,6 +708,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -761,6 +773,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -796,6 +809,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
+  ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1150,6 +1164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/api/public/purge-deleted-cards': {
+      id: '/api/public/purge-deleted-cards'
+      path: '/api/public/purge-deleted-cards'
+      fullPath: '/api/public/purge-deleted-cards'
+      preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
       path: '/upload'
@@ -1376,6 +1397,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   CatalogIndexRoute: CatalogIndexRoute,
+  ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
