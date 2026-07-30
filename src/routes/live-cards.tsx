@@ -492,6 +492,10 @@ function LiveCardsPage() {
         </div>
       </section>
 
+      {viewerOpen && animation?.videoUrl && (
+        <LiveCardViewer videoUrl={animation.videoUrl} title={null} onClose={() => setViewerOpen(false)} />
+      )}
+
       {confirmReplace && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-5 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
