@@ -65,6 +65,32 @@ export type AnimationResult =
   | { ok: true; animation: LiveCardAnimation }
   | { ok: false; errorCode: string; errorMessage: string };
 
+/**
+ * One finished live greeting card as it is kept in the personal account and in
+ * the administration. Fields that belong to later phases (sending, publishing,
+ * scheduled delivery, credits, sound and music) are already part of the shape
+ * so those features can be added without touching the workflow.
+ */
+export interface LiveGreetingRecord {
+  id: string;
+  status: string;
+  title: string | null;
+  /** Description used to create the source picture. */
+  imagePrompt: string | null;
+  motionPrompt: string;
+  motionPromptEnglish: string | null;
+  durationSeconds: number;
+  aspectRatio: string | null;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  soundEnabled: boolean;
+  isShared: boolean;
+  shareSlug: string | null;
+  scheduledSendAt: string | null;
+  priceCredits: number | null;
+  createdAt: string;
+}
+
 /** Optional motion presets. The label text itself is localised in the UI. */
 export const MOTION_PRESET_KEYS = [
   "camera",
