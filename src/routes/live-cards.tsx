@@ -148,9 +148,27 @@ function LiveCardsPage() {
     }
   }
 
+  /**
+   * Confirmed replacement: the current picture is not destroyed. It moves to
+   * the deleted source images, exactly like a rejected greeting card, and the
+   * person returns to the editor with their description still filled in.
+   */
+  async function handleConfirmReplace() {
+    if (!current) return;
+    setConfirmReplace(false);
+    try {
+      await discard({ data: { cardId: current.id } });
+    } catch {
+      // Already unreachable for the person; the recycle bin keeps the record.
+    }
+    setCurrent(null);
+    setSelectedId(null);
+    toast.success(t("lc_discarded"));
+    void recent.refetch();
+  }
+
   async function onFile(file: File) {
     setBusy("upload");
-    void 0;
     try {
       const buffer = new Uint8Array(await file.arrayBuffer());
       let binary = "";
