@@ -1733,13 +1733,17 @@ export type Database = {
           completed_at: string | null
           created_at: string
           deleted_at: string | null
+          delivery_status: string | null
           duration_seconds: number
           error_code: string | null
           error_message: string | null
           generator_key: string | null
           generator_model: string | null
           id: string
+          is_shared: boolean
           metadata: Json
+          music_storage_bucket: string | null
+          music_storage_path: string | null
           prediction_id: string | null
           price_credits: number | null
           prompt: string
@@ -1747,13 +1751,17 @@ export type Database = {
           prompt_lang: string | null
           purge_after: string | null
           resolution: string | null
+          scheduled_send_at: string | null
           session_id: string | null
+          share_slug: string | null
+          sound_enabled: boolean
           source_bucket: string | null
           source_card_id: string | null
           source_path: string | null
           status: string
           storage_bucket: string | null
           storage_path: string | null
+          title: string | null
           updated_at: string
           user_id: string
         }
@@ -1762,13 +1770,17 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
+          delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
           generator_key?: string | null
           generator_model?: string | null
           id?: string
+          is_shared?: boolean
           metadata?: Json
+          music_storage_bucket?: string | null
+          music_storage_path?: string | null
           prediction_id?: string | null
           price_credits?: number | null
           prompt?: string
@@ -1776,13 +1788,17 @@ export type Database = {
           prompt_lang?: string | null
           purge_after?: string | null
           resolution?: string | null
+          scheduled_send_at?: string | null
           session_id?: string | null
+          share_slug?: string | null
+          sound_enabled?: boolean
           source_bucket?: string | null
           source_card_id?: string | null
           source_path?: string | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1791,13 +1807,17 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
+          delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
           generator_key?: string | null
           generator_model?: string | null
           id?: string
+          is_shared?: boolean
           metadata?: Json
+          music_storage_bucket?: string | null
+          music_storage_path?: string | null
           prediction_id?: string | null
           price_credits?: number | null
           prompt?: string
@@ -1805,13 +1825,17 @@ export type Database = {
           prompt_lang?: string | null
           purge_after?: string | null
           resolution?: string | null
+          scheduled_send_at?: string | null
           session_id?: string | null
+          share_slug?: string | null
+          sound_enabled?: boolean
           source_bucket?: string | null
           source_card_id?: string | null
           source_path?: string | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
