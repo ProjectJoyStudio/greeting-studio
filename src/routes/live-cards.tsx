@@ -211,6 +211,15 @@ function LiveCardsPage() {
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:px-6">
         {/* Composer ------------------------------------------------------- */}
         <div className="space-y-6">
+          {stage === "motion" && current ? (
+            <AnimationStep
+              card={current}
+              sessionId={sessionId}
+              onChangeImage={() => setStage("image")}
+              onAnimation={setAnimation}
+            />
+          ) : (
+          <>
           <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
             <label
               htmlFor="lc-prompt"
@@ -302,25 +311,8 @@ function LiveCardsPage() {
             )}
           </div>
 
-          {/* Reserved panels for the animation phase ---------------------- */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <ReservedPanel
-              icon={<Clock className="h-4 w-4" />}
-              title={t("lc_duration_title")}
-              note={t("lc_duration_soon")}
-              badge={t("lc_soon")}
-            >
-              <div className="flex gap-2">
-                {PLANNED_VIDEO_DURATIONS.map((seconds) => (
-                  <span
-                    key={seconds}
-                    className="rounded-full border border-dashed border-border/60 px-3 py-1 text-xs text-muted-foreground"
-                  >
-                    {seconds}s
-                  </span>
-                ))}
-              </div>
-            </ReservedPanel>
+          {/* Reserved panels for the credit phase -------------------------- */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <ReservedPanel
               icon={<Coins className="h-4 w-4" />}
               title={t("lc_price_title")}
@@ -338,6 +330,8 @@ function LiveCardsPage() {
               <span className="font-display text-2xl text-muted-foreground/60">—</span>
             </ReservedPanel>
           </div>
+          </>
+          )}
         </div>
 
         {/* Preview -------------------------------------------------------- */}
