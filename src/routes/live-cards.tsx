@@ -1,0 +1,358 @@
+import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Sparkles, Upload, Wand2, Clock, Coins, Wallet, Play } from "lucide-react";
+import { toast } from "sonner";
+
+import { SiteLayout } from "@/components/site/SiteLayout";
+import { PageHeader } from "@/components/site/PageHeader";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth/AuthContext";
+import {
+  generateLiveCardImage,
+  listOwnLiveCards,
+  uploadLiveCardImage,
+} from "@/lib/live-cards/live-cards.functions";
+import {
+  LIVE_CARD_RATIOS,
+  PLANNED_VIDEO_DURATIONS,
+  type LiveCardAsset,
+  type LiveCardRatio,
+} from "@/lib/live-cards/types";
+
+export const Route = createFileRoute("/live-cards")({
+  head: () => ({
+    meta: [
+      { title: "Live greeting cards — Project Joy" },
+      {
+        name: "description",
+        content:
+          "Create the picture for your live greeting card: describe it in your own words or upload your own photo, and keep it in your Project Joy account.",
+      },
+      { property: "og:title", content: "Live greeting cards — Project Joy" },
+      {
+        property: "og:description",
+        content: "Describe or upload the picture for your living greeting and preview it instantly.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: LiveCardsPage,
+});
+
+const RATIO_CLASS: Record<LiveCardRatio, string> = {
+  "1:1": "aspect-square",
+  "4:5": "aspect-[4/5]",
+  "9:16": "aspect-[9/16]",
+  "16:9": "aspect-[16/9]",
+};
+
+function LiveCardsPage() {
+  const { t } = useI18n();
+  const { isAuthenticated } = useAuth();
+  const generate = useServerFn(generateLiveCardImage);
+  const upload = useServerFn(uploadLiveCardImage);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [prompt, setPrompt] = useState("");
+  const [ratio, setRatio] = useState<LiveCardRatio>("1:1");
+  const [busy, setBusy] = useState<null | "generate" | "upload">(null);
+  const [current, setCurrent] = useState<LiveCardAsset | null>(null);
+
+  const recent = useQuery({
+    queryKey: ["live-cards", "recent"],
+    queryFn: () => listOwnLiveCards({ data: undefined }),
+    enabled: isAuthenticated,
+  });
+
+  async function runGenerate() {
+    if (prompt.trim().length < 3) return;
+    setBusy("generate");
+    try {
+      const result = await generate({ data: { prompt, aspectRatio: ratio } });
+      if (!result.ok) {
+        toast.error(t("lc_failed"));
+        return;
+      }
+      setCurrent(result.card);
+      toast.success(t("lc_saved"));
+      void recent.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onFile(file: File) {
+    setBusy("upload");
+    try {
+      const buffer = new Uint8Array(await file.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < buffer.length; i += 1) binary += String.fromCharCode(buffer[i]);
+      const result = await upload({
+        data: {
+          fileBase64: btoa(binary),
+          contentType: file.type || "image/png",
+          prompt,
+          aspectRatio: ratio,
+        },
+      });
+      if (!result.ok) {
+        toast.error(t("lc_failed"));
+        return;
+      }
+      setCurrent(result.card);
+      toast.success(t("lc_saved"));
+      void recent.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  return (
+    <SiteLayout>
+      <PageHeader title={t("lc_title")} subtitle={t("lc_sub")} />
+
+      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:px-6">
+        {/* Composer ------------------------------------------------------- */}
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
+            <label
+              htmlFor="lc-prompt"
+              className="font-display text-lg font-semibold tracking-tight"
+            >
+              {t("lc_prompt_label")}
+            </label>
+            <textarea
+              id="lc-prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={6}
+              maxLength={1000}
+              placeholder={t("lc_prompt_ph")}
+              className="mt-3 w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed outline-none transition focus:border-primary/60"
+            />
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("lc_ratio")}
+              </span>
+              {LIVE_CARD_RATIOS.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRatio(value)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    ratio === value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
+                onClick={runGenerate}
+                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy === "generate" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4" />
+                )}
+                {current ? t("lc_regenerate") : t("lc_generate")}
+              </button>
+
+              <button
+                type="button"
+                disabled={!isAuthenticated || busy !== null}
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy === "upload" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {busy === "upload" ? t("lc_uploading") : t("lc_upload")}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void onFile(file);
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{t("lc_upload_hint")}</p>
+
+            {!isAuthenticated && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+                  {t("lc_login")}
+                </Link>
+              </p>
+            )}
+          </div>
+
+          {/* Reserved panels for the animation phase ---------------------- */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <ReservedPanel
+              icon={<Clock className="h-4 w-4" />}
+              title={t("lc_duration_title")}
+              note={t("lc_duration_soon")}
+              badge={t("lc_soon")}
+            >
+              <div className="flex gap-2">
+                {PLANNED_VIDEO_DURATIONS.map((seconds) => (
+                  <span
+                    key={seconds}
+                    className="rounded-full border border-dashed border-border/60 px-3 py-1 text-xs text-muted-foreground"
+                  >
+                    {seconds}s
+                  </span>
+                ))}
+              </div>
+            </ReservedPanel>
+            <ReservedPanel
+              icon={<Coins className="h-4 w-4" />}
+              title={t("lc_price_title")}
+              note={t("lc_price_soon")}
+              badge={t("lc_soon")}
+            >
+              <span className="font-display text-2xl text-muted-foreground/60">—</span>
+            </ReservedPanel>
+            <ReservedPanel
+              icon={<Wallet className="h-4 w-4" />}
+              title={t("lc_balance_title")}
+              note={t("lc_balance_soon")}
+              badge={t("lc_soon")}
+            >
+              <span className="font-display text-2xl text-muted-foreground/60">—</span>
+            </ReservedPanel>
+          </div>
+        </div>
+
+        {/* Preview -------------------------------------------------------- */}
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm lg:sticky lg:top-24">
+            <div
+              className={`relative w-full overflow-hidden rounded-2xl bg-muted/40 ${RATIO_CLASS[ratio]}`}
+            >
+              {current?.imageUrl ? (
+                <img
+                  src={current.imageUrl}
+                  alt={current.prompt || t("lc_title")}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                  {busy === "generate" ? (
+                    <>
+                      <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                      <span className="text-sm">{t("lc_working")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-7 w-7 opacity-50" />
+                      <span className="text-sm">{t("lc_preview_empty")}</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled
+              title={t("lc_animate_soon")}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
+            >
+              <Play className="h-4 w-4" />
+              {t("lc_animate")}
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                {t("lc_soon")}
+              </span>
+            </button>
+          </div>
+
+          {isAuthenticated && (recent.data?.length ?? 0) > 0 && (
+            <div className="rounded-3xl border border-border/60 bg-card/60 p-5">
+              <h2 className="font-display text-base font-semibold tracking-tight">
+                {t("lc_recent")}
+              </h2>
+              <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-6">
+                {recent.data!.map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => setCurrent(card)}
+                    className="group overflow-hidden rounded-xl border border-border/50 transition hover:border-primary/50"
+                    title={
+                      card.source === "upload" ? t("lc_source_upload") : t("lc_source_generated")
+                    }
+                  >
+                    {card.imageUrl ? (
+                      <img
+                        src={card.imageUrl}
+                        alt={card.prompt || t("lc_title")}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover"
+                      />
+                    ) : (
+                      <span className="block aspect-square w-full bg-muted/50" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </SiteLayout>
+  );
+}
+
+function ReservedPanel({
+  icon,
+  title,
+  note,
+  badge,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  note: string;
+  badge: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-2 text-sm font-medium">
+          {icon}
+          {title}
+        </span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+          {badge}
+        </span>
+      </div>
+      <div className="mt-3">{children}</div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
+    </div>
+  );
+}
