@@ -40,12 +40,14 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settin
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
+import { Route as DashboardLiveCardsRouteImport } from './routes/dashboard.live-cards'
 import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
 import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
 import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminUserLiveCardsRouteImport } from './routes/admin.user-live-cards'
 import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
@@ -232,6 +234,11 @@ const DashboardNotificationsRoute = DashboardNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardLiveCardsRoute = DashboardLiveCardsRouteImport.update({
+  id: '/live-cards',
+  path: '/live-cards',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardFavoritesRoute = DashboardFavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
@@ -260,6 +267,11 @@ const CSlugRoute = CSlugRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUserLiveCardsRoute = AdminUserLiveCardsRouteImport.update({
+  id: '/user-live-cards',
+  path: '/user-live-cards',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminUserDraftsRoute = AdminUserDraftsRouteImport.update({
@@ -459,12 +471,14 @@ export interface FileRoutesByFullPath {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
+  '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
+  '/dashboard/live-cards': typeof DashboardLiveCardsRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -525,12 +539,14 @@ export interface FileRoutesByTo {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
+  '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
+  '/dashboard/live-cards': typeof DashboardLiveCardsRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -595,12 +611,14 @@ export interface FileRoutesById {
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
+  '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
+  '/dashboard/live-cards': typeof DashboardLiveCardsRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -666,12 +684,14 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/user-drafts'
+    | '/admin/user-live-cards'
     | '/admin/users'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
+    | '/dashboard/live-cards'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -732,12 +752,14 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/user-drafts'
+    | '/admin/user-live-cards'
     | '/admin/users'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
+    | '/dashboard/live-cards'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -801,12 +823,14 @@ export interface FileRouteTypes {
     | '/admin/promotions'
     | '/admin/reports'
     | '/admin/user-drafts'
+    | '/admin/user-live-cards'
     | '/admin/users'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
     | '/dashboard/credits'
     | '/dashboard/favorites'
+    | '/dashboard/live-cards'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -1080,6 +1104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardNotificationsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/live-cards': {
+      id: '/dashboard/live-cards'
+      path: '/live-cards'
+      fullPath: '/dashboard/live-cards'
+      preLoaderRoute: typeof DashboardLiveCardsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/favorites': {
       id: '/dashboard/favorites'
       path: '/favorites'
@@ -1120,6 +1151,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/user-live-cards': {
+      id: '/admin/user-live-cards'
+      path: '/user-live-cards'
+      fullPath: '/admin/user-live-cards'
+      preLoaderRoute: typeof AdminUserLiveCardsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/user-drafts': {
@@ -1400,6 +1438,7 @@ interface AdminRouteChildren {
   AdminPromotionsRoute: typeof AdminPromotionsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminUserDraftsRoute: typeof AdminUserDraftsRoute
+  AdminUserLiveCardsRoute: typeof AdminUserLiveCardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1421,6 +1460,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPromotionsRoute: AdminPromotionsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminUserDraftsRoute: AdminUserDraftsRoute,
+  AdminUserLiveCardsRoute: AdminUserLiveCardsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -1431,6 +1471,7 @@ interface DashboardRouteChildren {
   DashboardCardsRoute: typeof DashboardCardsRoute
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
+  DashboardLiveCardsRoute: typeof DashboardLiveCardsRoute
   DashboardNotificationsRoute: typeof DashboardNotificationsRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
@@ -1442,6 +1483,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCardsRoute: DashboardCardsRoute,
   DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardFavoritesRoute: DashboardFavoritesRoute,
+  DashboardLiveCardsRoute: DashboardLiveCardsRoute,
   DashboardNotificationsRoute: DashboardNotificationsRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProfileRoute: DashboardProfileRoute,
