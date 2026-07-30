@@ -313,6 +313,15 @@ function CreateCardPage() {
           {stage === "design" && (
             <div className="space-y-5 rounded-2xl border border-border/60 bg-card/70 p-5">
               <h2 className="font-display text-xl font-semibold text-foreground">{t("gc_style_title")}</h2>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{t("gc_title_label")}</label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={t("gc_title_ph")}
+                  className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
+                />
+              </div>
               <textarea
                 rows={4}
                 value={greeting}
@@ -329,7 +338,16 @@ function CreateCardPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  {t("gc_finish_btn")}
+                  {saving ? t("gc_saving") : t("gc_finish_btn")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm hover:bg-secondary disabled:opacity-60"
+                >
+                  <Share2 className="h-4 w-4" />
+                  {t("gc_share")}
                 </button>
                 <button
                   type="button"
@@ -346,10 +364,19 @@ function CreateCardPage() {
             <div className="space-y-4 rounded-2xl border border-primary/30 bg-primary/5 p-6">
               <h2 className="font-display text-xl font-semibold text-foreground">{t("gc_done_title")}</h2>
               <p className="text-sm text-muted-foreground">{t("gc_done_sub")}</p>
+              <p className="text-sm text-muted-foreground">{t("gc_saved_success")}</p>
               <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
+                >
+                  <Share2 className="h-4 w-4" />
+                  {t("gc_share")}
+                </button>
                 <Link
                   to="/dashboard/cards"
-                  className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
+                  className="rounded-full border border-border/60 px-6 py-3 text-sm hover:bg-secondary"
                 >
                   {t("gc_open_account")}
                 </Link>
