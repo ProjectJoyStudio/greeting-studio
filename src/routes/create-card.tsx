@@ -1,23 +1,33 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Wand2, Download, Check } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Download, Check, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CardPreview } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
+import { ShareDialog } from "@/components/greeting-card/ShareDialog";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   composeGreetingFromKeywords,
   generateCardImage,
+  getOwnCard,
+  logCardEvent,
   rejectCard,
-  saveCardDetails,
+  saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
-import { DEFAULT_TEXT_DESIGN, type CardTextDesign, type GreetingMode } from "@/lib/greeting-card/types";
+import {
+  DEFAULT_TEXT_DESIGN,
+  normalizeTextDesign,
+  type CardTextDesign,
+  type GreetingMode,
+} from "@/lib/greeting-card/types";
 import { downloadFinalCard } from "@/lib/greeting-card/compose";
+import { uploadFinalCardImage } from "@/lib/greeting-card/save-final";
 
 type Stage = "edit" | "preview" | "design" | "done";
 
@@ -26,6 +36,7 @@ export const Route = createFileRoute("/create-card")({
     prompt: typeof search.prompt === "string" ? search.prompt.slice(0, 1000) : undefined,
     text: typeof search.text === "string" ? search.text.slice(0, 2000) : undefined,
     keywords: typeof search.keywords === "string" ? search.keywords.slice(0, 500) : undefined,
+    cardId: typeof search.cardId === "string" ? search.cardId.slice(0, 60) : undefined,
   }),
   head: () => ({
     meta: [
@@ -56,7 +67,9 @@ function CreateCardPage() {
   const runGenerate = useServerFn(generateCardImage);
   const runCompose = useServerFn(composeGreetingFromKeywords);
   const runReject = useServerFn(rejectCard);
-  const runSave = useServerFn(saveCardDetails);
+  const runSave = useServerFn(saveCardProject);
+  const runLoad = useServerFn(getOwnCard);
+  const trackEvent = useServerFn(logCardEvent);
 
   const [stage, setStage] = useState<Stage>("edit");
   const [prompt, setPrompt] = useState(search.prompt ?? "");
@@ -64,12 +77,34 @@ function CreateCardPage() {
   const [greeting, setGreeting] = useState(search.text ?? "");
   const [keywords, setKeywords] = useState(search.keywords ?? "");
   const [design, setDesign] = useState<CardTextDesign>({ ...DEFAULT_TEXT_DESIGN });
+  const [title, setTitle] = useState("");
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [generating, setGenerating] = useState(false);
   const [composing, setComposing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [card, setCard] = useState<{ id: string; imageUrl: string } | null>(null);
+
+  /** Re-opening a saved postcard restores the whole project, not just the picture. */
+  const { data: existing } = useQuery({
+    queryKey: ["own-card", search.cardId],
+    queryFn: () => runLoad({ data: { cardId: search.cardId! } }),
+    enabled: Boolean(search.cardId),
+  });
+
+  useEffect(() => {
+    if (!existing?.image_url) return;
+    setCard({ id: existing.id, imageUrl: existing.image_url });
+    setPrompt(existing.prompt ?? "");
+    setGreeting(existing.greeting_text ?? "");
+    setKeywords((existing.keywords ?? []).join(", "));
+    setMode(existing.greeting_mode === "keywords" ? "keywords" : "manual");
+    setDesign(normalizeTextDesign(existing.text_design));
+    setTitle(existing.title ?? "");
+    setStage("design");
+  }, [existing]);
 
   const keywordList = useMemo(
     () => keywords.split(",").map((k: string) => k.trim()).filter(Boolean),
@@ -136,30 +171,53 @@ function CreateCardPage() {
     setStage("edit"); // back to the editor with every field still filled in
   }
 
-  async function persist(finalize: boolean) {
-    if (!card) return;
+  /** Saves the picture and the editable project, then returns the share link. */
+  async function persist(finalize: boolean): Promise<string | null> {
+    if (!card) return null;
     setSaving(true);
     try {
-      await runSave({
+      let finalPath: string | null = null;
+      if (user) {
+        try {
+          finalPath = await uploadFinalCardImage(user.id, card.id, card.imageUrl, greeting, design);
+        } catch {
+          // The editable project is still saved; the picture can be re-rendered later.
+        }
+      }
+      const res = await runSave({
         data: {
           cardId: card.id,
+          title,
+          language: lang,
           greetingText: greeting,
           greetingMode: mode,
           keywords: keywordList,
           prompt,
           textDesign: design,
-          finalize,
+          finalStoragePath: finalPath,
+          enableShare: true,
         },
       });
       if (finalize) {
         setStage("done");
         toast.success(t("gc_saved_toast"));
       }
+      const url = res.shareSlug ? `${window.location.origin}/c/${res.shareSlug}` : null;
+      setShareUrl(url);
+      return url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("gc_err_save"));
+      return null;
     } finally {
       setSaving(false);
     }
+  }
+
+  /** Sharing saves first when the postcard is not stored yet. */
+  async function handleShare() {
+    const url = shareUrl ?? (await persist(false));
+    if (!url) return;
+    setShareOpen(true);
   }
 
   return (
