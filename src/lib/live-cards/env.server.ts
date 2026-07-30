@@ -7,7 +7,30 @@ export function liveCardsImageBucket(): string {
 }
 
 export function liveCardsVideoBucket(): string {
-  return process.env.LIVE_CARDS_VIDEO_BUCKET || "live-greeting-cards";
+  return process.env.LIVE_CARDS_VIDEO_BUCKET || "live-greeting-card-videos";
+}
+
+/**
+ * Optional ordered allow-list of animation engines, e.g. "wan_i2v".
+ * When unset, the routing layer uses its own ranking.
+ */
+export function configuredVideoGenerators(): string[] {
+  return (process.env.LIVE_CARDS_VIDEO_GENERATORS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** Animation lengths offered by the first engine, configurable per environment. */
+export function liveCardsDurations(): number[] {
+  const raw = (process.env.LIVE_CARDS_DURATIONS || "5,10").split(",");
+  const parsed = raw.map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
+  return parsed.length ? parsed : [5, 10];
+}
+
+/** Output resolution handed to the animation engine. */
+export function liveCardsVideoResolution(): string {
+  return process.env.LIVE_CARDS_VIDEO_RESOLUTION || "1080p";
 }
 
 /**
