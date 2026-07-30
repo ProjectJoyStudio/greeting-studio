@@ -92,3 +92,49 @@ export async function recordAdminAction(input: {
     request_metadata: { affected_user_id: input.affectedUserId ?? null },
   });
 }
+// ---------------------------------------------------------------------------
+// Live Greeting Cards — deleted source images share the same recycle-bin rules
+// as user postcards: soft delete, retention window, permanent purge.
+// ---------------------------------------------------------------------------
+
+/** Removes one live-card source image completely (storage + record). */
+export async function purgeLiveCardCompletely(cardId: string): Promise<boolean> {
+  const supabaseAdmin = await getAdmin();
+  const { data: card } = await supabaseAdmin
+    .from("live_greeting_cards")
+    .select("id, storage_bucket, storage_path, video_storage_bucket, video_storage_path")
+    .eq("id", cardId)
+    .maybeSingle();
+  if (!card) return false;
+
+  const byBucket = new Map<string, string[]>();
+  const push = (bucket: string | null, path: string | null) => {
+    if (!bucket || !path) return;
+    byBucket.set(bucket, [...(byBucket.get(bucket) ?? []), path]);
+  };
+  push(card.storage_bucket, card.storage_path);
+  push(card.video_storage_bucket, card.video_storage_path);
+  for (const [bucket, paths] of byBucket) {
+    await supabaseAdmin.storage.from(bucket).remove(paths);
+  }
+
+  await supabaseAdmin.from("live_greeting_cards").delete().eq("id", card.id);
+  return true;
+}
+
+/** Permanently removes every live-card image whose retention period expired. */
+export async function purgeExpiredLiveCards(): Promise<{ purged: number }> {
+  const supabaseAdmin = await getAdmin();
+  const { data: rows } = await supabaseAdmin
+    .from("live_greeting_cards")
+    .select("id")
+    .not("deleted_at", "is", null)
+    .lte("purge_after", new Date().toISOString())
+    .limit(500);
+
+  let purged = 0;
+  for (const row of rows ?? []) {
+    if (await purgeLiveCardCompletely(row.id)) purged += 1;
+  }
+  return { purged };
+}
