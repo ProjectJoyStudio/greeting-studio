@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       card_variant_additional_occasions: {
         Row: {
           card_variant_id: string
@@ -2394,6 +2418,9 @@ export type Database = {
         Row: {
           card_kind: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          file_size: number | null
           final_storage_bucket: string | null
           final_storage_path: string | null
           greeting_mode: string
@@ -2405,6 +2432,7 @@ export type Database = {
           language: string
           last_viewed_at: string | null
           prompt: string
+          purge_after: string | null
           scheduled_send_at: string | null
           share_slug: string | null
           source_card_id: string | null
@@ -2420,6 +2448,9 @@ export type Database = {
         Insert: {
           card_kind?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_size?: number | null
           final_storage_bucket?: string | null
           final_storage_path?: string | null
           greeting_mode?: string
@@ -2431,6 +2462,7 @@ export type Database = {
           language?: string
           last_viewed_at?: string | null
           prompt?: string
+          purge_after?: string | null
           scheduled_send_at?: string | null
           share_slug?: string | null
           source_card_id?: string | null
@@ -2446,6 +2478,9 @@ export type Database = {
         Update: {
           card_kind?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_size?: number | null
           final_storage_bucket?: string | null
           final_storage_path?: string | null
           greeting_mode?: string
@@ -2457,6 +2492,7 @@ export type Database = {
           language?: string
           last_viewed_at?: string | null
           prompt?: string
+          purge_after?: string | null
           scheduled_send_at?: string | null
           share_slug?: string | null
           source_card_id?: string | null

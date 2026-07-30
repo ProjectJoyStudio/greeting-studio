@@ -129,6 +129,9 @@ function MyCardsPage() {
                   <p className="text-xs text-muted-foreground">
                     {t("gc_created")}: {new Date(c.created_at).toLocaleDateString(lang)}
                   </p>
+                  {c.language && (
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{c.language}</p>
+                  )}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
                   <button onClick={() => setOpen(c.id)} className="rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary">

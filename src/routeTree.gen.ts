@@ -54,11 +54,14 @@ import { Route as AdminNotificationsRouteImport } from './routes/admin.notificat
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
+import { Route as AdminDeletedCardsRouteImport } from './routes/admin.deleted-cards'
 import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
+import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -297,6 +300,11 @@ const AdminEconomyRoute = AdminEconomyRouteImport.update({
   path: '/economy',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDeletedCardsRoute = AdminDeletedCardsRouteImport.update({
+  id: '/deleted-cards',
+  path: '/deleted-cards',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreditPackagesRoute = AdminCreditPackagesRouteImport.update({
   id: '/credit-packages',
   path: '/credit-packages',
@@ -317,11 +325,22 @@ const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminActivityLogRoute = AdminActivityLogRouteImport.update({
+  id: '/activity-log',
+  path: '/activity-log',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const ApiPublicPurgeDeletedCardsRoute =
+  ApiPublicPurgeDeletedCardsRouteImport.update({
+    id: '/api/public/purge-deleted-cards',
+    path: '/api/public/purge-deleted-cards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -411,10 +430,12 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/deleted-cards': typeof AdminDeletedCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -444,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -473,9 +495,11 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/deleted-cards': typeof AdminDeletedCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -505,6 +529,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -537,10 +562,12 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
+  '/admin/deleted-cards': typeof AdminDeletedCardsRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
@@ -570,6 +597,7 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -603,10 +631,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/catalog'
     | '/admin/credit-packages'
+    | '/admin/deleted-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -636,6 +666,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -665,9 +696,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/credit-packages'
+    | '/admin/deleted-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -697,6 +730,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -728,10 +762,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/catalog'
     | '/admin/credit-packages'
+    | '/admin/deleted-cards'
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
@@ -761,6 +797,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -796,6 +833,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
+  ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1115,6 +1153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEconomyRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/deleted-cards': {
+      id: '/admin/deleted-cards'
+      path: '/deleted-cards'
+      fullPath: '/admin/deleted-cards'
+      preLoaderRoute: typeof AdminDeletedCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/credit-packages': {
       id: '/admin/credit-packages'
       path: '/credit-packages'
@@ -1143,12 +1188,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/activity-log': {
+      id: '/admin/activity-log'
+      path: '/activity-log'
+      fullPath: '/admin/activity-log'
+      preLoaderRoute: typeof AdminActivityLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/': {
       id: '/admin/catalog/'
       path: '/'
       fullPath: '/admin/catalog/'
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
       parentRoute: typeof AdminCatalogRoute
+    }
+    '/api/public/purge-deleted-cards': {
+      id: '/api/public/purge-deleted-cards'
+      path: '/api/public/purge-deleted-cards'
+      fullPath: '/api/public/purge-deleted-cards'
+      preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
@@ -1286,10 +1345,12 @@ const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminActivityLogRoute: typeof AdminActivityLogRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCalendarSettingsRoute: typeof AdminCalendarSettingsRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCreditPackagesRoute: typeof AdminCreditPackagesRoute
+  AdminDeletedCardsRoute: typeof AdminDeletedCardsRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
@@ -1304,10 +1365,12 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityLogRoute: AdminActivityLogRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCalendarSettingsRoute: AdminCalendarSettingsRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCreditPackagesRoute: AdminCreditPackagesRoute,
+  AdminDeletedCardsRoute: AdminDeletedCardsRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
@@ -1376,6 +1439,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   CatalogIndexRoute: CatalogIndexRoute,
+  ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
