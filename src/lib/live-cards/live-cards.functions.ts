@@ -49,25 +49,29 @@ async function toAsset(row: Row): Promise<LiveCardAsset> {
 /** Creates the artwork through the internal routing layer and stores it. */
 export const generateLiveCardImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { prompt: string; aspectRatio?: string }) => {
+  .inputValidator((input: { prompt: string; aspectRatio?: string; promptLang?: string }) => {
     const prompt = String(input?.prompt ?? "").trim();
     if (prompt.length < 3) throw new Error("prompt_too_short");
     const ratio = String(input?.aspectRatio ?? "1:1");
     return {
       prompt: prompt.slice(0, 1000),
       aspectRatio: ["1:1", "4:5", "9:16", "16:9"].includes(ratio) ? ratio : "1:1",
+      promptLang: String(input?.promptLang ?? "").slice(0, 8),
     };
   })
   .handler(async ({ data, context }): Promise<LiveCardResult> => {
     const { routeImageRequest } = await import("./generators/router.server");
     const { GeneratorError } = await import("./generators/contracts.server");
-    const { toEnglishImagePrompt } = await import("@/lib/greeting-card/prompt-translate.server");
+    const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
     const { liveCardsImageBucket } = await import("./env.server");
+
+    // Universal translation layer — the engine only ever receives English.
+    const translated = await translatePromptToEnglish(data.prompt, "image");
 
     let routed;
     try {
       routed = await routeImageRequest({
-        prompt: await toEnglishImagePrompt(data.prompt),
+        prompt: translated.english,
         aspectRatio: data.aspectRatio,
       });
     } catch (err) {
@@ -99,6 +103,8 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
         user_id: context.userId,
         status: "image_ready",
         prompt: data.prompt,
+        prompt_en: translated.english,
+        prompt_lang: data.promptLang || null,
         source: "generated",
         generator_key: routed.generatorKey,
         generator_model: routed.generatorModel,
