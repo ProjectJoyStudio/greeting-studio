@@ -25,8 +25,8 @@ export type AdminActivityRow = {
   entity_id: string | null;
   actor_email: string | null;
   affected_email: string | null;
-  previous_data: unknown;
-  new_data: unknown;
+  previous_data: string | null;
+  new_data: string | null;
 };
 
 async function assertAdmin(context: { supabase: unknown; userId: string }) {
@@ -261,8 +261,8 @@ export const listAdminActivity = createServerFn({ method: "GET" })
         entity_id: row.entity_id,
         actor_email: await resolve(row.actor_user_id),
         affected_email: await resolve(meta.affected_user_id ?? null),
-        previous_data: row.previous_data,
-        new_data: row.new_data,
+        previous_data: row.previous_data ? JSON.stringify(row.previous_data, null, 2) : null,
+        new_data: row.new_data ? JSON.stringify(row.new_data, null, 2) : null,
       });
     }
     return rows;
