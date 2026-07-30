@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, Film, Images, Loader2, Play, RefreshCw, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock, Film, Images, Loader2, Play, Plus, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
+import { LiveCardViewer } from "./LiveCardViewer";
 import {
   getAnimationOptions,
   listLiveCardAnimations,
@@ -30,11 +31,14 @@ export function AnimationStep({
   sessionId,
   onChangeImage,
   onAnimation,
+  onNewProject,
 }: {
   card: LiveCardAsset;
   sessionId: string | null;
   onChangeImage: () => void;
   onAnimation: (animation: LiveCardAnimation | null) => void;
+  /** Starts a completely new, independent live greeting card project. */
+  onNewProject: () => void;
 }) {
   const { t, lang } = useI18n();
   const start = useServerFn(startLiveCardAnimation);
@@ -46,6 +50,7 @@ export function AnimationStep({
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   // Attempts the person has dismissed with "try again" — never restored again.
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   // The motion description survives reloads and failed attempts.
   useEffect(() => {
@@ -134,6 +139,57 @@ export function AnimationStep({
   }
 
   const running = Boolean(animation && isPending(animation.status));
+  // Once the animation exists, the session is finished: every control that
+  // could start the same animation again is removed from the page.
+  const finished = animation?.status === "ready";
+
+  if (finished && animation) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center shadow-warm">
+          <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
+          <h2 className="mt-3 font-display text-lg font-semibold tracking-tight">{t("la_done_title")}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t("la_done_hint")}</p>
+
+          <div className="mt-5 flex flex-col gap-3">
+            {animation.videoUrl && (
+              <button
+                type="button"
+                onClick={() => setViewerOpen(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-medium transition hover:border-primary/50"
+              >
+                <Play className="h-4 w-4" />
+                {t("la_open_viewer")}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                window.localStorage.removeItem(DRAFT_KEY);
+                setAnimation(null);
+                setMotion("");
+                setDuration(null);
+                onAnimation(null);
+                onNewProject();
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm"
+            >
+              <Plus className="h-4 w-4" />
+              {t("la_new_project")}
+            </button>
+          </div>
+        </div>
+
+        {viewerOpen && animation.videoUrl && (
+          <LiveCardViewer
+            videoUrl={animation.videoUrl}
+            title={null}
+            onClose={() => setViewerOpen(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
