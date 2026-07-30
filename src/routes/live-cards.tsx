@@ -460,6 +460,31 @@ function LiveCardsPage() {
           )}
         </div>
       </section>
+
+      {confirmReplace && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
+            <h3 className="font-display text-lg font-semibold text-foreground">{t("lc_replace_title")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("lc_replace_desc")}</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmReplace(false)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm hover:bg-secondary"
+              >
+                {t("lc_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReplace}
+                className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+              >
+                {t("lc_replace_confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SiteLayout>
   );
 }
