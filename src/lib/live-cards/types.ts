@@ -33,5 +33,44 @@ export type LiveCardResult =
 export const LIVE_CARD_RATIOS = ["1:1", "4:5", "9:16", "16:9"] as const;
 export type LiveCardRatio = (typeof LIVE_CARD_RATIOS)[number];
 
-/** Reserved for the next phase — durations are shown but not selectable yet. */
-export const PLANNED_VIDEO_DURATIONS = [5, 10, 15] as const;
+/** Fallback only — the real list always comes from the generator configuration. */
+export const PLANNED_VIDEO_DURATIONS = [5, 10] as const;
+
+/** Lifecycle of one animation, mirrored in the interface as plain progress. */
+export type AnimationStatus =
+  | "preparing"
+  | "queued"
+  | "processing"
+  | "storing"
+  | "ready"
+  | "failed";
+
+export interface LiveCardAnimation {
+  id: string;
+  status: AnimationStatus;
+  sourceCardId: string | null;
+  sourceImageUrl: string | null;
+  /** Exactly what the person wrote, in their own language. */
+  prompt: string;
+  /** English wording sent to the engine — never shown to the person. */
+  promptEnglish: string | null;
+  durationSeconds: number;
+  aspectRatio: string | null;
+  videoUrl: string | null;
+  errorCode: string | null;
+  createdAt: string;
+}
+
+export type AnimationResult =
+  | { ok: true; animation: LiveCardAnimation }
+  | { ok: false; errorCode: string; errorMessage: string };
+
+/** Optional motion presets. The label text itself is localised in the UI. */
+export const MOTION_PRESET_KEYS = [
+  "camera",
+  "natural",
+  "nature",
+  "water",
+  "cinematic",
+] as const;
+export type MotionPresetKey = (typeof MOTION_PRESET_KEYS)[number];
