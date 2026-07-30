@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Upload, Wand2, Clock, Coins, Wallet, Play } from "lucide-react";
+import { Check, Loader2, Sparkles, Upload, Wand2, Clock, Coins, Wallet, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import {
   generateLiveCardImage,
   listOwnLiveCards,
+  selectLiveCardImage,
   uploadLiveCardImage,
 } from "@/lib/live-cards/live-cards.functions";
 import {
@@ -50,16 +51,18 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
 };
 
 function LiveCardsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
   const generate = useServerFn(generateLiveCardImage);
   const upload = useServerFn(uploadLiveCardImage);
+  const select = useServerFn(selectLiveCardImage);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [prompt, setPrompt] = useState("");
   const [ratio, setRatio] = useState<LiveCardRatio>("1:1");
-  const [busy, setBusy] = useState<null | "generate" | "upload">(null);
+  const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const recent = useQuery({
     queryKey: ["live-cards", "recent"],
@@ -71,13 +74,34 @@ function LiveCardsPage() {
     if (prompt.trim().length < 3) return;
     setBusy("generate");
     try {
-      const result = await generate({ data: { prompt, aspectRatio: ratio } });
+      const result = await generate({ data: { prompt, aspectRatio: ratio, promptLang: lang } });
       if (!result.ok) {
         toast.error(t("lc_failed"));
         return;
       }
       setCurrent(result.card);
+      setSelectedId(null);
       toast.success(t("lc_saved"));
+      void recent.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function useThisImage() {
+    if (!current) return;
+    setBusy("select");
+    try {
+      const result = await select({ data: { cardId: current.id } });
+      if (!result.ok) {
+        toast.error(t("lc_failed"));
+        return;
+      }
+      setCurrent(result.card);
+      setSelectedId(result.card.id);
+      toast.success(t("lc_selected_toast"));
       void recent.refetch();
     } catch {
       toast.error(t("lc_failed"));
@@ -105,6 +129,7 @@ function LiveCardsPage() {
         return;
       }
       setCurrent(result.card);
+      setSelectedId(null);
       toast.success(t("lc_saved"));
       void recent.refetch();
     } catch {
@@ -160,20 +185,23 @@ function LiveCardsPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
-                onClick={runGenerate}
-                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "generate" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4" />
-                )}
-                {current ? t("lc_regenerate") : t("lc_generate")}
-              </button>
+              {!current && (
+                <button
+                  type="button"
+                  disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
+                  onClick={runGenerate}
+                  className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "generate" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {t("lc_generate")}
+                </button>
+              )}
 
+              {!current && (
               <button
                 type="button"
                 disabled={!isAuthenticated || busy !== null}
@@ -187,6 +215,7 @@ function LiveCardsPage() {
                 )}
                 {busy === "upload" ? t("lc_uploading") : t("lc_upload")}
               </button>
+              )}
               <input
                 ref={fileRef}
                 type="file"
@@ -276,11 +305,46 @@ function LiveCardsPage() {
               )}
             </div>
 
+            {current && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={useThisImage}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    selectedId === current.id
+                      ? "border border-primary/60 bg-primary/10 text-primary"
+                      : "bg-gold-gradient text-primary-foreground shadow-warm"
+                  }`}
+                >
+                  {busy === "select" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {selectedId === current.id ? t("lc_selected") : t("lc_use_image")}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy !== null || prompt.trim().length < 3}
+                  onClick={runGenerate}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === "generate" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {t("lc_regenerate")}
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
               disabled
               title={t("lc_animate_soon")}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-border/70 px-5 py-3 text-sm font-medium text-muted-foreground"
             >
               <Play className="h-4 w-4" />
               {t("lc_animate")}
@@ -300,7 +364,11 @@ function LiveCardsPage() {
                   <button
                     key={card.id}
                     type="button"
-                    onClick={() => setCurrent(card)}
+                    onClick={() => {
+                      setCurrent(card);
+                      setSelectedId(card.status === "image_selected" ? card.id : null);
+                      if (card.prompt) setPrompt(card.prompt);
+                    }}
                     className="group overflow-hidden rounded-xl border border-border/50 transition hover:border-primary/50"
                     title={
                       card.source === "upload" ? t("lc_source_upload") : t("lc_source_generated")

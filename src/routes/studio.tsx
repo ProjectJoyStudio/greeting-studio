@@ -573,17 +573,14 @@ function Step1({
           const prepLabel = isPremium
             ? t("studio_premium_custom_estimate")
             : formatEstimatePrep(est, t);
-          return (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => onChange(g.id)}
-              className={`group relative flex flex-col rounded-2xl border p-5 text-left transition ${
-                active
-                  ? "border-primary/60 bg-primary/[0.04] shadow-warm"
-                  : "border-border bg-background hover:border-primary/40 hover:bg-secondary/40"
-              }`}
-            >
+          const cardClass = `group relative flex flex-col rounded-2xl border p-5 text-left transition ${
+            active
+              ? "border-primary/60 bg-primary/[0.04] shadow-warm"
+              : "border-border bg-background hover:border-primary/40 hover:bg-secondary/40"
+          }`;
+          // The whole Live greeting cards card opens the existing creation page.
+          const body = (
+            <>
               <div className="flex items-center gap-3">
                 <span
                   className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${
@@ -612,6 +609,18 @@ function Step1({
                   {prepLabel}
                 </span>
               </div>
+            </>
+          );
+          if (g.id === "animated") {
+            return (
+              <Link key={g.id} to="/live-cards" className={cardClass}>
+                {body}
+              </Link>
+            );
+          }
+          return (
+            <button key={g.id} type="button" onClick={() => onChange(g.id)} className={cardClass}>
+              {body}
             </button>
           );
         })}

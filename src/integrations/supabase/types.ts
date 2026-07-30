@@ -1729,6 +1729,8 @@ export type Database = {
       }
       live_greeting_cards: {
         Row: {
+          animation_prompt: string | null
+          animation_prompt_en: string | null
           created_at: string
           deleted_at: string | null
           duration_seconds: number | null
@@ -1739,6 +1741,8 @@ export type Database = {
           metadata: Json
           price_credits: number | null
           prompt: string
+          prompt_en: string | null
+          prompt_lang: string | null
           purge_after: string | null
           source: string
           status: string
@@ -1753,6 +1757,8 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          animation_prompt?: string | null
+          animation_prompt_en?: string | null
           created_at?: string
           deleted_at?: string | null
           duration_seconds?: number | null
@@ -1763,6 +1769,8 @@ export type Database = {
           metadata?: Json
           price_credits?: number | null
           prompt?: string
+          prompt_en?: string | null
+          prompt_lang?: string | null
           purge_after?: string | null
           source?: string
           status?: string
@@ -1777,6 +1785,8 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          animation_prompt?: string | null
+          animation_prompt_en?: string | null
           created_at?: string
           deleted_at?: string | null
           duration_seconds?: number | null
@@ -1787,6 +1797,8 @@ export type Database = {
           metadata?: Json
           price_credits?: number | null
           prompt?: string
+          prompt_en?: string | null
+          prompt_lang?: string | null
           purge_after?: string | null
           source?: string
           status?: string

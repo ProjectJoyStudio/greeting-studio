@@ -31,6 +31,9 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "Animation arrives in the next phase.",
     lc_source_upload: "Uploaded",
     lc_source_generated: "Created",
+    lc_use_image: "Use this image",
+    lc_selected: "Selected for animation",
+    lc_selected_toast: "This image is ready for the next step.",
   },
   ru: {
     lc_nav: "Живые открытки",
@@ -61,6 +64,9 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "Анимация появится на следующем этапе.",
     lc_source_upload: "Загружено",
     lc_source_generated: "Создано",
+    lc_use_image: "Использовать это изображение",
+    lc_selected: "Выбрано для оживления",
+    lc_selected_toast: "Это изображение готово к следующему шагу.",
   },
   de: {
     lc_nav: "Lebendige Grußkarten",
@@ -91,6 +97,9 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "Die Animation folgt in der nächsten Phase.",
     lc_source_upload: "Hochgeladen",
     lc_source_generated: "Erstellt",
+    lc_use_image: "Dieses Bild verwenden",
+    lc_selected: "Für die Animation gewählt",
+    lc_selected_toast: "Dieses Bild ist bereit für den nächsten Schritt.",
   },
   uk: {
     lc_nav: "Живі листівки",
@@ -121,6 +130,9 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "Анімація з’явиться на наступному етапі.",
     lc_source_upload: "Завантажено",
     lc_source_generated: "Створено",
+    lc_use_image: "Використати це зображення",
+    lc_selected: "Обрано для оживлення",
+    lc_selected_toast: "Це зображення готове до наступного кроку.",
   },
   fr: {
     lc_nav: "Cartes vivantes",
@@ -151,6 +163,9 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "L’animation arrive lors de la prochaine phase.",
     lc_source_upload: "Importée",
     lc_source_generated: "Créée",
+    lc_use_image: "Utiliser cette image",
+    lc_selected: "Choisie pour l’animation",
+    lc_selected_toast: "Cette image est prête pour l’étape suivante.",
   },
   pl: {
     lc_nav: "Żywe kartki",
@@ -181,5 +196,8 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_animate_soon: "Animacja pojawi się w następnym etapie.",
     lc_source_upload: "Wgrane",
     lc_source_generated: "Utworzone",
+    lc_use_image: "Użyj tego obrazu",
+    lc_selected: "Wybrany do ożywienia",
+    lc_selected_toast: "Ten obraz jest gotowy na następny krok.",
   },
 };
