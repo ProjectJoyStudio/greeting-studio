@@ -18,10 +18,11 @@ import {
 } from "@/lib/live-cards/live-cards.functions";
 import {
   LIVE_CARD_RATIOS,
-  PLANNED_VIDEO_DURATIONS,
   type LiveCardAsset,
+  type LiveCardAnimation,
   type LiveCardRatio,
 } from "@/lib/live-cards/types";
+import { AnimationStep } from "@/components/live-cards/AnimationStep";
 
 export const Route = createFileRoute("/live-cards")({
   head: () => ({
@@ -83,6 +84,8 @@ function LiveCardsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [restored, setRestored] = useState(false);
+  const [stage, setStage] = useState<"image" | "motion">("image");
+  const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   const sessionId = useLiveCardSession();
 
   const recent = useQuery({
@@ -98,6 +101,7 @@ function LiveCardsPage() {
     const chosen = recent.data.find((card) => card.selected) ?? recent.data[0];
     setCurrent(chosen);
     setSelectedId(chosen.selected ? chosen.id : null);
+    if (chosen.selected) setStage("motion");
     if (chosen.prompt) setPrompt(chosen.prompt);
     if (chosen.aspectRatio && (LIVE_CARD_RATIOS as readonly string[]).includes(chosen.aspectRatio)) {
       setRatio(chosen.aspectRatio as LiveCardRatio);
@@ -139,6 +143,7 @@ function LiveCardsPage() {
       }
       setCurrent(result.card);
       setSelectedId(result.card.id);
+      setStage("motion");
       toast.success(t("lc_selected_toast"));
       void recent.refetch();
     } catch {
@@ -163,6 +168,7 @@ function LiveCardsPage() {
     }
     setCurrent(null);
     setSelectedId(null);
+    setStage("image");
     toast.success(t("lc_discarded"));
     void recent.refetch();
   }
