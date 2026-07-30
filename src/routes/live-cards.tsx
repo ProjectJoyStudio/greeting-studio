@@ -432,14 +432,14 @@ function LiveCardsPage() {
             )}
 
             {animation?.status === "ready" && animation.videoUrl && (
-              <a
-                href={animation.videoUrl}
-                download
+              <button
+                type="button"
+                onClick={() => setViewerOpen(true)}
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
               >
                 <Play className="h-4 w-4" />
-                {t("la_download")}
-              </a>
+                {t("la_open_viewer")}
+              </button>
             )}
           </div>
 
