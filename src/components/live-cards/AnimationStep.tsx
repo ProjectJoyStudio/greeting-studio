@@ -44,6 +44,8 @@ export function AnimationStep({
   const [duration, setDuration] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
+  // Attempts the person has dismissed with "try again" — never restored again.
+  const [dismissed, setDismissed] = useState<string[]>([]);
 
   // The motion description survives reloads and failed attempts.
   useEffect(() => {
@@ -72,14 +74,14 @@ export function AnimationStep({
   });
   useEffect(() => {
     if (animation || !existing.data?.length) return;
-    const mine = existing.data.find((a) => a.sourceCardId === card.id);
+    const mine = existing.data.find((a) => a.sourceCardId === card.id && !dismissed.includes(a.id));
     if (!mine) return;
     setAnimation(mine);
     onAnimation(mine);
     if (mine.prompt && !motion) setMotion(mine.prompt);
     setDuration(mine.durationSeconds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existing.data, card.id]);
+  }, [existing.data, card.id, dismissed]);
 
   // Progress polling — the engine works asynchronously.
   useEffect(() => {
@@ -256,6 +258,7 @@ export function AnimationStep({
               <button
                 type="button"
                 onClick={() => {
+                  setDismissed((ids) => [...ids, animation.id]);
                   setAnimation(null);
                   onAnimation(null);
                 }}
