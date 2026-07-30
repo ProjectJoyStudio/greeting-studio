@@ -59,6 +59,7 @@ import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-p
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
@@ -324,6 +325,11 @@ const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminActivityLogRoute = AdminActivityLogRouteImport.update({
+  id: '/activity-log',
+  path: '/activity-log',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -424,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
@@ -488,6 +495,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/credit-packages': typeof AdminCreditPackagesRoute
@@ -554,6 +562,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
@@ -622,6 +631,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/catalog'
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/credit-packages'
@@ -751,6 +762,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
     | '/admin/catalog'
@@ -1176,6 +1188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/activity-log': {
+      id: '/admin/activity-log'
+      path: '/activity-log'
+      fullPath: '/admin/activity-log'
+      preLoaderRoute: typeof AdminActivityLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/': {
       id: '/admin/catalog/'
       path: '/'
@@ -1326,6 +1345,7 @@ const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminActivityLogRoute: typeof AdminActivityLogRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCalendarSettingsRoute: typeof AdminCalendarSettingsRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
@@ -1345,6 +1365,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityLogRoute: AdminActivityLogRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCalendarSettingsRoute: AdminCalendarSettingsRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
