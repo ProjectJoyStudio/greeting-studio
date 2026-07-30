@@ -1733,12 +1733,16 @@ export type Database = {
           completed_at: string | null
           created_at: string
           deleted_at: string | null
+          deleted_by: string | null
           delivery_status: string | null
           duration_seconds: number
           error_code: string | null
           error_message: string | null
           generator_key: string | null
           generator_model: string | null
+          greeting_keywords: string[]
+          greeting_mode: string
+          greeting_text: string
           id: string
           is_shared: boolean
           metadata: Json
@@ -1761,6 +1765,8 @@ export type Database = {
           status: string
           storage_bucket: string | null
           storage_path: string | null
+          text_design: Json
+          text_saved_at: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -1770,12 +1776,16 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
           generator_key?: string | null
           generator_model?: string | null
+          greeting_keywords?: string[]
+          greeting_mode?: string
+          greeting_text?: string
           id?: string
           is_shared?: boolean
           metadata?: Json
@@ -1798,6 +1808,8 @@ export type Database = {
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          text_design?: Json
+          text_saved_at?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -1807,12 +1819,16 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
           generator_key?: string | null
           generator_model?: string | null
+          greeting_keywords?: string[]
+          greeting_mode?: string
+          greeting_text?: string
           id?: string
           is_shared?: boolean
           metadata?: Json
@@ -1835,6 +1851,8 @@ export type Database = {
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          text_design?: Json
+          text_saved_at?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string

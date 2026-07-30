@@ -13,12 +13,17 @@ export const Route = createFileRoute("/api/public/purge-deleted-cards")({
         if (!expected || provided !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
-        const { purgeExpiredCards, purgeExpiredLiveCards } = await import(
+        const { purgeExpiredCards, purgeExpiredLiveCards, purgeExpiredLiveAnimations } = await import(
           "@/lib/admin/deleted-cards.server"
         );
         const cards = await purgeExpiredCards();
         const liveCards = await purgeExpiredLiveCards();
-        return Response.json({ purged: cards.purged, purgedLiveCards: liveCards.purged });
+        const liveGreetings = await purgeExpiredLiveAnimations();
+        return Response.json({
+          purged: cards.purged,
+          purgedLiveCards: liveCards.purged,
+          purgedLiveGreetings: liveGreetings.purged,
+        });
       },
     },
   },

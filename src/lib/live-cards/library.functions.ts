@@ -4,10 +4,11 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizeTextDesign } from "@/lib/greeting-card/types";
 import type { LiveGreetingRecord } from "./types";
 
 const COLUMNS =
-  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
+  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
 
 type Row = {
   id: string;
@@ -22,6 +23,10 @@ type Row = {
   aspect_ratio: string | null;
   storage_bucket: string | null;
   storage_path: string | null;
+  greeting_text?: string | null;
+  greeting_mode?: string | null;
+  greeting_keywords?: string[] | null;
+  text_design?: unknown;
   sound_enabled: boolean | null;
   is_shared: boolean | null;
   share_slug: string | null;
@@ -60,8 +65,12 @@ export async function buildLiveGreeting(
     aspectRatio: row.aspect_ratio,
     imageUrl: await sign(row.source_bucket, row.source_path),
     videoUrl: await sign(row.storage_bucket, row.storage_path),
+    greetingText: row.greeting_text ?? "",
+    greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
+    greetingKeywords: row.greeting_keywords ?? [],
+    textDesign: normalizeTextDesign(row.text_design),
     // Prepared for later phases — not offered in the interface yet.
-    soundEnabled: row.sound_enabled ?? true,
+    soundEnabled: row.sound_enabled ?? false,
     isShared: row.is_shared ?? false,
     shareSlug: row.share_slug,
     scheduledSendAt: row.scheduled_send_at,
@@ -126,6 +135,52 @@ export const deleteMyLiveGreeting = createServerFn({ method: "POST" })
       .update({
         deleted_at: now.toISOString(),
         purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
+      })
+      .eq("id", data.animationId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * The greeting text is added after the animation, exactly like the greeting
+ * card module: same editor, same styling values, saved with the finished card.
+ */
+export const saveLiveGreetingText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    animationId: string;
+    title?: string;
+    greetingText?: string;
+    greetingMode?: string;
+    keywords?: string[];
+    textDesign?: unknown;
+  }) => {
+    const animationId = String(input?.animationId ?? "");
+    if (!animationId) throw new Error("animation_required");
+    return {
+      animationId,
+      title: String(input?.title ?? "").slice(0, 160),
+      greetingText: String(input?.greetingText ?? "").slice(0, 2000),
+      greetingMode: input?.greetingMode === "keywords" ? "keywords" : "manual",
+      keywords: (Array.isArray(input?.keywords) ? input!.keywords : [])
+        .map((k) => String(k).trim())
+        .filter(Boolean)
+        .slice(0, 20),
+      textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
+    };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { error } = await context.supabase
+      .from("live_card_animations")
+      .update({
+        title: data.title || null,
+        greeting_text: data.greetingText,
+        greeting_mode: data.greetingMode,
+        greeting_keywords: data.keywords,
+        text_design: data.textDesign as never,
+        text_saved_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)
       .eq("user_id", context.userId)
