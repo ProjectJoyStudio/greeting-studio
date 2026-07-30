@@ -114,7 +114,13 @@ function MyLiveCardsPage() {
       )}
 
       {open?.videoUrl && (
-        <LiveCardViewer videoUrl={open.videoUrl} title={open.title} onClose={() => setOpen(null)} />
+        <LiveCardViewer
+          videoUrl={open.videoUrl}
+          title={open.title}
+          greetingText={open.greetingText}
+          design={open.textDesign}
+          onClose={() => setOpen(null)}
+        />
       )}
 
       {confirmDelete && (
