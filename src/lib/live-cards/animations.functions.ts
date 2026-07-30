@@ -194,7 +194,16 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
     const { pollVideoRequest } = await import("./generators/router.server");
     const progress = await pollVideoRequest(current.generator_key ?? "", current.prediction_id);
 
-    async function save(patch: Record<string, unknown>): Promise<AnimationResult> {
+    type AnimationPatch = {
+      status: string;
+      storage_bucket?: string;
+      storage_path?: string;
+      error_code?: string;
+      error_message?: string;
+      completed_at?: string;
+    };
+
+    async function save(patch: AnimationPatch): Promise<AnimationResult> {
       const { data: updated } = await context.supabase
         .from("live_card_animations")
         .update(patch)
