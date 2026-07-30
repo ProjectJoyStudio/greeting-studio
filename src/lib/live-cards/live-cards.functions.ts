@@ -188,3 +188,29 @@ export const listOwnLiveCards = createServerFn({ method: "POST" })
     if (error || !data) return [];
     return Promise.all((data as Row[]).map(toAsset));
   });
+
+/**
+ * Marks a picture as the one the person wants to bring to life. It becomes the
+ * current image of the live greeting card and is the input of the animation
+ * phase, which is connected in the next step.
+ */
+export const selectLiveCardImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string }) => {
+    const cardId = String(input?.cardId ?? "");
+    if (!cardId) throw new Error("card_required");
+    return { cardId };
+  })
+  .handler(async ({ data, context }): Promise<LiveCardResult> => {
+    const { data: row, error } = await context.supabase
+      .from("live_greeting_cards")
+      .update({ status: "image_selected" })
+      .eq("id", data.cardId)
+      .is("deleted_at", null)
+      .select(COLUMNS)
+      .single();
+    if (error || !row) {
+      return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not select the picture." };
+    }
+    return { ok: true, card: await toAsset(row as Row) };
+  });
