@@ -178,14 +178,14 @@ export function LiveGreetingEditor({
   }
 
   /** Renders the finished file and stores it as the completed version. */
-  async function complete(withText: boolean) {
+  async function complete() {
     if (!videoUrl) return;
     setRendering(true);
     setProgress(0);
     try {
-      const text = withText ? state.text : "";
+      const text = state.text;
       const rendered = await renderFinalVideo(videoUrl, text, state.design, setProgress);
-      if (withText && text.trim() && !rendered.verified) {
+      if (text.trim() && !rendered.verified) {
         toast.error(t("lge_verify_failed"));
         return;
       }
@@ -200,11 +200,10 @@ export function LiveGreetingEditor({
           animationId,
           storagePath: path,
           mime: rendered.mime,
-          hasText: Boolean(withText && text.trim()),
+          hasText: Boolean(text.trim()),
           title: state.title,
         },
       });
-      window.localStorage.removeItem(localKey(animationId));
       setFinalUrl(result.videoUrl);
       toast.success(t("lge_completed"));
       onFinish?.();
