@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Play, RotateCcw, Trash2, X } from "lucide-react";
+import { Loader2, Play, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
 import {
   adminDeleteLiveGreeting,
+  adminDeliverLiveGreeting,
   adminPurgeLiveGreeting,
   adminRestoreLiveGreeting,
   listUserLiveGreetings,
@@ -20,9 +21,12 @@ export function UserLiveCardsPage() {
   const removeRow = useServerFn(adminDeleteLiveGreeting);
   const restoreRow = useServerFn(adminRestoreLiveGreeting);
   const purgeRow = useServerFn(adminPurgeLiveGreeting);
+  const deliverRow = useServerFn(adminDeliverLiveGreeting);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<AdminLiveGreetingRow | null>(null);
   const [confirmPurge, setConfirmPurge] = useState<AdminLiveGreetingRow | null>(null);
+  const [deliverTo, setDeliverTo] = useState<AdminLiveGreetingRow | null>(null);
+  const [email, setEmail] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-user-live-cards"],
@@ -36,11 +40,16 @@ export function UserLiveCardsPage() {
     toast.success(message);
     setOpen(null);
     setConfirmPurge(null);
+    setDeliverTo(null);
+    setEmail("");
     queryClient.invalidateQueries({ queryKey: ["admin-user-live-cards"] });
   };
   const fail = (e: unknown) => {
     const code = e instanceof Error ? e.message : "error";
-    toast.error(code === "retention_active" ? t("ulc_retention_active") : code);
+    if (code === "retention_active") toast.error(t("ulc_retention_active"));
+    else if (code === "user_not_found") toast.error(t("ulc_user_not_found"));
+    else if (code === "generation_incomplete") toast.error(t("ulc_not_generated"));
+    else toast.error(code);
   };
 
   const del = useMutation({
@@ -56,6 +65,12 @@ export function UserLiveCardsPage() {
   const purge = useMutation({
     mutationFn: (id: string) => purgeRow({ data: { animationId: id } }),
     onSuccess: () => done(t("ulc_purged_toast")),
+    onError: fail,
+  });
+  const deliver = useMutation({
+    mutationFn: (vars: { id: string; email: string }) =>
+      deliverRow({ data: { animationId: vars.id, email: vars.email } }),
+    onSuccess: () => done(t("ulc_delivered_toast")),
     onError: fail,
   });
 
@@ -82,6 +97,7 @@ export function UserLiveCardsPage() {
                 <th className="p-3">{t("ulc_motion")}</th>
                 <th className="p-3">{t("ulc_duration")}</th>
                 <th className="p-3">{t("ulc_status")}</th>
+                <th className="p-3">{t("ulc_delivery")}</th>
                 <th className="p-3">{t("ulc_created")}</th>
                 <th className="p-3" />
               </tr>
@@ -107,9 +123,31 @@ export function UserLiveCardsPage() {
                     {row.status}
                     {row.deleted_at ? ` · ${t("ulc_deleted_flag")}` : ""}
                   </td>
+                  <td className="p-3">
+                    <span
+                      className={
+                        row.delivered ? "font-medium text-primary" : "font-medium text-destructive"
+                      }
+                    >
+                      {row.delivered ? t("ulc_delivered") : t("ulc_not_delivered")}
+                    </span>
+                  </td>
                   <td className="p-3 text-muted-foreground">{fmt(row.created_at)}</td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-2">
+                      {row.status === "ready" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliverTo(row);
+                            setEmail(row.user_email ?? "");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 font-medium text-primary hover:bg-primary/10"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          {row.delivered ? t("ulc_retry_delivery") : t("ulc_send_to_user")}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setOpen(row)}
