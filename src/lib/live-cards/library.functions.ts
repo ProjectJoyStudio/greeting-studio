@@ -192,6 +192,8 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
     mime?: string;
     hasText?: boolean;
     title?: string;
+    greetingText?: string;
+    textDesign?: unknown;
   }) => {
     const animationId = String(input?.animationId ?? "");
     const storagePath = String(input?.storagePath ?? "");
@@ -203,6 +205,8 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       mime: String(input?.mime ?? "video/mp4").slice(0, 80),
       hasText: input?.hasText === true,
       title: String(input?.title ?? "").slice(0, 160),
+      greetingText: String(input?.greetingText ?? "").slice(0, 2000),
+      textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
     };
   })
   .handler(async ({ data, context }): Promise<{ ok: boolean; videoUrl: string | null }> => {
@@ -224,6 +228,11 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
         final_path: data.storagePath,
         final_mime: data.mime,
         final_has_text: data.hasText,
+        // Persist the exact state used for this render in the same write that
+        // links the final file. In particular, an intentionally empty greeting
+        // clears any older autosaved draft text instead of restoring it later.
+        greeting_text: data.greetingText,
+        text_design: data.textDesign as never,
         finalized_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)

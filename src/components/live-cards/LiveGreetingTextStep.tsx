@@ -221,6 +221,8 @@ export function LiveGreetingEditor({
           mime: rendered.mime,
           hasText: Boolean(text.trim()),
           title: state.title,
+          greetingText: text,
+          textDesign: design as unknown as Record<string, unknown>,
         },
       });
       setFinalUrl(result.videoUrl);

@@ -3,24 +3,20 @@ import { Download, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import { hexToRgba } from "@/components/greeting-card/CardPreview";
-import { DEFAULT_TEXT_DESIGN, type CardTextDesign } from "@/lib/greeting-card/types";
 
 /**
  * Built-in viewer for a finished live greeting card. The video never opens as a
  * standalone browser file, so closing always returns to the Project Joy page.
+ * The final MP4 is the only visual source: greeting text is already burned into
+ * its frames and must never be drawn again by the cabinet or sharing viewer.
  */
 export function LiveCardViewer({
   videoUrl,
   title,
-  greetingText = "",
-  design = DEFAULT_TEXT_DESIGN,
   onClose,
 }: {
   videoUrl: string;
   title?: string | null;
-  greetingText?: string;
-  design?: CardTextDesign;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -86,7 +82,7 @@ export function LiveCardViewer({
           </button>
         </div>
 
-        <div className="relative" style={{ containerType: "inline-size" }}>
+        <div className="relative">
           <video
             src={videoUrl}
             controls
@@ -96,31 +92,6 @@ export function LiveCardViewer({
             playsInline
             className="max-h-[70vh] w-full rounded-2xl bg-black object-contain"
           />
-          {greetingText.trim() ? (
-            <div
-              className="pointer-events-none absolute select-none"
-              style={{
-                left: `${design.x}%`,
-                top: `${design.y}%`,
-                width: `${design.width}%`,
-                transform: "translate(-50%, -50%)",
-                textAlign: design.align,
-                color: design.color,
-                fontFamily: design.fontFamily,
-                fontSize: `${design.fontSize}cqw`,
-                lineHeight: 1.25,
-                whiteSpace: "pre-wrap",
-                textShadow: design.shadow ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
-                background: design.background
-                  ? hexToRgba(design.backgroundColor, design.backgroundOpacity)
-                  : undefined,
-                padding: design.background ? "0.6em 0.8em" : undefined,
-                borderRadius: design.background ? "0.6em" : undefined,
-              }}
-            >
-              {greetingText}
-            </div>
-          ) : null}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
