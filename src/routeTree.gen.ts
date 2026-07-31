@@ -36,6 +36,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
@@ -213,6 +214,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
+  id: '/live-editor/$animationId',
+  path: '/live-editor/$animationId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
@@ -483,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -551,6 +558,7 @@ export interface FileRoutesByTo {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -696,6 +705,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
     | '/dashboard/'
@@ -764,6 +774,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/live-editor/$animationId'
     | '/admin'
     | '/catalog'
     | '/dashboard'
@@ -835,6 +846,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
     | '/dashboard/'
@@ -881,6 +893,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
+  LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
 }
@@ -1075,6 +1088,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/live-editor/$animationId': {
+      id: '/live-editor/$animationId'
+      path: '/live-editor/$animationId'
+      fullPath: '/live-editor/$animationId'
+      preLoaderRoute: typeof LiveEditorAnimationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dashboard/settings': {
       id: '/dashboard/settings'
@@ -1522,6 +1542,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
+  LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
 }
