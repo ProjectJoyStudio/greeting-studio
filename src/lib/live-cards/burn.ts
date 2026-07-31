@@ -7,7 +7,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { CardTextDesign } from "@/lib/greeting-card/types";
-import { drawGreeting, type GreetingBox } from "./text-render";
+import {
+  drawGreeting,
+  layoutGreeting,
+  validateGreetingLayout,
+  type GreetingBox,
+} from "./text-render";
 
 export const LIVE_VIDEO_BUCKET = "live-greeting-card-videos";
 
@@ -74,6 +79,11 @@ export async function renderFinalVideo(
   onProgress?: (ratio: number) => void,
 ): Promise<RenderResult> {
   const mime = pickMime();
+  // Wait for the exact editor font before measuring. Without this, a fallback
+  // font can produce different line breaks during the first export frame.
+  if (typeof document !== "undefined" && "fonts" in document) {
+    await document.fonts.ready;
+  }
   const video = await loadVideo(videoUrl);
   const width = video.videoWidth || 720;
   const height = video.videoHeight || 720;
@@ -83,6 +93,15 @@ export async function renderFinalVideo(
   canvas.height = height;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("canvas_unavailable");
+
+  const finalText = text;
+  const finalDesign = { ...design };
+  if (finalText.trim()) {
+    const layout = layoutGreeting(width, height, finalText, finalDesign, ctx);
+    if (!layout || !validateGreetingLayout(width, height, layout).valid) {
+      throw new Error("invalid_text_layout");
+    }
+  }
 
   let box: GreetingBox | null = null;
   // Exactly one clean frame per tick: the surface is wiped, the animation is
@@ -98,7 +117,7 @@ export async function renderFinalVideo(
     ctx.shadowOffsetY = 0;
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(video, 0, 0, width, height);
-    box = drawGreeting(ctx, width, height, text, design);
+    box = drawGreeting(ctx, width, height, finalText, finalDesign);
   };
 
   await seek(video, 0);
@@ -141,8 +160,8 @@ export async function renderFinalVideo(
   const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
   let verified = true;
   let duplicate = false;
-  if (text.trim()) {
-    const check = await verifyBurnedText(blob, video, box, text, design, width, height);
+  if (finalText.trim()) {
+    const check = await verifyBurnedText(blob, video, box, finalText, finalDesign, width, height);
     verified = check.verified;
     duplicate = check.duplicate;
   }
@@ -207,24 +226,40 @@ async function verifyBurnedText(
     if (!a || !b || a.length !== b.length) return { verified: false, duplicate: false };
 
     let changed = 0;
+    let expectedChanged = 0;
+    let unexpectedChanged = 0;
     let mismatch = 0;
     for (let i = 0; i < a.length; i += 4) {
       const diff =
         Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
       if (diff > 60) changed += 1;
       if (expected) {
+        const intended =
+          Math.abs(expected[i] - a[i]) +
+          Math.abs(expected[i + 1] - a[i + 1]) +
+          Math.abs(expected[i + 2] - a[i + 2]);
         const d2 =
           Math.abs(expected[i] - b[i]) +
           Math.abs(expected[i + 1] - b[i + 1]) +
           Math.abs(expected[i + 2] - b[i + 2]);
+        if (intended > 60) expectedChanged += 1;
+        // A duplicate/shifted layer changes pixels where the one-layer
+        // reference expects the clean animation. Encoding noise stays below
+        // this deliberately conservative threshold.
+        if (intended <= 60 && d2 > 120) unexpectedChanged += 1;
         if (d2 > 90) mismatch += 1;
       }
     }
     const pixels = a.length / 4 || 1;
+    const duplicateLimit = Math.max(12, expectedChanged * 0.18);
     return {
       verified: changed / pixels > 0.005,
-      // A second text layer changes far more pixels than encoding noise.
-      duplicate: Boolean(expected) && mismatch / pixels > 0.35,
+      // Require both unexpected glyph-like pixels and a meaningful mismatch
+      // from the exact one-layer reference before blocking completion.
+      duplicate:
+        Boolean(expected) &&
+        unexpectedChanged > duplicateLimit &&
+        mismatch > Math.max(24, expectedChanged * 0.3),
     };
   } catch {
     return { verified: false, duplicate: false };

@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import type { CardTextDesign } from "@/lib/greeting-card/types";
 import {
   SAFE_MARGIN,
   clampPosition,
-  hexToRgba,
-  layoutGreeting,
+  drawGreeting,
 } from "@/lib/live-cards/text-render";
 
 /**
@@ -34,6 +33,7 @@ export function LiveVideoPreview({
   showSafeArea?: boolean;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -50,10 +50,20 @@ export function LiveVideoPreview({
     return () => observer.disconnect();
   }, []);
 
-  const layout = useMemo(
-    () => layoutGreeting(size.width, size.height, text, design),
-    [size.width, size.height, text, design],
-  );
+  // Preview and export both call drawGreeting. There is no browser/CSS text
+  // layer whose wrapping, stroke or line metrics could differ from the MP4.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || size.width <= 0 || size.height <= 0) return;
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(size.width * scale));
+    canvas.height = Math.max(1, Math.round(size.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.clearRect(0, 0, size.width, size.height);
+    drawGreeting(ctx, size.width, size.height, text, design);
+  }, [size.width, size.height, text, design]);
 
   function apply(e: ReactPointerEvent<HTMLDivElement>) {
     const box = boxRef.current?.getBoundingClientRect();
@@ -93,50 +103,29 @@ export function LiveVideoPreview({
         />
       ) : null}
 
-      {layout ? (
-        <div
-          onPointerDown={(e) => {
-            if (!onMove) return;
-            dragging.current = true;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            apply(e);
-          }}
-          onPointerMove={(e) => {
-            if (dragging.current) apply(e);
-          }}
-          onPointerUp={() => {
-            dragging.current = false;
-          }}
-          className={`absolute select-none touch-none ${onMove ? "cursor-move" : ""}`}
-          style={{
-            left: `${layout.box.left}px`,
-            top: `${layout.box.top}px`,
-            width: `${layout.box.width}px`,
-            height: `${layout.box.height}px`,
-            padding: `${layout.padY}px ${layout.padX}px`,
-            textAlign: design.align,
-            color: design.color,
-            fontFamily: design.fontFamily,
-            fontSize: `${layout.fontPx}px`,
-            lineHeight: `${layout.lineHeight}px`,
-            textShadow: design.shadow ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
-            WebkitTextStrokeWidth: design.outline
-              ? `${Math.max(1, layout.fontPx * 0.04)}px`
-              : undefined,
-            WebkitTextStrokeColor: design.outline ? design.outlineColor : undefined,
-            background: design.background
-              ? hexToRgba(design.backgroundColor, design.backgroundOpacity)
-              : undefined,
-            borderRadius: design.background ? "0.6em" : undefined,
-          }}
-        >
-          {layout.lines.map((line, i) => (
-            <div key={i} style={{ whiteSpace: "pre" }}>
-              {line || "\u00a0"}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <canvas
+        ref={canvasRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
+      <div
+        onPointerDown={(e) => {
+          if (!onMove) return;
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          apply(e);
+        }}
+        onPointerMove={(e) => {
+          if (dragging.current) apply(e);
+        }}
+        onPointerUp={() => {
+          dragging.current = false;
+        }}
+        onPointerCancel={() => {
+          dragging.current = false;
+        }}
+        className={`absolute inset-0 select-none touch-none ${onMove ? "cursor-move" : "pointer-events-none"}`}
+      />
     </div>
   );
 }

@@ -30,19 +30,42 @@ export function clampPosition(x: number, y: number, width: number): { x: number;
 
 type Measurer = Pick<CanvasRenderingContext2D, "measureText"> & { font: string };
 
+function splitLongWord(ctx: Measurer, word: string, maxWidth: number): string[] {
+  if (ctx.measureText(word).width <= maxWidth) return [word];
+  const parts: string[] = [];
+  let part = "";
+  // Array.from splits by Unicode code point rather than UTF-16 code unit, so
+  // Cyrillic and other non-ASCII greetings are never broken into invalid text.
+  for (const character of Array.from(word)) {
+    const next = part + character;
+    if (part && ctx.measureText(next).width > maxWidth) {
+      parts.push(part);
+      part = character;
+    } else {
+      part = next;
+    }
+  }
+  if (part) parts.push(part);
+  return parts;
+}
+
 function wrap(ctx: Measurer, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
     let line = "";
-    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-      const next = line ? `${line} ${word}` : word;
-      if (ctx.measureText(next).width > maxWidth && line) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = next;
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    for (const word of words) {
+      for (const part of splitLongWord(ctx, word, maxWidth)) {
+        const next = line ? `${line} ${part}` : part;
+        if (ctx.measureText(next).width > maxWidth && line) {
+          lines.push(line);
+          line = part;
+        } else {
+          line = next;
+        }
       }
     }
+    // An empty line is intentional and preserves paragraph breaks.
     lines.push(line);
   }
   return lines;
@@ -68,6 +91,11 @@ export interface GreetingLayout {
   centerY: number;
   /** Outer rectangle of the whole greeting, padding included. */
   box: GreetingBox;
+}
+
+export interface GreetingLayoutValidation {
+  valid: boolean;
+  reason?: "outside_safe_area" | "line_overlap" | "line_overflow";
 }
 
 /** One shared measuring surface for the browser preview. */
@@ -101,14 +129,14 @@ export function layoutGreeting(
   const safeH = (frameHeight * (100 - SAFE_MARGIN * 2)) / 100;
   const wanted = Math.min((frameWidth * design.width) / 100, safeW);
 
-  let fontPx = Math.max(6, (design.fontSize / 100) * frameWidth);
+  let fontPx = Math.max(2, (design.fontSize / 100) * frameWidth);
   let lines: string[] = [];
   let lineHeight = fontPx * 1.32;
   let boxWidth = wanted;
   let padX = 0;
   let padY = 0;
 
-  for (let attempt = 0; attempt < 80; attempt += 1) {
+  for (let attempt = 0; attempt < 140; attempt += 1) {
     padX = design.background ? fontPx * 0.6 : 0;
     padY = design.background ? fontPx * 0.45 : 0;
     boxWidth = Math.max(fontPx, Math.min(wanted, safeW - padX * 2));
@@ -119,8 +147,8 @@ export function layoutGreeting(
     let widest = 0;
     for (const line of lines) widest = Math.max(widest, ctx.measureText(line).width);
     const fits = blockHeight + padY * 2 <= safeH && widest <= boxWidth + 0.5;
-    if (fits || fontPx <= 7) break;
-    fontPx = Math.max(7, fontPx * 0.94);
+    if (fits || fontPx <= 2) break;
+    fontPx = Math.max(2, fontPx * 0.94);
   }
 
   const blockHeight = lines.length * lineHeight;
@@ -152,6 +180,39 @@ export function layoutGreeting(
       height: outerH,
     },
   };
+}
+
+/**
+ * Rejects a layout before recording if it could overlap or leave the safe
+ * area. This is deliberately shared by preview and export validation.
+ */
+export function validateGreetingLayout(
+  frameWidth: number,
+  frameHeight: number,
+  layout: GreetingLayout,
+): GreetingLayoutValidation {
+  const marginX = (frameWidth * SAFE_MARGIN) / 100;
+  const marginY = (frameHeight * SAFE_MARGIN) / 100;
+  const epsilon = 1;
+  if (
+    layout.box.left < marginX - epsilon ||
+    layout.box.top < marginY - epsilon ||
+    layout.box.left + layout.box.width > frameWidth - marginX + epsilon ||
+    layout.box.top + layout.box.height > frameHeight - marginY + epsilon
+  ) {
+    return { valid: false, reason: "outside_safe_area" };
+  }
+  if (layout.lineHeight < layout.fontPx * 1.15) {
+    return { valid: false, reason: "line_overlap" };
+  }
+  if (
+    layout.boxWidth <= 0 ||
+    layout.blockHeight > layout.box.height + epsilon ||
+    !layout.lines.length
+  ) {
+    return { valid: false, reason: "line_overflow" };
+  }
+  return { valid: true };
 }
 
 /**
@@ -194,6 +255,13 @@ export function drawGreeting(
 
   lines.forEach((line, i) => {
     const y = startY + i * lineHeight;
+    // Reset persistent Canvas shadow state before every line. Otherwise the
+    // next line's outline inherits the previous fill shadow and paints what
+    // looks like a second, offset copy of the glyphs.
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     if (design.outline) {
       ctx.save();
       ctx.lineJoin = "round";
@@ -205,6 +273,7 @@ export function drawGreeting(
     if (design.shadow) {
       ctx.shadowColor = "rgba(0,0,0,0.55)";
       ctx.shadowBlur = fontPx * 0.35;
+      ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = fontPx * 0.06;
     } else {
       ctx.shadowColor = "transparent";
