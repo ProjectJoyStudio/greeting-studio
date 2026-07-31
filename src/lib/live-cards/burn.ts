@@ -59,6 +59,8 @@ export interface RenderResult {
   extension: string;
   /** True when the greeting was confirmed to be part of the exported frames. */
   verified: boolean;
+  /** True when the exported frames do not match the single expected text layer. */
+  duplicate: boolean;
 }
 
 /**
@@ -79,11 +81,22 @@ export async function renderFinalVideo(
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("canvas_unavailable");
 
   let box: GreetingBox | null = null;
+  // Exactly one clean frame per tick: the surface is wiped, the animation is
+  // drawn, and the single greeting layer is painted once on top.
   const paint = () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.filter = "none";
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.clearRect(0, 0, width, height);
     ctx.drawImage(video, 0, 0, width, height);
     box = drawGreeting(ctx, width, height, text, design);
   };
@@ -126,13 +139,17 @@ export async function renderFinalVideo(
   onProgress?.(1);
 
   const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
-  const verified = text.trim()
-    ? await verifyBurnedText(blob, video, box, width, height)
-    : true;
+  let verified = true;
+  let duplicate = false;
+  if (text.trim()) {
+    const check = await verifyBurnedText(blob, video, box, text, design, width, height);
+    verified = check.verified;
+    duplicate = check.duplicate;
+  }
   video.pause();
   video.removeAttribute("src");
   video.load();
-  return { blob, mime, extension, verified };
+  return { blob, mime, extension, verified, duplicate };
 }
 
 /**
@@ -144,10 +161,12 @@ async function verifyBurnedText(
   blob: Blob,
   original: HTMLVideoElement,
   box: GreetingBox | null,
+  text: string,
+  design: CardTextDesign,
   width: number,
   height: number,
-): Promise<boolean> {
-  if (!box) return false;
+): Promise<{ verified: boolean; duplicate: boolean }> {
+  if (!box) return { verified: false, duplicate: false };
   const url = URL.createObjectURL(blob);
   try {
     const rendered = await loadVideo(url);
@@ -158,42 +177,57 @@ async function verifyBurnedText(
     await seek(rendered, time);
     await seek(original, Math.min(time, Math.max(0, (original.duration || 1) - 0.05)));
 
-    const grab = (source: HTMLVideoElement) => {
+    const crop = (draw: (g: CanvasRenderingContext2D) => void) => {
       const c = document.createElement("canvas");
       c.width = Math.max(1, Math.round(box!.width));
       c.height = Math.max(1, Math.round(box!.height));
       const g = c.getContext("2d", { willReadFrequently: true });
       if (!g) return null;
-      g.drawImage(
-        source,
-        box!.left,
-        box!.top,
-        box!.width,
-        box!.height,
-        0,
-        0,
-        c.width,
-        c.height,
-      );
+      draw(g);
       return g.getImageData(0, 0, c.width, c.height).data;
     };
+    const grab = (source: HTMLVideoElement) =>
+      crop((g) =>
+        g.drawImage(source, box!.left, box!.top, box!.width, box!.height, 0, 0, g.canvas.width, g.canvas.height),
+      );
 
     const a = grab(original);
     const b = grab(rendered);
-    if (!a || !b || a.length !== b.length) return false;
+    // The expected result: the clean animation with exactly one greeting layer.
+    const expected = crop((g) => {
+      const full = document.createElement("canvas");
+      full.width = width;
+      full.height = height;
+      const fg = full.getContext("2d", { willReadFrequently: true });
+      if (!fg) return;
+      fg.drawImage(original, 0, 0, width, height);
+      drawGreeting(fg, width, height, text, design);
+      g.drawImage(full, box!.left, box!.top, box!.width, box!.height, 0, 0, g.canvas.width, g.canvas.height);
+    });
+    if (!a || !b || a.length !== b.length) return { verified: false, duplicate: false };
 
     let changed = 0;
+    let mismatch = 0;
     for (let i = 0; i < a.length; i += 4) {
       const diff =
         Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
       if (diff > 60) changed += 1;
+      if (expected) {
+        const d2 =
+          Math.abs(expected[i] - b[i]) +
+          Math.abs(expected[i + 1] - b[i + 1]) +
+          Math.abs(expected[i + 2] - b[i + 2]);
+        if (d2 > 90) mismatch += 1;
+      }
     }
     const pixels = a.length / 4 || 1;
-    void width;
-    void height;
-    return changed / pixels > 0.005;
+    return {
+      verified: changed / pixels > 0.005,
+      // A second text layer changes far more pixels than encoding noise.
+      duplicate: Boolean(expected) && mismatch / pixels > 0.35,
+    };
   } catch {
-    return false;
+    return { verified: false, duplicate: false };
   } finally {
     URL.revokeObjectURL(url);
   }
