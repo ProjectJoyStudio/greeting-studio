@@ -3,6 +3,10 @@ import type { Dict, Lang } from "../types";
 /** The large text editor that finishes a live greeting card. */
 export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
   en: {
+    lge_verify_warning: "Saved. We could not fully confirm the greeting in the video — please check it.",
+    lge_err_render: "The final video could not be created.",
+    lge_err_upload: "The finished video could not be stored.",
+    lge_err_save: "The finished video could not be saved to your account.",
     gc_align_left: "Left",
     gc_align_center: "Centre",
     gc_align_right: "Right",
@@ -27,6 +31,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "This live greeting card could not be found.",
   },
   ru: {
+    lge_verify_warning: "Сохранено. Не удалось полностью проверить текст в видео — пожалуйста, просмотрите его.",
+    lge_err_render: "Не удалось создать финальное видео.",
+    lge_err_upload: "Не удалось сохранить готовое видео в хранилище.",
+    lge_err_save: "Не удалось сохранить готовое видео в вашем кабинете.",
     gc_align_left: "Слева",
     gc_align_center: "По центру",
     gc_align_right: "Справа",
@@ -51,6 +59,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Эта живая открытка не найдена.",
   },
   de: {
+    lge_verify_warning: "Gespeichert. Der Gruß im Video konnte nicht vollständig geprüft werden – bitte ansehen.",
+    lge_err_render: "Das fertige Video konnte nicht erstellt werden.",
+    lge_err_upload: "Das fertige Video konnte nicht gespeichert werden.",
+    lge_err_save: "Das fertige Video konnte nicht in Ihrem Konto gespeichert werden.",
     gc_align_left: "Links",
     gc_align_center: "Mitte",
     gc_align_right: "Rechts",
@@ -75,6 +87,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Diese lebendige Grußkarte wurde nicht gefunden.",
   },
   uk: {
+    lge_verify_warning: "Збережено. Не вдалося повністю перевірити текст у відео — перегляньте його.",
+    lge_err_render: "Не вдалося створити фінальне відео.",
+    lge_err_upload: "Не вдалося зберегти готове відео у сховищі.",
+    lge_err_save: "Не вдалося зберегти готове відео у вашому кабінеті.",
     gc_align_left: "Ліворуч",
     gc_align_center: "По центру",
     gc_align_right: "Праворуч",
@@ -99,6 +115,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Цю живу листівку не знайдено.",
   },
   fr: {
+    lge_verify_warning: "Enregistré. Le message dans la vidéo n’a pas pu être vérifié entièrement — veuillez le contrôler.",
+    lge_err_render: "La vidéo finale n’a pas pu être créée.",
+    lge_err_upload: "La vidéo finale n’a pas pu être stockée.",
+    lge_err_save: "La vidéo finale n’a pas pu être enregistrée dans votre compte.",
     gc_align_left: "Gauche",
     gc_align_center: "Centre",
     gc_align_right: "Droite",
@@ -123,6 +143,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Cette carte vivante est introuvable.",
   },
   pl: {
+    lge_verify_warning: "Zapisano. Nie udało się w pełni potwierdzić tekstu w filmie — sprawdź go.",
+    lge_err_render: "Nie udało się utworzyć gotowego filmu.",
+    lge_err_upload: "Nie udało się zapisać gotowego filmu w magazynie.",
+    lge_err_save: "Nie udało się zapisać gotowego filmu na Twoim koncie.",
     gc_align_left: "Lewo",
     gc_align_center: "Środek",
     gc_align_right: "Prawo",
