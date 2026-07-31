@@ -98,7 +98,7 @@ export async function renderFinalVideo(
   const finalDesign = { ...design };
   if (finalText.trim()) {
     const layout = layoutGreeting(width, height, finalText, finalDesign, ctx);
-    if (!layout || !validateGreetingLayout(width, height, layout, ctx).valid) {
+    if (!layout || !validateGreetingLayout(width, height, layout).valid) {
       throw new Error("invalid_text_layout");
     }
   }
