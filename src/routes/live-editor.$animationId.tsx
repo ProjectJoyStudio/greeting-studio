@@ -52,7 +52,7 @@ function LiveEditorPage() {
         ) : draft.data ? (
           <LiveGreetingEditor
             animationId={animationId}
-            videoUrl={draft.data.videoUrl}
+            videoUrl={draft.data.sourceVideoUrl ?? draft.data.videoUrl}
             aspectRatio={draft.data.aspectRatio}
             onFinish={() => void draft.refetch()}
             onNewProject={() => navigate({ to: "/live-cards" })}
