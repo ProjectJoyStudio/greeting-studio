@@ -76,12 +76,24 @@ export function TextStylePanel({
             {t("gc_shadow")}
           </label>
           <label className="flex items-center gap-2">
+            <input type="checkbox" checked={design.outline}
+              onChange={(e) => onChange({ outline: e.target.checked })} />
+            {t("gc_outline")}
+          </label>
+          <label className="flex items-center gap-2">
             <input type="checkbox" checked={design.background}
               onChange={(e) => onChange({ background: e.target.checked })} />
             {t("gc_text_bg")}
           </label>
         </div>
       </Row>
+      {design.outline && (
+        <Row label={t("gc_outline_color")}>
+          <input type="color" value={design.outlineColor}
+            onChange={(e) => onChange({ outlineColor: e.target.value })}
+            className="h-10 w-full rounded-lg border border-border/60 bg-background" />
+        </Row>
+      )}
       {design.background && (
         <>
           <Row label={t("gc_text_bg_color")}>

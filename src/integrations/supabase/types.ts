@@ -1738,6 +1738,11 @@ export type Database = {
           duration_seconds: number
           error_code: string | null
           error_message: string | null
+          final_bucket: string | null
+          final_has_text: boolean
+          final_mime: string | null
+          final_path: string | null
+          finalized_at: string | null
           generator_key: string | null
           generator_model: string | null
           greeting_keywords: string[]
@@ -1781,6 +1786,11 @@ export type Database = {
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
+          final_bucket?: string | null
+          final_has_text?: boolean
+          final_mime?: string | null
+          final_path?: string | null
+          finalized_at?: string | null
           generator_key?: string | null
           generator_model?: string | null
           greeting_keywords?: string[]
@@ -1824,6 +1834,11 @@ export type Database = {
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
+          final_bucket?: string | null
+          final_has_text?: boolean
+          final_mime?: string | null
+          final_path?: string | null
+          finalized_at?: string | null
           generator_key?: string | null
           generator_model?: string | null
           greeting_keywords?: string[]

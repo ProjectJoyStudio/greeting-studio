@@ -1,0 +1,218 @@
+// ---------------------------------------------------------------------------
+// Final rendering of a live greeting card. The greeting is painted into every
+// frame, so the exported file itself carries the text — it is never only a
+// browser overlay. Runs entirely in the browser; the finished file is then
+// stored in the person's own space.
+// ---------------------------------------------------------------------------
+
+import { supabase } from "@/integrations/supabase/client";
+import type { CardTextDesign } from "@/lib/greeting-card/types";
+import { drawGreeting, type GreetingBox } from "./text-render";
+
+export const LIVE_VIDEO_BUCKET = "live-greeting-card-videos";
+
+const MIME_CANDIDATES = [
+  "video/mp4;codecs=avc1.42E01E",
+  "video/mp4;codecs=h264",
+  "video/mp4",
+  "video/webm;codecs=vp9",
+  "video/webm;codecs=vp8",
+  "video/webm",
+];
+
+function pickMime(): string {
+  const supported = typeof MediaRecorder !== "undefined";
+  if (!supported) throw new Error("recording_unsupported");
+  for (const mime of MIME_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  throw new Error("recording_unsupported");
+}
+
+function loadVideo(url: string): Promise<HTMLVideoElement> {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("video");
+    el.crossOrigin = "anonymous";
+    el.muted = true;
+    el.playsInline = true;
+    el.preload = "auto";
+    el.onloadeddata = () => resolve(el);
+    el.onerror = () => reject(new Error("video_load_failed"));
+    el.src = url;
+  });
+}
+
+function seek(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      video.removeEventListener("seeked", done);
+      resolve();
+    };
+    video.addEventListener("seeked", done);
+    video.currentTime = time;
+  });
+}
+
+export interface RenderResult {
+  blob: Blob;
+  mime: string;
+  extension: string;
+  /** True when the greeting was confirmed to be part of the exported frames. */
+  verified: boolean;
+}
+
+/**
+ * Draws the animation frame by frame with the greeting on top and captures the
+ * result as a new video file.
+ */
+export async function renderFinalVideo(
+  videoUrl: string,
+  text: string,
+  design: CardTextDesign,
+  onProgress?: (ratio: number) => void,
+): Promise<RenderResult> {
+  const mime = pickMime();
+  const video = await loadVideo(videoUrl);
+  const width = video.videoWidth || 720;
+  const height = video.videoHeight || 720;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas_unavailable");
+
+  let box: GreetingBox | null = null;
+  const paint = () => {
+    ctx.drawImage(video, 0, 0, width, height);
+    box = drawGreeting(ctx, width, height, text, design);
+  };
+
+  await seek(video, 0);
+  paint();
+
+  const stream = canvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  const chunks: BlobPart[] = [];
+  recorder.ondataavailable = (e) => {
+    if (e.data.size) chunks.push(e.data);
+  };
+
+  const finished = new Promise<Blob>((resolve) => {
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mime }));
+  });
+
+  recorder.start(200);
+  await video.play();
+
+  await new Promise<void>((resolve) => {
+    const tick = () => {
+      if (video.ended || video.paused) {
+        paint();
+        resolve();
+        return;
+      }
+      paint();
+      onProgress?.(video.duration ? Math.min(1, video.currentTime / video.duration) : 0);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+
+  // A short tail makes sure the very last frames are inside the file.
+  await new Promise((r) => setTimeout(r, 250));
+  recorder.stop();
+  const blob = await finished;
+  onProgress?.(1);
+
+  const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
+  const verified = text.trim()
+    ? await verifyBurnedText(blob, video, box, width, height)
+    : true;
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+  return { blob, mime, extension, verified };
+}
+
+/**
+ * Confirms the greeting really is inside the exported file: the same moment of
+ * the original animation and of the finished file are compared inside the
+ * area the greeting occupies.
+ */
+async function verifyBurnedText(
+  blob: Blob,
+  original: HTMLVideoElement,
+  box: GreetingBox | null,
+  width: number,
+  height: number,
+): Promise<boolean> {
+  if (!box) return false;
+  const url = URL.createObjectURL(blob);
+  try {
+    const rendered = await loadVideo(url);
+    const time = Math.min(
+      Math.max(0.1, (rendered.duration || original.duration || 1) / 2),
+      (rendered.duration || 1) - 0.05,
+    );
+    await seek(rendered, time);
+    await seek(original, Math.min(time, Math.max(0, (original.duration || 1) - 0.05)));
+
+    const grab = (source: HTMLVideoElement) => {
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(box!.width));
+      c.height = Math.max(1, Math.round(box!.height));
+      const g = c.getContext("2d", { willReadFrequently: true });
+      if (!g) return null;
+      g.drawImage(
+        source,
+        box!.left,
+        box!.top,
+        box!.width,
+        box!.height,
+        0,
+        0,
+        c.width,
+        c.height,
+      );
+      return g.getImageData(0, 0, c.width, c.height).data;
+    };
+
+    const a = grab(original);
+    const b = grab(rendered);
+    if (!a || !b || a.length !== b.length) return false;
+
+    let changed = 0;
+    for (let i = 0; i < a.length; i += 4) {
+      const diff =
+        Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]);
+      if (diff > 60) changed += 1;
+    }
+    const pixels = a.length / 4 || 1;
+    void width;
+    void height;
+    return changed / pixels > 0.005;
+  } catch {
+    return false;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** Stores the finished file in the person's own folder and returns its path. */
+export async function uploadFinalVideo(
+  animationId: string,
+  blob: Blob,
+  extension: string,
+  mime: string,
+): Promise<string> {
+  const { data } = await supabase.auth.getUser();
+  const userId = data.user?.id;
+  if (!userId) throw new Error("not_authenticated");
+  const path = `${userId}/final/${animationId}.${extension}`;
+  const { error } = await supabase.storage
+    .from(LIVE_VIDEO_BUCKET)
+    .upload(path, blob, { contentType: mime, upsert: true });
+  if (error) throw new Error(error.message);
+  return path;
+}

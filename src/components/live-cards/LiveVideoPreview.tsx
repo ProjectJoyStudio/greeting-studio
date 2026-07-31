@@ -1,7 +1,7 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 
-import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import type { CardTextDesign } from "@/lib/greeting-card/types";
+import { SAFE_MARGIN, clampPosition, hexToRgba } from "@/lib/live-cards/text-render";
 
 /**
  * Live preview of a finished live greeting card: the animation with the
@@ -16,6 +16,7 @@ export function LiveVideoPreview({
   onMove,
   className = "",
   ratioClass = "aspect-video",
+  showSafeArea = false,
 }: {
   videoUrl: string | null;
   text: string;
@@ -24,6 +25,8 @@ export function LiveVideoPreview({
   onMove?: (position: { x: number; y: number }) => void;
   className?: string;
   ratioClass?: string;
+  /** Dashed guides for the area that is always visible on every device. */
+  showSafeArea?: boolean;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -31,9 +34,9 @@ export function LiveVideoPreview({
   function apply(e: ReactPointerEvent<HTMLDivElement>) {
     const box = boxRef.current?.getBoundingClientRect();
     if (!box || !onMove) return;
-    const x = Math.min(95, Math.max(5, ((e.clientX - box.left) / box.width) * 100));
-    const y = Math.min(95, Math.max(5, ((e.clientY - box.top) / box.height) * 100));
-    onMove({ x: Math.round(x), y: Math.round(y) });
+    const x = ((e.clientX - box.left) / box.width) * 100;
+    const y = ((e.clientY - box.top) / box.height) * 100;
+    onMove(clampPosition(x, y, design.width));
   }
 
   return (
@@ -53,6 +56,19 @@ export function LiveVideoPreview({
         />
       ) : null}
 
+      {showSafeArea ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute rounded-xl border border-dashed border-primary/50"
+          style={{
+            left: `${SAFE_MARGIN}%`,
+            top: `${SAFE_MARGIN}%`,
+            right: `${SAFE_MARGIN}%`,
+            bottom: `${SAFE_MARGIN}%`,
+          }}
+        />
+      ) : null}
+
       {text.trim() ? (
         <div
           onPointerDown={(e) => {
@@ -67,7 +83,7 @@ export function LiveVideoPreview({
           onPointerUp={() => {
             dragging.current = false;
           }}
-          className={`absolute select-none ${onMove ? "cursor-move" : ""}`}
+          className={`absolute select-none touch-none ${onMove ? "cursor-move" : ""}`}
           style={{
             left: `${design.x}%`,
             top: `${design.y}%`,
@@ -80,6 +96,8 @@ export function LiveVideoPreview({
             lineHeight: 1.25,
             whiteSpace: "pre-wrap",
             textShadow: design.shadow ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
+            WebkitTextStrokeWidth: design.outline ? `${design.fontSize * 0.04}cqw` : undefined,
+            WebkitTextStrokeColor: design.outline ? design.outlineColor : undefined,
             background: design.background
               ? hexToRgba(design.backgroundColor, design.backgroundOpacity)
               : undefined,

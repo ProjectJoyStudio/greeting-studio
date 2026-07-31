@@ -8,7 +8,7 @@ import { normalizeTextDesign } from "@/lib/greeting-card/types";
 import type { LiveGreetingRecord } from "./types";
 
 const COLUMNS =
-  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
+  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
 
 type Row = {
   id: string;
@@ -23,6 +23,11 @@ type Row = {
   aspect_ratio: string | null;
   storage_bucket: string | null;
   storage_path: string | null;
+  final_bucket?: string | null;
+  final_path?: string | null;
+  final_mime?: string | null;
+  final_has_text?: boolean | null;
+  finalized_at?: string | null;
   greeting_text?: string | null;
   greeting_mode?: string | null;
   greeting_keywords?: string[] | null;
@@ -54,6 +59,7 @@ export async function buildLiveGreeting(
     const signed = await client.storage.from(bucket).createSignedUrl(path, 60 * 60 * 12);
     return signed.data?.signedUrl ?? null;
   };
+  const finalized = Boolean(row.finalized_at && row.final_bucket && row.final_path);
   return {
     id: row.id,
     status: row.status,
@@ -64,11 +70,17 @@ export async function buildLiveGreeting(
     durationSeconds: row.duration_seconds ?? 5,
     aspectRatio: row.aspect_ratio,
     imageUrl: await sign(row.source_bucket, row.source_path),
-    videoUrl: await sign(row.storage_bucket, row.storage_path),
+    // A finished card always plays its own final file; the draft plays the
+    // plain animation while it is still being edited.
+    videoUrl: finalized
+      ? await sign(row.final_bucket ?? null, row.final_path ?? null)
+      : await sign(row.storage_bucket, row.storage_path),
     greetingText: row.greeting_text ?? "",
     greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
     greetingKeywords: row.greeting_keywords ?? [],
     textDesign: normalizeTextDesign(row.text_design),
+    isFinalized: finalized,
+    hasBurnedText: finalized && row.final_has_text === true,
     // Prepared for later phases — not offered in the interface yet.
     soundEnabled: row.sound_enabled ?? false,
     isShared: row.is_shared ?? false,
@@ -79,7 +91,35 @@ export async function buildLiveGreeting(
   };
 }
 
-/** Every finished live greeting card of the signed-in person, newest first. */
+async function hydrate(
+  context: { supabase: { from: (t: string) => any } },
+  rows: Row[],
+): Promise<LiveGreetingRecord[]> {
+  const cardIds = [...new Set(rows.map((r) => r.source_card_id).filter(Boolean))] as string[];
+    const prompts = new Map<string, string>();
+    if (cardIds.length) {
+      const { data: cards } = await context.supabase
+        .from("live_greeting_cards")
+        .select("id, prompt")
+        .in("id", cardIds);
+      for (const card of (cards ?? []) as { id: string; prompt: string | null }[]) {
+        prompts.set(card.id, card.prompt ?? "");
+      }
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return Promise.all(
+      rows.map((row) =>
+        buildLiveGreeting(
+          supabaseAdmin as unknown as SignedClient,
+          row,
+          row.source_card_id ? prompts.get(row.source_card_id) ?? null : null,
+        ),
+      ),
+    );
+}
+
+/** Completed live greeting cards of the signed-in person, newest first. */
 export const listMyLiveGreetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<LiveGreetingRecord[]> => {
@@ -88,31 +128,104 @@ export const listMyLiveGreetings = createServerFn({ method: "GET" })
       .select(COLUMNS)
       .eq("user_id", context.userId)
       .eq("status", "ready")
+      .not("finalized_at", "is", null)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error || !rows) return [];
+    return hydrate(context as never, rows as Row[]);
+  });
 
-    const cardIds = [...new Set((rows as Row[]).map((r) => r.source_card_id).filter(Boolean))] as string[];
-    const prompts = new Map<string, string>();
-    if (cardIds.length) {
-      const { data: cards } = await context.supabase
-        .from("live_greeting_cards")
-        .select("id, prompt")
-        .in("id", cardIds);
-      for (const card of cards ?? []) prompts.set(card.id, card.prompt ?? "");
-    }
+/**
+ * Drafts: animations that still wait for their greeting. They exist only to
+ * continue editing — they can never be downloaded or shared.
+ */
+export const listMyLiveDrafts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LiveGreetingRecord[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("live_card_animations")
+      .select(COLUMNS)
+      .eq("user_id", context.userId)
+      .eq("status", "ready")
+      .is("finalized_at", null)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error || !rows) return [];
+    return hydrate(context as never, rows as Row[]);
+  });
+
+/** One draft, used by the text editor to restore the exact editing state. */
+export const getLiveGreetingDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    const animationId = String(input?.animationId ?? "");
+    if (!animationId) throw new Error("animation_required");
+    return { animationId };
+  })
+  .handler(async ({ data, context }): Promise<LiveGreetingRecord | null> => {
+    const { data: row } = await context.supabase
+      .from("live_card_animations")
+      .select(COLUMNS)
+      .eq("id", data.animationId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!row) return null;
+    const [record] = await hydrate(context as never, [row as Row]);
+    return record ?? null;
+  });
+
+/**
+ * Marks the live greeting card as completed: the rendered file — with the
+ * greeting already part of its frames — becomes the version people download
+ * and share. The draft stays untouched next to it.
+ */
+export const finalizeLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    animationId: string;
+    storagePath: string;
+    mime?: string;
+    hasText?: boolean;
+    title?: string;
+  }) => {
+    const animationId = String(input?.animationId ?? "");
+    const storagePath = String(input?.storagePath ?? "");
+    if (!animationId) throw new Error("animation_required");
+    if (!storagePath) throw new Error("file_required");
+    return {
+      animationId,
+      storagePath,
+      mime: String(input?.mime ?? "video/mp4").slice(0, 80),
+      hasText: input?.hasText === true,
+      title: String(input?.title ?? "").slice(0, 160),
+    };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean; videoUrl: string | null }> => {
+    // Only the person's own folder may ever be linked to their card.
+    if (!data.storagePath.startsWith(`${context.userId}/`)) throw new Error("forbidden");
+    const { error } = await context.supabase
+      .from("live_card_animations")
+      .update({
+        title: data.title || null,
+        final_bucket: "live-greeting-card-videos",
+        final_path: data.storagePath,
+        final_mime: data.mime,
+        final_has_text: data.hasText,
+        finalized_at: new Date().toISOString(),
+      })
+      .eq("id", data.animationId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return Promise.all(
-      (rows as Row[]).map((row) =>
-        buildLiveGreeting(
-          supabaseAdmin as unknown as SignedClient,
-          row,
-          row.source_card_id ? prompts.get(row.source_card_id) ?? null : null,
-        ),
-      ),
-    );
+    const signed = await supabaseAdmin.storage
+      .from("live-greeting-card-videos")
+      .createSignedUrl(data.storagePath, 60 * 60 * 12);
+    return { ok: true, videoUrl: signed.data?.signedUrl ?? null };
   });
 
 /**
