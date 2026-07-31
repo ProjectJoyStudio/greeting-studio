@@ -3,6 +3,9 @@ import type { Dict, Lang } from "../types";
 /** The large text editor that finishes a live greeting card. */
 export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
   en: {
+    gc_align_left: "Left",
+    gc_align_center: "Centre",
+    gc_align_right: "Right",
     gc_outline: "Outline",
     gc_outline_color: "Outline colour",
     lge_title: "Greeting editor",
@@ -24,6 +27,9 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "This live greeting card could not be found.",
   },
   ru: {
+    gc_align_left: "Слева",
+    gc_align_center: "По центру",
+    gc_align_right: "Справа",
     gc_outline: "Обводка",
     gc_outline_color: "Цвет обводки",
     lge_title: "Редактор поздравления",
@@ -45,6 +51,9 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Эта живая открытка не найдена.",
   },
   de: {
+    gc_align_left: "Links",
+    gc_align_center: "Mitte",
+    gc_align_right: "Rechts",
     gc_outline: "Kontur",
     gc_outline_color: "Konturfarbe",
     lge_title: "Grußtext-Editor",
@@ -66,6 +75,9 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Diese lebendige Grußkarte wurde nicht gefunden.",
   },
   uk: {
+    gc_align_left: "Ліворуч",
+    gc_align_center: "По центру",
+    gc_align_right: "Праворуч",
     gc_outline: "Обведення",
     gc_outline_color: "Колір обведення",
     lge_title: "Редактор привітання",
@@ -87,6 +99,9 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Цю живу листівку не знайдено.",
   },
   fr: {
+    gc_align_left: "Gauche",
+    gc_align_center: "Centre",
+    gc_align_right: "Droite",
     gc_outline: "Contour",
     gc_outline_color: "Couleur du contour",
     lge_title: "Éditeur de message",
@@ -108,6 +123,9 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Cette carte vivante est introuvable.",
   },
   pl: {
+    gc_align_left: "Lewo",
+    gc_align_center: "Środek",
+    gc_align_right: "Prawo",
     gc_outline: "Obrys",
     gc_outline_color: "Kolor obrysu",
     lge_title: "Edytor życzeń",
