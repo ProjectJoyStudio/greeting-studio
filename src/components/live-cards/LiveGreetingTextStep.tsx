@@ -295,7 +295,7 @@ export function LiveGreetingEditor({
           </div>
 
           <LiveVideoPreview
-            videoUrl={videoUrl}
+            videoUrl={sourceUrl ?? videoUrl}
             text={state.text}
             design={state.design}
             showSafeArea
