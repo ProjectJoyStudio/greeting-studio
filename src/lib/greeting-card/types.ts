@@ -11,6 +11,9 @@ export interface CardTextDesign {
   width: number; // 0..100 (% of width)
   align: "left" | "center" | "right";
   shadow: boolean;
+  /** Thin contrasting outline around every glyph. */
+  outline: boolean;
+  outlineColor: string;
   background: boolean;
   backgroundColor: string;
   backgroundOpacity: number; // 0..1
@@ -25,6 +28,8 @@ export const DEFAULT_TEXT_DESIGN: CardTextDesign = {
   width: 80,
   align: "center",
   shadow: true,
+  outline: false,
+  outlineColor: "#000000",
   background: false,
   backgroundColor: "#000000",
   backgroundOpacity: 0.35,
