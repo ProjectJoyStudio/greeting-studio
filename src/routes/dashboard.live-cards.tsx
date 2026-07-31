@@ -117,8 +117,6 @@ function MyLiveCardsPage() {
         <LiveCardViewer
           videoUrl={open.videoUrl}
           title={open.title}
-          greetingText={open.greetingText}
-          design={open.textDesign}
           onClose={() => setOpen(null)}
         />
       )}

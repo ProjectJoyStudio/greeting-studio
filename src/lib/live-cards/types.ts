@@ -89,7 +89,7 @@ export interface LiveGreetingRecord {
    * second text layer on top of an already finished video.
    */
   sourceVideoUrl: string | null;
-  /** Greeting written after the animation, overlaid on the finished video. */
+  /** Editable draft greeting metadata; finished viewers never overlay it. */
   greetingText: string;
   greetingMode: "manual" | "keywords";
   greetingKeywords: string[];
