@@ -268,39 +268,3 @@ export const adminDeliverLiveGreeting = createServerFn({ method: "POST" })
     });
     return result;
   });
-
-const adminPurgeLiveGreetingLegacy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { animationId: string }) => {
-    if (!input?.animationId) throw new Error("animationId is required");
-    return { animationId: input.animationId };
-  })
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
-    const { getAdmin, purgeLiveAnimationCompletely, recordAdminAction } = await import(
-      "./deleted-cards.server"
-    );
-    const supabaseAdmin = await getAdmin();
-
-    const { data: row } = await supabaseAdmin
-      .from("live_card_animations")
-      .select("id, user_id, prompt, deleted_at, purge_after")
-      .eq("id", data.animationId)
-      .maybeSingle();
-    if (!row) throw new Error("animation_not_found");
-    if (!row.deleted_at) throw new Error("not_deleted");
-    if (row.purge_after && new Date(row.purge_after).getTime() > Date.now()) {
-      throw new Error("retention_active");
-    }
-
-    await purgeLiveAnimationCompletely(row.id);
-    await recordAdminAction({
-      actorUserId: context.userId,
-      action: "live_greeting.purged",
-      entityType: "live_card_animation",
-      entityId: row.id,
-      affectedUserId: row.user_id,
-      previous: { prompt: row.prompt, deleted_at: row.deleted_at },
-    });
-    return { ok: true };
-  });
