@@ -20,6 +20,8 @@ export type AdminLiveGreetingRow = {
   video_url: string | null;
   greeting_text: string;
   created_at: string;
+  finalized_at: string | null;
+  delivered: boolean;
   deleted_at: string | null;
   purge_after: string | null;
   deleted_by_admin: boolean;
@@ -43,7 +45,7 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("live_card_animations")
       .select(
-        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, greeting_text, created_at, deleted_at, purge_after, deleted_by",
+        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, greeting_text, created_at, finalized_at, final_path, deleted_at, purge_after, deleted_by",
       )
       .order("created_at", { ascending: false })
       .limit(300);
@@ -89,6 +91,8 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
         video_url: await sign(row.storage_bucket, row.storage_path),
         greeting_text: row.greeting_text ?? "",
         created_at: row.created_at,
+        finalized_at: row.finalized_at ?? null,
+        delivered: Boolean(row.finalized_at && row.final_path),
         deleted_at: row.deleted_at ?? null,
         purge_after: row.purge_after ?? null,
         deleted_by_admin: Boolean(row.deleted_by),
