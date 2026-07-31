@@ -83,6 +83,12 @@ export interface LiveGreetingRecord {
   aspectRatio: string | null;
   imageUrl: string | null;
   videoUrl: string | null;
+  /**
+   * The plain animation without any greeting burned in. Final rendering always
+   * starts from this file, so a card can be re-rendered without stacking a
+   * second text layer on top of an already finished video.
+   */
+  sourceVideoUrl: string | null;
   /** Greeting written after the animation, overlaid on the finished video. */
   greetingText: string;
   greetingMode: "manual" | "keywords";
