@@ -88,6 +88,10 @@ export interface LiveGreetingRecord {
   greetingMode: "manual" | "keywords";
   greetingKeywords: string[];
   textDesign: import("@/lib/greeting-card/types").CardTextDesign;
+  /** True once the final file with the greeting burned in has been rendered. */
+  isFinalized: boolean;
+  /** True when the finished file already carries the greeting in its frames. */
+  hasBurnedText: boolean;
   soundEnabled: boolean;
   isShared: boolean;
   shareSlug: string | null;
