@@ -218,3 +218,89 @@ export const adminPurgeLiveGreeting = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Hands an already generated live greeting card to its owner — or to another
+ * account chosen by e-mail. Nothing is generated again: this repeats only the
+ * delivery step, so a card that failed at the last moment is never lost.
+ */
+export const adminDeliverLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string; email?: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return {
+      animationId: String(input.animationId),
+      email: String(input?.email ?? "").trim().toLowerCase().slice(0, 200),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, recordAdminAction } = await import("./deleted-cards.server");
+    const { deliverLiveGreeting } = await import("@/lib/live-cards/lifecycle.server");
+    const supabaseAdmin = await getAdmin();
+
+    let targetUserId: string | null = null;
+    if (data.email) {
+      // The chosen account is resolved by its e-mail address.
+      for (let page = 1; page <= 10 && !targetUserId; page += 1) {
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+        const users = list?.users ?? [];
+        const found = users.find((u) => (u.email ?? "").toLowerCase() === data.email);
+        if (found) targetUserId = found.id;
+        if (users.length < 200) break;
+      }
+      if (!targetUserId) throw new Error("user_not_found");
+    }
+
+    const result = await deliverLiveGreeting({
+      animationId: data.animationId,
+      targetUserId,
+      actorUserId: context.userId,
+    });
+
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: result.alreadyDelivered ? "live_greeting.redelivered" : "live_greeting.delivered",
+      entityType: "live_card_animation",
+      entityId: data.animationId,
+      affectedUserId: result.userId,
+      next: { user_id: result.userId, email: data.email || null },
+    });
+    return result;
+  });
+
+const adminPurgeLiveGreetingLegacy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return { animationId: input.animationId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, purgeLiveAnimationCompletely, recordAdminAction } = await import(
+      "./deleted-cards.server"
+    );
+    const supabaseAdmin = await getAdmin();
+
+    const { data: row } = await supabaseAdmin
+      .from("live_card_animations")
+      .select("id, user_id, prompt, deleted_at, purge_after")
+      .eq("id", data.animationId)
+      .maybeSingle();
+    if (!row) throw new Error("animation_not_found");
+    if (!row.deleted_at) throw new Error("not_deleted");
+    if (row.purge_after && new Date(row.purge_after).getTime() > Date.now()) {
+      throw new Error("retention_active");
+    }
+
+    await purgeLiveAnimationCompletely(row.id);
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: "live_greeting.purged",
+      entityType: "live_card_animation",
+      entityId: row.id,
+      affectedUserId: row.user_id,
+      previous: { prompt: row.prompt, deleted_at: row.deleted_at },
+    });
+    return { ok: true };
+  });
