@@ -229,6 +229,54 @@ export function UserLiveCardsPage() {
         </div>
       )}
 
+      {deliverTo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
+            <h3 className="font-[Fraunces] text-lg font-semibold text-foreground">
+              {deliverTo.delivered ? t("ulc_retry_delivery") : t("ulc_send_to_user")}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("ulc_deliver_desc")}</p>
+            <label className="mt-4 block text-xs font-medium text-foreground" htmlFor="ulc-email">
+              {t("ulc_deliver_email")}
+            </label>
+            <input
+              id="ulc-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={deliverTo.user_email ?? ""}
+              className="mt-1 w-full rounded-xl border border-border/60 bg-background/70 px-4 py-2.5 text-sm outline-none focus:border-primary/60"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeliverTo(null)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm hover:bg-secondary"
+              >
+                {t("ulc_cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={deliver.isPending}
+                onClick={() =>
+                  deliver.mutate({
+                    id: deliverTo.id,
+                    email: email.trim() === (deliverTo.user_email ?? "") ? "" : email.trim(),
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {deliver.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {t("ulc_deliver_confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmPurge && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
