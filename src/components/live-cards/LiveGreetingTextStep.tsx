@@ -54,10 +54,6 @@ const EMPTY: EditorState = {
   design: { ...DEFAULT_TEXT_DESIGN },
 };
 
-function localKey(animationId: string) {
-  return `joy.live-cards.editor.${animationId}`;
-}
-
 /**
  * The final editing step of a live greeting card: a large video editor where
  * the greeting is placed directly on the animation. Everything is kept as a
@@ -103,22 +99,11 @@ export function LiveGreetingEditor({
   }, []);
 
   // ---- Draft recovery ----------------------------------------------------
-  // The browser copy comes back instantly, the stored draft confirms it.
+  // The stored draft in the personal account is the only source of truth.
   useEffect(() => {
     let cancelled = false;
-    try {
-      const cached = window.localStorage.getItem(localKey(animationId));
-      if (cached) {
-        const parsed = JSON.parse(cached) as Partial<EditorState>;
-        setState({
-          ...EMPTY,
-          ...parsed,
-          design: normalizeTextDesign(parsed.design),
-        });
-      }
-    } catch {
-      /* a corrupt copy is simply ignored */
-    }
+    setState(EMPTY);
+    dirty.current = false;
     (async () => {
       try {
         const draft = await loadDraft({ data: { animationId } });
@@ -148,11 +133,6 @@ export function LiveGreetingEditor({
   // ---- Automatic draft saving -------------------------------------------
   useEffect(() => {
     if (!ready || !dirty.current) return;
-    try {
-      window.localStorage.setItem(localKey(animationId), JSON.stringify(state));
-    } catch {
-      /* storage full — the stored draft still follows below */
-    }
     const timer = window.setTimeout(async () => {
       setSavingDraft(true);
       try {
