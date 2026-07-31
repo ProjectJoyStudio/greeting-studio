@@ -28,7 +28,9 @@ export function clampPosition(x: number, y: number, width: number): { x: number;
   };
 }
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+type Measurer = Pick<CanvasRenderingContext2D, "measureText"> & { font: string };
+
+function wrap(ctx: Measurer, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
     let line = "";
@@ -53,6 +55,105 @@ export interface GreetingBox {
   height: number;
 }
 
+export interface GreetingLayout {
+  lines: string[];
+  fontPx: number;
+  lineHeight: number;
+  /** Width the text wraps inside, without the background padding. */
+  boxWidth: number;
+  blockHeight: number;
+  padX: number;
+  padY: number;
+  centerX: number;
+  centerY: number;
+  /** Outer rectangle of the whole greeting, padding included. */
+  box: GreetingBox;
+}
+
+/** One shared measuring surface for the browser preview. */
+let measurer: Measurer | null = null;
+function getMeasurer(): Measurer | null {
+  if (measurer) return measurer;
+  if (typeof document === "undefined") return null;
+  const ctx = document.createElement("canvas").getContext("2d");
+  measurer = ctx;
+  return measurer;
+}
+
+/**
+ * Works out exactly how the greeting sits on a frame: wrapping, line height
+ * and — when the text is too long — a smaller size so everything stays inside
+ * the safe area. The preview and the exported video both use this, so what a
+ * person sees is what they get.
+ */
+export function layoutGreeting(
+  frameWidth: number,
+  frameHeight: number,
+  text: string,
+  design: CardTextDesign,
+  ctxIn?: Measurer | null,
+): GreetingLayout | null {
+  const value = text.trim();
+  const ctx = ctxIn ?? getMeasurer();
+  if (!value || !ctx || frameWidth <= 0 || frameHeight <= 0) return null;
+
+  const safeW = (frameWidth * (100 - SAFE_MARGIN * 2)) / 100;
+  const safeH = (frameHeight * (100 - SAFE_MARGIN * 2)) / 100;
+  const wanted = Math.min((frameWidth * design.width) / 100, safeW);
+
+  let fontPx = Math.max(6, (design.fontSize / 100) * frameWidth);
+  let lines: string[] = [];
+  let lineHeight = fontPx * 1.32;
+  let boxWidth = wanted;
+  let padX = 0;
+  let padY = 0;
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    padX = design.background ? fontPx * 0.6 : 0;
+    padY = design.background ? fontPx * 0.45 : 0;
+    boxWidth = Math.max(fontPx, Math.min(wanted, safeW - padX * 2));
+    ctx.font = `${fontPx}px ${design.fontFamily}`;
+    lines = wrap(ctx, value, boxWidth);
+    lineHeight = fontPx * 1.32;
+    const blockHeight = lines.length * lineHeight;
+    let widest = 0;
+    for (const line of lines) widest = Math.max(widest, ctx.measureText(line).width);
+    const fits = blockHeight + padY * 2 <= safeH && widest <= boxWidth + 0.5;
+    if (fits || fontPx <= 7) break;
+    fontPx = Math.max(7, fontPx * 0.94);
+  }
+
+  const blockHeight = lines.length * lineHeight;
+  const outerW = boxWidth + padX * 2;
+  const outerH = blockHeight + padY * 2;
+  const minX = (frameWidth * SAFE_MARGIN) / 100 + outerW / 2;
+  const maxX = frameWidth - (frameWidth * SAFE_MARGIN) / 100 - outerW / 2;
+  const minY = (frameHeight * SAFE_MARGIN) / 100 + outerH / 2;
+  const maxY = frameHeight - (frameHeight * SAFE_MARGIN) / 100 - outerH / 2;
+  const clamp = (v: number, lo: number, hi: number) =>
+    lo > hi ? (lo + hi) / 2 : Math.min(Math.max(v, lo), hi);
+  const centerX = clamp((design.x / 100) * frameWidth, minX, maxX);
+  const centerY = clamp((design.y / 100) * frameHeight, minY, maxY);
+
+  return {
+    lines,
+    fontPx,
+    lineHeight,
+    boxWidth,
+    blockHeight,
+    padX,
+    padY,
+    centerX,
+    centerY,
+    box: {
+      left: centerX - outerW / 2,
+      top: centerY - outerH / 2,
+      width: outerW,
+      height: outerH,
+    },
+  };
+}
+
 /**
  * Paints the greeting onto a frame. Returns the area it occupies, which is
  * used to confirm afterwards that the text really is part of the video.
@@ -64,31 +165,22 @@ export function drawGreeting(
   text: string,
   design: CardTextDesign,
 ): GreetingBox | null {
-  const value = text.trim();
-  if (!value) return null;
+  const layout = layoutGreeting(frameWidth, frameHeight, text, design, ctx);
+  if (!layout) return null;
+  const { lines, fontPx, lineHeight, boxWidth, blockHeight, centerX, centerY } = layout;
 
-  const fontPx = (design.fontSize / 100) * frameWidth;
   ctx.save();
   ctx.font = `${fontPx}px ${design.fontFamily}`;
   ctx.textBaseline = "middle";
   ctx.textAlign = design.align;
 
-  const boxWidth = (design.width / 100) * frameWidth;
-  const lines = wrap(ctx, value, boxWidth);
-  const lineHeight = fontPx * 1.25;
-  const blockHeight = lines.length * lineHeight;
-  const centerX = (design.x / 100) * frameWidth;
-  const centerY = (design.y / 100) * frameHeight;
-  const padX = design.background ? fontPx * 0.8 : 0;
-  const padY = design.background ? fontPx * 0.6 : 0;
-
   if (design.background) {
     ctx.fillStyle = hexToRgba(design.backgroundColor, design.backgroundOpacity);
     ctx.fillRect(
-      centerX - boxWidth / 2 - padX,
-      centerY - blockHeight / 2 - padY,
-      boxWidth + padX * 2,
-      blockHeight + padY * 2,
+      layout.box.left,
+      layout.box.top,
+      layout.box.width,
+      layout.box.height,
     );
   }
 
@@ -125,9 +217,9 @@ export function drawGreeting(
 
   ctx.restore();
   return {
-    left: Math.max(0, centerX - boxWidth / 2 - padX),
-    top: Math.max(0, centerY - blockHeight / 2 - padY),
-    width: Math.min(frameWidth, boxWidth + padX * 2),
-    height: Math.min(frameHeight, blockHeight + padY * 2),
+    left: Math.max(0, layout.box.left),
+    top: Math.max(0, layout.box.top),
+    width: Math.min(frameWidth, layout.box.width),
+    height: Math.min(frameHeight, layout.box.height),
   };
 }
