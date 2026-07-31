@@ -86,6 +86,9 @@ export function LiveGreetingEditor({
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [finalUrl, setFinalUrl] = useState<string | null>(null);
+  // The plain animation without any greeting. Both the preview and the final
+  // rendering use this file, so text is never burned twice.
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const dirty = useRef(false);
 
@@ -118,6 +121,7 @@ export function LiveGreetingEditor({
           });
         }
         if (draft.isFinalized && draft.videoUrl) setFinalUrl(draft.videoUrl);
+        if (draft.sourceVideoUrl) setSourceUrl(draft.sourceVideoUrl);
       } catch {
         /* the browser copy keeps the person working */
       } finally {
@@ -179,13 +183,16 @@ export function LiveGreetingEditor({
 
   /** Renders the finished file and stores it as the completed version. */
   async function complete() {
-    if (!videoUrl) return;
+    const clean = sourceUrl ?? videoUrl;
+    if (!clean) return;
     setRendering(true);
     setProgress(0);
     try {
+      // One single, final text configuration is used for the whole render.
       const text = state.text;
-      const rendered = await renderFinalVideo(videoUrl, text, state.design, setProgress);
-      if (text.trim() && !rendered.verified) {
+      const design = { ...state.design };
+      const rendered = await renderFinalVideo(clean, text, design, setProgress);
+      if (text.trim() && (!rendered.verified || rendered.duplicate)) {
         toast.error(t("lge_verify_failed"));
         return;
       }
@@ -288,7 +295,7 @@ export function LiveGreetingEditor({
           </div>
 
           <LiveVideoPreview
-            videoUrl={videoUrl}
+            videoUrl={sourceUrl ?? videoUrl}
             text={state.text}
             design={state.design}
             showSafeArea

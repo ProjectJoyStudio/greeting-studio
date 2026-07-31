@@ -60,6 +60,7 @@ export async function buildLiveGreeting(
     return signed.data?.signedUrl ?? null;
   };
   const finalized = Boolean(row.finalized_at && row.final_bucket && row.final_path);
+  const rawVideoUrl = await sign(row.storage_bucket, row.storage_path);
   return {
     id: row.id,
     status: row.status,
@@ -74,7 +75,8 @@ export async function buildLiveGreeting(
     // plain animation while it is still being edited.
     videoUrl: finalized
       ? await sign(row.final_bucket ?? null, row.final_path ?? null)
-      : await sign(row.storage_bucket, row.storage_path),
+      : rawVideoUrl,
+    sourceVideoUrl: rawVideoUrl,
     greetingText: row.greeting_text ?? "",
     greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
     greetingKeywords: row.greeting_keywords ?? [],
