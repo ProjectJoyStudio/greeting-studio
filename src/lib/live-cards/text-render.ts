@@ -30,19 +30,42 @@ export function clampPosition(x: number, y: number, width: number): { x: number;
 
 type Measurer = Pick<CanvasRenderingContext2D, "measureText"> & { font: string };
 
+function splitLongWord(ctx: Measurer, word: string, maxWidth: number): string[] {
+  if (ctx.measureText(word).width <= maxWidth) return [word];
+  const parts: string[] = [];
+  let part = "";
+  // Array.from splits by Unicode code point rather than UTF-16 code unit, so
+  // Cyrillic and other non-ASCII greetings are never broken into invalid text.
+  for (const character of Array.from(word)) {
+    const next = part + character;
+    if (part && ctx.measureText(next).width > maxWidth) {
+      parts.push(part);
+      part = character;
+    } else {
+      part = next;
+    }
+  }
+  if (part) parts.push(part);
+  return parts;
+}
+
 function wrap(ctx: Measurer, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
     let line = "";
-    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-      const next = line ? `${line} ${word}` : word;
-      if (ctx.measureText(next).width > maxWidth && line) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = next;
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    for (const word of words) {
+      for (const part of splitLongWord(ctx, word, maxWidth)) {
+        const next = line ? `${line} ${part}` : part;
+        if (ctx.measureText(next).width > maxWidth && line) {
+          lines.push(line);
+          line = part;
+        } else {
+          line = next;
+        }
       }
     }
+    // An empty line is intentional and preserves paragraph breaks.
     lines.push(line);
   }
   return lines;
@@ -68,6 +91,11 @@ export interface GreetingLayout {
   centerY: number;
   /** Outer rectangle of the whole greeting, padding included. */
   box: GreetingBox;
+}
+
+export interface GreetingLayoutValidation {
+  valid: boolean;
+  reason?: "outside_safe_area" | "line_overlap" | "line_overflow";
 }
 
 /** One shared measuring surface for the browser preview. */
@@ -152,6 +180,42 @@ export function layoutGreeting(
       height: outerH,
     },
   };
+}
+
+/**
+ * Rejects a layout before recording if it could overlap or leave the safe
+ * area. This is deliberately shared by preview and export validation.
+ */
+export function validateGreetingLayout(
+  frameWidth: number,
+  frameHeight: number,
+  layout: GreetingLayout,
+  ctxIn?: Measurer | null,
+): GreetingLayoutValidation {
+  const marginX = (frameWidth * SAFE_MARGIN) / 100;
+  const marginY = (frameHeight * SAFE_MARGIN) / 100;
+  const epsilon = 1;
+  if (
+    layout.box.left < marginX - epsilon ||
+    layout.box.top < marginY - epsilon ||
+    layout.box.left + layout.box.width > frameWidth - marginX + epsilon ||
+    layout.box.top + layout.box.height > frameHeight - marginY + epsilon
+  ) {
+    return { valid: false, reason: "outside_safe_area" };
+  }
+  if (layout.lineHeight < layout.fontPx * 1.15) {
+    return { valid: false, reason: "line_overlap" };
+  }
+  const ctx = ctxIn ?? getMeasurer();
+  if (ctx) {
+    ctx.font = `${layout.fontPx}px ${layout.fontPx ? "sans-serif" : "sans-serif"}`;
+    // Width is already measured with the selected font by layoutGreeting.
+    // This geometry check catches any impossible/negative text box.
+    if (layout.boxWidth <= 0 || layout.lines.some((line) => !Number.isFinite(line.length))) {
+      return { valid: false, reason: "line_overflow" };
+    }
+  }
+  return { valid: true };
 }
 
 /**
