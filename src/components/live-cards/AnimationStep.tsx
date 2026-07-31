@@ -215,19 +215,19 @@ export function AnimationStep({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Chosen image ------------------------------------------------------ */}
-      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
-        <div className="flex items-center justify-between gap-4">
-          <span className="inline-flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
-            <Images className="h-4 w-4 text-primary" />
-            {t("la_step_image")}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start">
+      {/* Chosen image — always visible while the movement is described ----- */}
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-3 shadow-warm sm:p-4 lg:sticky lg:top-24">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1 pb-2">
+          <span className="inline-flex min-w-0 items-center gap-2 font-display text-sm font-semibold tracking-tight">
+            <Images className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">{t("la_step_image")}</span>
           </span>
           <button
             type="button"
             onClick={onChangeImage}
             disabled={running}
-            className="rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t("la_change_image")}
           </button>
@@ -236,30 +236,30 @@ export function AnimationStep({
           <img
             src={card.imageUrl}
             alt={card.prompt || t("la_step_image")}
-            className="mt-4 h-32 w-full rounded-2xl object-cover"
+            className="max-h-[58vh] w-full rounded-2xl bg-black/5 object-contain"
           />
         )}
       </div>
 
-      {/* Motion description ------------------------------------------------ */}
-      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
-        <label htmlFor="la-motion" className="font-display text-lg font-semibold tracking-tight">
+      {/* Controls ---------------------------------------------------------- */}
+      <div className="min-w-0 space-y-4 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5">
+        <label htmlFor="la-motion" className="font-display text-base font-semibold tracking-tight">
           {t("la_motion_label")}
         </label>
         <textarea
           id="la-motion"
           value={motion}
           onChange={(e) => setMotion(e.target.value)}
-          rows={5}
+          rows={3}
           maxLength={1000}
           placeholder={t("la_motion_ph")}
-          className="mt-3 w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed outline-none transition focus:border-primary/60"
+          className="mt-2 w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-3 text-sm leading-relaxed outline-none transition focus:border-primary/60"
         />
 
-        <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {t("la_presets")}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="-mt-2 flex flex-wrap gap-1.5">
           {MOTION_PRESET_KEYS.map((key) => (
             <button
               key={key}
@@ -269,7 +269,7 @@ export function AnimationStep({
                   value.trim() ? `${value.trim()} ${t(`la_preset_${key}_text`)}` : t(`la_preset_${key}_text`),
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
             >
               <Sparkles className="h-3 w-3" />
               {t(`la_preset_${key}`)}
@@ -278,18 +278,18 @@ export function AnimationStep({
         </div>
 
         {/* Duration — always taken from the generator configuration --------- */}
-        <div className="mt-6">
+        <div>
           <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             {t("la_duration")}
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {durations.map((seconds) => (
               <button
                 key={seconds}
                 type="button"
                 onClick={() => setDuration(seconds)}
-                className={`rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                   chosenDuration === seconds
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border/60 text-muted-foreground hover:border-primary/40"
@@ -301,13 +301,9 @@ export function AnimationStep({
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Summary and confirmation ------------------------------------------ */}
-      <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
-        <h2 className="font-display text-lg font-semibold tracking-tight">{t("la_summary")}</h2>
-        <dl className="mt-4 space-y-2 text-sm">
-          <SummaryRow label={t("la_summary_motion")} value={motion.trim() || "—"} />
+        {/* Compact summary ------------------------------------------------- */}
+        <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
           <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
           <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
         </dl>
@@ -316,14 +312,14 @@ export function AnimationStep({
           type="button"
           onClick={animate}
           disabled={sending || running || motion.trim().length < 3}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending || running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           {sending ? t("la_animate_working") : t("la_animate")}
         </button>
 
         {animation && (
-          <div className="mt-4 rounded-2xl border border-border/60 bg-background/60 p-4">
+          <div className="rounded-2xl border border-border/60 bg-background/60 p-3">
             <p className="inline-flex items-center gap-2 text-sm font-medium">
               {running ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -356,7 +352,7 @@ export function AnimationStep({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 py-0.5">
       <dt className="shrink-0 text-muted-foreground">{label}</dt>
       <dd className="text-right font-medium">{value}</dd>
     </div>
