@@ -152,6 +152,7 @@ export function AnimationStep({
         <LiveGreetingTextStep
           animationId={animation.id}
           videoUrl={animation.videoUrl}
+          aspectRatio={animation.aspectRatio}
           onFinish={() => setTextStage(false)}
           onNewProject={() => {
             window.localStorage.removeItem(DRAFT_KEY);
