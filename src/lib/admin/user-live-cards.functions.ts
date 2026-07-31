@@ -20,6 +20,8 @@ export type AdminLiveGreetingRow = {
   video_url: string | null;
   greeting_text: string;
   created_at: string;
+  finalized_at: string | null;
+  delivered: boolean;
   deleted_at: string | null;
   purge_after: string | null;
   deleted_by_admin: boolean;
@@ -43,7 +45,7 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("live_card_animations")
       .select(
-        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, greeting_text, created_at, deleted_at, purge_after, deleted_by",
+        "id, user_id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, generator_key, storage_bucket, storage_path, greeting_text, created_at, finalized_at, final_path, deleted_at, purge_after, deleted_by",
       )
       .order("created_at", { ascending: false })
       .limit(300);
@@ -89,6 +91,8 @@ export const listUserLiveGreetings = createServerFn({ method: "GET" })
         video_url: await sign(row.storage_bucket, row.storage_path),
         greeting_text: row.greeting_text ?? "",
         created_at: row.created_at,
+        finalized_at: row.finalized_at ?? null,
+        delivered: Boolean(row.finalized_at && row.final_path),
         deleted_at: row.deleted_at ?? null,
         purge_after: row.purge_after ?? null,
         deleted_by_admin: Boolean(row.deleted_by),
@@ -213,4 +217,54 @@ export const adminPurgeLiveGreeting = createServerFn({ method: "POST" })
       previous: { prompt: row.prompt, deleted_at: row.deleted_at },
     });
     return { ok: true };
+  });
+
+/**
+ * Hands an already generated live greeting card to its owner — or to another
+ * account chosen by e-mail. Nothing is generated again: this repeats only the
+ * delivery step, so a card that failed at the last moment is never lost.
+ */
+export const adminDeliverLiveGreeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string; email?: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return {
+      animationId: String(input.animationId),
+      email: String(input?.email ?? "").trim().toLowerCase().slice(0, 200),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, recordAdminAction } = await import("./deleted-cards.server");
+    const { deliverLiveGreeting } = await import("@/lib/live-cards/lifecycle.server");
+    const supabaseAdmin = await getAdmin();
+
+    let targetUserId: string | null = null;
+    if (data.email) {
+      // The chosen account is resolved by its e-mail address.
+      for (let page = 1; page <= 10 && !targetUserId; page += 1) {
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+        const users = list?.users ?? [];
+        const found = users.find((u) => (u.email ?? "").toLowerCase() === data.email);
+        if (found) targetUserId = found.id;
+        if (users.length < 200) break;
+      }
+      if (!targetUserId) throw new Error("user_not_found");
+    }
+
+    const result = await deliverLiveGreeting({
+      animationId: data.animationId,
+      targetUserId,
+      actorUserId: context.userId,
+    });
+
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: result.alreadyDelivered ? "live_greeting.redelivered" : "live_greeting.delivered",
+      entityType: "live_card_animation",
+      entityId: data.animationId,
+      affectedUserId: result.userId,
+      next: { user_id: result.userId, email: data.email || null },
+    });
+    return result;
   });

@@ -153,6 +153,14 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       if (error || !row) {
         return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not store the animation." };
       }
+      const { logLiveCardEvent } = await import("./lifecycle.server");
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        ownerUserId: context.userId,
+        animationId: row.id,
+        stage: "generation_started",
+        detail: { generator: routed.generatorKey, duration },
+      });
       return { ok: true, animation: await toAnimation(row as Row) };
     } catch (err) {
       const known = err instanceof GeneratorError;
@@ -162,6 +170,14 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       await context.supabase
         .from("live_card_animations")
         .insert({ ...base, status: "failed", error_code: errorCode, error_message: errorMessage });
+      const { logLiveCardEvent } = await import("./lifecycle.server");
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        animationId: null,
+        stage: "failed",
+        ok: false,
+        detail: { step: "generation", errorCode, errorMessage },
+      });
       return { ok: false, errorCode, errorMessage };
     }
   });
@@ -246,8 +262,24 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       .from(bucket)
       .upload(storagePath, silent, { contentType: progress.contentType, upsert: true });
     if (upload.error) {
+      const { logLiveCardEvent } = await import("./lifecycle.server");
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        animationId: current.id,
+        stage: "failed",
+        ok: false,
+        detail: { step: "storage_upload", error: upload.error.message },
+      });
       return save({ status: "failed", error_code: "storage_failed", error_message: upload.error.message });
     }
+    const { logLiveCardEvent } = await import("./lifecycle.server");
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: context.userId,
+      animationId: current.id,
+      stage: "generation_completed",
+      detail: { bucket, path: storagePath },
+    });
     return save({
       status: "ready",
       storage_bucket: bucket,

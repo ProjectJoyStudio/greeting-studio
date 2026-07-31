@@ -208,6 +208,14 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; videoUrl: string | null }> => {
     // Only the person's own folder may ever be linked to their card.
     if (!data.storagePath.startsWith(`${context.userId}/`)) throw new Error("forbidden");
+    const { logLiveCardEvent } = await import("./lifecycle.server");
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: context.userId,
+      animationId: data.animationId,
+      stage: "upload_completed",
+      detail: { path: data.storagePath, mime: data.mime, has_text: data.hasText },
+    });
     const { error } = await context.supabase
       .from("live_card_animations")
       .update({
@@ -221,13 +229,53 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       .eq("id", data.animationId)
       .eq("user_id", context.userId)
       .is("deleted_at", null);
-    if (error) throw new Error(error.message);
+    if (error) {
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        animationId: data.animationId,
+        stage: "failed",
+        ok: false,
+        detail: { step: "database_save", error: error.message },
+      });
+      throw new Error(`database_save_failed: ${error.message}`);
+    }
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: context.userId,
+      animationId: data.animationId,
+      stage: "database_saved",
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const signed = await supabaseAdmin.storage
       .from("live-greeting-card-videos")
       .createSignedUrl(data.storagePath, 60 * 60 * 12);
     return { ok: true, videoUrl: signed.data?.signedUrl ?? null };
+  });
+
+/**
+ * The editor reports every step of the final rendering, so a card that fails
+ * at the last moment can always be traced and delivered by hand.
+ */
+export const recordLiveCardStage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string; stage: string; ok?: boolean; detail?: string }) => ({
+    animationId: String(input?.animationId ?? ""),
+    stage: String(input?.stage ?? "").slice(0, 40),
+    ok: input?.ok !== false,
+    detail: String(input?.detail ?? "").slice(0, 500),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { logLiveCardEvent } = await import("./lifecycle.server");
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: context.userId,
+      animationId: data.animationId || null,
+      stage: data.stage as never,
+      ok: data.ok,
+      detail: data.detail ? { detail: data.detail } : undefined,
+    });
+    return { ok: true };
   });
 
 /**

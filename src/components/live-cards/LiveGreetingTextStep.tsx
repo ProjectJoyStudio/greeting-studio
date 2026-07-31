@@ -25,6 +25,7 @@ import {
 import {
   getLiveGreetingDraft,
   finalizeLiveGreeting,
+  recordLiveCardStage,
   saveLiveGreetingText,
 } from "@/lib/live-cards/library.functions";
 import { renderFinalVideo, uploadFinalVideo } from "@/lib/live-cards/burn";
@@ -78,6 +79,7 @@ export function LiveGreetingEditor({
   const finalize = useServerFn(finalizeLiveGreeting);
   const loadDraft = useServerFn(getLiveGreetingDraft);
   const compose = useServerFn(composeGreetingFromKeywords);
+  const logStage = useServerFn(recordLiveCardStage);
 
   const [state, setState] = useState<EditorState>(EMPTY);
   const [ready, setReady] = useState(false);
@@ -187,21 +189,31 @@ export function LiveGreetingEditor({
     if (!clean) return;
     setRendering(true);
     setProgress(0);
+    const note = (stage: string, ok = true, detail = "") => {
+      void logStage({ data: { animationId, stage, ok, detail } }).catch(() => {});
+    };
+    // Each step reports its own outcome, so a failure names the real reason
+    // and a successfully rendered card is never silently dropped.
+    let step: "render" | "upload" | "save" = "render";
     try {
       // One single, final text configuration is used for the whole render.
       const text = state.text;
       const design = { ...state.design };
+      note("render_started");
       const rendered = await renderFinalVideo(clean, text, design, setProgress);
-      if (text.trim() && (!rendered.verified || rendered.duplicate)) {
-        toast.error(t("lge_verify_failed"));
-        return;
-      }
+      const imperfect = Boolean(text.trim()) && (!rendered.verified || rendered.duplicate);
+      note("render_completed", true, imperfect ? "text_verification_uncertain" : "");
+
+      step = "upload";
       const path = await uploadFinalVideo(
         animationId,
         rendered.blob,
         rendered.extension,
         rendered.mime,
       );
+      note("upload_completed");
+
+      step = "save";
       const result = await finalize({
         data: {
           animationId,
@@ -212,11 +224,18 @@ export function LiveGreetingEditor({
         },
       });
       setFinalUrl(result.videoUrl);
-      toast.success(t("lge_completed"));
+      // The card is saved in the account either way; an uncertain text check
+      // is only a warning, never a reason to lose the finished card.
+      if (imperfect) toast.warning(t("lge_verify_warning"));
+      else toast.success(t("lge_completed"));
       onFinish?.();
     } catch (err) {
       const code = err instanceof Error ? err.message : "";
-      toast.error(code === "recording_unsupported" ? t("lge_unsupported") : t("lge_render_failed"));
+      note("failed", false, `${step}: ${code}`);
+      if (code === "recording_unsupported") toast.error(t("lge_unsupported"));
+      else if (step === "upload") toast.error(`${t("lge_err_upload")} (${code})`);
+      else if (step === "save") toast.error(`${t("lge_err_save")} (${code})`);
+      else toast.error(`${t("lge_err_render")} (${code})`);
     } finally {
       setRendering(false);
     }

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Play, RotateCcw, Trash2, X } from "lucide-react";
+import { Loader2, Play, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
 import {
   adminDeleteLiveGreeting,
+  adminDeliverLiveGreeting,
   adminPurgeLiveGreeting,
   adminRestoreLiveGreeting,
   listUserLiveGreetings,
@@ -20,9 +21,12 @@ export function UserLiveCardsPage() {
   const removeRow = useServerFn(adminDeleteLiveGreeting);
   const restoreRow = useServerFn(adminRestoreLiveGreeting);
   const purgeRow = useServerFn(adminPurgeLiveGreeting);
+  const deliverRow = useServerFn(adminDeliverLiveGreeting);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<AdminLiveGreetingRow | null>(null);
   const [confirmPurge, setConfirmPurge] = useState<AdminLiveGreetingRow | null>(null);
+  const [deliverTo, setDeliverTo] = useState<AdminLiveGreetingRow | null>(null);
+  const [email, setEmail] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-user-live-cards"],
@@ -36,11 +40,16 @@ export function UserLiveCardsPage() {
     toast.success(message);
     setOpen(null);
     setConfirmPurge(null);
+    setDeliverTo(null);
+    setEmail("");
     queryClient.invalidateQueries({ queryKey: ["admin-user-live-cards"] });
   };
   const fail = (e: unknown) => {
     const code = e instanceof Error ? e.message : "error";
-    toast.error(code === "retention_active" ? t("ulc_retention_active") : code);
+    if (code === "retention_active") toast.error(t("ulc_retention_active"));
+    else if (code === "user_not_found") toast.error(t("ulc_user_not_found"));
+    else if (code === "generation_incomplete") toast.error(t("ulc_not_generated"));
+    else toast.error(code);
   };
 
   const del = useMutation({
@@ -56,6 +65,12 @@ export function UserLiveCardsPage() {
   const purge = useMutation({
     mutationFn: (id: string) => purgeRow({ data: { animationId: id } }),
     onSuccess: () => done(t("ulc_purged_toast")),
+    onError: fail,
+  });
+  const deliver = useMutation({
+    mutationFn: (vars: { id: string; email: string }) =>
+      deliverRow({ data: { animationId: vars.id, email: vars.email } }),
+    onSuccess: () => done(t("ulc_delivered_toast")),
     onError: fail,
   });
 
@@ -82,6 +97,7 @@ export function UserLiveCardsPage() {
                 <th className="p-3">{t("ulc_motion")}</th>
                 <th className="p-3">{t("ulc_duration")}</th>
                 <th className="p-3">{t("ulc_status")}</th>
+                <th className="p-3">{t("ulc_delivery")}</th>
                 <th className="p-3">{t("ulc_created")}</th>
                 <th className="p-3" />
               </tr>
@@ -107,9 +123,31 @@ export function UserLiveCardsPage() {
                     {row.status}
                     {row.deleted_at ? ` · ${t("ulc_deleted_flag")}` : ""}
                   </td>
+                  <td className="p-3">
+                    <span
+                      className={
+                        row.delivered ? "font-medium text-primary" : "font-medium text-destructive"
+                      }
+                    >
+                      {row.delivered ? t("ulc_delivered") : t("ulc_not_delivered")}
+                    </span>
+                  </td>
                   <td className="p-3 text-muted-foreground">{fmt(row.created_at)}</td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-2">
+                      {row.status === "ready" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeliverTo(row);
+                            setEmail(row.user_email ?? "");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 font-medium text-primary hover:bg-primary/10"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          {row.delivered ? t("ulc_retry_delivery") : t("ulc_send_to_user")}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setOpen(row)}
@@ -187,6 +225,54 @@ export function UserLiveCardsPage() {
               <Field label={t("ulc_deleted_at")} value={fmt(open.deleted_at)} />
               <Field label={t("ulc_purge_after")} value={fmt(open.purge_after)} />
             </dl>
+          </div>
+        </div>
+      )}
+
+      {deliverTo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
+            <h3 className="font-[Fraunces] text-lg font-semibold text-foreground">
+              {deliverTo.delivered ? t("ulc_retry_delivery") : t("ulc_send_to_user")}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("ulc_deliver_desc")}</p>
+            <label className="mt-4 block text-xs font-medium text-foreground" htmlFor="ulc-email">
+              {t("ulc_deliver_email")}
+            </label>
+            <input
+              id="ulc-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={deliverTo.user_email ?? ""}
+              className="mt-1 w-full rounded-xl border border-border/60 bg-background/70 px-4 py-2.5 text-sm outline-none focus:border-primary/60"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeliverTo(null)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm hover:bg-secondary"
+              >
+                {t("ulc_cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={deliver.isPending}
+                onClick={() =>
+                  deliver.mutate({
+                    id: deliverTo.id,
+                    email: email.trim() === (deliverTo.user_email ?? "") ? "" : email.trim(),
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {deliver.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {t("ulc_deliver_confirm")}
+              </button>
+            </div>
           </div>
         </div>
       )}
