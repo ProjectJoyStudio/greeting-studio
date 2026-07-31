@@ -53,25 +53,32 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
   "16:9": "aspect-[16/9]",
 };
 
-const SESSION_KEY = "joy.live-cards.session";
-
-/** Keeps every version of one creation session together, across reloads. */
+/**
+ * Every visit to the creation page starts its own private session, so the
+ * page always opens clean. Finished work and drafts stay safe in the personal
+ * account and are opened from there on purpose.
+ */
 function useLiveCardSession(): [string | null, () => void] {
   const [sessionId, setSessionId] = useState<string | null>(null);
   useEffect(() => {
-    let existing = window.localStorage.getItem(SESSION_KEY);
-    if (!existing) {
-      existing = crypto.randomUUID();
-      window.localStorage.setItem(SESSION_KEY, existing);
+    // Any leftovers of an earlier visit are cleared here.
+    try {
+      window.localStorage.removeItem("joy.live-cards.session");
+      window.localStorage.removeItem("joy.live-cards.motion");
+    } catch {
+      /* nothing to clean up */
     }
-    setSessionId(existing);
+    setSessionId(crypto.randomUUID());
   }, []);
   // A finished live greeting card is kept in the account; the next project
   // always starts from a completely new, independent session.
   const reset = () => {
-    const fresh = crypto.randomUUID();
-    window.localStorage.setItem(SESSION_KEY, fresh);
-    setSessionId(fresh);
+    try {
+      window.localStorage.removeItem("joy.live-cards.motion");
+    } catch {
+      /* nothing to clean up */
+    }
+    setSessionId(crypto.randomUUID());
   };
   return [sessionId, reset];
 }
@@ -231,9 +238,13 @@ function LiveCardsPage() {
     <SiteLayout>
       <PageHeader title={t("lc_title")} subtitle={t("lc_sub")} />
 
-      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:px-6">
+      <section
+        className={`mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:px-6 ${
+          stage === "motion" ? "" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]"
+        }`}
+      >
         {/* Composer ------------------------------------------------------- */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {stage === "motion" && current ? (
             <AnimationStep
               card={current}
@@ -358,7 +369,8 @@ function LiveCardsPage() {
           )}
         </div>
 
-        {/* Preview -------------------------------------------------------- */}
+        {/* Preview — hidden while the animation stage owns the full width -- */}
+        {stage === "image" ? (
         <div className="space-y-6">
           <div className="rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm lg:sticky lg:top-24">
             <div
@@ -490,6 +502,7 @@ function LiveCardsPage() {
             </div>
           )}
         </div>
+        ) : null}
       </section>
 
       {viewerOpen && animation?.videoUrl && (

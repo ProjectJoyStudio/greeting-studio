@@ -54,10 +54,6 @@ const EMPTY: EditorState = {
   design: { ...DEFAULT_TEXT_DESIGN },
 };
 
-function localKey(animationId: string) {
-  return `joy.live-cards.editor.${animationId}`;
-}
-
 /**
  * The final editing step of a live greeting card: a large video editor where
  * the greeting is placed directly on the animation. Everything is kept as a
@@ -103,22 +99,11 @@ export function LiveGreetingEditor({
   }, []);
 
   // ---- Draft recovery ----------------------------------------------------
-  // The browser copy comes back instantly, the stored draft confirms it.
+  // The stored draft in the personal account is the only source of truth.
   useEffect(() => {
     let cancelled = false;
-    try {
-      const cached = window.localStorage.getItem(localKey(animationId));
-      if (cached) {
-        const parsed = JSON.parse(cached) as Partial<EditorState>;
-        setState({
-          ...EMPTY,
-          ...parsed,
-          design: normalizeTextDesign(parsed.design),
-        });
-      }
-    } catch {
-      /* a corrupt copy is simply ignored */
-    }
+    setState(EMPTY);
+    dirty.current = false;
     (async () => {
       try {
         const draft = await loadDraft({ data: { animationId } });
@@ -148,11 +133,6 @@ export function LiveGreetingEditor({
   // ---- Automatic draft saving -------------------------------------------
   useEffect(() => {
     if (!ready || !dirty.current) return;
-    try {
-      window.localStorage.setItem(localKey(animationId), JSON.stringify(state));
-    } catch {
-      /* storage full — the stored draft still follows below */
-    }
     const timer = window.setTimeout(async () => {
       setSavingDraft(true);
       try {
@@ -198,14 +178,14 @@ export function LiveGreetingEditor({
   }
 
   /** Renders the finished file and stores it as the completed version. */
-  async function complete(withText: boolean) {
+  async function complete() {
     if (!videoUrl) return;
     setRendering(true);
     setProgress(0);
     try {
-      const text = withText ? state.text : "";
+      const text = state.text;
       const rendered = await renderFinalVideo(videoUrl, text, state.design, setProgress);
-      if (withText && text.trim() && !rendered.verified) {
+      if (text.trim() && !rendered.verified) {
         toast.error(t("lge_verify_failed"));
         return;
       }
@@ -220,11 +200,10 @@ export function LiveGreetingEditor({
           animationId,
           storagePath: path,
           mime: rendered.mime,
-          hasText: Boolean(withText && text.trim()),
+          hasText: Boolean(text.trim()),
           title: state.title,
         },
       });
-      window.localStorage.removeItem(localKey(animationId));
       setFinalUrl(result.videoUrl);
       toast.success(t("lge_completed"));
       onFinish?.();
@@ -290,7 +269,7 @@ export function LiveGreetingEditor({
   // ---- Editor ------------------------------------------------------------
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* Stage — the video stays the centre of the page ------------------ */}
         <div className="rounded-3xl border border-border/60 bg-card/70 p-3 shadow-warm sm:p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1 pb-3">
@@ -321,7 +300,7 @@ export function LiveGreetingEditor({
         </div>
 
         {/* Controls -------------------------------------------------------- */}
-        <div className="space-y-4 rounded-3xl border border-border/60 bg-card/70 p-5 shadow-warm">
+        <div className="min-w-0 space-y-4 overflow-y-auto rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5 xl:max-h-[78vh]">
           <div className="flex gap-2">
             {(["manual", "keywords"] as const).map((m) => (
               <button
@@ -409,21 +388,12 @@ export function LiveGreetingEditor({
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => complete(true)}
-            disabled={rendering || !videoUrl || !state.text.trim()}
+            onClick={() => void complete()}
+            disabled={rendering || !videoUrl}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
           >
             {rendering ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             {t("lge_save_final")}
-          </button>
-          <button
-            type="button"
-            onClick={() => complete(false)}
-            disabled={rendering || !videoUrl}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Send className="h-4 w-4" />
-            {t("lge_send_without_text")}
           </button>
           {onNewProject && (
             <button
