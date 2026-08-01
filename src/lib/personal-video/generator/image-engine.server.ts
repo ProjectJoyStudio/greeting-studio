@@ -1,11 +1,85 @@
 // ---------------------------------------------------------------------------
 // Independent starting-scene image engine of the Personal Video Greeting
-// section (FLUX.2 Dev). It shares no state, no client and no configuration
-// with the greeting-card or live-card generators, so it can be swapped for a
-// different engine later without touching the page logic.
+// section. The engine is chosen through configuration, never hardcoded into
+// the page, so it can be swapped later without rebuilding the flow.
+//
+//   image_generator = FLUX_2_MAX   (current setting, best identity keeping)
+//
+// Override with the environment variable PVG_IMAGE_GENERATOR, for example:
+//   PVG_IMAGE_GENERATOR=FLUX_2_DEV
+// A specific Replicate model may still be forced with PVG_IMAGE_MODEL.
+//
+// This module shares no state, no client and no configuration with the
+// greeting-card or live-card generators.
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://api.replicate.com/v1";
+
+/** The engine used when nothing is configured. */
+export const PVG_DEFAULT_ENGINE = "FLUX_2_MAX";
+
+type EngineDefinition = {
+  /** Stable key stored with every scene. */
+  key: string;
+  /** Replicate model the engine talks to. */
+  model: string;
+  /** Builds the engine-specific request body. */
+  buildInput: (input: { prompt: string; referenceUrls: string[] }) => Record<string, unknown>;
+};
+
+const ENGINES: Record<string, EngineDefinition> = {
+  FLUX_2_MAX: {
+    key: "flux2_max",
+    model: "black-forest-labs/flux-2-max",
+    buildInput: ({ prompt, referenceUrls }) => ({
+      prompt,
+      input_images: referenceUrls.slice(0, 8),
+      aspect_ratio: "16:9",
+      resolution: "2 MP",
+      output_format: "jpg",
+      safety_tolerance: 2,
+    }),
+  },
+  FLUX_2_PRO: {
+    key: "flux2_pro",
+    model: "black-forest-labs/flux-2-pro",
+    buildInput: ({ prompt, referenceUrls }) => ({
+      prompt,
+      input_images: referenceUrls.slice(0, 8),
+      aspect_ratio: "16:9",
+      output_format: "jpg",
+      safety_tolerance: 2,
+    }),
+  },
+  FLUX_2_DEV: {
+    key: "flux2_dev",
+    model: "black-forest-labs/flux-2-dev",
+    buildInput: ({ prompt, referenceUrls }) => ({
+      prompt,
+      image_input: referenceUrls,
+      aspect_ratio: "16:9",
+      output_format: "jpg",
+      num_outputs: 1,
+    }),
+  },
+};
+
+function engine(): EngineDefinition {
+  const name = (process.env["PVG_IMAGE_GENERATOR"] || PVG_DEFAULT_ENGINE).trim().toUpperCase();
+  const chosen = ENGINES[name] ?? ENGINES[PVG_DEFAULT_ENGINE]!;
+  const override = process.env["PVG_IMAGE_MODEL"];
+  return override ? { ...chosen, model: override } : chosen;
+}
+
+/** Key of the engine currently in use, stored with every generated scene. */
+export function pvgEngineKey(): string {
+  return engine().key;
+}
+
+/** Replicate model currently in use. */
+export function pvgEngineModel(): string {
+  return engine().model;
+}
 
 export type PvgEngineErrorCode =
   | "missing_token"
@@ -22,12 +96,6 @@ export class PvgEngineError extends Error {
     this.name = "PvgEngineError";
     this.code = code;
   }
-}
-
-export const PVG_ENGINE_KEY = "flux2_dev";
-
-export function pvgEngineModel(): string {
-  return process.env["PVG_IMAGE_MODEL"] || "black-forest-labs/flux-2-dev";
 }
 
 function token(): string {
@@ -48,6 +116,7 @@ function codeForStatus(status: number): PvgEngineErrorCode {
 export interface PvgStartResult {
   predictionId: string;
   model: string;
+  engineKey: string;
 }
 
 /**
@@ -58,19 +127,11 @@ export async function startSceneRender(input: {
   prompt: string;
   referenceUrls: string[];
 }): Promise<PvgStartResult> {
-  const model = pvgEngineModel();
-  const res = await fetch(`${API_BASE}/models/${model}/predictions`, {
+  const active = engine();
+  const res = await fetch(`${API_BASE}/models/${active.model}/predictions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      input: {
-        prompt: input.prompt,
-        image_input: input.referenceUrls,
-        aspect_ratio: "16:9",
-        output_format: "jpg",
-        num_outputs: 1,
-      },
-    }),
+    body: JSON.stringify({ input: active.buildInput(input) }),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -83,7 +144,7 @@ export async function startSceneRender(input: {
   if (!prediction.id) {
     throw new PvgEngineError("api_error", "The engine did not accept the request.");
   }
-  return { predictionId: prediction.id, model };
+  return { predictionId: prediction.id, model: active.model, engineKey: active.key };
 }
 
 export type PvgProgress =
