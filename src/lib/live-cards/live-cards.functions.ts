@@ -103,6 +103,7 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
       routed = await createLiveCardImage({
         prompt: translated.english,
         aspectRatio: data.aspectRatio,
+        userId: context.userId,
       });
     } catch (err) {
       const known = err instanceof LiveCardImageServiceError;
