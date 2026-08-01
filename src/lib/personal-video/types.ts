@@ -1,5 +1,7 @@
 // Client-safe types and rules of the Personal Video Greeting section.
 
+import { PERSONAL_VIDEO_GREETING_TEST_MODE } from "./test-mode";
+
 /** Standard projects hold up to five people. Premium raises this later. */
 export const PVG_MAX_PEOPLE = 5;
 /** One payment covers five starting-scene creations. */
@@ -106,7 +108,7 @@ export function validatePvgProject(
     issues.push({ field: "generations", key: "pvg_err_generations" });
   }
   const price = pvgPriceCredits(project.people.length);
-  if (project.creditsCharged === 0 && balance < price) {
+  if (!PERSONAL_VIDEO_GREETING_TEST_MODE && project.creditsCharged === 0 && balance < price) {
     issues.push({ field: "credits", key: "pvg_err_credits" });
   }
   return issues;
