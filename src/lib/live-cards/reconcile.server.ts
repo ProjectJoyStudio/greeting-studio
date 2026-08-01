@@ -17,6 +17,7 @@ type PendingRow = {
   generator_key: string | null;
   prediction_id: string | null;
   title: string | null;
+  duration_seconds: number | null;
 };
 
 export type ReconcileOutcome = "pending" | "ready" | "failed" | "skipped";
@@ -26,7 +27,7 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("live_card_animations")
-    .select("id, user_id, status, generator_key, prediction_id, title")
+    .select("id, user_id, status, generator_key, prediction_id, title, duration_seconds")
     .eq("id", animationId)
     .maybeSingle();
   const row = data as PendingRow | null;
@@ -81,6 +82,8 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
     const bytes = new Uint8Array(await res.arrayBuffer());
     const { stripAudioTrack } = await import("./mp4-audio.server");
     const silent = stripAudioTrack(bytes);
+    const { readMp4DurationSeconds } = await import("./mp4-duration.server");
+    const deliveredDuration = readMp4DurationSeconds(bytes);
     const storagePath = `${row.user_id}/${row.id}.${progress.fileExtension}`;
     const upload = await supabaseAdmin.storage
       .from(bucket)
@@ -112,7 +115,18 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
       ownerUserId: row.user_id,
       animationId: row.id,
       stage: "generation_completed",
-      detail: { bucket, path: storagePath, background: true },
+      detail: {
+        bucket,
+        path: storagePath,
+        background: true,
+        model: row.generator_key,
+        selectedDurationSeconds: row.duration_seconds,
+        returnedDurationSeconds: deliveredDuration,
+        durationMismatch:
+          deliveredDuration !== null &&
+          row.duration_seconds !== null &&
+          Math.abs(deliveredDuration - row.duration_seconds) > 0.75,
+      },
     });
     await notifyOwner(row, "live_card.ready");
     return "ready";
