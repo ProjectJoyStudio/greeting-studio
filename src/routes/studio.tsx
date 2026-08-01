@@ -185,7 +185,7 @@ function GiftCards() {
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-primary transition">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className="min-w-0 truncate font-display text-lg font-semibold tracking-tight">
+                <h3 className="min-w-0 font-display text-lg font-semibold leading-snug tracking-tight">
                   {t(g.titleKey)}
                 </h3>
               </div>
