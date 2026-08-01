@@ -267,6 +267,8 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
     // Project Joy never keeps the sound the engine invents by itself.
     const { stripAudioTrack } = await import("./mp4-audio.server");
     const silent = stripAudioTrack(bytes);
+    const { readMp4DurationSeconds } = await import("./mp4-duration.server");
+    const deliveredDuration = readMp4DurationSeconds(bytes);
     const storagePath = `${context.userId}/${current.id}.${progress.fileExtension}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upload = await supabaseAdmin.storage
@@ -289,7 +291,17 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       ownerUserId: context.userId,
       animationId: current.id,
       stage: "generation_completed",
-      detail: { bucket, path: storagePath },
+      detail: {
+        bucket,
+        path: storagePath,
+        model: current.generator_key,
+        selectedDurationSeconds: current.duration_seconds,
+        returnedDurationSeconds: deliveredDuration,
+        durationMismatch:
+          deliveredDuration !== null &&
+          current.duration_seconds !== null &&
+          Math.abs(deliveredDuration - current.duration_seconds) > 0.75,
+      },
     });
     return save({
       status: "ready",
