@@ -50,6 +50,7 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminUserLiveCardsRouteImport } from './routes/admin.user-live-cards'
 import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
+import { Route as AdminStudioPromosRouteImport } from './routes/admin.studio-promos'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
 import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
@@ -286,6 +287,11 @@ const AdminUserDraftsRoute = AdminUserDraftsRouteImport.update({
   path: '/user-drafts',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStudioPromosRoute = AdminStudioPromosRouteImport.update({
+  id: '/studio-promos',
+  path: '/studio-promos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -483,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/studio-promos': typeof AdminStudioPromosRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -553,6 +560,7 @@ export interface FileRoutesByTo {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/studio-promos': typeof AdminStudioPromosRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -627,6 +635,7 @@ export interface FileRoutesById {
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
   '/admin/promotions': typeof AdminPromotionsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/studio-promos': typeof AdminStudioPromosRoute
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -702,6 +711,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/studio-promos'
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
@@ -772,6 +782,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/studio-promos'
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
@@ -845,6 +856,7 @@ export interface FileRouteTypes {
     | '/admin/platform-settings'
     | '/admin/promotions'
     | '/admin/reports'
+    | '/admin/studio-promos'
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
@@ -1201,6 +1213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUserDraftsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/studio-promos': {
+      id: '/admin/studio-promos'
+      path: '/studio-promos'
+      fullPath: '/admin/studio-promos'
+      preLoaderRoute: typeof AdminStudioPromosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -1478,6 +1497,7 @@ interface AdminRouteChildren {
   AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
   AdminPromotionsRoute: typeof AdminPromotionsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminStudioPromosRoute: typeof AdminStudioPromosRoute
   AdminUserDraftsRoute: typeof AdminUserDraftsRoute
   AdminUserLiveCardsRoute: typeof AdminUserLiveCardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1500,6 +1520,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
   AdminPromotionsRoute: AdminPromotionsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminStudioPromosRoute: AdminStudioPromosRoute,
   AdminUserDraftsRoute: AdminUserDraftsRoute,
   AdminUserLiveCardsRoute: AdminUserLiveCardsRoute,
   AdminUsersRoute: AdminUsersRoute,

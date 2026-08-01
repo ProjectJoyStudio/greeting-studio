@@ -18,6 +18,7 @@ import {
   LogOut,
   ImageOff,
   Film,
+  Clapperboard,
   Trash2,
   ShieldCheck,
   Menu,
@@ -38,6 +39,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/admin", key: "admin_nav_overview", icon: LayoutDashboard },
   { to: "/admin/homepage-hero", key: "admin_nav_hero_showcase", icon: Home },
+  { to: "/admin/studio-promos", key: "spw_admin_title", icon: Clapperboard },
   { to: "/admin/economy", key: "admin_nav_economy", icon: Coins },
   { to: "/admin/orders", key: "admin_nav_orders", icon: ShoppingBag },
   { to: "/admin/users", key: "admin_nav_users", icon: Users },
