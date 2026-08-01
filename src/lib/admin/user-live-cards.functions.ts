@@ -268,3 +268,81 @@ export const adminDeliverLiveGreeting = createServerFn({ method: "POST" })
     });
     return result;
   });
+
+/**
+ * Returns an already generated live greeting card to its owner without
+ * finishing it: the card appears in the person's "unfinished live greeting
+ * cards" so they can add the greeting themselves. Nothing is generated again.
+ */
+export const adminReturnLiveGreetingToUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string; email?: string }) => {
+    if (!input?.animationId) throw new Error("animationId is required");
+    return {
+      animationId: String(input.animationId),
+      email: String(input?.email ?? "").trim().toLowerCase().slice(0, 200),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { getAdmin, recordAdminAction } = await import("./deleted-cards.server");
+    const { logLiveCardEvent } = await import("@/lib/live-cards/lifecycle.server");
+    const supabaseAdmin = await getAdmin();
+
+    const { data: row } = await supabaseAdmin
+      .from("live_card_animations")
+      .select("id, user_id, status, title, storage_path")
+      .eq("id", data.animationId)
+      .maybeSingle();
+    if (!row) throw new Error("animation_not_found");
+    if (row.status !== "ready" || !row.storage_path) throw new Error("generation_incomplete");
+
+    let targetUserId = row.user_id;
+    if (data.email) {
+      let found: string | null = null;
+      for (let page = 1; page <= 10 && !found; page += 1) {
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+        const users = list?.users ?? [];
+        const match = users.find((u) => (u.email ?? "").toLowerCase() === data.email);
+        if (match) found = match.id;
+        if (users.length < 200) break;
+      }
+      if (!found) throw new Error("user_not_found");
+      targetUserId = found;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("live_card_animations")
+      .update({ user_id: targetUserId, deleted_at: null, purge_after: null, deleted_by: null })
+      .eq("id", row.id);
+    if (error) throw new Error(error.message);
+
+    try {
+      await supabaseAdmin.from("notification_jobs").insert({
+        user_id: targetUserId,
+        notification_type: "live_card.returned",
+        channel: "in_app",
+        status: "pending",
+        payload: { animation_id: row.id, title: row.title ?? null } as never,
+      });
+    } catch {
+      /* a missing notification must never lose the card */
+    }
+
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: targetUserId,
+      animationId: row.id,
+      stage: "assigned_to_user",
+      detail: { returned_as_draft: true },
+    });
+    await recordAdminAction({
+      actorUserId: context.userId,
+      action: "live_greeting.returned_to_user",
+      entityType: "live_card_animation",
+      entityId: row.id,
+      affectedUserId: targetUserId,
+      next: { user_id: targetUserId, email: data.email || null, finalized: false },
+    });
+    return { ok: true, userId: targetUserId };
+  });

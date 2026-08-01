@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Play, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { Loader2, Play, RotateCcw, Send, Trash2, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -10,6 +10,7 @@ import {
   adminDeliverLiveGreeting,
   adminPurgeLiveGreeting,
   adminRestoreLiveGreeting,
+  adminReturnLiveGreetingToUser,
   listUserLiveGreetings,
   type AdminLiveGreetingRow,
 } from "@/lib/admin/user-live-cards.functions";
@@ -22,6 +23,7 @@ export function UserLiveCardsPage() {
   const restoreRow = useServerFn(adminRestoreLiveGreeting);
   const purgeRow = useServerFn(adminPurgeLiveGreeting);
   const deliverRow = useServerFn(adminDeliverLiveGreeting);
+  const returnRow = useServerFn(adminReturnLiveGreetingToUser);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<AdminLiveGreetingRow | null>(null);
   const [confirmPurge, setConfirmPurge] = useState<AdminLiveGreetingRow | null>(null);
@@ -71,6 +73,12 @@ export function UserLiveCardsPage() {
     mutationFn: (vars: { id: string; email: string }) =>
       deliverRow({ data: { animationId: vars.id, email: vars.email } }),
     onSuccess: () => done(t("ulc_delivered_toast")),
+    onError: fail,
+  });
+
+  const returnToUser = useMutation({
+    mutationFn: (id: string) => returnRow({ data: { animationId: id } }),
+    onSuccess: () => done(t("ulc_returned_toast")),
     onError: fail,
   });
 
@@ -146,6 +154,17 @@ export function UserLiveCardsPage() {
                         >
                           <Send className="h-3.5 w-3.5" />
                           {row.delivered ? t("ulc_retry_delivery") : t("ulc_send_to_user")}
+                        </button>
+                      )}
+                      {row.status === "ready" && (
+                        <button
+                          type="button"
+                          disabled={returnToUser.isPending}
+                          onClick={() => returnToUser.mutate(row.id)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 font-medium hover:border-primary/50 disabled:opacity-60"
+                        >
+                          <Undo2 className="h-3.5 w-3.5" />
+                          {t("ulc_return_to_user")}
                         </button>
                       )}
                       <button

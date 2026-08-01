@@ -8,7 +8,7 @@ import { normalizeTextDesign } from "@/lib/greeting-card/types";
 import type { LiveGreetingRecord } from "./types";
 
 const COLUMNS =
-  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
+  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, error_code, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
 
 type Row = {
   id: string;
@@ -28,6 +28,7 @@ type Row = {
   final_mime?: string | null;
   final_has_text?: boolean | null;
   finalized_at?: string | null;
+  error_code?: string | null;
   greeting_text?: string | null;
   greeting_mode?: string | null;
   greeting_keywords?: string[] | null;
@@ -88,6 +89,7 @@ export async function buildLiveGreeting(
     isShared: row.is_shared ?? false,
     shareSlug: row.share_slug,
     scheduledSendAt: row.scheduled_send_at,
+    errorCode: row.error_code ?? null,
     priceCredits: row.price_credits,
     createdAt: row.completed_at ?? row.created_at,
   };
@@ -149,7 +151,7 @@ export const listMyLiveDrafts = createServerFn({ method: "GET" })
       .from("live_card_animations")
       .select(COLUMNS)
       .eq("user_id", context.userId)
-      .eq("status", "ready")
+      .in("status", ["preparing", "queued", "processing", "storing", "ready", "failed"])
       .is("finalized_at", null)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -359,4 +361,16 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
       .is("deleted_at", null);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * Background generations of the signed-in person are finished here, so a card
+ * whose creator left the page is completed and lands in the personal account
+ * as an unfinished live greeting card.
+ */
+export const syncMyLiveCardAnimations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ finished: number }> => {
+    const { reconcileUserAnimations } = await import("./reconcile.server");
+    return { finished: await reconcileUserAnimations(context.userId) };
   });

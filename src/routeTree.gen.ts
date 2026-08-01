@@ -67,6 +67,7 @@ import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
+import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -371,6 +372,12 @@ const ApiPublicPurgeDeletedCardsRoute =
     path: '/api/public/purge-deleted-cards',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLiveCardsReconcileRoute =
+  ApiPublicLiveCardsReconcileRouteImport.update({
+    id: '/api/public/live-cards-reconcile',
+    path: '/api/public/live-cards-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -500,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -569,6 +577,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -642,6 +651,7 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
@@ -785,6 +796,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
@@ -857,6 +869,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
@@ -895,6 +908,7 @@ export interface RootRouteChildren {
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
+  ApiPublicLiveCardsReconcileRoute: typeof ApiPublicLiveCardsReconcileRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
 }
 
@@ -1306,6 +1320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/live-cards-reconcile': {
+      id: '/api/public/live-cards-reconcile'
+      path: '/api/public/live-cards-reconcile'
+      fullPath: '/api/public/live-cards-reconcile'
+      preLoaderRoute: typeof ApiPublicLiveCardsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
       path: '/upload'
@@ -1544,18 +1565,9 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogCategoryRoute: CatalogCategoryRoute,
   LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,
   CatalogIndexRoute: CatalogIndexRoute,
+  ApiPublicLiveCardsReconcileRoute: ApiPublicLiveCardsReconcileRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
