@@ -34,7 +34,7 @@ export const LIVE_CARD_RATIOS = ["1:1", "4:5", "9:16", "16:9"] as const;
 export type LiveCardRatio = (typeof LIVE_CARD_RATIOS)[number];
 
 /** Fallback only — the real list always comes from the generator configuration. */
-export const PLANNED_VIDEO_DURATIONS = [5, 10] as const;
+export const PLANNED_VIDEO_DURATIONS = [3, 4, 5, 6, 7] as const;
 
 /** Lifecycle of one animation, mirrored in the interface as plain progress. */
 export type AnimationStatus =
