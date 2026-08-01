@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -37,6 +38,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
+import { Route as DashboardVideoGreetingsRouteImport } from './routes/dashboard.video-greetings'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
@@ -67,6 +69,7 @@ import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calend
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
+import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
@@ -82,6 +85,11 @@ import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catal
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 
+const VideoGreetingRoute = VideoGreetingRouteImport.update({
+  id: '/video-greeting',
+  path: '/video-greeting',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -221,6 +229,11 @@ const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
   id: '/live-editor/$animationId',
   path: '/live-editor/$animationId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardVideoGreetingsRoute = DashboardVideoGreetingsRouteImport.update({
+  id: '/video-greetings',
+  path: '/video-greetings',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
@@ -372,6 +385,11 @@ const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const ApiPublicPvgReconcileRoute = ApiPublicPvgReconcileRouteImport.update({
+  id: '/api/public/pvg-reconcile',
+  path: '/api/public/pvg-reconcile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPurgeDeletedCardsRoute =
   ApiPublicPurgeDeletedCardsRouteImport.update({
     id: '/api/public/purge-deleted-cards',
@@ -474,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -503,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
@@ -516,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -546,6 +567,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -574,6 +596,7 @@ export interface FileRoutesByTo {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
@@ -587,6 +610,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -620,6 +644,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -649,6 +674,7 @@ export interface FileRoutesById {
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
@@ -662,6 +688,7 @@ export interface FileRoutesById {
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
@@ -696,6 +723,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -725,6 +753,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
@@ -738,6 +767,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/upload'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-reconcile'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -768,6 +798,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -796,6 +827,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
     | '/admin'
     | '/catalog'
@@ -809,6 +841,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/upload'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-reconcile'
     | '/admin/catalog'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -841,6 +874,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -870,6 +904,7 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/profile'
     | '/dashboard/settings'
+    | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
@@ -883,6 +918,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/upload'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-reconcile'
     | '/admin/catalog/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
@@ -916,16 +952,25 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  VideoGreetingRoute: typeof VideoGreetingRoute
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicLiveCardsReconcileRoute: typeof ApiPublicLiveCardsReconcileRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
+  ApiPublicPvgReconcileRoute: typeof ApiPublicPvgReconcileRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/video-greeting': {
+      id: '/video-greeting'
+      path: '/video-greeting'
+      fullPath: '/video-greeting'
+      preLoaderRoute: typeof VideoGreetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -1121,6 +1166,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/live-editor/$animationId'
       preLoaderRoute: typeof LiveEditorAnimationIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/video-greetings': {
+      id: '/dashboard/video-greetings'
+      path: '/video-greetings'
+      fullPath: '/dashboard/video-greetings'
+      preLoaderRoute: typeof DashboardVideoGreetingsRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/dashboard/settings': {
       id: '/dashboard/settings'
@@ -1332,6 +1384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/api/public/pvg-reconcile': {
+      id: '/api/public/pvg-reconcile'
+      path: '/api/public/pvg-reconcile'
+      fullPath: '/api/public/pvg-reconcile'
+      preLoaderRoute: typeof ApiPublicPvgReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/purge-deleted-cards': {
       id: '/api/public/purge-deleted-cards'
       path: '/api/public/purge-deleted-cards'
@@ -1538,6 +1597,7 @@ interface DashboardRouteChildren {
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardVideoGreetingsRoute: typeof DashboardVideoGreetingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -1550,6 +1610,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardVideoGreetingsRoute: DashboardVideoGreetingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
@@ -1582,12 +1643,14 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  VideoGreetingRoute: VideoGreetingRoute,
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicLiveCardsReconcileRoute: ApiPublicLiveCardsReconcileRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
+  ApiPublicPvgReconcileRoute: ApiPublicPvgReconcileRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

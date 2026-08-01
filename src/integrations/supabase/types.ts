@@ -2404,6 +2404,181 @@ export type Database = {
         }
         Relationships: []
       }
+      pvg_people: {
+        Row: {
+          created_at: string
+          extra_photos: Json
+          face_quality: string
+          id: string
+          name: string | null
+          optimized_bucket: string | null
+          optimized_path: string | null
+          original_bucket: string | null
+          original_path: string | null
+          position: number
+          project_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extra_photos?: Json
+          face_quality?: string
+          id?: string
+          name?: string | null
+          optimized_bucket?: string | null
+          optimized_path?: string | null
+          original_bucket?: string | null
+          original_path?: string | null
+          position?: number
+          project_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extra_photos?: Json
+          face_quality?: string
+          id?: string
+          name?: string | null
+          optimized_bucket?: string | null
+          optimized_path?: string | null
+          original_bucket?: string | null
+          original_path?: string | null
+          position?: number
+          project_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_people_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvg_projects: {
+        Row: {
+          created_at: string
+          credits_charged: number
+          deleted_at: string | null
+          generations_limit: number
+          generations_used: number
+          id: string
+          occasion: string | null
+          recipient_name: string | null
+          scene_description: string | null
+          selected_scene_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_charged?: number
+          deleted_at?: string | null
+          generations_limit?: number
+          generations_used?: number
+          id?: string
+          occasion?: string | null
+          recipient_name?: string | null
+          scene_description?: string | null
+          selected_scene_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_charged?: number
+          deleted_at?: string | null
+          generations_limit?: number
+          generations_used?: number
+          id?: string
+          occasion?: string | null
+          recipient_name?: string | null
+          scene_description?: string | null
+          selected_scene_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pvg_scenes: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          generator_key: string | null
+          generator_model: string | null
+          id: string
+          prediction_id: string | null
+          project_id: string
+          prompt: string | null
+          prompt_en: string | null
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+          variation_index: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          prediction_id?: string | null
+          project_id: string
+          prompt?: string | null
+          prompt_en?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+          variation_index?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          prediction_id?: string | null
+          project_id?: string
+          prompt?: string | null
+          prompt_en?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+          variation_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_scenes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_deliveries: {
         Row: {
           attempted_count: number

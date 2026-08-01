@@ -56,8 +56,7 @@ interface GiftOption {
 const GIFTS: GiftOption[] = [
   { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc", to: "/create-card" },
   { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", to: "/live-cards" },
-  // Prepared for the future Personal Video Greeting section.
-  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", to: null },
+  { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", to: "/video-greeting" },
   { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc", to: null },
   { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc", to: null },
   { id: "premium", icon: Crown, titleKey: "gift_premium", descKey: "gift_premium_desc", to: null },
