@@ -110,6 +110,11 @@ function LiveCardsPage() {
     enabled: isAuthenticated && Boolean(sessionId),
   });
 
+  /** Up to three starting pictures may be created per project. */
+  const MAX_ATTEMPTS = 3;
+  const generatedCount = (recent.data ?? []).filter((c) => c.source === "generated").length;
+  const attemptsLeft = Math.max(0, MAX_ATTEMPTS - generatedCount);
+
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
   useEffect(() => {
@@ -127,6 +132,10 @@ function LiveCardsPage() {
 
   async function runGenerate() {
     if (prompt.trim().length < 3) return;
+    if (attemptsLeft <= 0) {
+      toast.error(t("lc_attempts_done"));
+      return;
+    }
     setBusy("generate");
     setRestored(true);
     try {
