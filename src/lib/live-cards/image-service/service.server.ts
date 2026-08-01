@@ -8,7 +8,7 @@
 //            person, who may try again. The integration stays in place for
 //            later use and is guarded by two explicit switches.
 
-import { backupHandoverAllowed, primaryCostUsd } from "./config.server";
+import { backupHandoverAllowed, primaryCostUsd, primaryModel } from "./config.server";
 import { isConfirmedFailure, LiveImageError, renderPrimaryImage, type LiveImageRender } from "./client.server";
 import { logError, logInfo, logWarn } from "./log.server";
 import { queueStats, QueueFullError, QueueTimeoutError, withImageSlot } from "./queue.server";
@@ -88,7 +88,7 @@ export async function createLiveCardImage(input: {
         logError("request_failed", {
           ...base,
           engine: "primary",
-          model: primaryModelName(),
+          model: primaryModel(),
           status: "failed",
           code: primaryError.code,
           error: primaryError.message,
