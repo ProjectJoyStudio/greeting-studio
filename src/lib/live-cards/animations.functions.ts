@@ -87,10 +87,12 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }): Promise<AnimationResult> => {
-    const { availableDurations, startVideoRequest } = await import("./generators/router.server");
+    const { startVideoRequest } = await import("./generators/router.server");
     const { GeneratorError } = await import("./generators/contracts.server");
     const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
     const { liveCardsVideoResolution } = await import("./env.server");
+    const { normaliseAnimationDuration } = await import("./duration-pricing");
+    const requestId = crypto.randomUUID();
 
     const { data: card, error: cardError } = await context.supabase
       .from("live_greeting_cards")
@@ -102,8 +104,8 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       return { ok: false, errorCode: "image_missing", errorMessage: "The source picture is not available." };
     }
 
-    const durations = availableDurations();
-    const duration = durations.includes(data.durationSeconds) ? data.durationSeconds : durations[0] ?? 5;
+    // The person's choice is used as it is; only impossible values are clamped.
+    const duration = normaliseAnimationDuration(data.durationSeconds);
 
     // Universal translation layer — the engine only ever receives English.
     const translated = await translatePromptToEnglish(data.prompt, "animation");
@@ -159,7 +161,16 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
         ownerUserId: context.userId,
         animationId: row.id,
         stage: "generation_started",
-        detail: { generator: routed.generatorKey, duration },
+        detail: {
+          requestId,
+          userId: context.userId,
+          generator: routed.generatorKey,
+          model: routed.generatorModel,
+          requestedDurationSeconds: data.durationSeconds || null,
+          selectedDurationSeconds: duration,
+          sentDurationSeconds: duration,
+          status: "queued",
+        },
       });
       return { ok: true, animation: await toAnimation(row as Row) };
     } catch (err) {
@@ -176,7 +187,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
         animationId: null,
         stage: "failed",
         ok: false,
-        detail: { step: "generation", errorCode, errorMessage },
+        detail: { requestId, step: "generation", selectedDurationSeconds: duration, errorCode, errorMessage },
       });
       return { ok: false, errorCode, errorMessage };
     }
@@ -256,6 +267,8 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
     // Project Joy never keeps the sound the engine invents by itself.
     const { stripAudioTrack } = await import("./mp4-audio.server");
     const silent = stripAudioTrack(bytes);
+    const { readMp4DurationSeconds } = await import("./mp4-duration.server");
+    const deliveredDuration = readMp4DurationSeconds(bytes);
     const storagePath = `${context.userId}/${current.id}.${progress.fileExtension}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upload = await supabaseAdmin.storage
@@ -278,7 +291,17 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       ownerUserId: context.userId,
       animationId: current.id,
       stage: "generation_completed",
-      detail: { bucket, path: storagePath },
+      detail: {
+        bucket,
+        path: storagePath,
+        model: current.generator_key,
+        selectedDurationSeconds: current.duration_seconds,
+        returnedDurationSeconds: deliveredDuration,
+        durationMismatch:
+          deliveredDuration !== null &&
+          current.duration_seconds !== null &&
+          Math.abs(deliveredDuration - current.duration_seconds) > 0.75,
+      },
     });
     return save({
       status: "ready",

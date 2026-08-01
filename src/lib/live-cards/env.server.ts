@@ -23,9 +23,9 @@ export function configuredVideoGenerators(): string[] {
 
 /** Animation lengths offered by the first engine, configurable per environment. */
 export function liveCardsDurations(): number[] {
-  const raw = (process.env.LIVE_CARDS_DURATIONS || "5,10").split(",");
+  const raw = (process.env.LIVE_CARDS_DURATIONS || "3,4,5,6,7").split(",");
   const parsed = raw.map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
-  return parsed.length ? parsed : [5, 10];
+  return parsed.length ? parsed : [3, 4, 5, 6, 7];
 }
 
 /** Output resolution handed to the animation engine. */
