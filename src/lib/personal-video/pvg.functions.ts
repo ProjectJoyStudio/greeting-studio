@@ -400,14 +400,14 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       const referenceUrls = project.people
         .map((p) => p.photoUrl)
         .filter((url): url is string => Boolean(url));
-      const { startSceneRender, PVG_ENGINE_KEY } = await import("./generator/flux2-dev.server");
+      const { startSceneRender } = await import("./generator/image-engine.server");
       const started = await startSceneRender({ prompt, referenceUrls });
       await supabase
         .from("pvg_scenes")
         .update({
           status: "processing",
           prediction_id: started.predictionId,
-          generator_key: PVG_ENGINE_KEY,
+          generator_key: started.engineKey,
           generator_model: started.model,
         })
         .eq("id", (sceneRow as SceneRow).id);

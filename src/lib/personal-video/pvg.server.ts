@@ -118,7 +118,7 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
   if (!row || !row.prediction_id) return "pending";
   if (row.status === "ready" || row.status === "failed") return row.status;
 
-  const { pollSceneRender } = await import("./generator/flux2-dev.server");
+  const { pollSceneRender } = await import("./generator/image-engine.server");
   const progress = await pollSceneRender(row.prediction_id);
 
   const patch = async (values: Record<string, unknown>) => {
