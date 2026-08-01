@@ -19,6 +19,14 @@ import {
   type LiveCardAnimation,
   type LiveCardAsset,
 } from "@/lib/live-cards/types";
+import {
+  ANIMATION_DURATION_DEFAULT,
+  ANIMATION_DURATION_MAX,
+  ANIMATION_DURATION_MIN,
+  ANIMATION_DURATION_STEP,
+  animationDurationCredits,
+  normaliseAnimationDuration,
+} from "@/lib/live-cards/duration-pricing";
 
 const DRAFT_KEY = "joy.live-cards.motion";
 
@@ -68,10 +76,13 @@ export function AnimationStep({
     queryKey: ["live-cards", "animation-options"],
     queryFn: () => getAnimationOptions(),
   });
+  // Fallback list kept for reference; the slider itself defines the range.
   const durations = options.data?.durations?.length
     ? options.data.durations
     : ([...PLANNED_VIDEO_DURATIONS] as number[]);
-  const chosenDuration = duration ?? durations[0] ?? 5;
+  void durations;
+  const chosenDuration = normaliseAnimationDuration(duration ?? ANIMATION_DURATION_DEFAULT);
+  const priceCredits = animationDurationCredits(chosenDuration);
 
   // Generation runs in the background: whatever is unfinished for this session
   // is picked up again when the person returns to the page.
@@ -277,29 +288,45 @@ export function AnimationStep({
           ))}
         </div>
 
-        {/* Duration — always taken from the generator configuration --------- */}
+        {/* Duration — chosen before the animation starts, locked afterwards -- */}
         <div>
-          <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            {t("la_duration")}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {durations.map((seconds) => (
-              <button
-                key={seconds}
-                type="button"
-                onClick={() => setDuration(seconds)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  chosenDuration === seconds
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/60 text-muted-foreground hover:border-primary/40"
-                }`}
-              >
-                {seconds}
-                {t("la_seconds")}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label
+              htmlFor="la-duration"
+              className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+            >
+              <Clock className="h-3.5 w-3.5" />
+              {t("la_duration")}
+            </label>
+            <span className="font-display text-sm font-semibold tracking-tight text-primary">
+              {chosenDuration} {t("la_seconds_long")}
+            </span>
           </div>
+          <input
+            id="la-duration"
+            type="range"
+            min={ANIMATION_DURATION_MIN}
+            max={ANIMATION_DURATION_MAX}
+            step={ANIMATION_DURATION_STEP}
+            value={chosenDuration}
+            disabled={sending || running}
+            onChange={(e) => setDuration(Number(e.target.value))}
+            className="mt-3 w-full accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+            <span>
+              {ANIMATION_DURATION_MIN}
+              {t("la_seconds")}
+            </span>
+            <span>
+              {ANIMATION_DURATION_MAX}
+              {t("la_seconds")}
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {t("la_price_estimate")}: <span className="font-medium">{priceCredits ?? "—"}</span>{" "}
+            {t("la_price_credits")}
+          </p>
         </div>
 
         {/* Compact summary ------------------------------------------------- */}
