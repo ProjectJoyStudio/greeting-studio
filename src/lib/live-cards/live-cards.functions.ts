@@ -71,22 +71,41 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }): Promise<LiveCardResult> => {
-    const { routeImageRequest } = await import("./generators/router.server");
-    const { GeneratorError } = await import("./generators/contracts.server");
+    const { createLiveCardImage, LiveCardImageServiceError } = await import(
+      "./image-service/service.server"
+    );
+    const { maxAttemptsPerProject } = await import("./image-service/config.server");
     const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
     const { liveCardsImageBucket } = await import("./env.server");
+
+    // Each project may create a limited number of starting pictures.
+    if (data.sessionId) {
+      const { count } = await context.supabase
+        .from("live_greeting_cards")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", context.userId)
+        .eq("session_id", data.sessionId)
+        .eq("source", "generated");
+      if ((count ?? 0) >= maxAttemptsPerProject()) {
+        return {
+          ok: false,
+          errorCode: "attempt_limit",
+          errorMessage: "You have created the maximum number of starting pictures for this project.",
+        };
+      }
+    }
 
     // Universal translation layer — the engine only ever receives English.
     const translated = await translatePromptToEnglish(data.prompt, "image");
 
     let routed;
     try {
-      routed = await routeImageRequest({
+      routed = await createLiveCardImage({
         prompt: translated.english,
         aspectRatio: data.aspectRatio,
       });
     } catch (err) {
-      const known = err instanceof GeneratorError;
+      const known = err instanceof LiveCardImageServiceError;
       return {
         ok: false,
         errorCode: known ? err.code : "unknown",

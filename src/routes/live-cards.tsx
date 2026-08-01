@@ -110,6 +110,11 @@ function LiveCardsPage() {
     enabled: isAuthenticated && Boolean(sessionId),
   });
 
+  /** Up to three starting pictures may be created per project. */
+  const MAX_ATTEMPTS = 3;
+  const generatedCount = (recent.data ?? []).filter((c) => c.source === "generated").length;
+  const attemptsLeft = Math.max(0, MAX_ATTEMPTS - generatedCount);
+
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
   useEffect(() => {
@@ -127,6 +132,10 @@ function LiveCardsPage() {
 
   async function runGenerate() {
     if (prompt.trim().length < 3) return;
+    if (attemptsLeft <= 0) {
+      toast.error(t("lc_attempts_done"));
+      return;
+    }
     setBusy("generate");
     setRestored(true);
     try {
@@ -293,7 +302,7 @@ function LiveCardsPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {!current && (
+              {attemptsLeft > 0 && (
                 <button
                   type="button"
                   disabled={!isAuthenticated || busy !== null || prompt.trim().length < 3}
@@ -305,7 +314,7 @@ function LiveCardsPage() {
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  {t("lc_generate")}
+                  {generatedCount > 0 ? t("lc_regenerate") : t("lc_generate")}
                 </button>
               )}
 
@@ -336,6 +345,11 @@ function LiveCardsPage() {
               />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{t("lc_upload_hint")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {attemptsLeft > 0
+                ? `${t("lc_attempts_left")} ${attemptsLeft}/${MAX_ATTEMPTS}`
+                : t("lc_attempts_done")}
+            </p>
 
             {!isAuthenticated && (
               <p className="mt-4 text-sm text-muted-foreground">
@@ -429,8 +443,8 @@ function LiveCardsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy !== null}
-                  onClick={() => setConfirmReplace(true)}
+                  disabled={busy !== null || (attemptsLeft <= 0 && generatedCount >= MAX_ATTEMPTS)}
+                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : setConfirmReplace(true))}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
