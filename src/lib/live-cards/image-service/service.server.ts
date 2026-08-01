@@ -3,11 +3,12 @@
 // its own logging and its own failure handling.
 //
 // Primary  — the low-cost engine of this service (own integration).
-// Backup   — the existing high-quality engines, used only after a confirmed
-//            primary failure. Slowness alone never triggers the backup, and
-//            the two engines never run at the same time for one request.
+// Backup   — the existing high-cost engines. CURRENTLY DISABLED: automatic
+//            fallback is off, so a failed request stops and is reported to the
+//            person, who may try again. The integration stays in place for
+//            later use and is guarded by two explicit switches.
 
-import { backupEnabled } from "./config.server";
+import { backupHandoverAllowed, primaryCostUsd } from "./config.server";
 import { isConfirmedFailure, LiveImageError, renderPrimaryImage, type LiveImageRender } from "./client.server";
 import { logError, logInfo, logWarn } from "./log.server";
 import { queueStats, QueueFullError, QueueTimeoutError, withImageSlot } from "./queue.server";
@@ -46,17 +47,25 @@ export async function createLiveCardImage(input: {
   prompt: string;
   aspectRatio: string;
   requestId?: string;
+  userId?: string;
 }): Promise<LiveCardImageResult> {
   const requestId = input.requestId ?? crypto.randomUUID();
+  const base = { requestId, userId: input.userId ?? null, section: "live_cards" };
 
   try {
     return await withImageSlot(async () => {
-      logInfo("request_started", { requestId, ratio: input.aspectRatio, ...queueStats() });
+      logInfo("request_started", { ...base, ratio: input.aspectRatio, ...queueStats() });
 
       let primaryError: LiveImageError | null = null;
       try {
         const render: LiveImageRender = await renderPrimaryImage(input.prompt, input.aspectRatio);
-        logInfo("request_completed", { requestId, engine: "primary", model: render.model });
+        logInfo("request_completed", {
+          ...base,
+          engine: "primary",
+          model: render.model,
+          status: "succeeded",
+          costUsd: primaryCostUsd(),
+        });
         return {
           url: render.url,
           contentType: render.contentType,
@@ -72,18 +81,23 @@ export async function createLiveCardImage(input: {
             : new LiveImageError("generation_failed", err instanceof Error ? err.message : "Unknown failure.");
       }
 
-      // A slow render is not a failure: it never hands the work to the backup.
-      if (!isConfirmedFailure(primaryError.code)) {
-        logError("request_failed", { requestId, engine: "primary", code: primaryError.code });
+      // Backup hand-over is switched off: every failure — slow render,
+      // timeout, temporary unavailability or a confirmed engine error —
+      // stops here and is reported. The higher-cost engine never starts.
+      if (!backupHandoverAllowed() || !isConfirmedFailure(primaryError.code)) {
+        logError("request_failed", {
+          ...base,
+          engine: "primary",
+          model: primaryModelName(),
+          status: "failed",
+          code: primaryError.code,
+          error: primaryError.message,
+          fallback: "off",
+        });
         throw new LiveCardImageServiceError(primaryError.code, primaryError.message);
       }
 
-      if (!backupEnabled()) {
-        logError("request_failed", { requestId, engine: "primary", code: primaryError.code, backup: "disabled" });
-        throw new LiveCardImageServiceError(primaryError.code, primaryError.message);
-      }
-
-      logWarn("primary_failed_switching_to_backup", { requestId, code: primaryError.code });
+      logWarn("primary_failed_switching_to_backup", { ...base, code: primaryError.code });
 
       // The backup runs strictly after the primary has finished with a
       // confirmed error — never in parallel with it.
@@ -91,7 +105,12 @@ export async function createLiveCardImage(input: {
       const { GeneratorError } = await import("../generators/contracts.server");
       try {
         const routed = await routeImageRequest({ prompt: input.prompt, aspectRatio: input.aspectRatio });
-        logInfo("request_completed", { requestId, engine: "backup", model: routed.generatorModel });
+        logInfo("request_completed", {
+          ...base,
+          engine: "backup",
+          model: routed.generatorModel,
+          status: "succeeded",
+        });
         return {
           url: routed.url,
           contentType: routed.contentType,
@@ -103,13 +122,13 @@ export async function createLiveCardImage(input: {
       } catch (err) {
         const code = err instanceof GeneratorError ? err.code : "generation_failed";
         const message = err instanceof Error ? err.message : "The picture could not be created.";
-        logError("request_failed", { requestId, engine: "backup", code });
+        logError("request_failed", { ...base, engine: "backup", status: "failed", code, error: message });
         throw new LiveCardImageServiceError(code, message);
       }
     });
   } catch (err) {
     if (err instanceof QueueFullError || err instanceof QueueTimeoutError) {
-      logWarn("request_rejected", { requestId, code: err.code });
+      logWarn("request_rejected", { ...base, status: "rejected", code: err.code });
       throw new LiveCardImageServiceError(err.code, err.message);
     }
     throw err;
