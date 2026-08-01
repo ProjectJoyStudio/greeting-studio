@@ -2457,6 +2457,48 @@ export type Database = {
           },
         ]
       }
+      studio_promo_windows: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          poster_path: string | null
+          slot: string
+          sort_order: number
+          storage_bucket: string | null
+          storage_path: string | null
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          poster_path?: string | null
+          slot: string
+          sort_order?: number
+          storage_bucket?: string | null
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          poster_path?: string | null
+          slot?: string
+          sort_order?: number
+          storage_bucket?: string | null
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       subscription_credit_grants: {
         Row: {
           expires_at: string | null
