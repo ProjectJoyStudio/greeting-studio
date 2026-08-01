@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check } from "lucide-react";
+import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -22,6 +22,7 @@ import {
 import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import {
   PVG_MAX_PEOPLE,
+  PVG_MAX_GENERATIONS,
   pvgPriceCredits,
   validatePvgProject,
   type PvgIssueField,
@@ -47,6 +48,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [description, setDescription] = useState("");
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
   const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
@@ -123,6 +127,32 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
 
   const price = pvgPriceCredits(project?.people.length ?? 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
+
+  // --- preview selection ---------------------------------------------------
+  /** Technical failures never count against the five generations. */
+  const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
+  const generationsLeft = (project?.generationsLimit ?? PVG_MAX_GENERATIONS) - usedCount;
+  const mainScene = useMemo(() => {
+    const scenes = project?.scenes ?? [];
+    if (scenes.length === 0) return null;
+    return (
+      scenes.find((s) => s.id === activeSceneId) ??
+      scenes.find((s) => s.id === project?.selectedSceneId) ??
+      [...scenes].reverse().find((s) => s.status === "ready") ??
+      scenes[scenes.length - 1] ??
+      null
+    );
+  }, [project, activeSceneId]);
+
+  // Escape closes the enlarged view on desktop.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen]);
 
   // --- photo handling -----------------------------------------------------
   async function handlePersonFile(file: File) {
@@ -449,8 +479,8 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
           </div>
         </div>
 
-        {/* Right — price and the five variations -------------------------- */}
-        <div className="space-y-6">
+        {/* Right — price, large preview and the five variations ----------- */}
+        <div className="min-w-0 space-y-6">
           <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm lg:sticky lg:top-24">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2 text-sm font-medium">
@@ -470,88 +500,225 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
             )}
 
-            <button
-              type="button"
-              disabled={!canGenerate}
-              onClick={runGenerate}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {busy === "generate" || hasRunning ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Wand2 className="h-4 w-4" />
-              )}
-              {busy === "generate" || hasRunning ? t("pvg_generating") : t("pvg_generate")}
-            </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_attempts")}: {project?.generationsUsed ?? 0}/{project?.generationsLimit ?? 5}
-            </p>
-            {issueFor("generations") && (
-              <p className="mt-2 text-center text-xs text-destructive">{t("pvg_err_generations")}</p>
+            {generationsLeft > 0 ? (
+              <button
+                type="button"
+                disabled={!canGenerate}
+                onClick={runGenerate}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy === "generate" || hasRunning ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4" />
+                )}
+                {busy === "generate" || hasRunning
+                  ? t("pvg_generating")
+                  : usedCount > 0
+                    ? t("pvg_another_scene")
+                    : t("pvg_generate")}
+              </button>
+            ) : (
+              <p className="mt-5 rounded-2xl bg-muted/50 px-4 py-3 text-center text-xs text-muted-foreground">
+                {t("pvg_all_used")}
+              </p>
             )}
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")}{" "}
+              {project?.generationsLimit ?? PVG_MAX_GENERATIONS}
+            </p>
           </div>
 
           {(project?.scenes.length ?? 0) > 0 && (
-            <div className="rounded-3xl border border-border/60 bg-card/60 p-5">
+            <div className="min-w-0 rounded-3xl border border-border/60 bg-card/60 p-5">
               <h2 className="font-display text-base font-semibold tracking-tight">
                 {t("pvg_variations")}
               </h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {project!.scenes.map((scene) => (
-                  <div key={scene.id} className="overflow-hidden rounded-2xl border border-border/60">
-                    <div className="relative aspect-video w-full bg-muted/40">
-                      {scene.status === "ready" && scene.imageUrl ? (
+
+              {/* Large main preview ------------------------------------- */}
+              <div className="mt-4 min-w-0">
+                {mainScene ? (
+                  <div className="overflow-hidden rounded-2xl border border-border/60 bg-muted/30">
+                    {mainScene.status === "ready" && mainScene.imageUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setLightboxOpen(true)}
+                        className="block w-full cursor-zoom-in"
+                        aria-label={`${t("pvg_variation")} ${mainScene.variationIndex}`}
+                      >
                         <img
-                          src={scene.imageUrl}
-                          alt={`${t("pvg_variation")} ${scene.variationIndex}`}
-                          className="h-full w-full select-none object-cover"
+                          src={mainScene.imageUrl}
+                          alt={`${t("pvg_variation")} ${mainScene.variationIndex}`}
+                          className="h-auto max-h-[70vh] w-full select-none object-contain"
                           draggable={false}
                           onContextMenu={(e) => e.preventDefault()}
                         />
+                      </button>
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center gap-2 text-xs text-muted-foreground">
+                        {mainScene.status === "failed" ? (
+                          t("pvg_scene_failed")
+                        ) : (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            {t("pvg_scene_working")}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-dashed border-border/60 text-xs text-muted-foreground">
+                    {t("pvg_preview_empty")}
+                  </div>
+                )}
+
+                {mainScene && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {t("pvg_variation")} {mainScene.variationIndex}
+                      </p>
+                      {project?.selectedSceneId === mainScene.id ? (
+                        <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                          <Check className="h-3.5 w-3.5" />
+                          {t("pvg_selected_badge")}
+                        </p>
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center gap-2 text-xs text-muted-foreground">
-                          {scene.status === "failed" ? (
-                            t("pvg_scene_failed")
-                          ) : (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                              {t("pvg_scene_working")}
-                            </>
-                          )}
-                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{t("pvg_enlarge_hint")}</p>
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-2 p-3">
-                      <span className="text-xs font-medium">
+                    {mainScene.status === "ready" && project?.selectedSceneId !== mainScene.id && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmSceneId(mainScene.id)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        {t("pvg_use_scene")}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Thumbnails --------------------------------------------- */}
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {project!.scenes.map((scene) => {
+                  const active = mainScene?.id === scene.id;
+                  return (
+                    <button
+                      key={scene.id}
+                      type="button"
+                      onClick={() => setActiveSceneId(scene.id)}
+                      className={`min-w-0 overflow-hidden rounded-xl border text-left transition ${
+                        active
+                          ? "border-primary ring-2 ring-primary/40"
+                          : "border-border/60 hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="relative aspect-video w-full bg-muted/40">
+                        {scene.status === "ready" && scene.imageUrl ? (
+                          <img
+                            src={scene.imageUrl}
+                            alt={`${t("pvg_variation")} ${scene.variationIndex}`}
+                            className="h-full w-full select-none object-cover"
+                            draggable={false}
+                            onContextMenu={(e) => e.preventDefault()}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                            {scene.status === "failed" ? (
+                              t("pvg_scene_failed")
+                            ) : (
+                              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            )}
+                          </div>
+                        )}
+                        {project!.selectedSceneId === scene.id && (
+                          <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="block truncate px-2 py-1.5 text-[11px] font-medium">
                         {t("pvg_variation")} {scene.variationIndex}
                       </span>
-                      {scene.status === "ready" && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!project) return;
-                            void chooseScene({
-                              data: { projectId: project.id, sceneId: scene.id },
-                            }).then((res) => res.project && setProject(res.project));
-                          }}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                            project!.selectedSceneId === scene.id
-                              ? "border border-primary/60 bg-primary/10 text-primary"
-                              : "bg-gold-gradient text-primary-foreground"
-                          }`}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          {project!.selectedSceneId === scene.id ? t("pvg_selected") : t("pvg_use_scene")}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       </section>
+
+      {/* Full-screen viewing ---------------------------------------------- */}
+      {lightboxOpen && mainScene?.imageUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setLightboxOpen(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-4 py-2 text-xs font-medium"
+          >
+            <X className="h-4 w-4" />
+            {t("pvg_close")}
+          </button>
+          <img
+            src={mainScene.imageUrl}
+            alt={`${t("pvg_variation")} ${mainScene.variationIndex}`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[95vw] select-none rounded-xl object-contain shadow-warm"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+          />
+        </div>
+      )}
+
+      {/* Confirmation before the scene becomes the first frame ------------- */}
+      {confirmSceneId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmSceneId(null)}
+          className="fixed inset-0 z-[101] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6 shadow-warm"
+          >
+            <p className="text-sm leading-relaxed">{t("pvg_confirm_q")}</p>
+            <div className="mt-5 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmSceneId(null)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium"
+              >
+                {t("pvg_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!project) return;
+                  const sceneId = confirmSceneId;
+                  setConfirmSceneId(null);
+                  void chooseScene({ data: { projectId: project.id, sceneId } }).then(
+                    (res) => res.project && setProject(res.project),
+                  );
+                }}
+                className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
+              >
+                {t("pvg_confirm_scene")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SiteLayout>
   );
 }
