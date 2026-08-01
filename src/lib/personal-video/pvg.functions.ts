@@ -16,6 +16,7 @@ import {
 } from "./pvg.server";
 import { PVG_MAX_GENERATIONS, PVG_MAX_PEOPLE, pvgPriceCredits, validatePvgProject } from "./types";
 import type { PvgProject } from "./types";
+import { PERSONAL_VIDEO_GREETING_TEST_MODE } from "./test-mode";
 
 // --- input shapes ----------------------------------------------------------
 
@@ -83,6 +84,19 @@ async function walletBalance(supabase: { from: (t: string) => any }, userId: str
     .eq("user_id", userId)
     .maybeSingle();
   return (data as { balance: number } | null)?.balance ?? 0;
+}
+
+/** Only scenes that did not fail count against the package of five. */
+const successfulScenes = (project: PvgProject): number =>
+  project.scenes.filter((s) => s.status !== "failed").length;
+
+/** Keeps the stored counter in step with the scenes that really succeeded. */
+async function syncGenerationsUsed(
+  supabase: { from: (t: string) => any },
+  projectId: string,
+  used: number,
+): Promise<void> {
+  await supabase.from("pvg_projects").update({ generations_used: used }).eq("id", projectId);
 }
 
 // --- server functions ------------------------------------------------------
@@ -315,7 +329,9 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const price = pvgPriceCredits(project.people.length);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (project.creditsCharged === 0) {
+    // Test mode of this section only: the price stays visible, but nothing is
+    // taken from the balance. Turning the switch off restores this untouched.
+    if (!PERSONAL_VIDEO_GREETING_TEST_MODE && project.creditsCharged === 0) {
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")
         .select("id, balance, lifetime_spent")
@@ -341,14 +357,17 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       await supabase.from("pvg_projects").update({ credits_charged: price }).eq("id", project.id);
     }
 
-    const variationIndex = project.scenes.length + 1;
-    if (variationIndex > project.generationsLimit) {
+    const used = successfulScenes(project);
+    if (used >= project.generationsLimit) {
       return {
         ok: false as const,
         issues: [{ field: "generations", key: "pvg_err_generations" }],
         project,
       };
     }
+    // The stored index stays unique per project, also across failed attempts.
+    const variationIndex =
+      project.scenes.reduce((max, s) => Math.max(max, s.variationIndex), 0) + 1;
 
     const people = project.people
       .map((p, i) => `${p.name.trim() || `person ${i + 1}`}`)
@@ -374,7 +393,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
 
     await supabase
       .from("pvg_projects")
-      .update({ generations_used: variationIndex, status: "generating" })
+      .update({ generations_used: used + 1, status: "generating" })
       .eq("id", project.id);
 
     try {
@@ -401,9 +420,12 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           error_message: err instanceof Error ? err.message.slice(0, 300) : "The engine refused the request.",
         })
         .eq("id", (sceneRow as SceneRow).id);
+      // A technical failure does not use up one of the five generations.
+      await syncGenerationsUsed(supabase, project.id, used);
     }
 
-    return { ok: true as const, issues: [], project: await loadProject(supabase, project.id) };
+    const refreshed = await loadProject(supabase, project.id);
+    return { ok: true as const, issues: [], project: refreshed };
   });
 
 /** Reloads a project and completes any starting scene the engine has finished. */
@@ -418,10 +440,15 @@ export const refreshPvgProject = createServerFn({ method: "POST" })
       .eq("project_id", data.projectId)
       .in("status", ["pending", "processing"]);
     for (const row of (running ?? []) as { id: string }[]) await reconcileScene(row.id);
-    return {
-      project: await loadProject(supabase, data.projectId),
-      balance: await walletBalance(supabase, userId),
-    };
+    let project = await loadProject(supabase, data.projectId);
+    if (project) {
+      const used = successfulScenes(project);
+      if (used !== project.generationsUsed) {
+        await syncGenerationsUsed(supabase, data.projectId, used);
+        project = { ...project, generationsUsed: used };
+      }
+    }
+    return { project, balance: await walletBalance(supabase, userId) };
   });
 
 /** Marks the chosen variation as the first frame of the future greeting. */
