@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check } from "lucide-react";
+import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -22,6 +22,7 @@ import {
 import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import {
   PVG_MAX_PEOPLE,
+  PVG_MAX_GENERATIONS,
   pvgPriceCredits,
   validatePvgProject,
   type PvgIssueField,
@@ -47,6 +48,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [description, setDescription] = useState("");
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
   const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
@@ -123,6 +127,32 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
 
   const price = pvgPriceCredits(project?.people.length ?? 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
+
+  // --- preview selection ---------------------------------------------------
+  /** Technical failures never count against the five generations. */
+  const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
+  const generationsLeft = (project?.generationsLimit ?? PVG_MAX_GENERATIONS) - usedCount;
+  const mainScene = useMemo(() => {
+    const scenes = project?.scenes ?? [];
+    if (scenes.length === 0) return null;
+    return (
+      scenes.find((s) => s.id === activeSceneId) ??
+      scenes.find((s) => s.id === project?.selectedSceneId) ??
+      [...scenes].reverse().find((s) => s.status === "ready") ??
+      scenes[scenes.length - 1] ??
+      null
+    );
+  }, [project, activeSceneId]);
+
+  // Escape closes the enlarged view on desktop.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen]);
 
   // --- photo handling -----------------------------------------------------
   async function handlePersonFile(file: File) {
