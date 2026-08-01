@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -82,6 +83,11 @@ import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catal
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 
+const VideoGreetingRoute = VideoGreetingRouteImport.update({
+  id: '/video-greeting',
+  path: '/video-greeting',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -474,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -620,6 +628,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/video-greeting': typeof VideoGreetingRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -696,6 +705,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -768,6 +778,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -841,6 +852,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/studio'
     | '/verify-email'
+    | '/video-greeting'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -916,6 +928,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  VideoGreetingRoute: typeof VideoGreetingRoute
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
@@ -926,6 +939,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/video-greeting': {
+      id: '/video-greeting'
+      path: '/video-greeting'
+      fullPath: '/video-greeting'
+      preLoaderRoute: typeof VideoGreetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -1582,6 +1602,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  VideoGreetingRoute: VideoGreetingRoute,
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,
