@@ -305,3 +305,77 @@ export const listLiveCardAnimations = createServerFn({ method: "POST" })
     if (error || !rows) return [];
     return Promise.all((rows as Row[]).map(toAnimation));
   });
+
+/**
+ * Starts the same animation again after a failure. The existing record is
+ * reused, so one generation never produces two cards in the account.
+ */
+export const retryLiveCardAnimation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string }) => {
+    const animationId = String(input?.animationId ?? "");
+    if (!animationId) throw new Error("animation_required");
+    return { animationId };
+  })
+  .handler(async ({ data, context }): Promise<AnimationResult> => {
+    const { data: row } = await context.supabase
+      .from("live_card_animations")
+      .select(COLUMNS)
+      .eq("id", data.animationId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    const current = row as Row | null;
+    if (!current) return { ok: false, errorCode: "not_found", errorMessage: "The animation was not found." };
+    if (current.status !== "failed") return { ok: true, animation: await toAnimation(current) };
+    if (!current.source_bucket || !current.source_path) {
+      return { ok: false, errorCode: "image_missing", errorMessage: "The source picture is not available." };
+    }
+
+    const { startVideoRequest } = await import("./generators/router.server");
+    const { liveCardsVideoResolution } = await import("./env.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const signed = await supabaseAdmin.storage
+      .from(current.source_bucket)
+      .createSignedUrl(current.source_path, 60 * 60 * 2);
+    const imageUrl = signed.data?.signedUrl;
+    if (!imageUrl) {
+      return { ok: false, errorCode: "image_missing", errorMessage: "The source picture could not be read." };
+    }
+
+    try {
+      const routed = await startVideoRequest({
+        imageUrl,
+        prompt: current.prompt_en ?? current.prompt ?? "",
+        durationSeconds: current.duration_seconds ?? 5,
+        aspectRatio: current.aspect_ratio ?? "1:1",
+        resolution: liveCardsVideoResolution(),
+      });
+      const { data: updated } = await context.supabase
+        .from("live_card_animations")
+        .update({
+          status: "queued",
+          generator_key: routed.generatorKey,
+          generator_model: routed.generatorModel,
+          prediction_id: routed.jobId,
+          error_code: null,
+          error_message: null,
+          completed_at: null,
+        })
+        .eq("id", current.id)
+        .select(COLUMNS)
+        .single();
+      const { logLiveCardEvent } = await import("./lifecycle.server");
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        ownerUserId: context.userId,
+        animationId: current.id,
+        stage: "generation_started",
+        detail: { retry: true, generator: routed.generatorKey },
+      });
+      return { ok: true, animation: await toAnimation((updated ?? current) as Row) };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "The animation could not be started.";
+      return { ok: false, errorCode: "retry_failed", errorMessage };
+    }
+  });

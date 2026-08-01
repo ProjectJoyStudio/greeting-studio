@@ -103,6 +103,8 @@ export interface LiveGreetingRecord {
   shareSlug: string | null;
   scheduledSendAt: string | null;
   priceCredits: number | null;
+  /** Reason of a failed generation, if any. */
+  errorCode?: string | null;
   createdAt: string;
 }
 
