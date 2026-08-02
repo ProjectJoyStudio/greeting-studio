@@ -501,7 +501,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("id", (sceneRow as SceneRow).id);
       // A technical failure uses up neither an included nor a paid scene.
       await syncGenerationsUsed(supabase, project.id, used);
-      if (price > 0) {
+      if (chargedAmount > 0) {
         const { data: wallet } = await supabaseAdmin
           .from("credit_wallets")
           .select("id, balance, lifetime_spent")
@@ -512,16 +512,16 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           await supabaseAdmin
             .from("credit_wallets")
             .update({
-              balance: w.balance + price,
-              lifetime_spent: Math.max(0, w.lifetime_spent - price),
+              balance: w.balance + chargedAmount,
+              lifetime_spent: Math.max(0, w.lifetime_spent - chargedAmount),
             })
             .eq("id", w.id);
           await supabaseAdmin.from("credit_transactions").insert({
             wallet_id: w.id,
             user_id: userId,
             txn_type: "refund",
-            amount: price,
-            balance_after: w.balance + price,
+            amount: chargedAmount,
+            balance_after: w.balance + chargedAmount,
             description: "Personal video greeting — refund for a failed starting scene",
             metadata: { project_id: project.id, scene_id: (sceneRow as SceneRow).id },
           });
