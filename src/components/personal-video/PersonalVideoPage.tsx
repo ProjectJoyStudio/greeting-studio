@@ -689,6 +689,15 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                         {t("pvg_use_scene")}
                       </button>
                     )}
+                    {project?.selectedSceneId && (
+                      <Link
+                        to="/video-greeting-setup"
+                        search={{ project: project.id }}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+                      >
+                        {t("pvs_continue")}
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
