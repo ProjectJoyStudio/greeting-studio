@@ -76,9 +76,12 @@ async function loadProject(
     supabase.from("pvg_scenes").select(SCENE_COLUMNS).eq("project_id", projectId).order("variation_index"),
   ]);
 
+  const people = await Promise.all(((peopleData ?? []) as PersonRow[]).map(toPerson));
   return {
     ...toProjectShell(row),
-    people: await Promise.all(((peopleData ?? []) as PersonRow[]).map(toPerson)),
+    // Included scenes follow the current number of people at all times.
+    generationsLimit: pvgIncludedGenerations(people.length),
+    people,
     scenes: await Promise.all(((sceneData ?? []) as SceneRow[]).map(toScene)),
   };
 }
