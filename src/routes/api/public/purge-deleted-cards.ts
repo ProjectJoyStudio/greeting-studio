@@ -19,10 +19,13 @@ export const Route = createFileRoute("/api/public/purge-deleted-cards")({
         const cards = await purgeExpiredCards();
         const liveCards = await purgeExpiredLiveCards();
         const liveGreetings = await purgeExpiredLiveAnimations();
+        const { purgeExpiredPvgProjects } = await import("@/lib/personal-video/order.server");
+        const videoDrafts = await purgeExpiredPvgProjects();
         return Response.json({
           purged: cards.purged,
           purgedLiveCards: liveCards.purged,
           purgedLiveGreetings: liveGreetings.purged,
+          purgedVideoDrafts: videoDrafts.purged,
         });
       },
     },

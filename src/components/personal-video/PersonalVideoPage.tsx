@@ -23,6 +23,9 @@ import {
 } from "@/lib/personal-video/pvg.functions";
 import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
+import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
+import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
+import type { SaveState } from "@/lib/personal-video/order";
 import {
   PVG_MAX_PEOPLE,
   pvgIncludedGenerations,
@@ -47,6 +50,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const generate = useServerFn(generatePvgScene);
   const refresh = useServerFn(refreshPvgProject);
   const chooseScene = useServerFn(selectPvgScene);
+  const claim = useServerFn(claimPvgEditSession);
 
   const [project, setProject] = useState<PvgProject | null>(null);
   const [balance, setBalanceState] = useState(0);
@@ -56,6 +60,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     pushBalance(next);
   };
   const [busy, setBusy] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [readOnly, setReadOnly] = useState(false);
+  const sessionId = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random()),
+  );
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [description, setDescription] = useState("");
@@ -99,17 +108,51 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     ) {
       return;
     }
-    const timer = setTimeout(() => {
+    if (readOnly) return;
+    const persist = () => {
+      setSaveState("saving");
       void save({
-        data: { projectId: project.id, recipientName, occasion, sceneDescription: description },
-      }).then(() =>
-        setProject((prev) =>
-          prev ? { ...prev, recipientName, occasion, sceneDescription: description } : prev,
-        ),
-      );
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [recipientName, occasion, description, project, save]);
+        data: {
+          projectId: project.id,
+          recipientName,
+          occasion,
+          sceneDescription: description,
+          workflowStep: "scene",
+        },
+      })
+        .then(() => {
+          setSaveState("saved");
+          setProject((prev) =>
+            prev ? { ...prev, recipientName, occasion, sceneDescription: description } : prev,
+          );
+        })
+        .catch(() => setSaveState("failed"));
+    };
+    const timer = setTimeout(persist, 1200);
+    window.addEventListener("pagehide", persist);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pagehide", persist);
+    };
+  }, [recipientName, occasion, description, project, readOnly, save]);
+
+  // One writer at a time, so two devices never overwrite each other.
+  useEffect(() => {
+    if (!project) return;
+    let stop = false;
+    const beat = () =>
+      void claim({ data: { projectId: project.id, sessionId: sessionId.current } })
+        .then((res) => {
+          if (!stop) setReadOnly(!res.editable);
+        })
+        .catch(() => undefined);
+    beat();
+    const timer = setInterval(beat, 30_000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+  }, [project, claim]);
 
   // --- creation keeps running in the background ---------------------------
   const hasRunning = Boolean(
@@ -345,6 +388,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   return (
     <SiteLayout>
       <PageHeader title={t("pvg_title")} subtitle={t("pvg_sub")} />
+
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
+        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
+        <SaveIndicator state={saveState} />
+      </div>
 
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:px-6">
         {/* Left — the project ------------------------------------------- */}

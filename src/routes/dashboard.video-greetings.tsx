@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useI18n } from "@/lib/i18n";
 import { deletePvgProject, listPvgProjects } from "@/lib/personal-video/pvg.functions";
+import { PVG_STATUS_KEY, normalizeStatus, normalizeStep } from "@/lib/personal-video/order";
 
 export const Route = createFileRoute("/dashboard/video-greetings")({
   head: () => ({
@@ -86,9 +87,13 @@ function VideoGreetingsPage() {
                   {project.occasion || "—"} · {project.peopleCount}/5 · {project.generationsUsed}/
                   {project.generationsLimit}
                 </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t(PVG_STATUS_KEY[normalizeStatus(project.status)])}
+                  {project.lastSavedAt ? ` · ${t("pvo_last_saved")}: ${new Date(project.lastSavedAt).toLocaleString()}` : ""}
+                </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Link
-                    to="/video-greeting"
+                    to={normalizeStep(project.workflowStep) === "video" ? "/video-greeting-setup" : "/video-greeting"}
                     search={{ project: project.id }}
                     className="inline-flex rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50"
                   >
@@ -119,6 +124,7 @@ function VideoGreetingsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-sm text-muted-foreground">{t("pvg_delete_confirm_title")}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{t("pvo_delete_warning")}</p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"

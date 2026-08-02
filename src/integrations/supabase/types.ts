@@ -2469,63 +2469,140 @@ export type Database = {
           },
         ]
       }
+      pvg_project_versions: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          snapshot: Json
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          snapshot?: Json
+          user_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          snapshot?: Json
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_project_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pvg_projects: {
         Row: {
           created_at: string
+          credit_history: Json
           credits_charged: number
           deleted_at: string | null
+          edit_heartbeat_at: string | null
+          edit_session_id: string | null
           generations_limit: number
           generations_used: number
           greeting_keywords: string
           greeting_mode: string
           greeting_text: string
           id: string
+          last_saved_at: string
+          music_settings: Json
           occasion: string | null
+          order_cost: number
+          permanently_deleted: boolean
+          purge_after: string | null
           recipient_name: string | null
+          restored_at: string | null
+          restored_by: string | null
           scene_description: string | null
           selected_scene_id: string | null
           status: string
           updated_at: string
           user_id: string
+          version: number
           video_duration_seconds: number
+          voice_settings: Json
+          volume_settings: Json
+          workflow_step: string
         }
         Insert: {
           created_at?: string
+          credit_history?: Json
           credits_charged?: number
           deleted_at?: string | null
+          edit_heartbeat_at?: string | null
+          edit_session_id?: string | null
           generations_limit?: number
           generations_used?: number
           greeting_keywords?: string
           greeting_mode?: string
           greeting_text?: string
           id?: string
+          last_saved_at?: string
+          music_settings?: Json
           occasion?: string | null
+          order_cost?: number
+          permanently_deleted?: boolean
+          purge_after?: string | null
           recipient_name?: string | null
+          restored_at?: string | null
+          restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
+          version?: number
           video_duration_seconds?: number
+          voice_settings?: Json
+          volume_settings?: Json
+          workflow_step?: string
         }
         Update: {
           created_at?: string
+          credit_history?: Json
           credits_charged?: number
           deleted_at?: string | null
+          edit_heartbeat_at?: string | null
+          edit_session_id?: string | null
           generations_limit?: number
           generations_used?: number
           greeting_keywords?: string
           greeting_mode?: string
           greeting_text?: string
           id?: string
+          last_saved_at?: string
+          music_settings?: Json
           occasion?: string | null
+          order_cost?: number
+          permanently_deleted?: boolean
+          purge_after?: string | null
           recipient_name?: string | null
+          restored_at?: string | null
+          restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
+          version?: number
           video_duration_seconds?: number
+          voice_settings?: Json
+          volume_settings?: Json
+          workflow_step?: string
         }
         Relationships: []
       }

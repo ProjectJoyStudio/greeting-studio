@@ -18,10 +18,15 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
+        workflow_step: "video",
+        order_cost: clampDuration(data.durationSeconds),
       })
-      .eq("id", data.projectId);
+      .eq("id", data.projectId)
+      .is("deleted_at", null);
     if (error) throw new Error(error.message);
-    return { saved: true as const };
+    const { recordVersion } = await import("./order.server");
+    const version = await recordVersion(data.projectId);
+    return { saved: true as const, version, savedAt: new Date().toISOString() };
   });
 
 /** Project Joy writes, shortens or expands the greeting for the chosen length. */
