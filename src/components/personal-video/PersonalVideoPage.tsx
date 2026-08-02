@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
+import { creditWord } from "@/lib/credits/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   addPvgPersonPhoto,
@@ -31,8 +33,10 @@ import {
 } from "@/lib/personal-video/types";
 
 export function PersonalVideoPage({ projectId }: { projectId?: string | undefined }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
+  const { isTest: isTestWallet } = useCreditBalance();
+  const pushBalance = useRefreshCreditBalance();
   const open = useServerFn(openPvgProject);
   const save = useServerFn(savePvgProject);
   const savePerson = useServerFn(savePvgPerson);
@@ -44,7 +48,12 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const chooseScene = useServerFn(selectPvgScene);
 
   const [project, setProject] = useState<PvgProject | null>(null);
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalanceState] = useState(0);
+  // One shared balance: every page updates the moment credits move.
+  const setBalance = (next: number) => {
+    setBalanceState(next);
+    pushBalance(next);
+  };
   const [busy, setBusy] = useState<string | null>(null);
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
@@ -563,7 +572,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{t("pvg_paid_note")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {t("pvg_balance")}: {balance} {t("pvg_credits_word")}
+              {t("pvg_balance")}: {balance} {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
             </p>
             {issueFor("credits") && (
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
