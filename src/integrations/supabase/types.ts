@@ -2476,6 +2476,9 @@ export type Database = {
           deleted_at: string | null
           generations_limit: number
           generations_used: number
+          greeting_keywords: string
+          greeting_mode: string
+          greeting_text: string
           id: string
           occasion: string | null
           recipient_name: string | null
@@ -2484,6 +2487,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          video_duration_seconds: number
         }
         Insert: {
           created_at?: string
@@ -2491,6 +2495,9 @@ export type Database = {
           deleted_at?: string | null
           generations_limit?: number
           generations_used?: number
+          greeting_keywords?: string
+          greeting_mode?: string
+          greeting_text?: string
           id?: string
           occasion?: string | null
           recipient_name?: string | null
@@ -2499,6 +2506,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          video_duration_seconds?: number
         }
         Update: {
           created_at?: string
@@ -2506,6 +2514,9 @@ export type Database = {
           deleted_at?: string | null
           generations_limit?: number
           generations_used?: number
+          greeting_keywords?: string
+          greeting_mode?: string
+          greeting_text?: string
           id?: string
           occasion?: string | null
           recipient_name?: string | null
@@ -2514,6 +2525,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          video_duration_seconds?: number
         }
         Relationships: []
       }

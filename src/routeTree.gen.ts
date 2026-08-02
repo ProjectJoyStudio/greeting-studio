@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VideoGreetingSetupRouteImport } from './routes/video-greeting-setup'
 import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as StudioRouteImport } from './routes/studio'
@@ -86,6 +87,11 @@ import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catal
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 
+const VideoGreetingSetupRoute = VideoGreetingSetupRouteImport.update({
+  id: '/video-greeting-setup',
+  path: '/video-greeting-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideoGreetingRoute = VideoGreetingRouteImport.update({
   id: '/video-greeting',
   path: '/video-greeting',
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting-setup': typeof VideoGreetingSetupRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -575,6 +582,7 @@ export interface FileRoutesByTo {
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting-setup': typeof VideoGreetingSetupRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -653,6 +661,7 @@ export interface FileRoutesById {
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting-setup': typeof VideoGreetingSetupRoute
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -733,6 +742,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/verify-email'
     | '/video-greeting'
+    | '/video-greeting-setup'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/verify-email'
     | '/video-greeting'
+    | '/video-greeting-setup'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -886,6 +897,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/verify-email'
     | '/video-greeting'
+    | '/video-greeting-setup'
     | '/admin/activity-log'
     | '/admin/audit-log'
     | '/admin/calendar-settings'
@@ -965,6 +977,7 @@ export interface RootRouteChildren {
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VideoGreetingRoute: typeof VideoGreetingRoute
+  VideoGreetingSetupRoute: typeof VideoGreetingSetupRoute
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
@@ -976,6 +989,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/video-greeting-setup': {
+      id: '/video-greeting-setup'
+      path: '/video-greeting-setup'
+      fullPath: '/video-greeting-setup'
+      preLoaderRoute: typeof VideoGreetingSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/video-greeting': {
       id: '/video-greeting'
       path: '/video-greeting'
@@ -1665,6 +1685,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VideoGreetingRoute: VideoGreetingRoute,
+  VideoGreetingSetupRoute: VideoGreetingSetupRoute,
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,

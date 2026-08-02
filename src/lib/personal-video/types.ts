@@ -1,5 +1,7 @@
 // Client-safe types and rules of the Personal Video Greeting section.
 
+import type { PvsVideoSetup } from "./video-setup";
+
 /** Standard projects hold up to five people. Premium raises this later. */
 export const PVG_MAX_PEOPLE = 5;
 /** No project ever includes more than five free starting-scene creations. */
@@ -51,6 +53,8 @@ export interface PvgProject {
   creditsCharged: number;
   selectedSceneId: string | null;
   updatedAt: string;
+  /** Settings of the second page: length and greeting of the future video. */
+  videoSetup: PvsVideoSetup;
   people: PvgPerson[];
   scenes: PvgScene[];
 }

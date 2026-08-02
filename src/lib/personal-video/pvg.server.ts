@@ -2,9 +2,10 @@
 // row mapping and the background completion of running starting scenes.
 
 import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } from "./types";
+import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords";
 export const PERSON_COLUMNS =
   "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source";
 export const SCENE_COLUMNS =
@@ -21,6 +22,10 @@ export interface ProjectRow {
   credits_charged: number;
   selected_scene_id: string | null;
   updated_at: string;
+  video_duration_seconds?: number | null;
+  greeting_mode?: string | null;
+  greeting_text?: string | null;
+  greeting_keywords?: string | null;
 }
 
 export interface PersonRow {
@@ -99,6 +104,12 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     creditsCharged: row.credits_charged,
     selectedSceneId: row.selected_scene_id,
     updatedAt: row.updated_at,
+    videoSetup: {
+      durationSeconds: clampDuration(row.video_duration_seconds ?? PVS_DEFAULT_SECONDS),
+      greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
+      greetingText: row.greeting_text ?? "",
+      greetingKeywords: row.greeting_keywords ?? "",
+    },
   };
 }
 
