@@ -12,7 +12,6 @@ import {
   PenLine,
   Sliders,
   Sparkles,
-  Mic,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +24,7 @@ import { creditWord } from "@/lib/credits/i18n";
 import { openPvgProject } from "@/lib/personal-video/pvg.functions";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
+import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
 import {
@@ -341,17 +341,12 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 </div>
               </Panel>
 
-              {/* Reserved: voice */}
-              <ReservedPanel
-                icon={<Mic className="h-4 w-4" />}
-                title={t("pvs_voice")}
-                soon={t("pvs_soon")}
-                options={[
-                  t("pvs_voice_library"),
-                  t("pvs_voice_mine"),
-                  t("pvs_voice_participants"),
-                  t("pvs_voice_none"),
-                ]}
+              {/* Voice of the greeting */}
+              <VoicePanel
+                projectId={project.id}
+                greeting={greeting}
+                language={lang}
+                disabled={readOnly}
               />
 
               {/* Reserved: music */}
