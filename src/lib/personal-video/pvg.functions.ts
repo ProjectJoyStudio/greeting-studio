@@ -355,21 +355,24 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const issues = validatePvgProject(project, balance);
     if (issues.length > 0) {
       // A paid request is never sent when anything is still missing.
-      return { ok: false as const, issues, project };
+      return { ok: false as const, issues, project, balance };
     }
 
     const used = successfulScenes(project);
     const included = pvgIncludedGenerations(project.people.length);
     // Beyond the included scenes every further scene costs exactly one credit.
     const isExtra = used >= included;
-    const price =
-      (project.creditsCharged === 0 ? pvgPriceCredits(project.people.length) : 0) +
-      (isExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
+    // The temporary test mode only waives the one-off package price; an extra
+    // scene bought on top of the included ones is always paid for.
+    const packagePrice =
+      PERSONAL_VIDEO_GREETING_TEST_MODE || project.creditsCharged > 0
+        ? 0
+        : pvgPriceCredits(project.people.length);
+    const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
+    const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Test mode of this section only: the price stays visible, but nothing is
-    // taken from the balance. Turning the switch off restores this untouched.
-    if (!PERSONAL_VIDEO_GREETING_TEST_MODE && price > 0) {
+    if (price > 0) {
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")
         .select("id, balance, lifetime_spent")
@@ -377,12 +380,30 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .maybeSingle();
       const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
       if (!w || w.balance < price) {
-        return { ok: false as const, issues: [{ field: "credits", key: "pvg_err_credits" }], project };
+        return {
+          ok: false as const,
+          issues: [{ field: "credits", key: "pvg_err_credits" }],
+          project,
+          balance: w?.balance ?? 0,
+        };
       }
-      await supabaseAdmin
+      // Conditional write: a second click cannot take the same credit twice,
+      // because the row must still hold the balance we just read.
+      const { data: charged } = await supabaseAdmin
         .from("credit_wallets")
         .update({ balance: w.balance - price, lifetime_spent: w.lifetime_spent + price })
-        .eq("id", w.id);
+        .eq("id", w.id)
+        .eq("balance", w.balance)
+        .select("id")
+        .maybeSingle();
+      if (!charged) {
+        return {
+          ok: false as const,
+          issues: [{ field: "credits", key: "pvg_err_credits" }],
+          project,
+          balance: await walletBalance(supabase, userId),
+        };
+      }
       await supabaseAdmin.from("credit_transactions").insert({
         wallet_id: w.id,
         user_id: userId,
@@ -461,7 +482,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("id", (sceneRow as SceneRow).id);
       // A technical failure uses up neither an included nor a paid scene.
       await syncGenerationsUsed(supabase, project.id, used);
-      if (!PERSONAL_VIDEO_GREETING_TEST_MODE && isExtra) {
+      if (price > 0) {
         const { data: wallet } = await supabaseAdmin
           .from("credit_wallets")
           .select("id, balance, lifetime_spent")
@@ -472,29 +493,34 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           await supabaseAdmin
             .from("credit_wallets")
             .update({
-              balance: w.balance + PVG_EXTRA_SCENE_CREDITS,
-              lifetime_spent: Math.max(0, w.lifetime_spent - PVG_EXTRA_SCENE_CREDITS),
+              balance: w.balance + price,
+              lifetime_spent: Math.max(0, w.lifetime_spent - price),
             })
             .eq("id", w.id);
           await supabaseAdmin.from("credit_transactions").insert({
             wallet_id: w.id,
             user_id: userId,
             txn_type: "refund",
-            amount: PVG_EXTRA_SCENE_CREDITS,
-            balance_after: w.balance + PVG_EXTRA_SCENE_CREDITS,
-            description: "Personal video greeting — refund for a failed additional scene",
+            amount: price,
+            balance_after: w.balance + price,
+            description: "Personal video greeting — refund for a failed starting scene",
             metadata: { project_id: project.id, scene_id: (sceneRow as SceneRow).id },
           });
           await supabase
             .from("pvg_projects")
-            .update({ credits_charged: Math.max(0, project.creditsCharged + price - PVG_EXTRA_SCENE_CREDITS) })
+            .update({ credits_charged: Math.max(0, project.creditsCharged) })
             .eq("id", project.id);
         }
       }
     }
 
     const refreshed = await loadProject(supabase, project.id);
-    return { ok: true as const, issues: [], project: refreshed };
+    return {
+      ok: true as const,
+      issues: [] as { field: string; key: string }[],
+      project: refreshed,
+      balance: await walletBalance(supabase, userId),
+    };
   });
 
 /** Reloads a project and completes any starting scene the engine has finished. */

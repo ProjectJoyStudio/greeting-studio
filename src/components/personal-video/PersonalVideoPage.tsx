@@ -292,11 +292,12 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   }
 
   async function runGenerate() {
-    if (!project) return;
+    if (!project || busy !== null) return;
     setBusy("generate");
     try {
       const res = await generate({ data: { projectId: project.id } });
       if (res.project) setProject(res.project);
+      if (typeof res.balance === "number") setBalance(res.balance);
       if (!res.ok) {
         const first = res.issues[0];
         toast.error(first ? t(first.key) : t("pvg_scene_failed"));
