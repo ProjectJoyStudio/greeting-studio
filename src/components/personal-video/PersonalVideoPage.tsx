@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check, X } from "lucide-react";
+import { Coins, ImagePlus, Loader2, Plus, ScanFace, Trash2, Users, Wand2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -20,6 +20,7 @@ import {
   selectPvgScene,
 } from "@/lib/personal-video/pvg.functions";
 import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
+import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
 import {
   PVG_MAX_PEOPLE,
   PVG_MAX_GENERATIONS,
@@ -51,6 +52,8 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
+  const [manualFile, setManualFile] = useState<File | null>(null);
+  const [manualOffered, setManualOffered] = useState<File | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
   const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
@@ -190,7 +193,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       const room = PVG_MAX_PEOPLE - project.people.length;
       const faces = await detectFaces(file, Math.max(0, room));
       if (!faces || faces.length === 0) {
-        toast.error(t("pvg_no_faces"));
+        // Automatic recognition was not sure: offer manual marking instead.
+        setManualOffered(file);
+        setManualFile(file);
         return;
       }
       let latest = project;
@@ -207,12 +212,58 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
         if (res.project) latest = res.project;
       }
       setProject(latest);
+      setManualOffered(file);
       toast.success(`${t("pvg_faces_found")}: ${faces.length}`);
     } catch {
-      toast.error(t("pvg_no_faces"));
+      setManualOffered(file);
+      setManualFile(file);
     } finally {
       setBusy(null);
       if (groupInput.current) groupInput.current.value = "";
+    }
+  }
+
+  /**
+   * Stores the manually marked faces. Faces given to somebody already in the
+   * project only add a reference photo, so the number of people — and with it
+   * the price — stays the same.
+   */
+  async function handleManualFaces(faces: ManualFaceResult[]) {
+    if (!project) return;
+    setBusy("group");
+    try {
+      let latest = project;
+      for (const face of faces) {
+        if (face.personId) {
+          const res = await addPhoto({
+            data: {
+              projectId: project.id,
+              personId: face.personId,
+              base64: face.base64,
+              contentType: face.contentType,
+            },
+          });
+          if (res.project) latest = res.project;
+        } else {
+          const res = await savePerson({
+            data: {
+              projectId: project.id,
+              optimizedBase64: face.base64,
+              contentType: face.contentType,
+              faceQuality: face.quality,
+              source: "group",
+            },
+          });
+          if (res.project) latest = res.project;
+        }
+      }
+      setProject(latest);
+      setManualFile(null);
+      toast.success(`${t("pvg_face_saved")}: ${faces.length}`);
+    } catch {
+      toast.error(t("pvg_scene_failed"));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -443,8 +494,22 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {busy === "group" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
                 {t("pvg_add_group")}
               </button>
+              {manualOffered && (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => setManualFile(manualOffered)}
+                  className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-5 py-2.5 text-sm font-medium text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ScanFace className="h-4 w-4" />
+                  {t("pvg_mark_faces")}
+                </button>
+              )}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{t("pvg_upload_hint")}</p>
+            {manualOffered && (
+              <p className="mt-1 text-xs text-muted-foreground">{t("pvg_mark_faces_hint")}</p>
+            )}
 
             <input
               ref={personInput}
@@ -678,6 +743,17 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             onContextMenu={(e) => e.preventDefault()}
           />
         </div>
+      )}
+
+      {/* Manual face marking on a group photo ------------------------------ */}
+      {manualFile && project && (
+        <ManualFaceEditor
+          file={manualFile}
+          people={project.people}
+          busy={busy === "group"}
+          onCancel={() => setManualFile(null)}
+          onSave={(faces) => void handleManualFaces(faces)}
+        />
       )}
 
       {/* Confirmation before the scene becomes the first frame ------------- */}
