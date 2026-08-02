@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Menu,
   Search,
+  FlaskConical,
   X,
 } from "lucide-react";
 
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
   { to: "/admin/deleted-live-cards", key: "dlc_title", icon: Trash2 },
   { to: "/admin/activity-log", key: "al_title", icon: ShieldCheck },
   { to: "/admin/credit-packages", key: "admin_nav_credit_packages", icon: Package },
+  { to: "/admin/dev-credits", key: "admin_nav_dev_credits", icon: FlaskConical },
   { to: "/admin/promotions", key: "admin_nav_promotions", icon: Megaphone },
   { to: "/admin/notifications", key: "admin_nav_notifications", icon: Bell },
   { to: "/admin/languages", key: "admin_nav_languages", icon: Languages },
