@@ -494,8 +494,22 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {busy === "group" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
                 {t("pvg_add_group")}
               </button>
+              {manualOffered && (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => setManualFile(manualOffered)}
+                  className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-5 py-2.5 text-sm font-medium text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ScanFace className="h-4 w-4" />
+                  {t("pvg_mark_faces")}
+                </button>
+              )}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{t("pvg_upload_hint")}</p>
+            {manualOffered && (
+              <p className="mt-1 text-xs text-muted-foreground">{t("pvg_mark_faces_hint")}</p>
+            )}
 
             <input
               ref={personInput}
