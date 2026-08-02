@@ -169,6 +169,59 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
 }
 
 /** Finishes every running starting scene across the platform. */
+export async function purgeProjectFiles(projectId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const [{ data: people }, { data: scenes }] = await Promise.all([
+    supabaseAdmin
+      .from("pvg_people")
+      .select("optimized_bucket, optimized_path, original_bucket, original_path, extra_photos")
+      .eq("project_id", projectId),
+    supabaseAdmin
+      .from("pvg_scenes")
+      .select("storage_bucket, storage_path, prediction_id, status")
+      .eq("project_id", projectId),
+  ]);
+
+  const byBucket = new Map<string, string[]>();
+  const add = (bucket: string | null | undefined, path: string | null | undefined) => {
+    if (!bucket || !path) return;
+    const list = byBucket.get(bucket) ?? [];
+    list.push(path);
+    byBucket.set(bucket, list);
+  };
+
+  for (const row of (people ?? []) as Array<Record<string, unknown>>) {
+    add(row["optimized_bucket"] as string, row["optimized_path"] as string);
+    add(row["original_bucket"] as string, row["original_path"] as string);
+    const extra = row["extra_photos"];
+    if (Array.isArray(extra)) {
+      for (const item of extra) {
+        if (item && typeof item === "object") {
+          const rec = item as Record<string, unknown>;
+          add(rec["bucket"] as string, rec["path"] as string);
+        }
+      }
+    }
+  }
+  for (const row of (scenes ?? []) as Array<Record<string, unknown>>) {
+    add(row["storage_bucket"] as string, row["storage_path"] as string);
+  }
+
+  // Stop anything still rendering; results that arrive later have no row left.
+  const running = ((scenes ?? []) as Array<Record<string, unknown>>).filter(
+    (row) => row["prediction_id"] && row["status"] !== "ready" && row["status"] !== "failed",
+  );
+  if (running.length > 0) {
+    const { cancelSceneRender } = await import("./generator/image-engine.server");
+    await Promise.all(running.map((row) => cancelSceneRender(row["prediction_id"] as string)));
+  }
+
+  for (const [bucket, paths] of byBucket) {
+    if (paths.length > 0) await supabaseAdmin.storage.from(bucket).remove(paths);
+  }
+}
+
 export async function reconcilePendingScenes(limit = 40): Promise<{ checked: number }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin

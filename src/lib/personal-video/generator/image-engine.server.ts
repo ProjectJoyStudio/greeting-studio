@@ -152,6 +152,22 @@ export type PvgProgress =
   | { state: "ready"; url: string; contentType: string; fileExtension: string }
   | { state: "failed"; errorCode: string; errorMessage: string };
 
+/**
+ * Asks the engine to stop one running render. Never throws: when the render
+ * can no longer be stopped we simply drop its result later.
+ */
+export async function cancelSceneRender(predictionId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/predictions/${predictionId}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 function extractUrl(output: unknown): string | null {
   if (typeof output === "string") return output;
   if (Array.isArray(output)) {
