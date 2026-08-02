@@ -372,6 +372,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // How many credits were really taken — the refund below returns exactly this.
+    let chargedAmount = 0;
     if (price > 0) {
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")
@@ -414,6 +416,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         };
       }
       if (charged) {
+        chargedAmount = charge;
         await supabaseAdmin.from("credit_transactions").insert({
           wallet_id: w.id,
           user_id: userId,
