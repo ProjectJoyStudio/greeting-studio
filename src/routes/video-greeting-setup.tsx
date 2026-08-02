@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { VideoSetupPage } from "@/components/personal-video/VideoSetupPage";
 
-export const Route = createFileRoute("/video-greeting/setup")({
+export const Route = createFileRoute("/video-greeting-setup")({
   validateSearch: (search: Record<string, unknown>): { project?: string } =>
     typeof search.project === "string" ? { project: search.project } : {},
   head: () => ({

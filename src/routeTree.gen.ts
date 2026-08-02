@@ -37,6 +37,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as VideoGreetingSetupRouteImport } from './routes/video-greeting.setup'
 import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
 import { Route as DashboardVideoGreetingsRouteImport } from './routes/dashboard.video-greetings'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
@@ -225,6 +226,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const VideoGreetingSetupRoute = VideoGreetingSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => VideoGreetingRoute,
 } as any)
 const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
   id: '/live-editor/$animationId',
@@ -498,7 +504,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting': typeof VideoGreetingRouteWithChildren
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -531,6 +537,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
+  '/video-greeting/setup': typeof VideoGreetingSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -574,7 +581,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting': typeof VideoGreetingRouteWithChildren
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -606,6 +613,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
+  '/video-greeting/setup': typeof VideoGreetingSetupRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -652,7 +660,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/video-greeting': typeof VideoGreetingRoute
+  '/video-greeting': typeof VideoGreetingRouteWithChildren
   '/admin/activity-log': typeof AdminActivityLogRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/calendar-settings': typeof AdminCalendarSettingsRoute
@@ -685,6 +693,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
+  '/video-greeting/setup': typeof VideoGreetingSetupRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -765,6 +774,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
+    | '/video-greeting/setup'
     | '/admin/'
     | '/catalog/'
     | '/dashboard/'
@@ -840,6 +850,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
+    | '/video-greeting/setup'
     | '/admin'
     | '/catalog'
     | '/dashboard'
@@ -918,6 +929,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
     | '/live-editor/$animationId'
+    | '/video-greeting/setup'
     | '/admin/'
     | '/catalog/'
     | '/dashboard/'
@@ -964,7 +976,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  VideoGreetingRoute: typeof VideoGreetingRoute
+  VideoGreetingRoute: typeof VideoGreetingRouteWithChildren
   CSlugRoute: typeof CSlugRoute
   CatalogCategoryRoute: typeof CatalogCategoryRoute
   LiveEditorAnimationIdRoute: typeof LiveEditorAnimationIdRoute
@@ -1171,6 +1183,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/video-greeting/setup': {
+      id: '/video-greeting/setup'
+      path: '/setup'
+      fullPath: '/video-greeting/setup'
+      preLoaderRoute: typeof VideoGreetingSetupRouteImport
+      parentRoute: typeof VideoGreetingRoute
     }
     '/live-editor/$animationId': {
       id: '/live-editor/$animationId'
@@ -1639,6 +1658,18 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface VideoGreetingRouteChildren {
+  VideoGreetingSetupRoute: typeof VideoGreetingSetupRoute
+}
+
+const VideoGreetingRouteChildren: VideoGreetingRouteChildren = {
+  VideoGreetingSetupRoute: VideoGreetingSetupRoute,
+}
+
+const VideoGreetingRouteWithChildren = VideoGreetingRoute._addFileChildren(
+  VideoGreetingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1664,7 +1695,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  VideoGreetingRoute: VideoGreetingRoute,
+  VideoGreetingRoute: VideoGreetingRouteWithChildren,
   CSlugRoute: CSlugRoute,
   CatalogCategoryRoute: CatalogCategoryRoute,
   LiveEditorAnimationIdRoute: LiveEditorAnimationIdRoute,
