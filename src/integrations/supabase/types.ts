@@ -2674,6 +2674,124 @@ export type Database = {
           },
         ]
       }
+      pvg_voice_logs: {
+        Row: {
+          character_count: number
+          created_at: string
+          error_message: string | null
+          generation_ms: number
+          id: string
+          language: string
+          project_id: string | null
+          provider: string
+          success: boolean
+          user_id: string | null
+          voice_id: string
+        }
+        Insert: {
+          character_count?: number
+          created_at?: string
+          error_message?: string | null
+          generation_ms?: number
+          id?: string
+          language?: string
+          project_id?: string | null
+          provider?: string
+          success?: boolean
+          user_id?: string | null
+          voice_id?: string
+        }
+        Update: {
+          character_count?: number
+          created_at?: string
+          error_message?: string | null
+          generation_ms?: number
+          id?: string
+          language?: string
+          project_id?: string | null
+          provider?: string
+          success?: boolean
+          user_id?: string | null
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_voice_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvg_voiceovers: {
+        Row: {
+          character_count: number
+          created_at: string
+          duration_seconds: number
+          generated_at: string
+          greeting_text: string
+          id: string
+          language: string
+          mime_type: string
+          model_id: string
+          project_id: string
+          provider: string
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+          voice_id: string
+          voice_name: string
+        }
+        Insert: {
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          generated_at?: string
+          greeting_text?: string
+          id?: string
+          language?: string
+          mime_type?: string
+          model_id?: string
+          project_id: string
+          provider?: string
+          storage_bucket?: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+          voice_id: string
+          voice_name?: string
+        }
+        Update: {
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          generated_at?: string
+          greeting_text?: string
+          id?: string
+          language?: string
+          mime_type?: string
+          model_id?: string
+          project_id?: string
+          provider?: string
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+          voice_id?: string
+          voice_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_voiceovers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_deliveries: {
         Row: {
           attempted_count: number
