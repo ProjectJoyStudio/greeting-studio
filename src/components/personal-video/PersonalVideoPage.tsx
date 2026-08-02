@@ -745,6 +745,17 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
         </div>
       )}
 
+      {/* Manual face marking on a group photo ------------------------------ */}
+      {manualFile && project && (
+        <ManualFaceEditor
+          file={manualFile}
+          people={project.people}
+          busy={busy === "group"}
+          onCancel={() => setManualFile(null)}
+          onSave={(faces) => void handleManualFaces(faces)}
+        />
+      )}
+
       {/* Confirmation before the scene becomes the first frame ------------- */}
       {confirmSceneId && (
         <div
@@ -753,7 +764,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
           onClick={() => setConfirmSceneId(null)}
           className="fixed inset-0 z-[101] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
         >
-          {null}
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6 shadow-warm"
