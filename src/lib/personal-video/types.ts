@@ -53,6 +53,14 @@ export interface PvgProject {
   creditsCharged: number;
   selectedSceneId: string | null;
   updatedAt: string;
+  createdAt: string;
+  /** Which page of the workflow the person stopped on. */
+  workflowStep: "scene" | "video";
+  orderCost: number;
+  /** Number of the latest successful automatic save. */
+  version: number;
+  lastSavedAt: string;
+  creditHistory: { at: string; amount: number; reason: string; balanceAfter?: number }[];
   /** Settings of the second page: length and greeting of the future video. */
   videoSetup: PvsVideoSetup;
   people: PvgPerson[];

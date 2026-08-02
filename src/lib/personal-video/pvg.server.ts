@@ -5,7 +5,7 @@ import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } 
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after";
 export const PERSON_COLUMNS =
   "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source";
 export const SCENE_COLUMNS =
@@ -22,6 +22,14 @@ export interface ProjectRow {
   credits_charged: number;
   selected_scene_id: string | null;
   updated_at: string;
+  created_at?: string | null;
+  workflow_step?: string | null;
+  order_cost?: number | null;
+  version?: number | null;
+  last_saved_at?: string | null;
+  credit_history?: unknown;
+  deleted_at?: string | null;
+  purge_after?: string | null;
   video_duration_seconds?: number | null;
   greeting_mode?: string | null;
   greeting_text?: string | null;
@@ -104,6 +112,12 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     creditsCharged: row.credits_charged,
     selectedSceneId: row.selected_scene_id,
     updatedAt: row.updated_at,
+    createdAt: row.created_at ?? row.updated_at,
+    workflowStep: row.workflow_step === "video" ? "video" : "scene",
+    orderCost: row.order_cost ?? 0,
+    version: row.version ?? 0,
+    lastSavedAt: row.last_saved_at ?? row.updated_at,
+    creditHistory: Array.isArray(row.credit_history) ? (row.credit_history as PvgProject["creditHistory"]) : [],
     videoSetup: {
       durationSeconds: clampDuration(row.video_duration_seconds ?? PVS_DEFAULT_SECONDS),
       greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
