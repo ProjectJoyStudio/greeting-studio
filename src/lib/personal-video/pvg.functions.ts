@@ -358,12 +358,18 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       return { ok: false as const, issues, project };
     }
 
-    const price = pvgPriceCredits(project.people.length);
+    const used = successfulScenes(project);
+    const included = pvgIncludedGenerations(project.people.length);
+    // Beyond the included scenes every further scene costs exactly one credit.
+    const isExtra = used >= included;
+    const price =
+      (project.creditsCharged === 0 ? pvgPriceCredits(project.people.length) : 0) +
+      (isExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Test mode of this section only: the price stays visible, but nothing is
     // taken from the balance. Turning the switch off restores this untouched.
-    if (!PERSONAL_VIDEO_GREETING_TEST_MODE && project.creditsCharged === 0) {
+    if (!PERSONAL_VIDEO_GREETING_TEST_MODE && price > 0) {
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")
         .select("id, balance, lifetime_spent")
@@ -383,20 +389,17 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         txn_type: "order_charge",
         amount: -price,
         balance_after: w.balance - price,
-        description: "Personal video greeting — starting scene package",
-        metadata: { project_id: project.id, people: project.people.length },
+        description: isExtra
+          ? "Personal video greeting — one additional starting scene"
+          : "Personal video greeting — starting scene package",
+        metadata: { project_id: project.id, people: project.people.length, extra_scene: isExtra },
       });
-      await supabase.from("pvg_projects").update({ credits_charged: price }).eq("id", project.id);
+      await supabase
+        .from("pvg_projects")
+        .update({ credits_charged: project.creditsCharged + price })
+        .eq("id", project.id);
     }
 
-    const used = successfulScenes(project);
-    if (used >= project.generationsLimit) {
-      return {
-        ok: false as const,
-        issues: [{ field: "generations", key: "pvg_err_generations" }],
-        project,
-      };
-    }
     // The stored index stays unique per project, also across failed attempts.
     const variationIndex =
       project.scenes.reduce((max, s) => Math.max(max, s.variationIndex), 0) + 1;
