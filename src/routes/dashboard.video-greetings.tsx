@@ -148,6 +148,6 @@ function VideoGreetingsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 }
