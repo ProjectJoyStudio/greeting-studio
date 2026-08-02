@@ -141,6 +141,16 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const price = pvgPriceCredits(project?.people.length ?? 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
 
+  // A gentle, short note whenever one more included scene becomes available.
+  const includedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!project) return;
+    const next = pvgIncludedGenerations(project.people.length);
+    const prev = includedRef.current;
+    includedRef.current = next;
+    if (prev !== null && next > prev) toast.success(t("pvg_included_added"), { duration: 4000 });
+  }, [project, t]);
+
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
@@ -570,8 +580,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 <span className="text-sm text-muted-foreground">{t("pvg_credits_word")}</span>
               </span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t("pvg_paid_note")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               {t("pvg_balance")}: {balance} {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
             </p>
             {issueFor("credits") && (
@@ -598,7 +607,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                     : t("pvg_generate")}
             </button>
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")} {includedCount}
+              {t("pvg_included_label")}: {includedCount}
+            </p>
+            <p className="mt-0.5 text-center text-xs text-muted-foreground">
+              {t("pvg_used_label")}: {usedCount} {t("pvg_of")} {includedCount}
             </p>
             {needsExtraCredit && (
               <p className="mt-1 text-center text-xs text-muted-foreground">
