@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Video } from "lucide-react";
+import { Loader2, Plus, Trash2, Video } from "lucide-react";
+import { toast } from "sonner";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useI18n } from "@/lib/i18n";
-import { listPvgProjects } from "@/lib/personal-video/pvg.functions";
+import { deletePvgProject, listPvgProjects } from "@/lib/personal-video/pvg.functions";
 
 export const Route = createFileRoute("/dashboard/video-greetings")({
   head: () => ({
@@ -27,7 +29,20 @@ export const Route = createFileRoute("/dashboard/video-greetings")({
 function VideoGreetingsPage() {
   const { t } = useI18n();
   const list = useServerFn(listPvgProjects);
+  const removeProject = useServerFn(deletePvgProject);
+  const queryClient = useQueryClient();
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const projects = useQuery({ queryKey: ["pvg", "projects"], queryFn: () => list({}) });
+
+  const del = useMutation({
+    mutationFn: (projectId: string) => removeProject({ data: { projectId } }),
+    onSuccess: () => {
+      toast.success(t("pvg_deleted_toast"));
+      setPendingDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["pvg", "projects"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+  });
 
   return (
     <DashboardLayout>
@@ -71,16 +86,59 @@ function VideoGreetingsPage() {
                   {project.occasion || "—"} · {project.peopleCount}/5 · {project.generationsUsed}/
                   {project.generationsLimit}
                 </p>
-                <Link
-                  to="/video-greeting"
-                  search={{ project: project.id }}
-                  className="mt-3 inline-flex rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50"
-                >
-                  {t("pvg_continue")}
-                </Link>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Link
+                    to="/video-greeting"
+                    search={{ project: project.id }}
+                    className="inline-flex rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50"
+                  >
+                    {t("pvg_continue")}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(project.id)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t("pvg_delete")}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-5 backdrop-blur-sm"
+          onClick={() => !del.isPending && setPendingDelete(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-warm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-muted-foreground">{t("pvg_delete_confirm_title")}</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                disabled={del.isPending}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm transition hover:bg-secondary disabled:opacity-60"
+              >
+                {t("pvg_delete_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => del.mutate(pendingDelete)}
+                disabled={del.isPending}
+                className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
+              >
+                {del.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("pvg_delete_confirm")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </DashboardLayout>
