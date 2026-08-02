@@ -390,14 +390,12 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: w?.balance ?? 0,
         };
       }
-      if (!w) {
-        // No wallet row during testing — continue without any charge.
-        return await startSceneRender(supabase, supabaseAdmin, project, userId);
-      }
-      const charge = PERSONAL_VIDEO_GREETING_TEST_MODE ? Math.min(price, w.balance) : price;
-      if (charge <= 0) {
-        return await startSceneRender(supabase, supabaseAdmin, project, userId);
-      }
+      const charge = !w
+        ? 0
+        : PERSONAL_VIDEO_GREETING_TEST_MODE
+          ? Math.max(0, Math.min(price, w.balance))
+          : price;
+      if (w && charge > 0) {
       // Conditional write: a second click cannot take the same credit twice,
       // because the row must still hold the balance we just read.
       const { data: charged } = await supabaseAdmin
@@ -417,20 +415,25 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       }
       if (charged) {
         await supabaseAdmin.from("credit_transactions").insert({
-        wallet_id: w.id,
-        user_id: userId,
-        txn_type: "order_charge",
+          wallet_id: w.id,
+          user_id: userId,
+          txn_type: "order_charge",
           amount: -charge,
           balance_after: w.balance - charge,
-        description: isExtra
-          ? "Personal video greeting — one additional starting scene"
-          : "Personal video greeting — starting scene package",
-        metadata: { project_id: project.id, people: project.people.length, extra_scene: isExtra },
-      });
+          description: isExtra
+            ? "Personal video greeting — one additional starting scene"
+            : "Personal video greeting — starting scene package",
+          metadata: {
+            project_id: project.id,
+            people: project.people.length,
+            extra_scene: isExtra,
+          },
+        });
         await supabase
           .from("pvg_projects")
           .update({ credits_charged: project.creditsCharged + charge })
           .eq("id", project.id);
+      }
       }
     }
 
