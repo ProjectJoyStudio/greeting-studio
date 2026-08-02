@@ -355,7 +355,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const issues = validatePvgProject(project, balance);
     if (issues.length > 0) {
       // A paid request is never sent when anything is still missing.
-      return { ok: false as const, issues, project };
+      return { ok: false as const, issues, project, balance };
     }
 
     const used = successfulScenes(project);
