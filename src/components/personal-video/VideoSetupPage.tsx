@@ -12,7 +12,6 @@ import {
   PenLine,
   Sliders,
   Sparkles,
-  Mic,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
