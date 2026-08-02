@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Coins, ImagePlus, Loader2, Plus, Trash2, Users, Wand2, Check, X } from "lucide-react";
+import { Coins, ImagePlus, Loader2, Plus, ScanFace, Trash2, Users, Wand2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
