@@ -20,6 +20,7 @@ import {
   selectPvgScene,
 } from "@/lib/personal-video/pvg.functions";
 import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
+import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
 import {
   PVG_MAX_PEOPLE,
   PVG_MAX_GENERATIONS,
@@ -51,6 +52,8 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
+  const [manualFile, setManualFile] = useState<File | null>(null);
+  const [manualOffered, setManualOffered] = useState<File | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
   const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
@@ -190,7 +193,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       const room = PVG_MAX_PEOPLE - project.people.length;
       const faces = await detectFaces(file, Math.max(0, room));
       if (!faces || faces.length === 0) {
-        toast.error(t("pvg_no_faces"));
+        // Automatic recognition was not sure: offer manual marking instead.
+        setManualOffered(file);
+        setManualFile(file);
         return;
       }
       let latest = project;
@@ -207,12 +212,58 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
         if (res.project) latest = res.project;
       }
       setProject(latest);
+      setManualOffered(file);
       toast.success(`${t("pvg_faces_found")}: ${faces.length}`);
     } catch {
-      toast.error(t("pvg_no_faces"));
+      setManualOffered(file);
+      setManualFile(file);
     } finally {
       setBusy(null);
       if (groupInput.current) groupInput.current.value = "";
+    }
+  }
+
+  /**
+   * Stores the manually marked faces. Faces given to somebody already in the
+   * project only add a reference photo, so the number of people — and with it
+   * the price — stays the same.
+   */
+  async function handleManualFaces(faces: ManualFaceResult[]) {
+    if (!project) return;
+    setBusy("group");
+    try {
+      let latest = project;
+      for (const face of faces) {
+        if (face.personId) {
+          const res = await addPhoto({
+            data: {
+              projectId: project.id,
+              personId: face.personId,
+              base64: face.base64,
+              contentType: face.contentType,
+            },
+          });
+          if (res.project) latest = res.project;
+        } else {
+          const res = await savePerson({
+            data: {
+              projectId: project.id,
+              optimizedBase64: face.base64,
+              contentType: face.contentType,
+              faceQuality: face.quality,
+              source: "group",
+            },
+          });
+          if (res.project) latest = res.project;
+        }
+      }
+      setProject(latest);
+      setManualFile(null);
+      toast.success(`${t("pvg_face_saved")}: ${faces.length}`);
+    } catch {
+      toast.error(t("pvg_scene_failed"));
+    } finally {
+      setBusy(null);
     }
   }
 
