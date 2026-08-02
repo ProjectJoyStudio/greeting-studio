@@ -71,6 +71,7 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
     characterCount: Number(row['character_count'] ?? 0),
     generatedAt: row['generated_at'],
     audioUrl: await signed(row['storage_bucket'] ?? BUCKET, row['storage_path']),
+    greetingText: row['greeting_text'] ?? "",
   };
 }
 
@@ -173,5 +174,30 @@ export async function generateVoiceover(args: {
     characterCount: text.length,
     generatedAt,
     audioUrl: await signed(BUCKET, path),
+    greetingText: text,
+  };
+}
+
+/**
+ * A short spoken sample of one voice. It is never stored and never touches the
+ * voice already saved inside the order.
+ */
+export async function previewVoice(args: {
+  voiceId: string;
+  language: string;
+  provider?: string;
+}): Promise<{ audioBase64: string; mimeType: string }> {
+  const { voiceSample } = await import("./catalog");
+  const provider = args.provider || DEFAULT_VOICE_PROVIDER;
+  const engine = getVoiceEngine(provider);
+  const voice = findVoice(args.voiceId);
+  const result = await engine.synthesize({
+    text: voiceSample(args.language),
+    voiceId: voice.id,
+    language: args.language,
+  });
+  return {
+    audioBase64: Buffer.from(result.audio).toString("base64"),
+    mimeType: result.mimeType,
   };
 }
