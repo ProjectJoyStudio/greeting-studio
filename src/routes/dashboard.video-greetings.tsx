@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useI18n } from "@/lib/i18n";
 import { deletePvgProject, listPvgProjects } from "@/lib/personal-video/pvg.functions";
 import { PVG_STATUS_KEY, normalizeStatus, normalizeStep } from "@/lib/personal-video/order";
@@ -46,7 +45,7 @@ function VideoGreetingsPage() {
   });
 
   return (
-    <DashboardLayout>
+    <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">{t("pvg_drafts_title")}</h1>
@@ -147,6 +146,6 @@ function VideoGreetingsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 }
