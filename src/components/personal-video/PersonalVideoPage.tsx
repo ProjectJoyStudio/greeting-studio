@@ -570,8 +570,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 <span className="text-sm text-muted-foreground">{t("pvg_credits_word")}</span>
               </span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t("pvg_paid_note")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               {t("pvg_balance")}: {balance} {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
             </p>
             {issueFor("credits") && (
@@ -598,7 +597,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                     : t("pvg_generate")}
             </button>
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")} {includedCount}
+              {t("pvg_included_label")}: {includedCount}
+            </p>
+            <p className="mt-0.5 text-center text-xs text-muted-foreground">
+              {t("pvg_used_label")}: {usedCount} {t("pvg_of")} {includedCount}
             </p>
             {needsExtraCredit && (
               <p className="mt-1 text-center text-xs text-muted-foreground">
