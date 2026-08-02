@@ -1491,6 +1491,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          is_test: boolean
           lifetime_purchased: number
           lifetime_spent: number
           reserved: number
@@ -1501,6 +1502,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          is_test?: boolean
           lifetime_purchased?: number
           lifetime_spent?: number
           reserved?: number
@@ -1511,6 +1513,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          is_test?: boolean
           lifetime_purchased?: number
           lifetime_spent?: number
           reserved?: number
@@ -2383,6 +2386,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_dev_test_account: boolean
           preferred_language: string
           updated_at: string
         }
@@ -2391,6 +2395,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          is_dev_test_account?: boolean
           preferred_language?: string
           updated_at?: string
         }
@@ -2399,6 +2404,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_dev_test_account?: boolean
           preferred_language?: string
           updated_at?: string
         }
@@ -3048,9 +3054,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_test_credits: {
+        Args: { _amount: number; _reason?: string; _user_id: string }
+        Returns: number
+      }
+      admin_list_test_accounts: {
+        Args: never
+        Returns: {
+          balance: number
+          display_name: string
+          email: string
+          is_dev_test_account: boolean
+          is_test: boolean
+          user_id: string
+        }[]
+      }
+      admin_reset_test_credits: { Args: { _user_id: string }; Returns: number }
       admin_restore_first_free_greeting: {
         Args: { _reason: string; _user_id: string }
         Returns: boolean
+      }
+      admin_set_dev_test_account: {
+        Args: { _enabled: boolean; _user_id: string }
+        Returns: boolean
+      }
+      admin_test_credit_history: {
+        Args: { _limit?: number; _user_id?: string }
+        Returns: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string
+          email: string
+          id: string
+          txn_type: Database["public"]["Enums"]["credit_txn_type"]
+          user_id: string
+        }[]
       }
       claim_first_free_greeting: {
         Args: {
