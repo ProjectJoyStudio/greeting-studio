@@ -360,14 +360,19 @@ export const generatePvgScene = createServerFn({ method: "POST" })
 
     const used = successfulScenes(project);
     const included = pvgIncludedGenerations(project.people.length);
+
+    // One request at a time: repeated clicks never start a second render and
+    // never take a second credit.
+    if (project.scenes.some((s) => s.status === "pending" || s.status === "processing")) {
+      return { ok: true as const, issues: [] as { field: string; key: string }[], project, balance };
+    }
+
     // Beyond the included scenes every further scene costs exactly one credit.
     const isExtra = used >= included;
-    // The temporary test mode only waives the one-off package price; an extra
-    // scene bought on top of the included ones is always paid for.
+    // The one-off order price is taken only with the very first scene of the
+    // project — reopening or refreshing the page never charges it again.
     const packagePrice =
-      PERSONAL_VIDEO_GREETING_TEST_MODE || project.creditsCharged > 0
-        ? 0
-        : pvgPriceCredits(project.people.length);
+      project.creditsCharged > 0 ? 0 : pvgPriceCredits(project.people.length);
     const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -381,10 +386,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle();
       const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-      // Testing stage: the full credit system is not connected yet, so a low
-      // balance never blocks a generation — the test balance is only reduced
-      // visually, down to zero at most.
-      if (!PERSONAL_VIDEO_GREETING_TEST_MODE && (!w || w.balance < price)) {
+      if (!w || w.balance < price) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -392,12 +394,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: w?.balance ?? 0,
         };
       }
-      const charge = !w
-        ? 0
-        : PERSONAL_VIDEO_GREETING_TEST_MODE
-          ? Math.max(0, Math.min(price, w.balance))
-          : price;
-      if (w && charge > 0) {
+      const charge = price;
+      {
       // Conditional write: a second click cannot take the same credit twice,
       // because the row must still hold the balance we just read.
       const { data: charged } = await supabaseAdmin
@@ -407,7 +405,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("balance", w.balance)
         .select("id")
         .maybeSingle();
-      if (!charged && !PERSONAL_VIDEO_GREETING_TEST_MODE) {
+      if (!charged) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -415,7 +413,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: await walletBalance(supabase, userId),
         };
       }
-      if (charged) {
+      {
         chargedAmount = charge;
         await supabaseAdmin.from("credit_transactions").insert({
           wallet_id: w.id,
