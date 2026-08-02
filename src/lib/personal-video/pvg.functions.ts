@@ -379,7 +379,10 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle();
       const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-      if (!w || w.balance < price) {
+      // Testing stage: the full credit system is not connected yet, so a low
+      // balance never blocks a generation — the test balance is only reduced
+      // visually, down to zero at most.
+      if (!PERSONAL_VIDEO_GREETING_TEST_MODE && (!w || w.balance < price)) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -387,16 +390,24 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: w?.balance ?? 0,
         };
       }
+      if (!w) {
+        // No wallet row during testing — continue without any charge.
+        return await startSceneRender(supabase, supabaseAdmin, project, userId);
+      }
+      const charge = PERSONAL_VIDEO_GREETING_TEST_MODE ? Math.min(price, w.balance) : price;
+      if (charge <= 0) {
+        return await startSceneRender(supabase, supabaseAdmin, project, userId);
+      }
       // Conditional write: a second click cannot take the same credit twice,
       // because the row must still hold the balance we just read.
       const { data: charged } = await supabaseAdmin
         .from("credit_wallets")
-        .update({ balance: w.balance - price, lifetime_spent: w.lifetime_spent + price })
+        .update({ balance: w.balance - charge, lifetime_spent: w.lifetime_spent + charge })
         .eq("id", w.id)
         .eq("balance", w.balance)
         .select("id")
         .maybeSingle();
-      if (!charged) {
+      if (!charged && !PERSONAL_VIDEO_GREETING_TEST_MODE) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -404,21 +415,23 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: await walletBalance(supabase, userId),
         };
       }
-      await supabaseAdmin.from("credit_transactions").insert({
+      if (charged) {
+        await supabaseAdmin.from("credit_transactions").insert({
         wallet_id: w.id,
         user_id: userId,
         txn_type: "order_charge",
-        amount: -price,
-        balance_after: w.balance - price,
+          amount: -charge,
+          balance_after: w.balance - charge,
         description: isExtra
           ? "Personal video greeting — one additional starting scene"
           : "Personal video greeting — starting scene package",
         metadata: { project_id: project.id, people: project.people.length, extra_scene: isExtra },
       });
-      await supabase
-        .from("pvg_projects")
-        .update({ credits_charged: project.creditsCharged + price })
-        .eq("id", project.id);
+        await supabase
+          .from("pvg_projects")
+          .update({ credits_charged: project.creditsCharged + charge })
+          .eq("id", project.id);
+      }
     }
 
     // The stored index stays unique per project, also across failed attempts.
