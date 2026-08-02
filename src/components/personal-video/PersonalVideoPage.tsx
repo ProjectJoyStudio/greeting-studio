@@ -23,7 +23,7 @@ import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/perso
 import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
 import {
   PVG_MAX_PEOPLE,
-  PVG_MAX_GENERATIONS,
+  pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
   type PvgIssueField,
@@ -52,6 +52,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
+  const [confirmExtra, setConfirmExtra] = useState(false);
   const [manualFile, setManualFile] = useState<File | null>(null);
   const [manualOffered, setManualOffered] = useState<File | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
@@ -134,7 +135,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const generationsLeft = (project?.generationsLimit ?? PVG_MAX_GENERATIONS) - usedCount;
+  const includedCount = pvgIncludedGenerations(project?.people.length ?? 0);
+  const generationsLeft = includedCount - usedCount;
+  const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
     const scenes = project?.scenes ?? [];
     if (scenes.length === 0) return null;
