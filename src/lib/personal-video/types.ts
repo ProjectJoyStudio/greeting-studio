@@ -4,8 +4,18 @@ import { PERSONAL_VIDEO_GREETING_TEST_MODE } from "./test-mode";
 
 /** Standard projects hold up to five people. Premium raises this later. */
 export const PVG_MAX_PEOPLE = 5;
-/** One payment covers five starting-scene creations. */
+/** No project ever includes more than five free starting-scene creations. */
 export const PVG_MAX_GENERATIONS = 5;
+/** Cost of one additional starting scene beyond the included ones. */
+export const PVG_EXTRA_SCENE_CREDITS = 1;
+
+/**
+ * Included starting scenes: one more than the number of people, never more
+ * than five.
+ */
+export function pvgIncludedGenerations(peopleCount: number): number {
+  return Math.min(PVG_MAX_GENERATIONS, Math.max(1, peopleCount) + 1);
+}
 
 export type PvgFaceQuality = "good" | "low" | "unknown";
 
@@ -104,11 +114,12 @@ export function validatePvgProject(
   if (project.people.some((p) => p.faceQuality === "low")) {
     issues.push({ field: "people", key: "pvg_err_people_quality" });
   }
-  if (project.generationsUsed >= project.generationsLimit) {
-    issues.push({ field: "generations", key: "pvg_err_generations" });
-  }
-  const price = pvgPriceCredits(project.people.length);
-  if (!PERSONAL_VIDEO_GREETING_TEST_MODE && project.creditsCharged === 0 && balance < price) {
+  const included = pvgIncludedGenerations(project.people.length);
+  const needsExtra = project.generationsUsed >= included;
+  const price =
+    (project.creditsCharged === 0 ? pvgPriceCredits(project.people.length) : 0) +
+    (needsExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
+  if (!PERSONAL_VIDEO_GREETING_TEST_MODE && price > 0 && balance < price) {
     issues.push({ field: "credits", key: "pvg_err_credits" });
   }
   return issues;
