@@ -23,7 +23,7 @@ import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/perso
 import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
 import {
   PVG_MAX_PEOPLE,
-  PVG_MAX_GENERATIONS,
+  pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
   type PvgIssueField,
@@ -52,6 +52,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
+  const [confirmExtra, setConfirmExtra] = useState(false);
   const [manualFile, setManualFile] = useState<File | null>(null);
   const [manualOffered, setManualOffered] = useState<File | null>(null);
   const personInput = useRef<HTMLInputElement>(null);
@@ -134,7 +135,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const generationsLeft = (project?.generationsLimit ?? PVG_MAX_GENERATIONS) - usedCount;
+  const includedCount = pvgIncludedGenerations(project?.people.length ?? 0);
+  const generationsLeft = includedCount - usedCount;
+  const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
     const scenes = project?.scenes ?? [];
     if (scenes.length === 0) return null;
@@ -565,33 +568,33 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
             )}
 
-            {generationsLeft > 0 ? (
-              <button
-                type="button"
-                disabled={!canGenerate}
-                onClick={runGenerate}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "generate" || hasRunning ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4" />
-                )}
-                {busy === "generate" || hasRunning
-                  ? t("pvg_generating")
+            <button
+              type="button"
+              disabled={!canGenerate}
+              onClick={() => (needsExtraCredit ? setConfirmExtra(true) : void runGenerate())}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "generate" || hasRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4" />
+              )}
+              {busy === "generate" || hasRunning
+                ? t("pvg_generating")
+                : needsExtraCredit
+                  ? t("pvg_extra_scene")
                   : usedCount > 0
                     ? t("pvg_another_scene")
                     : t("pvg_generate")}
-              </button>
-            ) : (
-              <p className="mt-5 rounded-2xl bg-muted/50 px-4 py-3 text-center text-xs text-muted-foreground">
-                {t("pvg_all_used")}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")} {includedCount}
+            </p>
+            {needsExtraCredit && (
+              <p className="mt-1 text-center text-xs text-muted-foreground">
+                {t("pvg_extra_note")}
               </p>
             )}
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")}{" "}
-              {project?.generationsLimit ?? PVG_MAX_GENERATIONS}
-            </p>
           </div>
 
           {(project?.scenes.length ?? 0) > 0 && (
@@ -757,6 +760,41 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       )}
 
       {/* Confirmation before the scene becomes the first frame ------------- */}
+      {confirmExtra && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmExtra(false)}
+          className="fixed inset-0 z-[101] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6 shadow-warm"
+          >
+            <p className="text-sm leading-relaxed">{t("pvg_extra_confirm")}</p>
+            <div className="mt-5 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmExtra(false)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium"
+              >
+                {t("pvg_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmExtra(false);
+                  void runGenerate();
+                }}
+                className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
+              >
+                {t("pvg_extra_scene")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmSceneId && (
         <div
           role="dialog"
