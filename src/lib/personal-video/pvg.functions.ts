@@ -372,6 +372,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // How many credits were really taken — the refund below returns exactly this.
+    let chargedAmount = 0;
     if (price > 0) {
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")
@@ -379,7 +381,10 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle();
       const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-      if (!w || w.balance < price) {
+      // Testing stage: the full credit system is not connected yet, so a low
+      // balance never blocks a generation — the test balance is only reduced
+      // visually, down to zero at most.
+      if (!PERSONAL_VIDEO_GREETING_TEST_MODE && (!w || w.balance < price)) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -387,16 +392,22 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: w?.balance ?? 0,
         };
       }
+      const charge = !w
+        ? 0
+        : PERSONAL_VIDEO_GREETING_TEST_MODE
+          ? Math.max(0, Math.min(price, w.balance))
+          : price;
+      if (w && charge > 0) {
       // Conditional write: a second click cannot take the same credit twice,
       // because the row must still hold the balance we just read.
       const { data: charged } = await supabaseAdmin
         .from("credit_wallets")
-        .update({ balance: w.balance - price, lifetime_spent: w.lifetime_spent + price })
+        .update({ balance: w.balance - charge, lifetime_spent: w.lifetime_spent + charge })
         .eq("id", w.id)
         .eq("balance", w.balance)
         .select("id")
         .maybeSingle();
-      if (!charged) {
+      if (!charged && !PERSONAL_VIDEO_GREETING_TEST_MODE) {
         return {
           ok: false as const,
           issues: [{ field: "credits", key: "pvg_err_credits" }],
@@ -404,21 +415,29 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           balance: await walletBalance(supabase, userId),
         };
       }
-      await supabaseAdmin.from("credit_transactions").insert({
-        wallet_id: w.id,
-        user_id: userId,
-        txn_type: "order_charge",
-        amount: -price,
-        balance_after: w.balance - price,
-        description: isExtra
-          ? "Personal video greeting — one additional starting scene"
-          : "Personal video greeting — starting scene package",
-        metadata: { project_id: project.id, people: project.people.length, extra_scene: isExtra },
-      });
-      await supabase
-        .from("pvg_projects")
-        .update({ credits_charged: project.creditsCharged + price })
-        .eq("id", project.id);
+      if (charged) {
+        chargedAmount = charge;
+        await supabaseAdmin.from("credit_transactions").insert({
+          wallet_id: w.id,
+          user_id: userId,
+          txn_type: "order_charge",
+          amount: -charge,
+          balance_after: w.balance - charge,
+          description: isExtra
+            ? "Personal video greeting — one additional starting scene"
+            : "Personal video greeting — starting scene package",
+          metadata: {
+            project_id: project.id,
+            people: project.people.length,
+            extra_scene: isExtra,
+          },
+        });
+        await supabase
+          .from("pvg_projects")
+          .update({ credits_charged: project.creditsCharged + charge })
+          .eq("id", project.id);
+      }
+      }
     }
 
     // The stored index stays unique per project, also across failed attempts.
@@ -482,7 +501,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("id", (sceneRow as SceneRow).id);
       // A technical failure uses up neither an included nor a paid scene.
       await syncGenerationsUsed(supabase, project.id, used);
-      if (price > 0) {
+      if (chargedAmount > 0) {
         const { data: wallet } = await supabaseAdmin
           .from("credit_wallets")
           .select("id, balance, lifetime_spent")
@@ -493,16 +512,16 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           await supabaseAdmin
             .from("credit_wallets")
             .update({
-              balance: w.balance + price,
-              lifetime_spent: Math.max(0, w.lifetime_spent - price),
+              balance: w.balance + chargedAmount,
+              lifetime_spent: Math.max(0, w.lifetime_spent - chargedAmount),
             })
             .eq("id", w.id);
           await supabaseAdmin.from("credit_transactions").insert({
             wallet_id: w.id,
             user_id: userId,
             txn_type: "refund",
-            amount: price,
-            balance_after: w.balance + price,
+            amount: chargedAmount,
+            balance_after: w.balance + chargedAmount,
             description: "Personal video greeting — refund for a failed starting scene",
             metadata: { project_id: project.id, scene_id: (sceneRow as SceneRow).id },
           });
