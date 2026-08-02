@@ -2,6 +2,7 @@
 // row mapping and the background completion of running starting scenes.
 
 import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } from "./types";
+import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
   "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords";
