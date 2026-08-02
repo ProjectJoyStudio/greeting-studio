@@ -45,3 +45,12 @@ export const generatePvgVoiceover = createServerFn({ method: "POST" })
     });
     return { voiceover };
   });
+
+/** A short sample of one voice. It never creates or replaces the order audio. */
+export const previewPvgVoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { voiceId: string; language: string }) => input)
+  .handler(async ({ data }): Promise<{ audioBase64: string; mimeType: string }> => {
+    const { previewVoice } = await import("./voice/voice.server");
+    return previewVoice({ voiceId: data.voiceId, language: data.language });
+  });
