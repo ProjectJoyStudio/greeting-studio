@@ -22,7 +22,6 @@ import {
   validatePvgProject,
 } from "./types";
 import type { PvgProject } from "./types";
-import { PERSONAL_VIDEO_GREETING_TEST_MODE } from "./test-mode";
 
 // --- input shapes ----------------------------------------------------------
 
