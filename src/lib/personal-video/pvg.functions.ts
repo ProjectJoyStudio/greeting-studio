@@ -14,7 +14,13 @@ import {
   type ProjectRow,
   type SceneRow,
 } from "./pvg.server";
-import { PVG_MAX_GENERATIONS, PVG_MAX_PEOPLE, pvgPriceCredits, validatePvgProject } from "./types";
+import {
+  PVG_EXTRA_SCENE_CREDITS,
+  PVG_MAX_PEOPLE,
+  pvgIncludedGenerations,
+  pvgPriceCredits,
+  validatePvgProject,
+} from "./types";
 import type { PvgProject } from "./types";
 import { PERSONAL_VIDEO_GREETING_TEST_MODE } from "./test-mode";
 
@@ -113,7 +119,7 @@ export const openPvgProject = createServerFn({ method: "POST" })
     }
     const { data: created, error } = await supabase
       .from("pvg_projects")
-      .insert({ user_id: userId, generations_limit: PVG_MAX_GENERATIONS })
+      .insert({ user_id: userId, generations_limit: pvgIncludedGenerations(0) })
       .select(PROJECT_COLUMNS)
       .single();
     if (error) throw new Error(error.message);
