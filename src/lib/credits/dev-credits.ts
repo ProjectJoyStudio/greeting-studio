@@ -23,7 +23,7 @@ export interface TestTxnRow {
   created_at: string;
 }
 
-const rpc = supabase.rpc.bind(supabase) as (
+const rpc = supabase.rpc.bind(supabase) as unknown as (
   name: string,
   args?: Record<string, unknown>,
 ) => Promise<{ data: unknown; error: { message: string } | null }>;
