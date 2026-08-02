@@ -33,6 +33,7 @@ interface SaveInput {
   recipientName: string;
   occasion: string;
   sceneDescription: string;
+  workflowStep?: "scene" | "video" | undefined;
 }
 interface PhotoInput {
   projectId: string;
@@ -118,6 +119,7 @@ export const openPvgProject = createServerFn({ method: "POST" })
     if (data.projectId) {
       const existing = await loadProject(supabase, data.projectId);
       if (existing) return { project: existing, balance: await walletBalance(supabase, userId) };
+      throw new Error("project_not_found");
     }
     const { data: created, error } = await supabase
       .from("pvg_projects")
@@ -168,7 +170,10 @@ export const listPvgProjects = createServerFn({ method: "GET" })
     return projects;
   });
 
-/** Automatic draft saving after every change on the page. */
+/**
+ * Leaving the workflow never destroys anything: the order keeps its id and
+ * moves to the recycle bin for the configured retention period.
+ */
 export const deletePvgProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
@@ -176,18 +181,24 @@ export const deletePvgProject = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: owned } = await supabase
       .from("pvg_projects")
-      .select("id, user_id")
+      .select("id, user_id, deleted_at")
       .eq("id", data.projectId)
       .maybeSingle();
-    const row = owned as { id: string; user_id: string } | null;
+    const row = owned as { id: string; user_id: string; deleted_at: string | null } | null;
     if (!row || row.user_id !== userId) throw new Error("project_not_found");
+    if (row.deleted_at) return { ok: true as const };
 
-    const { purgeProjectFiles } = await import("./pvg.server");
-    await purgeProjectFiles(row.id);
-
-    await supabase.from("pvg_scenes").delete().eq("project_id", row.id);
-    await supabase.from("pvg_people").delete().eq("project_id", row.id);
-    const { error } = await supabase.from("pvg_projects").delete().eq("id", row.id);
+    const { readRetentionDays } = await import("./order.server");
+    const days = await readRetentionDays();
+    const now = Date.now();
+    const { error } = await supabase
+      .from("pvg_projects")
+      .update({
+        deleted_at: new Date(now).toISOString(),
+        purge_after: new Date(now + days * 86_400_000).toISOString(),
+        status: "deleted_by_user",
+      })
+      .eq("id", row.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -202,10 +213,14 @@ export const savePvgProject = createServerFn({ method: "POST" })
         recipient_name: data.recipientName.slice(0, 120),
         occasion: data.occasion.slice(0, 120),
         scene_description: data.sceneDescription.slice(0, 4000),
+        workflow_step: data.workflowStep ?? "scene",
       })
-      .eq("id", data.projectId);
+      .eq("id", data.projectId)
+      .is("deleted_at", null);
     if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const { recordVersion } = await import("./order.server");
+    const version = await recordVersion(data.projectId);
+    return { ok: true as const, version, savedAt: new Date().toISOString() };
   });
 
 /** Adds a person, or replaces the picture of an existing person. */
