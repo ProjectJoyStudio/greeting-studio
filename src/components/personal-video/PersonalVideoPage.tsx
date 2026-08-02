@@ -568,33 +568,33 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
             )}
 
-            {generationsLeft > 0 ? (
-              <button
-                type="button"
-                disabled={!canGenerate}
-                onClick={runGenerate}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "generate" || hasRunning ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4" />
-                )}
-                {busy === "generate" || hasRunning
-                  ? t("pvg_generating")
+            <button
+              type="button"
+              disabled={!canGenerate}
+              onClick={() => (needsExtraCredit ? setConfirmExtra(true) : void runGenerate())}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "generate" || hasRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4" />
+              )}
+              {busy === "generate" || hasRunning
+                ? t("pvg_generating")
+                : needsExtraCredit
+                  ? t("pvg_extra_scene")
                   : usedCount > 0
                     ? t("pvg_another_scene")
                     : t("pvg_generate")}
-              </button>
-            ) : (
-              <p className="mt-5 rounded-2xl bg-muted/50 px-4 py-3 text-center text-xs text-muted-foreground">
-                {t("pvg_all_used")}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")} {includedCount}
+            </p>
+            {needsExtraCredit && (
+              <p className="mt-1 text-center text-xs text-muted-foreground">
+                {t("pvg_extra_note")}
               </p>
             )}
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_generated_count")}: {usedCount} {t("pvg_of")}{" "}
-              {project?.generationsLimit ?? PVG_MAX_GENERATIONS}
-            </p>
           </div>
 
           {(project?.scenes.length ?? 0) > 0 && (
