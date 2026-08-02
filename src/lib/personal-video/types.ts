@@ -51,6 +51,8 @@ export interface PvgProject {
   creditsCharged: number;
   selectedSceneId: string | null;
   updatedAt: string;
+  /** Settings of the second page: length and greeting of the future video. */
+  videoSetup: PvsVideoSetup;
   people: PvgPerson[];
   scenes: PvgScene[];
 }
