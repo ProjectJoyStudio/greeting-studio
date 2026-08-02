@@ -141,6 +141,16 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const price = pvgPriceCredits(project?.people.length ?? 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
 
+  // A gentle, short note whenever one more included scene becomes available.
+  const includedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!project) return;
+    const next = pvgIncludedGenerations(project.people.length);
+    const prev = includedRef.current;
+    includedRef.current = next;
+    if (prev !== null && next > prev) toast.success(t("pvg_included_added"), { duration: 4000 });
+  }, [project, t]);
+
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
