@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Coins, ImagePlus, Loader2, Plus, ScanFace, Trash2, Users, Wand2, Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ import {
 
 export function PersonalVideoPage({ projectId }: { projectId?: string | undefined }) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { isTest: isTestWallet } = useCreditBalance();
   const pushBalance = useRefreshCreditBalance();
@@ -844,7 +845,13 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                   const sceneId = confirmSceneId;
                   setConfirmSceneId(null);
                   void chooseScene({ data: { projectId: project.id, sceneId } }).then(
-                    (res) => res.project && setProject(res.project),
+                    (res) => {
+                      if (res.project) setProject(res.project);
+                      void navigate({
+                        to: "/video-greeting-setup",
+                        search: { project: project.id },
+                      });
+                    },
                   );
                 }}
                 className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
