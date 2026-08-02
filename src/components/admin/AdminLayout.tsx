@@ -49,6 +49,7 @@ const NAV: NavItem[] = [
   { to: "/admin/user-live-cards", key: "admin_nav_user_live_cards", icon: Film },
   { to: "/admin/deleted-cards", key: "dc_title", icon: Trash2 },
   { to: "/admin/deleted-live-cards", key: "dlc_title", icon: Trash2 },
+  { to: "/admin/deleted-video-drafts", key: "pvo_admin_title", icon: Trash2 },
   { to: "/admin/activity-log", key: "al_title", icon: ShieldCheck },
   { to: "/admin/credit-packages", key: "admin_nav_credit_packages", icon: Package },
   { to: "/admin/dev-credits", key: "admin_nav_dev_credits", icon: FlaskConical },
