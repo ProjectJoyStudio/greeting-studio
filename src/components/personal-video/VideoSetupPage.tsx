@@ -23,6 +23,9 @@ import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditWord } from "@/lib/credits/i18n";
 import { openPvgProject } from "@/lib/personal-video/pvg.functions";
+import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
+import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
+import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
 import {
   PVS_MAX_SECONDS,
@@ -50,6 +53,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const open = useServerFn(openPvgProject);
   const saveSetup = useServerFn(savePvgVideoSetup);
   const compose = useServerFn(composePvgGreeting);
+  const claim = useServerFn(claimPvgEditSession);
 
   const query = useQuery({
     queryKey: ["pvg", "setup", projectId ?? "new"],
@@ -63,7 +67,30 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [greeting, setGreeting] = useState("");
   const [keywords, setKeywords] = useState("");
   const [working, setWorking] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [readOnly, setReadOnly] = useState(false);
   const loaded = useRef(false);
+  const sessionId = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random()),
+  );
+
+  // One writer at a time: another open device is told instead of overwritten.
+  useEffect(() => {
+    if (!project) return;
+    let stop = false;
+    const beat = () =>
+      void claim({ data: { projectId: project.id, sessionId: sessionId.current } })
+        .then((res) => {
+          if (!stop) setReadOnly(!res.editable);
+        })
+        .catch(() => undefined);
+    beat();
+    const timer = setInterval(beat, 30_000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+  }, [project, claim]);
 
   useEffect(() => {
     if (!project || loaded.current) return;
@@ -76,7 +103,8 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
 
   // Everything the person changes is stored quietly in their draft.
   const persist = useCallback(() => {
-    if (!project) return;
+    if (!project || readOnly) return;
+    setSaveState("saving");
     void saveSetup({
       data: {
         projectId: project.id,
@@ -85,14 +113,28 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingText: greeting,
         greetingKeywords: keywords,
       },
-    });
-  }, [project, duration, mode, greeting, keywords, saveSetup]);
+    })
+      .then(() => setSaveState("saved"))
+      .catch(() => setSaveState("failed"));
+  }, [project, readOnly, duration, mode, greeting, keywords, saveSetup]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
-    const id = setTimeout(persist, 800);
+    const id = setTimeout(persist, 1200);
     return () => clearTimeout(id);
   }, [persist, project]);
+
+  // Leaving the page, switching tab or closing the browser saves first.
+  useEffect(() => {
+    const flush = () => persist();
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", flush);
+      flush();
+    };
+  }, [persist]);
 
   const scene = useMemo(
     () =>
@@ -133,6 +175,11 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   return (
     <SiteLayout>
       <PageHeader title={t("pvs_title")} subtitle={t("pvs_sub")} />
+
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
+        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
+        <SaveIndicator state={saveState} onRetry={persist} />
+      </div>
 
       <section className="mx-auto w-full max-w-7xl px-4 pb-24 lg:px-6">
         <button
