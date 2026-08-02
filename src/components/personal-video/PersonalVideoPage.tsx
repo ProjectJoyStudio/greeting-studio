@@ -376,11 +376,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     return (
       <SiteLayout>
         <PageHeader title={t("pvg_title")} subtitle={t("pvg_sub")} />
-
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
-        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
-        <SaveIndicator state={saveState} />
-      </div>
         <div className="mx-auto max-w-3xl px-5 pb-24">
           <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
             {t("pvg_login")}
@@ -393,6 +388,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   return (
     <SiteLayout>
       <PageHeader title={t("pvg_title")} subtitle={t("pvg_sub")} />
+
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
+        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
+        <SaveIndicator state={saveState} />
+      </div>
 
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:px-6">
         {/* Left — the project ------------------------------------------- */}
