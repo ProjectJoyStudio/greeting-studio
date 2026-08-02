@@ -75,7 +75,7 @@ export interface DetectedFace {
   quality: PvgFaceQuality;
 }
 
-interface FaceBox {
+export interface FaceBox {
   x: number;
   y: number;
   width: number;
