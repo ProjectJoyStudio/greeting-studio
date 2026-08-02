@@ -428,7 +428,11 @@ export const generatePvgScene = createServerFn({ method: "POST" })
 
     await supabase
       .from("pvg_projects")
-      .update({ generations_used: used + 1, status: "generating" })
+      .update({
+        generations_used: used + 1,
+        generations_limit: included,
+        status: "generating",
+      })
       .eq("id", project.id);
 
     try {
@@ -455,8 +459,38 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           error_message: err instanceof Error ? err.message.slice(0, 300) : "The engine refused the request.",
         })
         .eq("id", (sceneRow as SceneRow).id);
-      // A technical failure does not use up one of the five generations.
+      // A technical failure uses up neither an included nor a paid scene.
       await syncGenerationsUsed(supabase, project.id, used);
+      if (!PERSONAL_VIDEO_GREETING_TEST_MODE && isExtra) {
+        const { data: wallet } = await supabaseAdmin
+          .from("credit_wallets")
+          .select("id, balance, lifetime_spent")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
+        if (w) {
+          await supabaseAdmin
+            .from("credit_wallets")
+            .update({
+              balance: w.balance + PVG_EXTRA_SCENE_CREDITS,
+              lifetime_spent: Math.max(0, w.lifetime_spent - PVG_EXTRA_SCENE_CREDITS),
+            })
+            .eq("id", w.id);
+          await supabaseAdmin.from("credit_transactions").insert({
+            wallet_id: w.id,
+            user_id: userId,
+            txn_type: "refund",
+            amount: PVG_EXTRA_SCENE_CREDITS,
+            balance_after: w.balance + PVG_EXTRA_SCENE_CREDITS,
+            description: "Personal video greeting — refund for a failed additional scene",
+            metadata: { project_id: project.id, scene_id: (sceneRow as SceneRow).id },
+          });
+          await supabase
+            .from("pvg_projects")
+            .update({ credits_charged: Math.max(0, project.creditsCharged + price - PVG_EXTRA_SCENE_CREDITS) })
+            .eq("id", project.id);
+        }
+      }
     }
 
     const refreshed = await loadProject(supabase, project.id);
