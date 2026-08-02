@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardLayout";
 import { useI18n } from "@/lib/i18n";
 import { deletePvgProject, listPvgProjects } from "@/lib/personal-video/pvg.functions";
 import { PVG_STATUS_KEY, normalizeStatus, normalizeStep } from "@/lib/personal-video/order";
