@@ -760,6 +760,41 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       )}
 
       {/* Confirmation before the scene becomes the first frame ------------- */}
+      {confirmExtra && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmExtra(false)}
+          className="fixed inset-0 z-[101] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6 shadow-warm"
+          >
+            <p className="text-sm leading-relaxed">{t("pvg_extra_confirm")}</p>
+            <div className="mt-5 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmExtra(false)}
+                className="rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium"
+              >
+                {t("pvg_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmExtra(false);
+                  void runGenerate();
+                }}
+                className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
+              >
+                {t("pvg_extra_scene")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmSceneId && (
         <div
           role="dialog"
