@@ -161,6 +161,29 @@ export const listPvgProjects = createServerFn({ method: "GET" })
   });
 
 /** Automatic draft saving after every change on the page. */
+export const deletePvgProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: owned } = await supabase
+      .from("pvg_projects")
+      .select("id, user_id")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    const row = owned as { id: string; user_id: string } | null;
+    if (!row || row.user_id !== userId) throw new Error("project_not_found");
+
+    const { purgeProjectFiles } = await import("./pvg.server");
+    await purgeProjectFiles(row.id);
+
+    await supabase.from("pvg_scenes").delete().eq("project_id", row.id);
+    await supabase.from("pvg_people").delete().eq("project_id", row.id);
+    const { error } = await supabase.from("pvg_projects").delete().eq("id", row.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
 export const savePvgProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: SaveInput) => input)
