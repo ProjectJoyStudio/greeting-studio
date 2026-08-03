@@ -53,6 +53,7 @@ export interface VoiceTestRow {
   notes: string | null;
   rating: number | null;
   is_favorite: boolean;
+  credits_used?: number | null;
   created_at: string;
 }
 
@@ -65,6 +66,10 @@ export interface VoiceModelStat {
   avg_generation_ms: number | null;
   total_characters: number;
   avg_duration_seconds: number | null;
+  avg_characters?: number | null;
+  avg_credits?: number | null;
+  total_credits?: number | null;
+  avg_cost_usd?: number | null;
 }
 
 /** Testing audio lives apart from every customer recording. */

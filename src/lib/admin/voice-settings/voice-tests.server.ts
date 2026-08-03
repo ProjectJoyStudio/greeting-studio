@@ -87,6 +87,7 @@ export async function runVoiceModelTest(args: {
       ...base,
       duration_seconds: result.durationSeconds,
       generation_ms: Date.now() - started,
+      credits_used: result.creditsUsed ?? 0,
       storage_bucket: VOICE_TEST_BUCKET,
       storage_path: path,
       mime_type: result.mimeType,
