@@ -8,6 +8,8 @@ export interface SynthesisRequest {
   voiceId: string;
   /** Two-letter language of the greeting, used only for logging today. */
   language: string;
+  /** Voice model chosen by the administrator; each engine has its own default. */
+  modelId?: string;
 }
 
 export interface SynthesisResult {
@@ -31,9 +33,10 @@ function decodeBase64(value: string): Uint8Array {
 const elevenLabs: VoiceEngine = {
   id: "elevenlabs",
   isReady: () => Boolean(process.env["ELEVENLABS_API_KEY"]),
-  async synthesize({ text, voiceId }) {
+  async synthesize({ text, voiceId, modelId }) {
     const apiKey = process.env["ELEVENLABS_API_KEY"];
     if (!apiKey) throw new Error("voice_service_unavailable");
+    const model = modelId || "eleven_multilingual_v2";
 
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`,
@@ -42,7 +45,7 @@ const elevenLabs: VoiceEngine = {
         headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
         body: JSON.stringify({
           text: text.slice(0, PVG_VOICE_MAX_CHARS),
-          model_id: "eleven_multilingual_v2",
+          model_id: model,
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -72,7 +75,7 @@ const elevenLabs: VoiceEngine = {
       mimeType: "audio/mpeg",
       extension: "mp3",
       durationSeconds: Math.round(durationSeconds * 100) / 100,
-      modelId: "eleven_multilingual_v2",
+      modelId: model,
     };
   },
 };

@@ -71,10 +71,12 @@ import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
+import { Route as AdminVoiceSettingsIndexRouteImport } from './routes/admin.voice-settings.index'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
+import { Route as AdminVoiceSettingsTestingRouteImport } from './routes/admin.voice-settings.testing'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -398,6 +400,11 @@ const AdminActivityLogRoute = AdminActivityLogRouteImport.update({
   path: '/activity-log',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVoiceSettingsIndexRoute = AdminVoiceSettingsIndexRouteImport.update({
+  id: '/voice-settings/',
+  path: '/voice-settings/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -419,6 +426,12 @@ const ApiPublicLiveCardsReconcileRoute =
     id: '/api/public/live-cards-reconcile',
     path: '/api/public/live-cards-reconcile',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminVoiceSettingsTestingRoute =
+  AdminVoiceSettingsTestingRouteImport.update({
+    id: '/voice-settings/testing',
+    path: '/voice-settings/testing',
+    getParentRoute: () => AdminRoute,
   } as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
@@ -555,10 +568,12 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
+  '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -632,10 +647,12 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
+  '/admin/voice-settings': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -713,10 +730,12 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
+  '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -795,10 +814,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/admin/catalog/'
+    | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -872,10 +893,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/admin/catalog'
+    | '/admin/voice-settings'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -952,10 +975,12 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/admin/catalog/'
+    | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -1435,6 +1460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminActivityLogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/voice-settings/': {
+      id: '/admin/voice-settings/'
+      path: '/voice-settings'
+      fullPath: '/admin/voice-settings/'
+      preLoaderRoute: typeof AdminVoiceSettingsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/': {
       id: '/admin/catalog/'
       path: '/'
@@ -1462,6 +1494,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/live-cards-reconcile'
       preLoaderRoute: typeof ApiPublicLiveCardsReconcileRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/voice-settings/testing': {
+      id: '/admin/voice-settings/testing'
+      path: '/voice-settings/testing'
+      fullPath: '/admin/voice-settings/testing'
+      preLoaderRoute: typeof AdminVoiceSettingsTestingRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
@@ -1621,6 +1660,8 @@ interface AdminRouteChildren {
   AdminUserLiveCardsRoute: typeof AdminUserLiveCardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminVoiceSettingsTestingRoute: typeof AdminVoiceSettingsTestingRoute
+  AdminVoiceSettingsIndexRoute: typeof AdminVoiceSettingsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1646,6 +1687,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUserLiveCardsRoute: AdminUserLiveCardsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminVoiceSettingsTestingRoute: AdminVoiceSettingsTestingRoute,
+  AdminVoiceSettingsIndexRoute: AdminVoiceSettingsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1718,13 +1761,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

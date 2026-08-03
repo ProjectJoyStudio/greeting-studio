@@ -96,9 +96,12 @@ export async function generateVoiceover(args: {
 
   if (!text) throw new Error("greeting_required");
 
+  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
+  const modelId = await getProductionVoiceModel(provider);
+
   let result;
   try {
-    result = await engine.synthesize({ text, voiceId: voice.id, language: args.language });
+    result = await engine.synthesize({ text, voiceId: voice.id, language: args.language, modelId });
   } catch (error) {
     await logVoiceRequest({
       projectId: args.projectId,
@@ -191,10 +194,12 @@ export async function previewVoice(args: {
   const provider = args.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
   const voice = findVoice(args.voiceId);
+  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
   const result = await engine.synthesize({
     text: voiceSample(args.language),
     voiceId: voice.id,
     language: args.language,
+    modelId: await getProductionVoiceModel(provider),
   });
   return {
     audioBase64: Buffer.from(result.audio).toString("base64"),
