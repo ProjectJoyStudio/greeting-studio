@@ -3206,6 +3206,117 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_model_tests: {
+        Row: {
+          admin_user_id: string
+          character_count: number
+          created_at: string
+          duration_seconds: number
+          error_message: string | null
+          generation_ms: number
+          id: string
+          is_favorite: boolean
+          language: string
+          mime_type: string | null
+          model_key: string
+          model_label: string | null
+          notes: string | null
+          provider: string
+          rating: number | null
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          text_content: string
+          updated_at: string
+          voice_id: string
+          voice_name: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          error_message?: string | null
+          generation_ms?: number
+          id?: string
+          is_favorite?: boolean
+          language: string
+          mime_type?: string | null
+          model_key: string
+          model_label?: string | null
+          notes?: string | null
+          provider: string
+          rating?: number | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          text_content: string
+          updated_at?: string
+          voice_id: string
+          voice_name?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          error_message?: string | null
+          generation_ms?: number
+          id?: string
+          is_favorite?: boolean
+          language?: string
+          mime_type?: string | null
+          model_key?: string
+          model_label?: string | null
+          notes?: string | null
+          provider?: string
+          rating?: number | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          text_content?: string
+          updated_at?: string
+          voice_id?: string
+          voice_name?: string | null
+        }
+        Relationships: []
+      }
+      voice_models: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          label: string
+          model_key: string
+          provider: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          label: string
+          model_key: string
+          provider: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          label?: string
+          model_key?: string
+          provider?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       voice_profiles: {
         Row: {
           consent_confirmed_at: string | null
@@ -3285,6 +3396,10 @@ export type Database = {
         Args: { _enabled: boolean; _user_id: string }
         Returns: boolean
       }
+      admin_set_production_voice_model: {
+        Args: { _model_id: string }
+        Returns: boolean
+      }
       admin_test_credit_history: {
         Args: { _limit?: number; _user_id?: string }
         Returns: {
@@ -3296,6 +3411,19 @@ export type Database = {
           id: string
           txn_type: Database["public"]["Enums"]["credit_txn_type"]
           user_id: string
+        }[]
+      }
+      admin_voice_model_stats: {
+        Args: never
+        Returns: {
+          avg_duration_seconds: number
+          avg_generation_ms: number
+          failed: number
+          model_key: string
+          provider: string
+          succeeded: number
+          total: number
+          total_characters: number
         }[]
       }
       claim_first_free_greeting: {
