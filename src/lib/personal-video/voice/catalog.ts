@@ -45,6 +45,10 @@ export interface PvgVoiceover {
   durationSeconds: number;
   characterCount: number;
   generatedAt: string;
+  /** The exact model this recording was spoken with, kept forever. */
+  modelId?: string;
+  modelLabel?: string;
+  creditsUsed?: number;
   audioUrl: string | null;
   /** The exact greeting the audio was spoken from, used to spot outdated audio. */
   greetingText: string;
