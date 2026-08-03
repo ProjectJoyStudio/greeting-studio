@@ -125,6 +125,13 @@ export function VoiceSettingsPage() {
                       {m.status === "disabled" ? L("vs_enable_testing") : L("vs_disable")}
                     </button>
                   )}
+                  <Link
+                    to="/admin/voice-settings/testing"
+                    search={{ model: m.id }}
+                    className={`${btn} inline-flex items-center gap-1.5`}
+                  >
+                    <FlaskConical className="h-3.5 w-3.5" /> {L("vs_test_this")}
+                  </Link>
                 </div>
               </div>
             ))}
@@ -147,7 +154,11 @@ export function VoiceSettingsPage() {
                   <th className="py-2 pr-3">{L("vs_stat_failed")}</th>
                   <th className="py-2 pr-3">{L("vs_stat_avg_ms")}</th>
                   <th className="py-2 pr-3">{L("vs_stat_chars")}</th>
+                  <th className="py-2 pr-3">{L("vs_stat_avg_chars")}</th>
                   <th className="py-2 pr-3">{L("vs_stat_avg_duration")}</th>
+                  <th className="py-2 pr-3">{L("vs_stat_avg_credits")}</th>
+                  <th className="py-2 pr-3">{L("vs_stat_total_credits")}</th>
+                  <th className="py-2 pr-3">{L("vs_stat_avg_cost")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,11 +172,16 @@ export function VoiceSettingsPage() {
                     <td className="py-2 pr-3 text-rose-600">{s.failed}</td>
                     <td className="py-2 pr-3">{Math.round(Number(s.avg_generation_ms ?? 0))} ms</td>
                     <td className="py-2 pr-3">{s.total_characters}</td>
+                    <td className="py-2 pr-3">{Math.round(Number(s.avg_characters ?? 0))}</td>
                     <td className="py-2 pr-3">{Number(s.avg_duration_seconds ?? 0).toFixed(2)} s</td>
+                    <td className="py-2 pr-3">{Number(s.avg_credits ?? 0).toFixed(1)}</td>
+                    <td className="py-2 pr-3">{Number(s.total_credits ?? 0).toFixed(1)}</td>
+                    <td className="py-2 pr-3">${Number(s.avg_cost_usd ?? 0).toFixed(4)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <p className="mt-3 text-xs text-muted-foreground">{L("vs_stat_cost_note")}</p>
           </div>
         )}
       </section>

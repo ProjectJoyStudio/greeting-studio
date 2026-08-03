@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Download, Loader2, Star, Trash2 } from "lucide-react";
@@ -27,6 +27,7 @@ export function ModelTestingPage() {
   const { lang } = useI18n();
   const L = useLocal(lang);
   const qc = useQueryClient();
+  const search = useSearch({ from: "/admin/voice-settings/testing" });
 
   const models = useQuery({ queryKey: ["voice-models"], queryFn: listVoiceModels });
   const tests = useQuery({ queryKey: ["voice-tests"], queryFn: listVoiceTests });
@@ -40,7 +41,7 @@ export function ModelTestingPage() {
     [models.data],
   );
 
-  const [modelId, setModelId] = useState<string>("");
+  const [modelId, setModelId] = useState<string>(search.model ?? "");
   const [voiceId, setVoiceId] = useState(PVG_VOICES[0]!.id);
   const [language, setLanguage] = useState(lang);
   const [text, setText] = useState(
@@ -49,9 +50,18 @@ export function ModelTestingPage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [urls, setUrls] = useState<Record<string, string>>({});
 
+  const preselectApplied = useRef(false);
   useEffect(() => {
-    if (!modelId && usable.length > 0) setModelId(usable[0]!.id);
-  }, [modelId, usable]);
+    if (usable.length === 0) return;
+    if (!preselectApplied.current) {
+      preselectApplied.current = true;
+      if (search.model && usable.some((m) => m.id === search.model)) {
+        setModelId(search.model);
+        return;
+      }
+    }
+    if (!modelId) setModelId(usable[0]!.id);
+  }, [modelId, usable, search.model]);
 
   const rows = tests.data ?? [];
 

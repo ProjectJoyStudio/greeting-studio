@@ -77,6 +77,19 @@ const D: Record<string, Row> = {
   vs_duration: { en: "Duration", ru: "Длительность", de: "Dauer", uk: "Тривалість", fr: "Durée", pl: "Czas trwania" },
   vs_generated_at: { en: "Generated", ru: "Создано", de: "Erstellt", uk: "Створено", fr: "Généré", pl: "Utworzono" },
   vs_selected: { en: "selected", ru: "выбрано", de: "ausgewählt", uk: "вибрано", fr: "sélectionné(s)", pl: "wybrano" },
+  vs_test_this: { en: "Test This Model", ru: "Протестировать модель", de: "Dieses Modell testen", uk: "Протестувати модель", fr: "Tester ce modèle", pl: "Przetestuj ten model" },
+  vs_stat_avg_chars: { en: "Average characters", ru: "Средне символов", de: "Zeichen im Schnitt", uk: "Середньо символів", fr: "Caractères en moyenne", pl: "Średnio znaków" },
+  vs_stat_avg_credits: { en: "Average credits", ru: "Средне кредитов", de: "Guthaben im Schnitt", uk: "Середньо кредитів", fr: "Crédits en moyenne", pl: "Średnio kredytów" },
+  vs_stat_total_credits: { en: "Total credits", ru: "Всего кредитов", de: "Guthaben gesamt", uk: "Усього кредитів", fr: "Crédits au total", pl: "Łącznie kredytów" },
+  vs_stat_avg_cost: { en: "Average cost", ru: "Средняя стоимость", de: "Durchschnittliche Kosten", uk: "Середня вартість", fr: "Coût moyen", pl: "Średni koszt" },
+  vs_stat_cost_note: {
+    en: "Credits and cost are taken from the studio when it reports them, otherwise estimated from the characters spoken.",
+    ru: "Кредиты и стоимость берутся у студии, если она их сообщает, иначе рассчитываются по числу произнесённых символов.",
+    de: "Guthaben und Kosten stammen vom Studio, sofern es sie meldet, sonst werden sie aus den gesprochenen Zeichen geschätzt.",
+    uk: "Кредити й вартість беруться зі студії, якщо вона їх повідомляє, інакше оцінюються за кількістю символів.",
+    fr: "Les crédits et le coût proviennent du studio lorsqu'il les communique, sinon ils sont estimés d'après les caractères.",
+    pl: "Kredyty i koszt pochodzą ze studia, gdy je podaje, w przeciwnym razie są szacowane na podstawie znaków.",
+  },
 };
 
 export function useLocal(lang: Lang) {

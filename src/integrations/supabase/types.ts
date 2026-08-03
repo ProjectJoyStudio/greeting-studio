@@ -2728,6 +2728,7 @@ export type Database = {
         Row: {
           character_count: number
           created_at: string
+          credits_used: number
           duration_seconds: number
           generated_at: string
           greeting_text: string
@@ -2735,6 +2736,7 @@ export type Database = {
           language: string
           mime_type: string
           model_id: string
+          model_label: string
           project_id: string
           provider: string
           storage_bucket: string
@@ -2747,6 +2749,7 @@ export type Database = {
         Insert: {
           character_count?: number
           created_at?: string
+          credits_used?: number
           duration_seconds?: number
           generated_at?: string
           greeting_text?: string
@@ -2754,6 +2757,7 @@ export type Database = {
           language?: string
           mime_type?: string
           model_id?: string
+          model_label?: string
           project_id: string
           provider?: string
           storage_bucket?: string
@@ -2766,6 +2770,7 @@ export type Database = {
         Update: {
           character_count?: number
           created_at?: string
+          credits_used?: number
           duration_seconds?: number
           generated_at?: string
           greeting_text?: string
@@ -2773,6 +2778,7 @@ export type Database = {
           language?: string
           mime_type?: string
           model_id?: string
+          model_label?: string
           project_id?: string
           provider?: string
           storage_bucket?: string
@@ -3211,6 +3217,7 @@ export type Database = {
           admin_user_id: string
           character_count: number
           created_at: string
+          credits_used: number
           duration_seconds: number
           error_message: string | null
           generation_ms: number
@@ -3235,6 +3242,7 @@ export type Database = {
           admin_user_id: string
           character_count?: number
           created_at?: string
+          credits_used?: number
           duration_seconds?: number
           error_message?: string | null
           generation_ms?: number
@@ -3259,6 +3267,7 @@ export type Database = {
           admin_user_id?: string
           character_count?: number
           created_at?: string
+          credits_used?: number
           duration_seconds?: number
           error_message?: string | null
           generation_ms?: number
@@ -3284,6 +3293,7 @@ export type Database = {
       voice_models: {
         Row: {
           created_at: string
+          credit_multiplier: number
           description: string | null
           id: string
           label: string
@@ -3292,9 +3302,11 @@ export type Database = {
           sort_order: number
           status: string
           updated_at: string
+          usd_per_1000_credits: number
         }
         Insert: {
           created_at?: string
+          credit_multiplier?: number
           description?: string | null
           id?: string
           label: string
@@ -3303,9 +3315,11 @@ export type Database = {
           sort_order?: number
           status?: string
           updated_at?: string
+          usd_per_1000_credits?: number
         }
         Update: {
           created_at?: string
+          credit_multiplier?: number
           description?: string | null
           id?: string
           label?: string
@@ -3314,6 +3328,7 @@ export type Database = {
           sort_order?: number
           status?: string
           updated_at?: string
+          usd_per_1000_credits?: number
         }
         Relationships: []
       }
@@ -3416,6 +3431,9 @@ export type Database = {
       admin_voice_model_stats: {
         Args: never
         Returns: {
+          avg_characters: number
+          avg_cost_usd: number
+          avg_credits: number
           avg_duration_seconds: number
           avg_generation_ms: number
           failed: number
@@ -3424,6 +3442,7 @@ export type Database = {
           succeeded: number
           total: number
           total_characters: number
+          total_credits: number
         }[]
       }
       claim_first_free_greeting: {

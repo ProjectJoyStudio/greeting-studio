@@ -70,6 +70,9 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
     durationSeconds: Number(row['duration_seconds'] ?? 0),
     characterCount: Number(row['character_count'] ?? 0),
     generatedAt: row['generated_at'],
+    modelId: row['model_id'] ?? "",
+    modelLabel: row['model_label'] || (row['model_id'] ?? ""),
+    creditsUsed: Number(row['credits_used'] ?? 0),
     audioUrl: await signed(row['storage_bucket'] ?? BUCKET, row['storage_path']),
     greetingText: row['greeting_text'] ?? "",
   };
@@ -96,8 +99,9 @@ export async function generateVoiceover(args: {
 
   if (!text) throw new Error("greeting_required");
 
-  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
-  const modelId = await getProductionVoiceModel(provider);
+  const { getProductionVoiceModelInfo } = await import("@/lib/admin/voice-settings/models.server");
+  const model = await getProductionVoiceModelInfo(provider);
+  const modelId = model.modelKey;
 
   let result;
   try {
@@ -139,6 +143,8 @@ export async function generateVoiceover(args: {
       voice_name: voice.name,
       language: args.language,
       model_id: result.modelId,
+      model_label: model.label,
+      credits_used: result.creditsUsed ?? Math.round(text.length * model.creditMultiplier),
       storage_bucket: BUCKET,
       storage_path: path,
       mime_type: result.mimeType,
@@ -176,6 +182,9 @@ export async function generateVoiceover(args: {
     durationSeconds: result.durationSeconds,
     characterCount: text.length,
     generatedAt,
+    modelId: result.modelId,
+    modelLabel: model.label,
+    creditsUsed: result.creditsUsed ?? Math.round(text.length * model.creditMultiplier),
     audioUrl: await signed(BUCKET, path),
     greetingText: text,
   };

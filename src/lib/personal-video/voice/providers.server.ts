@@ -18,6 +18,8 @@ export interface SynthesisResult {
   extension: string;
   durationSeconds: number;
   modelId: string;
+  /** Voice credits the studio reported for this request, when it reports them. */
+  creditsUsed: number | null;
 }
 
 export interface VoiceEngine {
@@ -61,6 +63,10 @@ const elevenLabs: VoiceEngine = {
       throw new Error(`voice_request_failed:${res.status}:${detail.slice(0, 300)}`);
     }
 
+    const reported = Number(
+      res.headers.get("character-cost") ?? res.headers.get("x-character-cost") ?? "",
+    );
+
     const json = (await res.json()) as {
       audio_base64?: string;
       alignment?: { character_end_times_seconds?: number[] } | null;
@@ -76,6 +82,7 @@ const elevenLabs: VoiceEngine = {
       extension: "mp3",
       durationSeconds: Math.round(durationSeconds * 100) / 100,
       modelId: model,
+      creditsUsed: Number.isFinite(reported) && reported > 0 ? reported : null,
     };
   },
 };
