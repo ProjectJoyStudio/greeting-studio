@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -50,12 +50,15 @@ export function ModelTestingPage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [urls, setUrls] = useState<Record<string, string>>({});
 
+  const preselectApplied = useRef(false);
   useEffect(() => {
     if (usable.length === 0) return;
-    const preselected = search.model && usable.some((m) => m.id === search.model) ? search.model : null;
-    if (preselected && modelId !== preselected) {
-      setModelId(preselected);
-      return;
+    if (!preselectApplied.current) {
+      preselectApplied.current = true;
+      if (search.model && usable.some((m) => m.id === search.model)) {
+        setModelId(search.model);
+        return;
+      }
     }
     if (!modelId) setModelId(usable[0]!.id);
   }, [modelId, usable, search.model]);
