@@ -58,6 +58,7 @@ const K: Record<string, Row> = {
   admin_nav_catalog: { en: "Catalog", ru: "Каталог", de: "Katalog", uk: "Каталог", fr: "Catalogue", pl: "Katalog" },
   admin_nav_credit_packages: { en: "Credit Packages", ru: "Пакеты кредитов", de: "Kreditpakete", uk: "Пакети кредитів", fr: "Packs de crédits", pl: "Pakiety kredytów" },
   admin_nav_dev_credits: { en: "Developer Test Credits", ru: "Тестовые кредиты", de: "Entwickler-Testkredits", uk: "Тестові кредити", fr: "Crédits de test", pl: "Kredyty testowe" },
+  admin_nav_voice_settings: { en: "Voice Settings", ru: "Настройки голоса", de: "Spracheinstellungen", uk: "Налаштування голосу", fr: "Paramètres de voix", pl: "Ustawienia głosu" },
   admin_nav_promotions: { en: "Promotions", ru: "Акции", de: "Aktionen", uk: "Акції", fr: "Promotions", pl: "Promocje" },
   admin_nav_notifications: { en: "Notifications", ru: "Уведомления", de: "Benachrichtigungen", uk: "Сповіщення", fr: "Notifications", pl: "Powiadomienia" },
   admin_nav_languages: { en: "Languages", ru: "Языки", de: "Sprachen", uk: "Мови", fr: "Langues", pl: "Języki" },
