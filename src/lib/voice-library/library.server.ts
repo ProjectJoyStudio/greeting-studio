@@ -277,13 +277,14 @@ export async function verifyPreviews(voiceRowIds?: string[]): Promise<{
   checked: number;
   repaired: number;
   failed: number;
+  hidden: number;
 }> {
   const db = await admin();
   let query = db.from("voice_library").select("id, provider, external_voice_id").eq("is_active", true);
   if (voiceRowIds && voiceRowIds.length > 0) query = query.in("id", voiceRowIds);
   const { data } = await query;
   const voices = (data ?? []) as { id: string; provider: string; external_voice_id: string }[];
-  if (voices.length === 0) return { checked: 0, repaired: 0, failed: 0 };
+  if (voices.length === 0) return { checked: 0, repaired: 0, failed: 0, hidden: 0 };
 
   const { data: previewRows } = await db
     .from("voice_previews")
@@ -295,9 +296,11 @@ export async function verifyPreviews(voiceRowIds?: string[]): Promise<{
   let checked = 0;
   let repaired = 0;
   let failed = 0;
+  const unusable: string[] = [];
 
   for (const voice of voices) {
     const files = await storedFiles(voice.provider || DEFAULT_VOICE_PROVIDER, voice.external_voice_id);
+    let voiceFailed = false;
     for (const language of PREVIEW_LANGUAGES) {
       checked += 1;
       const row = byKey.get(`${voice.id}:${language}`);
@@ -308,14 +311,21 @@ export async function verifyPreviews(voiceRowIds?: string[]): Promise<{
         repaired += 1;
       } catch (error) {
         failed += 1;
+        voiceFailed = true;
         console.warn(
           `[voice-library] preview repair failed voice=${voice.id} language=${language}: ` +
             (error instanceof Error ? error.message : "unknown"),
         );
       }
     }
+    // A voice whose sample cannot be prepared leaves the offered library, so no
+    // silent preview button can ever appear for it.
+    if (voiceFailed) unusable.push(voice.id);
   }
-  return { checked, repaired, failed };
+  if (unusable.length > 0) {
+    await db.from("voice_library").update({ is_active: false } as never).in("id", unusable);
+  }
+  return { checked, repaired, failed, hidden: unusable.length };
 }
 
 /**
