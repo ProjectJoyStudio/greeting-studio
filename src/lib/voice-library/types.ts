@@ -38,6 +38,17 @@ export function voiceLabel(voice: LibraryVoice): string {
   return voice.displayName || voice.name;
 }
 
+/** The three groups a person chooses from: female, male or children. */
+export type VoiceCategory = "female" | "male" | "children";
+
+export function voiceCategory(voice: LibraryVoice): VoiceCategory {
+  const hay = `${voice.gender} ${voice.category} ${voice.description}`.toLowerCase();
+  if (hay.includes("child") || hay.includes("kid")) return "children";
+  if (voice.gender.toLowerCase().includes("female")) return "female";
+  if (voice.gender.toLowerCase().includes("male")) return "male";
+  return "female";
+}
+
 /** The saved preview for one language, falling back to English then any. */
 export function previewFor(voice: LibraryVoice, language: string): VoicePreview | null {
   const code = language.slice(0, 2).toLowerCase();

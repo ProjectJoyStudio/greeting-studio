@@ -7,7 +7,7 @@ import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 export const PROJECT_COLUMNS =
   "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after";
 export const PERSON_COLUMNS =
-  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source";
+  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name";
 export const SCENE_COLUMNS =
   "id, project_id, variation_index, status, storage_bucket, storage_path, error_code, error_message, prediction_id, created_at";
 
@@ -48,6 +48,8 @@ export interface PersonRow {
   extra_photos: unknown;
   face_quality: string;
   source: string;
+  voice_id?: string | null;
+  voice_name?: string | null;
 }
 
 export interface SceneRow {
@@ -82,6 +84,8 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
     faceQuality: quality,
     source: row.source === "group" ? "group" : "individual",
     extraPhotoCount: Array.isArray(row.extra_photos) ? row.extra_photos.length : 0,
+    voiceId: row.voice_id ?? null,
+    voiceName: row.voice_name ?? null,
   };
 }
 

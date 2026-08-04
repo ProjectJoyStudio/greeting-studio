@@ -54,3 +54,30 @@ export const previewPvgVoice = createServerFn({ method: "POST" })
     const { previewVoice } = await import("./voice/voice.server");
     return previewVoice({ voiceId: data.voiceId, language: data.language });
   });
+
+/** Gives one participant a voice, or takes their voice away again. */
+export const assignPvgPersonVoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      projectId: string;
+      personId: string;
+      voiceId: string | null;
+      voiceName?: string | null;
+      provider?: string | null;
+    }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ saved: true }> => {
+    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { error } = await context.supabase
+      .from("pvg_people")
+      .update({
+        voice_id: data.voiceId,
+        voice_name: data.voiceId ? (data.voiceName ?? null) : null,
+        voice_provider: data.voiceId ? (data.provider ?? null) : null,
+      })
+      .eq("id", data.personId)
+      .eq("project_id", data.projectId);
+    if (error) throw new Error(error.message);
+    return { saved: true as const };
+  });
