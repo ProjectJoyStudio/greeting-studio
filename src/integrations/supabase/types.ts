@@ -3212,6 +3212,66 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_library: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_name: string | null
+          external_voice_id: string
+          gender: string | null
+          id: string
+          imported_at: string
+          is_active: boolean
+          labels: Json
+          language: string | null
+          model_compatibility: string[]
+          name: string
+          provider: string
+          provider_preview_url: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          external_voice_id: string
+          gender?: string | null
+          id?: string
+          imported_at?: string
+          is_active?: boolean
+          labels?: Json
+          language?: string | null
+          model_compatibility?: string[]
+          name: string
+          provider?: string
+          provider_preview_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          external_voice_id?: string
+          gender?: string | null
+          id?: string
+          imported_at?: string
+          is_active?: boolean
+          labels?: Json
+          language?: string | null
+          model_compatibility?: string[]
+          name?: string
+          provider?: string
+          provider_preview_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       voice_model_tests: {
         Row: {
           admin_user_id: string
@@ -3331,6 +3391,62 @@ export type Database = {
           usd_per_1000_credits?: number
         }
         Relationships: []
+      }
+      voice_previews: {
+        Row: {
+          character_count: number
+          created_at: string
+          duration_seconds: number
+          generated_at: string
+          id: string
+          language: string
+          mime_type: string
+          model_key: string | null
+          sample_text: string | null
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          voice_id: string
+        }
+        Insert: {
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          generated_at?: string
+          id?: string
+          language: string
+          mime_type?: string
+          model_key?: string | null
+          sample_text?: string | null
+          storage_bucket?: string
+          storage_path: string
+          updated_at?: string
+          voice_id: string
+        }
+        Update: {
+          character_count?: number
+          created_at?: string
+          duration_seconds?: number
+          generated_at?: string
+          id?: string
+          language?: string
+          mime_type?: string
+          model_key?: string | null
+          sample_text?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_previews_voice_id_fkey"
+            columns: ["voice_id"]
+            isOneToOne: false
+            referencedRelation: "voice_library"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voice_profiles: {
         Row: {
