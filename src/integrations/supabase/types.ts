@@ -2760,6 +2760,105 @@ export type Database = {
           },
         ]
       }
+      pvg_voice_recordings: {
+        Row: {
+          active_version: string
+          created_at: string
+          duration_seconds: number
+          enhanced_bucket: string | null
+          enhanced_mime: string | null
+          enhanced_path: string | null
+          id: string
+          language: string
+          original_bucket: string | null
+          original_mime: string | null
+          original_path: string | null
+          permission_confirmed: boolean
+          permission_confirmed_at: string | null
+          person_id: string
+          processed_bucket: string | null
+          processed_mime: string | null
+          processed_path: string | null
+          processing_error: string | null
+          processing_status: string
+          project_id: string
+          updated_at: string
+          user_id: string
+          voice_model_id: string | null
+          voice_model_provider: string | null
+          voice_model_status: string
+        }
+        Insert: {
+          active_version?: string
+          created_at?: string
+          duration_seconds?: number
+          enhanced_bucket?: string | null
+          enhanced_mime?: string | null
+          enhanced_path?: string | null
+          id?: string
+          language?: string
+          original_bucket?: string | null
+          original_mime?: string | null
+          original_path?: string | null
+          permission_confirmed?: boolean
+          permission_confirmed_at?: string | null
+          person_id: string
+          processed_bucket?: string | null
+          processed_mime?: string | null
+          processed_path?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          project_id: string
+          updated_at?: string
+          user_id: string
+          voice_model_id?: string | null
+          voice_model_provider?: string | null
+          voice_model_status?: string
+        }
+        Update: {
+          active_version?: string
+          created_at?: string
+          duration_seconds?: number
+          enhanced_bucket?: string | null
+          enhanced_mime?: string | null
+          enhanced_path?: string | null
+          id?: string
+          language?: string
+          original_bucket?: string | null
+          original_mime?: string | null
+          original_path?: string | null
+          permission_confirmed?: boolean
+          permission_confirmed_at?: string | null
+          person_id?: string
+          processed_bucket?: string | null
+          processed_mime?: string | null
+          processed_path?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+          voice_model_id?: string | null
+          voice_model_provider?: string | null
+          voice_model_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_voice_recordings_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: true
+            referencedRelation: "pvg_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvg_voice_recordings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pvg_voiceovers: {
         Row: {
           character_count: number
