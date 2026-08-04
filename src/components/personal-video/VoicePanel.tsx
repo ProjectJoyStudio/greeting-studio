@@ -522,11 +522,78 @@ export function VoicePanel({
           return;
         }
       } else if (speechMode === "parts") {
+        // The video always opens and ends in silence, so the speech itself is
+        // given a little less time than the video lasts.
+        const budget = speechBudgetSeconds(videoSeconds ?? 0);
+
+        // Every part as it stands today, shortened together when the greeting
+        // would take longer to speak than the video allows.
+        let texts = participants.map((person, index) => partOf(person, index).trim());
+        const recordedSeconds = participants.reduce(
+          (sum, person) => sum + (recordings[person.id]?.durationSeconds ?? 0),
+          0,
+        );
+        const spokenWords = texts.reduce(
+          (sum, text, index) =>
+            recordings[participants[index]!.id]
+              ? sum
+              : sum + (text ? text.split(/\s+/).length : 0),
+          0,
+        );
+        const estimate =
+          recordedSeconds +
+          spokenWords / PVS_WORDS_PER_SECOND +
+          Math.max(0, participants.length - 1) * PVG_MIN_PART_GAP_SECONDS;
+
+        if (budget > 0 && estimate > budget && spokenWords > 0) {
+          const room = Math.max(
+            1,
+            budget - recordedSeconds - (participants.length - 1) * PVG_MIN_PART_GAP_SECONDS,
+          );
+          const fitted = await fitGreeting({
+            data: { projectId, text: greeting, budgetSeconds: room, language },
+          }).catch(() => ({ text: "" }));
+          if (fitted.text.trim()) {
+            const shared = splitGreeting(fitted.text.trim(), participants.length);
+            const next: Record<string, string> = {};
+            participants.forEach((person, index) => {
+              next[person.id] = shared[index] ?? "";
+            });
+            setParts(next);
+            texts = participants.map((person) => (next[person.id] ?? "").trim());
+            participants.forEach((person) => {
+              void savePart({
+                data: { projectId, personId: person.id, partText: next[person.id] ?? "" },
+              }).catch(() => undefined);
+            });
+          }
+        }
+
+        // A gentle quickening only when the words still need slightly less time.
+        const roomForSpeech = Math.max(
+          0.5,
+          (budget || 0) -
+            recordedSeconds -
+            Math.max(0, participants.length - 1) * PVG_MIN_PART_GAP_SECONDS,
+        );
+        const wordsNow = texts.reduce(
+          (sum, text, index) =>
+            recordings[participants[index]!.id]
+              ? sum
+              : sum + (text ? text.split(/\s+/).length : 0),
+          0,
+        );
+        const needed = wordsNow / PVS_WORDS_PER_SECOND;
+        const speed =
+          budget > 0 && needed > roomForSpeech
+            ? Math.min(1.2, Math.round((needed / roomForSpeech) * 100) / 100)
+            : 1;
+
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
         for (let index = 0; index < participants.length; index += 1) {
           const person = participants[index]!;
-          const text = partOf(person, index).trim();
+          const text = texts[index] ?? "";
           const recording = recordings[person.id];
           if (recording?.activeUrl) {
             sources.push({ url: recording.activeUrl });
@@ -539,7 +606,7 @@ export function VoicePanel({
           }
           const voice = assignments[person.id];
           if (!text || !voice) continue;
-          const track = await speak(text, voice.id);
+          const track = await speak(text, voice.id, speed);
           sources.push(track);
           summary.push({
             label: `${participantLabel(person, index)} — ${voice.name}`,
@@ -551,7 +618,7 @@ export function VoicePanel({
           toast.error(t("pvv_parts_missing"));
           return;
         }
-        const merged = await mergeInOrder(sources);
+        const merged = await mergeInOrder(sources, { maxSeconds: budget });
         const res = await saveMerged({
           data: {
             projectId,
