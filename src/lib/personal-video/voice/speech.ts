@@ -57,6 +57,50 @@ export function speechBudgetSeconds(videoSeconds: number): number {
 /** How far apart voices start when they speak together, slightly delayed. */
 export const PVG_CHORUS_DELAY_SECONDS = 0.09;
 
+/** The fastest Project Joy ever speaks; the voice still sounds natural. */
+export const PVG_MAX_SPEECH_SPEED = 1.2;
+
+/** How long one voice needs for a single word before anything is measured. */
+export const PVG_DEFAULT_SECONDS_PER_WORD = 1 / 2.2;
+
+export function wordCount(text: string): number {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+/** One participant as the estimate sees them. */
+export interface PvgPartEstimate {
+  /** Length of a recording the person brought, in seconds. */
+  recordedSeconds?: number;
+  /** Words this person speaks with a Project Joy voice. */
+  words?: number;
+  /** How long this exact voice needs per word, as measured before. */
+  secondsPerWord?: number;
+}
+
+/**
+ * How long the whole greeting will take: every participant with their own
+ * voice speed, the shortest pause between them, and the quiet half second at
+ * the start and the end of the video.
+ */
+export function estimateSpeechSeconds(parts: PvgPartEstimate[], speed = 1): number {
+  const speaking = parts.reduce((sum, part) => {
+    if (part.recordedSeconds) return sum + part.recordedSeconds;
+    const rate = part.secondsPerWord ?? PVG_DEFAULT_SECONDS_PER_WORD;
+    return sum + ((part.words ?? 0) * rate) / Math.max(0.5, speed);
+  }, 0);
+  const gaps = Math.max(0, parts.length - 1) * PVG_MIN_PART_GAP_SECONDS;
+  return Math.round((speaking + gaps) * 100) / 100;
+}
+
+/** The same estimate seen as the length of the whole video. */
+export function estimateVideoSeconds(parts: PvgPartEstimate[], speed = 1): number {
+  return (
+    Math.round(
+      (estimateSpeechSeconds(parts, speed) + PVG_LEAD_IN_SECONDS + PVG_TAIL_OUT_SECONDS) * 100,
+    ) / 100
+  );
+}
+
 /**
  * Shares one greeting fairly between the participants, sentence by sentence,
  * so every person receives a whole thought instead of a broken line.

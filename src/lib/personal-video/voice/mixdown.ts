@@ -26,6 +26,8 @@ export interface MixResult {
   base64: string;
   mimeType: "audio/wav";
   durationSeconds: number;
+  /** True when the recording is still longer than the time allowed. */
+  overflow?: boolean;
 }
 
 function base64ToBytes(value: string): Uint8Array {
@@ -128,6 +130,13 @@ function encodeWav(samples: Float32Array): Uint8Array {
 export interface MixOptions {
   /** Longest the finished recording may ever be, in seconds. 0 = no limit. */
   maxSeconds?: number;
+  /**
+   * Whether a recording that is still too long may be quickened as a last
+   * step. Turned off where the words of a person must never be altered.
+   */
+  compress?: boolean;
+  /** Fixed pause between two parts, in seconds. */
+  gapSeconds?: number;
 }
 
 /**
@@ -144,8 +153,8 @@ export async function mergeInOrder(
   const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
   const spoken = tracks.reduce((sum, t) => sum + t.length, 0);
 
-  let gapSeconds = PVG_PART_GAP_SECONDS;
-  if (limit && tracks.length > 1) {
+  let gapSeconds = options.gapSeconds ?? PVG_PART_GAP_SECONDS;
+  if (options.gapSeconds === undefined && limit && tracks.length > 1) {
     const room = limit * SAMPLE_RATE - spoken;
     const perGap = room / (tracks.length - 1) / SAMPLE_RATE;
     gapSeconds = Math.max(PVG_MIN_PART_GAP_SECONDS, Math.min(PVG_PART_GAP_SECONDS, perGap));
@@ -159,8 +168,10 @@ export async function mergeInOrder(
     out.set(track, offset);
     offset += track.length + gap;
   }
-  if (limit) out = fitWithin(out, limit);
-  return finish(out);
+  const tooLong = Boolean(limit) && out.length > Math.floor(limit * SAMPLE_RATE);
+  if (limit && options.compress !== false) out = fitWithin(out, limit);
+  const result = finish(out);
+  return options.compress === false ? { ...result, overflow: tooLong } : result;
 }
 
 /**
@@ -213,7 +224,21 @@ function fitWithin(
 
 async function prepare(source: MixSource): Promise<Float32Array> {
   const buffer = await decode(source);
-  return resample(levelled(buffer), buffer.sampleRate);
+  return trimSilence(resample(levelled(buffer), buffer.sampleRate));
+}
+
+/** Quiet moments at the very start and the very end are simply removed. */
+function trimSilence(samples: Float32Array): Float32Array {
+  const threshold = 0.012;
+  const keep = Math.round(0.02 * SAMPLE_RATE);
+  let start = 0;
+  while (start < samples.length && Math.abs(samples[start]!) < threshold) start += 1;
+  let end = samples.length - 1;
+  while (end > start && Math.abs(samples[end]!) < threshold) end -= 1;
+  if (start >= end) return samples;
+  const from = Math.max(0, start - keep);
+  const to = Math.min(samples.length, end + keep);
+  return samples.slice(from, to);
 }
 
 function finish(samples: Float32Array): MixResult {
