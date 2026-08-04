@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { PvgVoiceover } from "./voice/catalog";
+import type { PvgVoiceRecording } from "./voice/recordings";
 
 async function assertOwner(
   supabase: {
@@ -176,23 +177,51 @@ export const savePvgMergedVoiceover = createServerFn({ method: "POST" })
     };
   });
 
-/** Keeps the recording a participant made or brought with their own voice. */
+/**
+ * Keeps the recording a participant made or brought with their own voice: the
+ * original exactly as it arrived and the version Project Joy prepared from it.
+ */
 export const savePvgPersonRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (input: {
       projectId: string;
       personId: string;
-      audioBase64: string;
-      mimeType: string;
+      language: string;
+      originalBase64: string;
+      originalMime: string;
       extension: string;
+      processedBase64: string;
+      processedMime: string;
       durationSeconds: number;
+      permissionConfirmed: boolean;
     }) => input,
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ recording: PvgVoiceRecording }> => {
     await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const { savePersonRecording } = await import("./voice/voice.server");
-    return savePersonRecording({ ...data, userId: context.userId });
+    const { savePersonRecording } = await import("./voice/recordings.server");
+    return { recording: await savePersonRecording({ ...data, userId: context.userId }) };
+  });
+
+/** Every personal recording of one project, so nothing is ever lost. */
+export const listPvgPersonRecordings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }): Promise<{ recordings: PvgVoiceRecording[] }> => {
+    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { listRecordings } = await import("./voice/recordings.server");
+    return { recordings: await listRecordings(data.projectId) };
+  });
+
+/** Confirms permission to use the voice heard in a personal recording. */
+export const confirmPvgRecordingPermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; personId: string; confirmed: boolean }) => input)
+  .handler(async ({ data, context }): Promise<{ saved: true }> => {
+    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { confirmRecordingPermission } = await import("./voice/recordings.server");
+    await confirmRecordingPermission(data.projectId, data.personId, data.confirmed);
+    return { saved: true as const };
   });
 
 /** Removes the personal recording of one participant. */
@@ -201,7 +230,7 @@ export const deletePvgPersonRecording = createServerFn({ method: "POST" })
   .inputValidator((input: { projectId: string; personId: string }) => input)
   .handler(async ({ data, context }): Promise<{ removed: true }> => {
     await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const { deletePersonRecording } = await import("./voice/voice.server");
+    const { deletePersonRecording } = await import("./voice/recordings.server");
     await deletePersonRecording(data.projectId, data.personId);
     return { removed: true as const };
   });

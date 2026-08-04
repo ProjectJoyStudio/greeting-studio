@@ -29,11 +29,12 @@ export function RecordingStudio({
 }: {
   greeting: string;
   disabled?: boolean;
-  onReady: (recording: PendingRecording) => void;
+  onReady: (recording: PendingRecording, permissionConfirmed: boolean) => void;
 }) {
   const { t } = useI18n();
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [permission, setPermission] = useState(false);
   const [pending, setPending] = useState<PendingRecording | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -52,6 +53,7 @@ export function RecordingStudio({
       const objectUrl = URL.createObjectURL(blob);
       const durationSeconds = await audioDuration({ base64, mimeType });
       const next = { base64, mimeType, extension, durationSeconds, objectUrl };
+      setPermission(false);
       setPending((old) => {
         if (old) URL.revokeObjectURL(old.objectUrl);
         return next;
@@ -161,11 +163,27 @@ export function RecordingStudio({
           <p className="mt-2 text-[11px] text-muted-foreground">
             {t("pvv_recording_duration")}: {Math.round(pending.durationSeconds * 10) / 10}s
           </p>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={permission}
+              disabled={disabled}
+              onChange={(event) => setPermission(event.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 accent-[hsl(var(--primary))]"
+            />
+            <span>{t("pvv_permission_confirm")}</span>
+          </label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               disabled={disabled}
-              onClick={() => onReady(pending)}
+              onClick={() => {
+                if (!permission) {
+                  toast.error(t("pvv_err_permission"));
+                  return;
+                }
+                onReady(pending, true);
+              }}
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
             >
               {t("pvv_use_recording")}

@@ -21,9 +21,11 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
   assignPvgPersonVoice,
+  confirmPvgRecordingPermission,
   deletePvgPersonRecording,
   generatePvgVoiceover,
   getPvgVoiceover,
+  listPvgPersonRecordings,
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
@@ -40,6 +42,11 @@ import {
   type PvgSpeechMode,
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
+import {
+  validateVoiceSetup,
+  voiceIssueText,
+  type PvgVoiceRecording,
+} from "@/lib/personal-video/voice/recordings";
 import { mergeInOrder, mergeTogether, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
@@ -80,6 +87,7 @@ export function VoicePanel({
   people,
   greeting,
   language,
+  videoSeconds,
   disabled,
   speechMode: savedSpeechMode,
   syncMode: savedSyncMode,
@@ -90,6 +98,7 @@ export function VoicePanel({
   people: PvgPerson[];
   greeting: string;
   language: string;
+  videoSeconds?: number;
   disabled?: boolean;
   speechMode?: PvgSpeechMode;
   syncMode?: PvgSyncMode;
@@ -108,6 +117,8 @@ export function VoicePanel({
   const saveMerged = useServerFn(savePvgMergedVoiceover);
   const saveRecording = useServerFn(savePvgPersonRecording);
   const dropRecording = useServerFn(deletePvgPersonRecording);
+  const loadRecordings = useServerFn(listPvgPersonRecordings);
+  const confirmPermission = useServerFn(confirmPvgRecordingPermission);
 
   const library = useQuery({
     queryKey: ["voice-library", "active"],
@@ -126,9 +137,11 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
-  const [recordings, setRecordings] = useState<
-    Record<string, { url: string | null; seconds: number }>
-  >({});
+  const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
+  const [preparing, setPreparing] = useState(false);
+  const [prepared, setPrepared] = useState(false);
+  const [permissionForPending, setPermissionForPending] = useState(false);
+  const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
@@ -148,23 +161,29 @@ export function VoicePanel({
 
   useEffect(() => {
     const nextVoices: Record<string, Assignment> = {};
-    const nextRecordings: Record<string, { url: string | null; seconds: number }> = {};
     const nextParts: Record<string, string> = {};
     for (const person of participants) {
       if (person.voiceId)
         nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
-      if (person.recordingUrl || person.voiceSource === "recording") {
-        nextRecordings[person.id] = {
-          url: person.recordingUrl,
-          seconds: person.recordingDurationSeconds,
-        };
-      }
       if (person.partText) nextParts[person.id] = person.partText;
     }
     setAssignments(nextVoices);
-    setRecordings(nextRecordings);
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
+
+  // Everything a person recorded before is restored exactly as they left it.
+  const storedRecordings = useQuery({
+    queryKey: ["pvg", "recordings", projectId],
+    queryFn: () => loadRecordings({ data: { projectId } }),
+  });
+
+  useEffect(() => {
+    const list = storedRecordings.data?.recordings;
+    if (!list) return;
+    const next: Record<string, PvgVoiceRecording> = {};
+    for (const recording of list) next[recording.personId] = recording;
+    setRecordings(next);
+  }, [storedRecordings.data]);
 
   useEffect(() => {
     if (!savedChorus?.length || chorus.length) return;
@@ -318,18 +337,36 @@ export function VoicePanel({
     setPending(voice);
   }
 
-  /** A recording made or brought by a person is kept with one participant. */
-  async function keepRecording(person: PvgPerson, recording: PendingRecording) {
+  /**
+   * A recording a person made or brought is prepared by Project Joy and kept
+   * with one participant. Nothing here is ever chosen by the person: the whole
+   * preparation simply happens.
+   */
+  async function keepRecording(
+    person: PvgPerson,
+    recording: PendingRecording,
+    permissionConfirmed: boolean,
+  ) {
     setPendingRecording(null);
+    setPrepared(false);
+    setPreparing(true);
     try {
+      // Project Joy levels and tidies the recording before it is stored.
+      const ready = await mergeInOrder([
+        { base64: recording.base64, mimeType: recording.mimeType },
+      ]);
       const res = await saveRecording({
         data: {
           projectId,
           personId: person.id,
-          audioBase64: recording.base64,
-          mimeType: recording.mimeType,
+          language,
+          originalBase64: recording.base64,
+          originalMime: recording.mimeType,
           extension: recording.extension,
-          durationSeconds: recording.durationSeconds,
+          processedBase64: ready.base64,
+          processedMime: ready.mimeType,
+          durationSeconds: ready.durationSeconds || recording.durationSeconds,
+          permissionConfirmed,
         },
       });
       setAssignments((prev) => {
@@ -337,23 +374,25 @@ export function VoicePanel({
         delete next[person.id];
         return next;
       });
-      setRecordings((prev) => ({
-        ...prev,
-        [person.id]: { url: res.audioUrl, seconds: res.durationSeconds },
-      }));
+      setRecordings((prev) => ({ ...prev, [person.id]: res.recording }));
+      setPrepared(true);
       toast.success(t("pvv_recording_assigned"));
       onAssigned?.();
+      void storedRecordings.refetch();
     } catch {
       toast.error(t("pvv_failed"));
+    } finally {
+      setPreparing(false);
     }
   }
 
-  function acceptRecording(recording: PendingRecording) {
+  function acceptRecording(recording: PendingRecording, permissionConfirmed: boolean) {
     const only = participants[0];
     if (participants.length === 1 && only) {
-      void keepRecording(only, recording);
+      void keepRecording(only, recording, permissionConfirmed);
       return;
     }
+    setPermissionForPending(permissionConfirmed);
     setPendingRecording(recording);
   }
 
@@ -392,8 +431,23 @@ export function VoicePanel({
 
   async function generate() {
     if (running.current || busy || disabled) return;
-    if (greeting.trim().length < 2) {
-      toast.error(t("pvv_need_text"));
+    const found = validateVoiceSetup({
+      speechMode,
+      greeting,
+      videoSeconds: videoSeconds ?? 0,
+      chorusVoiceCount: chorus.length,
+      participants: participants.map((person, index) => ({
+        id: person.id,
+        label: participantLabel(person, index),
+        voiceId: assignments[person.id]?.id ?? null,
+        partText: partOf(person, index),
+        recording: recordings[person.id] ?? null,
+      })),
+    });
+    setIssues(found);
+    const first = found[0];
+    if (first) {
+      toast.error(voiceIssueText(first, t));
       return;
     }
     running.current = true;
@@ -409,8 +463,8 @@ export function VoicePanel({
           audioRef.current?.pause();
           setPlaying(false);
           setVoiceover(res.voiceover);
-        } else if (ownRecording?.url && first) {
-          const merged = await mergeInOrder([{ url: ownRecording.url }]);
+        } else if (ownRecording?.activeUrl && first) {
+          const merged = await mergeInOrder([{ url: ownRecording.activeUrl }]);
           const res = await saveMerged({
             data: {
               projectId,
@@ -446,11 +500,11 @@ export function VoicePanel({
           const person = participants[index]!;
           const text = partOf(person, index).trim();
           const recording = recordings[person.id];
-          if (recording?.url) {
-            sources.push({ url: recording.url });
+          if (recording?.activeUrl) {
+            sources.push({ url: recording.activeUrl });
             summary.push({
               label: participantLabel(person, index),
-              durationSeconds: recording.seconds,
+              durationSeconds: recording.durationSeconds,
               source: "recording",
             });
             continue;
@@ -856,7 +910,7 @@ export function VoicePanel({
               <button
                 key={person.id}
                 type="button"
-                onClick={() => void keepRecording(person, pendingRecording)}
+                onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
                 className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
                 {participantLabel(person, index)}
@@ -892,14 +946,39 @@ export function VoicePanel({
                   </span>
                 </span>
                 <span className="flex flex-wrap gap-1.5">
-                  {recording?.url && (
+                  {recording?.activeUrl && (
                     <button
                       type="button"
-                      onClick={() => void new Audio(recording.url!).play().catch(() => undefined)}
+                      onClick={() =>
+                        void new Audio(recording.activeUrl!).play().catch(() => undefined)
+                      }
                       className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
                     >
                       <Headphones className="h-3 w-3" />
                       {t("pvv_preview")}
+                    </button>
+                  )}
+                  {recording && !recording.permissionConfirmed && (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        setRecordings((prev) => {
+                          const current = prev[person.id];
+                          if (!current) return prev;
+                          return {
+                            ...prev,
+                            [person.id]: { ...current, permissionConfirmed: true },
+                          };
+                        });
+                        void confirmPermission({
+                          data: { projectId, personId: person.id, confirmed: true },
+                        }).catch(() => undefined);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
+                    >
+                      <Check className="h-3 w-3" />
+                      {t("pvv_permission_button")}
                     </button>
                   )}
                   {chosen && (
@@ -960,6 +1039,30 @@ export function VoicePanel({
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{t(voiceChanged ? "pvv_outdated_voice" : "pvv_outdated_text")}</span>
         </div>
+      )}
+
+      {preparing && (
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border/60 bg-background/60 p-4 text-xs text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span>{t("pvv_processing")}</span>
+        </div>
+      )}
+      {!preparing && prepared && (
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-xs">
+          <Check className="h-4 w-4 text-primary" />
+          <span>{t("pvv_processed")}</span>
+        </div>
+      )}
+
+      {issues.length > 0 && (
+        <ul className="mt-4 space-y-1.5 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-xs text-destructive">
+          {issues.map((issue, index) => (
+            <li key={`${issue.key}-${index}`} className="flex gap-2">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{voiceIssueText(issue, t)}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
