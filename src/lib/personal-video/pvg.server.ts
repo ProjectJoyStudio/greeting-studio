@@ -5,9 +5,9 @@ import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } 
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids";
 export const PERSON_COLUMNS =
-  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name";
+  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
   "id, project_id, variation_index, status, storage_bucket, storage_path, error_code, error_message, prediction_id, created_at";
 
@@ -34,6 +34,9 @@ export interface ProjectRow {
   greeting_mode?: string | null;
   greeting_text?: string | null;
   greeting_keywords?: string | null;
+  speech_mode?: string | null;
+  sync_mode?: string | null;
+  chorus_voice_ids?: unknown;
 }
 
 export interface PersonRow {
@@ -50,6 +53,11 @@ export interface PersonRow {
   source: string;
   voice_id?: string | null;
   voice_name?: string | null;
+  voice_source?: string | null;
+  part_text?: string | null;
+  recording_bucket?: string | null;
+  recording_path?: string | null;
+  recording_duration_seconds?: number | null;
 }
 
 export interface SceneRow {
@@ -86,6 +94,11 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
     extraPhotoCount: Array.isArray(row.extra_photos) ? row.extra_photos.length : 0,
     voiceId: row.voice_id ?? null,
     voiceName: row.voice_name ?? null,
+    voiceSource:
+      row.voice_source === "recording" ? "recording" : row.voice_source === "library" ? "library" : null,
+    partText: row.part_text ?? "",
+    recordingUrl: await signedUrl(row.recording_bucket ?? null, row.recording_path ?? null),
+    recordingDurationSeconds: Number(row.recording_duration_seconds ?? 0),
   };
 }
 
@@ -128,6 +141,12 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
       greetingText: row.greeting_text ?? "",
       greetingKeywords: row.greeting_keywords ?? "",
     },
+    speechMode:
+      row.speech_mode === "parts" || row.speech_mode === "chorus" ? row.speech_mode : "single",
+    syncMode: row.sync_mode === "simultaneous" ? "simultaneous" : "delayed",
+    chorusVoiceIds: Array.isArray(row.chorus_voice_ids)
+      ? (row.chorus_voice_ids as unknown[]).filter((v): v is string => typeof v === "string")
+      : [],
   };
 }
 
