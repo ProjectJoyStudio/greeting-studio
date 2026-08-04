@@ -193,7 +193,10 @@ export async function mergeTogether(
  * The last, dependable step: a recording that is still a little too long is
  * quickened just enough to end inside the time the video allows.
  */
-function fitWithin(samples: Float32Array, maxSeconds: number): Float32Array {
+function fitWithin(
+  samples: Float32Array<ArrayBuffer>,
+  maxSeconds: number,
+): Float32Array<ArrayBuffer> {
   const allowed = Math.floor(maxSeconds * SAMPLE_RATE);
   if (allowed <= 0 || samples.length <= allowed) return samples;
   const out = new Float32Array(allowed);
