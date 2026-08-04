@@ -23,7 +23,6 @@ import {
   assignPvgPersonVoice,
   confirmPvgRecordingPermission,
   deletePvgPersonRecording,
-  fitPvgGreetingToSpeech,
   generatePvgVoiceover,
   getPvgVoiceover,
   listPvgPersonRecordings,
@@ -36,16 +35,19 @@ import {
 } from "@/lib/personal-video/voice.functions";
 import type { PvgVoiceover } from "@/lib/personal-video/voice/catalog";
 import type { PvgPerson } from "@/lib/personal-video/types";
-import { PVS_WORDS_PER_SECOND } from "@/lib/personal-video/video-setup";
 import {
   PVG_MAX_CHORUS_VOICES,
   PVG_MIN_CHORUS_VOICES,
   PVG_MIN_PART_GAP_SECONDS,
+  PVG_MAX_SPEECH_SPEED,
+  estimateSpeechSeconds,
   speechBudgetSeconds,
   splitGreeting,
+  wordCount,
   type PvgSpeechMode,
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
+import { rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
 import {
   validateVoiceSetup,
   voiceIssueText,
