@@ -345,7 +345,7 @@ export function VoicePanel({
     }
   }
 
-  function useRecording(recording: PendingRecording) {
+  function acceptRecording(recording: PendingRecording) {
     const only = participants[0];
     if (participants.length === 1 && only) {
       void keepRecording(only, recording);
@@ -782,7 +782,7 @@ export function VoicePanel({
 
       {/* Record the greeting with your own voice -------------------------- */}
       {mode === "own" && (
-        <RecordingStudio greeting={greeting} disabled={disabled} onReady={useRecording} />
+        <RecordingStudio greeting={greeting} disabled={disabled} onReady={acceptRecording} />
       )}
 
       {/* Who should this voice be assigned to? --------------------------- */}
