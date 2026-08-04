@@ -406,12 +406,16 @@ export async function importVoices(options?: { withPreviews?: boolean }): Promis
   }
 
   const previews =
-    options?.withPreviews === false ? { created: 0, failed: 0 } : await fillMissingPreviews();
+    options?.withPreviews === false
+      ? { repaired: 0, failed: 0 }
+      : // Every newly imported voice automatically receives a sample in every
+        // Project Joy language, and any damaged sample is prepared again.
+        await verifyPreviews();
 
   return {
     imported: studio.length,
     added,
-    previewsCreated: previews.created,
+    previewsCreated: previews.repaired,
     previewsFailed: previews.failed,
   };
 }
