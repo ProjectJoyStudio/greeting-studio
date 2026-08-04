@@ -48,7 +48,7 @@ import {
   type PvgVoiceRecording,
 } from "@/lib/personal-video/voice/recordings";
 import { mergeInOrder, mergeTogether, type MixSource } from "@/lib/personal-video/voice/mixdown";
-import { voiceFailureKey } from "@/lib/personal-video/voice/errors";
+import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
 import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
   previewFor,
@@ -269,7 +269,9 @@ export function VoicePanel({
       sampleRef.current = audio;
       await audio.play();
     } catch (error) {
-      toast.error(t(voiceFailureKey(error)));
+      toast.error(
+        t(voiceFailureOf(error) === "voice_failed" ? "pvv_preview_failed" : voiceFailureKey(error)),
+      );
     } finally {
       setSamplingId(null);
     }
@@ -590,8 +592,8 @@ export function VoicePanel({
         setVoiceover(res.voiceover);
       }
       toast.success(t("pvv_success"));
-    } catch {
-      toast.error(t("pvv_failed"));
+    } catch (error) {
+      toast.error(t(voiceFailureKey(error)));
     } finally {
       running.current = false;
       setBusy(false);
@@ -778,7 +780,7 @@ export function VoicePanel({
             {t("pvv_choose_category")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.filter((c) => voices.some((v) => voiceCategory(v) === c)).map((c) => (
               <button
                 key={c}
                 type="button"
