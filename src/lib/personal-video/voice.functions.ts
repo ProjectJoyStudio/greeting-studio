@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { PvgVoiceover } from "./voice/catalog";
 
 async function assertOwner(
-  supabase: { from: (table: string) => any },
+  supabase: { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { maybeSingle: () => Promise<{ data: unknown }> } } } },
   projectId: string,
   userId: string,
 ): Promise<void> {

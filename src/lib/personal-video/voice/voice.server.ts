@@ -34,7 +34,7 @@ async function resolveVoice(
     .select("external_voice_id, name, display_name, provider, is_active")
     .eq("external_voice_id", voiceId)
     .maybeSingle();
-  const row = data as Record<string, any> | null;
+  const row = data as Record<string, unknown> | null;
   if (row) {
     return {
       id: row["external_voice_id"],
@@ -86,7 +86,7 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
     .eq("project_id", projectId)
     .maybeSingle();
   if (!data) return null;
-  const row = data as Record<string, any>;
+  const row = data as Record<string, unknown>;
   return {
     voiceId: row["voice_id"],
     voiceName: row["voice_name"] ?? findVoice(row["voice_id"]).name,
