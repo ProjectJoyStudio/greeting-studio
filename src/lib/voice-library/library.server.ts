@@ -385,7 +385,6 @@ export async function importVoices(options?: { withPreviews?: boolean }): Promis
       provider,
       external_voice_id: voice.voice_id,
       name: voice.name ?? voice.voice_id,
-      gender: guessGender(labels, ""),
       language,
       category: voice.category ?? "",
       labels,
@@ -395,6 +394,9 @@ export async function importVoices(options?: { withPreviews?: boolean }): Promis
     };
     if (!known.has(voice.voice_id)) {
       // Only a brand-new voice receives the studio description and is enabled.
+      // The voice type of a known voice is never overwritten: an administrator
+      // may have moved it into the children group by hand.
+      payload["gender"] = guessGender(labels, "");
       payload["description"] = voice.description ?? labels["description"] ?? "";
       payload["is_active"] = true;
       payload["imported_at"] = new Date().toISOString();
