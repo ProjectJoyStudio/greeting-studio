@@ -336,18 +336,36 @@ export function VoicePanel({
     setPending(voice);
   }
 
-  /** A recording made or brought by a person is kept with one participant. */
-  async function keepRecording(person: PvgPerson, recording: PendingRecording) {
+  /**
+   * A recording a person made or brought is prepared by Project Joy and kept
+   * with one participant. Nothing here is ever chosen by the person: the whole
+   * preparation simply happens.
+   */
+  async function keepRecording(
+    person: PvgPerson,
+    recording: PendingRecording,
+    permissionConfirmed: boolean,
+  ) {
     setPendingRecording(null);
+    setPrepared(false);
+    setPreparing(true);
     try {
+      // Project Joy levels and tidies the recording before it is stored.
+      const ready = await mergeInOrder([
+        { base64: recording.base64, mimeType: recording.mimeType },
+      ]);
       const res = await saveRecording({
         data: {
           projectId,
           personId: person.id,
-          audioBase64: recording.base64,
-          mimeType: recording.mimeType,
+          language,
+          originalBase64: recording.base64,
+          originalMime: recording.mimeType,
           extension: recording.extension,
-          durationSeconds: recording.durationSeconds,
+          processedBase64: ready.base64,
+          processedMime: ready.mimeType,
+          durationSeconds: ready.durationSeconds || recording.durationSeconds,
+          permissionConfirmed,
         },
       });
       setAssignments((prev) => {
@@ -355,23 +373,25 @@ export function VoicePanel({
         delete next[person.id];
         return next;
       });
-      setRecordings((prev) => ({
-        ...prev,
-        [person.id]: { url: res.audioUrl, seconds: res.durationSeconds },
-      }));
+      setRecordings((prev) => ({ ...prev, [person.id]: res.recording }));
+      setPrepared(true);
       toast.success(t("pvv_recording_assigned"));
       onAssigned?.();
+      void storedRecordings.refetch();
     } catch {
       toast.error(t("pvv_failed"));
+    } finally {
+      setPreparing(false);
     }
   }
 
-  function acceptRecording(recording: PendingRecording) {
+  function acceptRecording(recording: PendingRecording, permissionConfirmed: boolean) {
     const only = participants[0];
     if (participants.length === 1 && only) {
-      void keepRecording(only, recording);
+      void keepRecording(only, recording, permissionConfirmed);
       return;
     }
+    setPermissionForPending(permissionConfirmed);
     setPendingRecording(recording);
   }
 
@@ -410,8 +430,23 @@ export function VoicePanel({
 
   async function generate() {
     if (running.current || busy || disabled) return;
-    if (greeting.trim().length < 2) {
-      toast.error(t("pvv_need_text"));
+    const found = validateVoiceSetup({
+      speechMode,
+      greeting,
+      videoSeconds: videoSeconds ?? 0,
+      chorusVoiceCount: chorus.length,
+      participants: participants.map((person, index) => ({
+        id: person.id,
+        label: participantLabel(person, index),
+        voiceId: assignments[person.id]?.id ?? null,
+        partText: partOf(person, index),
+        recording: recordings[person.id] ?? null,
+      })),
+    });
+    setIssues(found);
+    const first = found[0];
+    if (first) {
+      toast.error(voiceIssueText(first, t));
       return;
     }
     running.current = true;
