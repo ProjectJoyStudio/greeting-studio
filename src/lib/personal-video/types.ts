@@ -28,6 +28,9 @@ export interface PvgPerson {
   faceQuality: PvgFaceQuality;
   source: "individual" | "group";
   extraPhotoCount: number;
+  /** The exact voice that speaks for this participant, kept with the order. */
+  voiceId: string | null;
+  voiceName: string | null;
 }
 
 export type PvgSceneStatus = "pending" | "processing" | "ready" | "failed";
