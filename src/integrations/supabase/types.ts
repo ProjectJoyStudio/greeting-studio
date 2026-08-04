@@ -2426,6 +2426,9 @@ export type Database = {
           source: string
           updated_at: string
           user_id: string
+          voice_id: string | null
+          voice_name: string | null
+          voice_provider: string | null
         }
         Insert: {
           created_at?: string
@@ -2442,6 +2445,9 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id: string
+          voice_id?: string | null
+          voice_name?: string | null
+          voice_provider?: string | null
         }
         Update: {
           created_at?: string
@@ -2458,6 +2464,9 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id?: string
+          voice_id?: string | null
+          voice_name?: string | null
+          voice_provider?: string | null
         }
         Relationships: [
           {
