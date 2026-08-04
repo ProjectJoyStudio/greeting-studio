@@ -532,67 +532,19 @@ export function VoicePanel({
         // given a little less time than the video lasts.
         const budget = speechBudgetSeconds(videoSeconds ?? 0);
 
-        // Every part as it stands today, shortened together when the greeting
-        // would take longer to speak than the video allows.
-        let texts = participants.map((person, index) => partOf(person, index).trim());
-        const recordedSeconds = participants.reduce(
-          (sum, person) => sum + (recordings[person.id]?.durationSeconds ?? 0),
-          0,
-        );
-        const spokenWords = texts.reduce(
-          (sum, text, index) =>
-            recordings[participants[index]!.id]
-              ? sum
-              : sum + (text ? text.split(/\s+/).length : 0),
-          0,
-        );
-        const estimate =
-          recordedSeconds +
-          spokenWords / PVS_WORDS_PER_SECOND +
-          Math.max(0, participants.length - 1) * PVG_MIN_PART_GAP_SECONDS;
+        // The lines belong to the people who wrote them: they are spoken
+        // exactly as they stand, never moved, shortened or rewritten.
+        const texts = participants.map((person, index) => partOf(person, index).trim());
 
-        if (budget > 0 && estimate > budget && spokenWords > 0) {
-          const room = Math.max(
-            1,
-            budget - recordedSeconds - (participants.length - 1) * PVG_MIN_PART_GAP_SECONDS,
-          );
-          const fitted = await fitGreeting({
-            data: { projectId, text: greeting, budgetSeconds: room, language },
-          }).catch(() => ({ text: "" }));
-          if (fitted.text.trim()) {
-            const shared = splitGreeting(fitted.text.trim(), participants.length);
-            const next: Record<string, string> = {};
-            participants.forEach((person, index) => {
-              next[person.id] = shared[index] ?? "";
-            });
-            setParts(next);
-            texts = participants.map((person) => (next[person.id] ?? "").trim());
-            participants.forEach((person) => {
-              void savePart({
-                data: { projectId, personId: person.id, partText: next[person.id] ?? "" },
-              }).catch(() => undefined);
-            });
-          }
-        }
-
-        // A gentle quickening only when the words still need slightly less time.
-        const roomForSpeech = Math.max(
-          0.5,
-          (budget || 0) -
-            recordedSeconds -
-            Math.max(0, participants.length - 1) * PVG_MIN_PART_GAP_SECONDS,
-        );
-        const wordsNow = texts.reduce(
-          (sum, text, index) =>
-            recordings[participants[index]!.id]
-              ? sum
-              : sum + (text ? text.split(/\s+/).length : 0),
-          0,
-        );
-        const needed = wordsNow / PVS_WORDS_PER_SECOND;
+        // Only the pace of the voices is adjusted, and only as much as the
+        // remaining time truly needs.
+        const estimate = estimateSpeechSeconds(partEstimates());
         const speed =
-          budget > 0 && needed > roomForSpeech
-            ? Math.min(1.2, Math.round((needed / roomForSpeech) * 100) / 100)
+          budget > 0 && estimate > budget
+            ? Math.min(
+                PVG_MAX_SPEECH_SPEED,
+                Math.max(1, Math.round((estimate / budget) * 100) / 100),
+              )
             : 1;
 
         const sources: MixSource[] = [];
@@ -613,6 +565,7 @@ export function VoicePanel({
           const voice = assignments[person.id];
           if (!text || !voice) continue;
           const track = await speak(text, voice.id, speed);
+          rememberPace(voice.id, language, wordCount(text), track.seconds, speed);
           sources.push(track);
           summary.push({
             label: `${participantLabel(person, index)} — ${voice.name}`,
@@ -624,7 +577,17 @@ export function VoicePanel({
           toast.error(t("pvv_parts_missing"));
           return;
         }
-        const merged = await mergeInOrder(sources, { maxSeconds: budget });
+        // Quiet edges are removed and the pauses stay at their shortest, but
+        // nothing is ever squeezed: the words themselves remain untouched.
+        const merged = await mergeInOrder(sources, {
+          maxSeconds: budget,
+          gapSeconds: PVG_MIN_PART_GAP_SECONDS,
+          compress: false,
+        });
+        if (merged.overflow) {
+          toast.error(t("pvv_parts_too_long"));
+          return;
+        }
         const res = await saveMerged({
           data: {
             projectId,
