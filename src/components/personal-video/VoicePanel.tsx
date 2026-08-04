@@ -48,7 +48,8 @@ import {
   type PvgVoiceRecording,
 } from "@/lib/personal-video/voice/recordings";
 import { mergeInOrder, mergeTogether, type MixSource } from "@/lib/personal-video/voice/mixdown";
-import { listStudioVoices } from "@/lib/voice-library/library.functions";
+import { voiceFailureKey } from "@/lib/personal-video/voice/errors";
+import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
   previewFor,
   voiceCategory,
@@ -109,6 +110,7 @@ export function VoicePanel({
   const load = useServerFn(getPvgVoiceover);
   const create = useServerFn(generatePvgVoiceover);
   const preview = useServerFn(previewPvgVoice);
+  const ensurePreview = useServerFn(ensureVoicePreview);
   const assign = useServerFn(assignPvgPersonVoice);
   const loadVoices = useServerFn(listStudioVoices);
   const saveSpeech = useServerFn(savePvgSpeechSettings);
@@ -251,14 +253,23 @@ export function VoicePanel({
       sampleRef.current?.pause();
       let src = voice.previewUrl;
       if (!src) {
-        const res = await preview({ data: { voiceId: voice.id, language } });
-        src = `data:${res.mimeType};base64,${res.audioBase64}`;
+        // The sample of this exact language is missing or damaged: Project Joy
+        // prepares it again and keeps it, so it is instant from now on.
+        const stored = await ensurePreview({ data: { voiceId: voice.id, language } }).catch(
+          () => ({ url: null as string | null }),
+        );
+        src = stored.url;
+        if (!src) {
+          const res = await preview({ data: { voiceId: voice.id, language } });
+          src = `data:${res.mimeType};base64,${res.audioBase64}`;
+        }
+        void library.refetch();
       }
       const audio = new Audio(src);
       sampleRef.current = audio;
       await audio.play();
-    } catch {
-      toast.error(t("pvv_preview_failed"));
+    } catch (error) {
+      toast.error(t(voiceFailureKey(error)));
     } finally {
       setSamplingId(null);
     }
