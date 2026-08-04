@@ -60,8 +60,9 @@ export function splitGreeting(text: string, participants: number): string[] {
   let index = 0;
   let filled = 0;
 
-  for (const piece of pieces) {
-    const remainingPieces = pieces.length - pieces.indexOf(piece);
+  for (let i = 0; i < pieces.length; i += 1) {
+    const piece = pieces[i]!;
+    const remainingPieces = pieces.length - i;
     if (index < people - 1 && filled >= target && remainingPieces > people - index - 1) {
       index += 1;
       filled = 0;
