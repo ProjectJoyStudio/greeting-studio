@@ -118,6 +118,8 @@ export async function synthesizeTrack(args: {
   text: string;
   voiceId: string;
   language: string;
+  /** Speaking pace, 1 = natural, up to 1.2 when the video is short. */
+  speed?: number;
 }): Promise<{
   audioBase64: string;
   mimeType: string;
@@ -141,6 +143,7 @@ export async function synthesizeTrack(args: {
       voiceId: voice.id,
       language: args.language,
       modelId: await getProductionVoiceModel(provider),
+      speed: args.speed ?? 1,
     });
     await logVoiceRequest({
       projectId: args.projectId,

@@ -3,7 +3,12 @@
 // and the result is written as a single audio file. A person never adjusts
 // volume, timing or synchronisation themselves.
 
-import { PVG_CHORUS_DELAY_SECONDS, PVG_PART_GAP_SECONDS, type PvgSyncMode } from "./speech";
+import {
+  PVG_CHORUS_DELAY_SECONDS,
+  PVG_MIN_PART_GAP_SECONDS,
+  PVG_PART_GAP_SECONDS,
+  type PvgSyncMode,
+} from "./speech";
 
 const SAMPLE_RATE = 44100;
 /** Comfortable loudness of the finished recording. */
@@ -120,20 +125,41 @@ function encodeWav(samples: Float32Array): Uint8Array {
   return bytes;
 }
 
+export interface MixOptions {
+  /** Longest the finished recording may ever be, in seconds. 0 = no limit. */
+  maxSeconds?: number;
+}
+
 /**
  * Puts the spoken parts of the participants one after the other, with a short,
- * natural pause between them.
+ * natural pause between them. When a longest length is given, the pauses are
+ * tightened and, if that is still not enough, the speech is gently quickened
+ * until the recording fits inside the time available.
  */
-export async function mergeInOrder(sources: MixSource[]): Promise<MixResult> {
+export async function mergeInOrder(
+  sources: MixSource[],
+  options: MixOptions = {},
+): Promise<MixResult> {
   const tracks = await Promise.all(sources.map(prepare));
-  const gap = Math.round(PVG_PART_GAP_SECONDS * SAMPLE_RATE);
+  const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
+  const spoken = tracks.reduce((sum, t) => sum + t.length, 0);
+
+  let gapSeconds = PVG_PART_GAP_SECONDS;
+  if (limit && tracks.length > 1) {
+    const room = limit * SAMPLE_RATE - spoken;
+    const perGap = room / (tracks.length - 1) / SAMPLE_RATE;
+    gapSeconds = Math.max(PVG_MIN_PART_GAP_SECONDS, Math.min(PVG_PART_GAP_SECONDS, perGap));
+  }
+
+  const gap = Math.round(gapSeconds * SAMPLE_RATE);
   const total = tracks.reduce((sum, t) => sum + t.length + gap, 0) - gap;
-  const out = new Float32Array(Math.max(1, total));
+  let out = new Float32Array(Math.max(1, total));
   let offset = 0;
   for (const track of tracks) {
     out.set(track, offset);
     offset += track.length + gap;
   }
+  if (limit) out = fitWithin(out, limit);
   return finish(out);
 }
 
@@ -141,11 +167,15 @@ export async function mergeInOrder(sources: MixSource[]): Promise<MixResult> {
  * Lets every chosen voice speak the whole greeting together. The tracks are
  * levelled, arranged in time and blended into one recording.
  */
-export async function mergeTogether(sources: MixSource[], sync: PvgSyncMode): Promise<MixResult> {
+export async function mergeTogether(
+  sources: MixSource[],
+  sync: PvgSyncMode,
+  options: MixOptions = {},
+): Promise<MixResult> {
   const tracks = await Promise.all(sources.map(prepare));
   const step = sync === "delayed" ? Math.round(PVG_CHORUS_DELAY_SECONDS * SAMPLE_RATE) : 0;
   const total = Math.max(...tracks.map((t, i) => t.length + i * step), 1);
-  const out = new Float32Array(total);
+  let out = new Float32Array(total);
   const share = 1 / Math.sqrt(Math.max(1, tracks.length));
   tracks.forEach((track, index) => {
     const start = index * step;
@@ -154,7 +184,31 @@ export async function mergeTogether(sources: MixSource[], sync: PvgSyncMode): Pr
       out[at] = (out[at] ?? 0) + track[i]! * share;
     }
   });
+  const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
+  if (limit) out = fitWithin(out, limit);
   return finish(out);
+}
+
+/**
+ * The last, dependable step: a recording that is still a little too long is
+ * quickened just enough to end inside the time the video allows.
+ */
+function fitWithin(
+  samples: Float32Array<ArrayBuffer>,
+  maxSeconds: number,
+): Float32Array<ArrayBuffer> {
+  const allowed = Math.floor(maxSeconds * SAMPLE_RATE);
+  if (allowed <= 0 || samples.length <= allowed) return samples;
+  const out = new Float32Array(allowed);
+  const ratio = samples.length / allowed;
+  for (let i = 0; i < allowed; i += 1) {
+    const position = i * ratio;
+    const left = Math.floor(position);
+    const right = Math.min(samples.length - 1, left + 1);
+    const weight = position - left;
+    out[i] = samples[left]! * (1 - weight) + samples[right]! * weight;
+  }
+  return out;
 }
 
 async function prepare(source: MixSource): Promise<Float32Array> {

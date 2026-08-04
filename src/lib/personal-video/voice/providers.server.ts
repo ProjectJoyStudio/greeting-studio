@@ -10,6 +10,8 @@ export interface SynthesisRequest {
   language: string;
   /** Voice model chosen by the administrator; each engine has its own default. */
   modelId?: string;
+  /** Speaking pace, 1 = natural. Used to fit a greeting into the video. */
+  speed?: number;
 }
 
 export interface SynthesisResult {
@@ -35,10 +37,18 @@ function decodeBase64(value: string): Uint8Array {
 const elevenLabs: VoiceEngine = {
   id: "elevenlabs",
   isReady: () => Boolean(process.env["ELEVENLABS_API_KEY"]),
-  async synthesize({ text, voiceId, modelId }) {
+  async synthesize({ text, voiceId, modelId, speed }) {
     const apiKey = process.env["ELEVENLABS_API_KEY"];
     if (!apiKey) throw new Error("voice_service_unavailable");
     const model = modelId || "eleven_multilingual_v2";
+    const pace = Number(speed);
+    const settings: Record<string, unknown> = {
+      stability: 0.5,
+      similarity_boost: 0.75,
+      style: 0.35,
+      use_speaker_boost: true,
+    };
+    if (Number.isFinite(pace) && pace > 1.001) settings["speed"] = Math.min(1.2, pace);
 
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`,
@@ -48,12 +58,7 @@ const elevenLabs: VoiceEngine = {
         body: JSON.stringify({
           text: text.slice(0, PVG_VOICE_MAX_CHARS),
           model_id: model,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.35,
-            use_speaker_boost: true,
-          },
+          voice_settings: settings,
         }),
       },
     );
