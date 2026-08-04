@@ -88,21 +88,21 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
   if (!data) return null;
   const row = data as Record<string, any>;
   return {
-    voiceId: row['voice_id'],
-    voiceName: row['voice_name'] ?? findVoice(row['voice_id']).name,
-    provider: row['provider'],
-    language: row['language'],
-    durationSeconds: Number(row['duration_seconds'] ?? 0),
-    characterCount: Number(row['character_count'] ?? 0),
-    generatedAt: row['generated_at'],
-    modelId: row['model_id'] ?? "",
-    modelLabel: row['model_label'] || (row['model_id'] ?? ""),
-    creditsUsed: Number(row['credits_used'] ?? 0),
-    audioUrl: await signed(row['storage_bucket'] ?? BUCKET, row['storage_path']),
-    greetingText: row['greeting_text'] ?? "",
-    speechMode: row['speech_mode'] ?? "single",
-    syncMode: row['sync_mode'] ?? null,
-    trackSummary: Array.isArray(row['track_summary']) ? row['track_summary'] : [],
+    voiceId: row["voice_id"],
+    voiceName: row["voice_name"] ?? findVoice(row["voice_id"]).name,
+    provider: row["provider"],
+    language: row["language"],
+    durationSeconds: Number(row["duration_seconds"] ?? 0),
+    characterCount: Number(row["character_count"] ?? 0),
+    generatedAt: row["generated_at"],
+    modelId: row["model_id"] ?? "",
+    modelLabel: row["model_label"] || (row["model_id"] ?? ""),
+    creditsUsed: Number(row["credits_used"] ?? 0),
+    audioUrl: await signed(row["storage_bucket"] ?? BUCKET, row["storage_path"]),
+    greetingText: row["greeting_text"] ?? "",
+    speechMode: row["speech_mode"] ?? "single",
+    syncMode: row["sync_mode"] ?? null,
+    trackSummary: Array.isArray(row["track_summary"]) ? row["track_summary"] : [],
   };
 }
 

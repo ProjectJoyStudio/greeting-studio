@@ -23,12 +23,48 @@ export interface PvgVoiceOption {
 
 /** The voices a person can choose from today. */
 export const PVG_VOICES: PvgVoiceOption[] = [
-  { id: "EXAVITQu4vr4xnSDxMaL", provider: "elevenlabs", name: "Sarah", description: "warm_female", gender: "female" },
-  { id: "FGY2WhTYpPnrIDTdsKH5", provider: "elevenlabs", name: "Laura", description: "bright_female", gender: "female" },
-  { id: "XrExE9yKIg1WjnnlVkGX", provider: "elevenlabs", name: "Matilda", description: "gentle_female", gender: "female" },
-  { id: "JBFqnCBsd6RMkjVDRZzb", provider: "elevenlabs", name: "George", description: "warm_male", gender: "male" },
-  { id: "onwK4e9ZLuTAKqWW03F9", provider: "elevenlabs", name: "Daniel", description: "calm_male", gender: "male" },
-  { id: "N2lVS1w4EtoT3dr4eOWO", provider: "elevenlabs", name: "Callum", description: "deep_male", gender: "male" },
+  {
+    id: "EXAVITQu4vr4xnSDxMaL",
+    provider: "elevenlabs",
+    name: "Sarah",
+    description: "warm_female",
+    gender: "female",
+  },
+  {
+    id: "FGY2WhTYpPnrIDTdsKH5",
+    provider: "elevenlabs",
+    name: "Laura",
+    description: "bright_female",
+    gender: "female",
+  },
+  {
+    id: "XrExE9yKIg1WjnnlVkGX",
+    provider: "elevenlabs",
+    name: "Matilda",
+    description: "gentle_female",
+    gender: "female",
+  },
+  {
+    id: "JBFqnCBsd6RMkjVDRZzb",
+    provider: "elevenlabs",
+    name: "George",
+    description: "warm_male",
+    gender: "male",
+  },
+  {
+    id: "onwK4e9ZLuTAKqWW03F9",
+    provider: "elevenlabs",
+    name: "Daniel",
+    description: "calm_male",
+    gender: "male",
+  },
+  {
+    id: "N2lVS1w4EtoT3dr4eOWO",
+    provider: "elevenlabs",
+    name: "Callum",
+    description: "deep_male",
+    gender: "male",
+  },
 ];
 
 export const PVG_DEFAULT_VOICE_ID = PVG_VOICES[0]!.id;

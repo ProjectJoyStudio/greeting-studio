@@ -73,7 +73,10 @@ export interface SceneRow {
   created_at: string;
 }
 
-export async function signedUrl(bucket: string | null, path: string | null): Promise<string | null> {
+export async function signedUrl(
+  bucket: string | null,
+  path: string | null,
+): Promise<string | null> {
   if (!bucket || !path) return null;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { pvgSignedUrlTtl } = await import("./env.server");
@@ -95,7 +98,11 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
     voiceId: row.voice_id ?? null,
     voiceName: row.voice_name ?? null,
     voiceSource:
-      row.voice_source === "recording" ? "recording" : row.voice_source === "library" ? "library" : null,
+      row.voice_source === "recording"
+        ? "recording"
+        : row.voice_source === "library"
+          ? "library"
+          : null,
     partText: row.part_text ?? "",
     recordingUrl: await signedUrl(row.recording_bucket ?? null, row.recording_path ?? null),
     recordingDurationSeconds: Number(row.recording_duration_seconds ?? 0),
@@ -134,7 +141,9 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     orderCost: row.order_cost ?? 0,
     version: row.version ?? 0,
     lastSavedAt: row.last_saved_at ?? row.updated_at,
-    creditHistory: Array.isArray(row.credit_history) ? (row.credit_history as PvgProject["creditHistory"]) : [],
+    creditHistory: Array.isArray(row.credit_history)
+      ? (row.credit_history as PvgProject["creditHistory"])
+      : [],
     videoSetup: {
       durationSeconds: clampDuration(row.video_duration_seconds ?? PVS_DEFAULT_SECONDS),
       greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
@@ -162,7 +171,12 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
     .select("id, user_id, status, prediction_id")
     .eq("id", sceneId)
     .maybeSingle();
-  const row = data as { id: string; user_id: string; status: string; prediction_id: string | null } | null;
+  const row = data as {
+    id: string;
+    user_id: string;
+    status: string;
+    prediction_id: string | null;
+  } | null;
   if (!row || !row.prediction_id) return "pending";
   if (row.status === "ready" || row.status === "failed") return row.status;
 
@@ -170,7 +184,10 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
   const progress = await pollSceneRender(row.prediction_id);
 
   const patch = async (values: Record<string, unknown>) => {
-    await supabaseAdmin.from("pvg_scenes").update(values as never).eq("id", row.id);
+    await supabaseAdmin
+      .from("pvg_scenes")
+      .update(values as never)
+      .eq("id", row.id);
   };
 
   if (progress.state === "processing") {
@@ -209,7 +226,8 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
     await patch({
       status: "failed",
       error_code: "storage_failed",
-      error_message: err instanceof Error ? err.message.slice(0, 300) : "The picture could not be stored.",
+      error_message:
+        err instanceof Error ? err.message.slice(0, 300) : "The picture could not be stored.",
       completed_at: new Date().toISOString(),
     });
     return "failed";

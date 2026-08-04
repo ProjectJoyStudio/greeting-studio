@@ -14,7 +14,8 @@ async function assertOwner(
     .select("id, user_id")
     .eq("id", projectId)
     .maybeSingle();
-  if (!data || (data as { user_id: string }).user_id !== userId) throw new Error("project_not_found");
+  if (!data || (data as { user_id: string }).user_id !== userId)
+    throw new Error("project_not_found");
 }
 
 /** The saved voice of the order, so a returning person hears it again at once. */

@@ -75,7 +75,11 @@ export function RecordingStudio({
       rec.onstop = () => {
         stream.getTracks().forEach((track) => track.stop());
         const type = rec.mimeType || "audio/webm";
-        void accept(new Blob(chunks.current, { type }), type, type.includes("ogg") ? "ogg" : "webm");
+        void accept(
+          new Blob(chunks.current, { type }),
+          type,
+          type.includes("ogg") ? "ogg" : "webm",
+        );
       };
       recorder.current = rec;
       rec.start();

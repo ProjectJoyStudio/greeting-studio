@@ -3,11 +3,7 @@
 // and the result is written as a single audio file. A person never adjusts
 // volume, timing or synchronisation themselves.
 
-import {
-  PVG_CHORUS_DELAY_SECONDS,
-  PVG_PART_GAP_SECONDS,
-  type PvgSyncMode,
-} from "./speech";
+import { PVG_CHORUS_DELAY_SECONDS, PVG_PART_GAP_SECONDS, type PvgSyncMode } from "./speech";
 
 const SAMPLE_RATE = 44100;
 /** Comfortable loudness of the finished recording. */
@@ -57,7 +53,8 @@ async function bytesOf(source: MixSource): Promise<ArrayBuffer> {
 /** Reads one sound of any common format into plain samples. */
 async function decode(source: MixSource): Promise<AudioBuffer> {
   const Ctor: typeof AudioContext =
-    window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const ctx = new Ctor();
   try {
     return await ctx.decodeAudioData(await bytesOf(source));
@@ -144,10 +141,7 @@ export async function mergeInOrder(sources: MixSource[]): Promise<MixResult> {
  * Lets every chosen voice speak the whole greeting together. The tracks are
  * levelled, arranged in time and blended into one recording.
  */
-export async function mergeTogether(
-  sources: MixSource[],
-  sync: PvgSyncMode,
-): Promise<MixResult> {
+export async function mergeTogether(sources: MixSource[], sync: PvgSyncMode): Promise<MixResult> {
   const tracks = await Promise.all(sources.map(prepare));
   const step = sync === "delayed" ? Math.round(PVG_CHORUS_DELAY_SECONDS * SAMPLE_RATE) : 0;
   const total = Math.max(...tracks.map((t, i) => t.length + i * step), 1);

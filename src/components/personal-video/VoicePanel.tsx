@@ -126,7 +126,9 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
-  const [recordings, setRecordings] = useState<Record<string, { url: string | null; seconds: number }>>({});
+  const [recordings, setRecordings] = useState<
+    Record<string, { url: string | null; seconds: number }>
+  >({});
   const [parts, setParts] = useState<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
@@ -149,7 +151,8 @@ export function VoicePanel({
     const nextRecordings: Record<string, { url: string | null; seconds: number }> = {};
     const nextParts: Record<string, string> = {};
     for (const person of participants) {
-      if (person.voiceId) nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
+      if (person.voiceId)
+        nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
       if (person.recordingUrl || person.voiceSource === "recording") {
         nextRecordings[person.id] = {
           url: person.recordingUrl,
@@ -368,15 +371,17 @@ export function VoicePanel({
     });
     setParts(next);
     participants.forEach((person) => {
-      void savePart({ data: { projectId, personId: person.id, partText: next[person.id] ?? "" } }).catch(
-        () => undefined,
-      );
+      void savePart({
+        data: { projectId, personId: person.id, partText: next[person.id] ?? "" },
+      }).catch(() => undefined);
     });
   }
 
   function editPart(person: PvgPerson, text: string) {
     setParts((prev) => ({ ...prev, [person.id]: text }));
-    void savePart({ data: { projectId, personId: person.id, partText: text } }).catch(() => undefined);
+    void savePart({ data: { projectId, personId: person.id, partText: text } }).catch(
+      () => undefined,
+    );
   }
 
   /** Speaks one piece of text with one Project Joy voice. */
@@ -535,7 +540,10 @@ export function VoicePanel({
       audio.pause();
       setPlaying(false);
     } else {
-      void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      void audio
+        .play()
+        .then(() => setPlaying(true))
+        .catch(() => setPlaying(false));
     }
   }
 
@@ -664,7 +672,9 @@ export function VoicePanel({
           disabled={disabled}
           onClick={() => setMode(mode === "library" ? null : "library")}
           className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
-            mode === "library" ? "border-primary bg-primary/10" : "border-border/60 hover:border-primary/40"
+            mode === "library"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
           }`}
         >
           <span className="flex items-center gap-2 text-sm font-semibold">
@@ -681,14 +691,18 @@ export function VoicePanel({
           disabled={disabled}
           onClick={() => setMode(mode === "own" ? null : "own")}
           className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
-            mode === "own" ? "border-primary bg-primary/10" : "border-border/60 hover:border-primary/40"
+            mode === "own"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
           }`}
         >
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Mic className="h-4 w-4 text-primary" />
             {t("pvv_option_own")}
           </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">{t("pvv_option_own_note")}</span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t("pvv_option_own_note")}
+          </span>
         </button>
       </div>
 
@@ -870,7 +884,9 @@ export function VoicePanel({
                   <span className="font-medium">{participantLabel(person, index)}</span>
                   <span className="text-muted-foreground"> — </span>
                   <span
-                    className={chosen || recording ? "font-medium text-primary" : "text-muted-foreground"}
+                    className={
+                      chosen || recording ? "font-medium text-primary" : "text-muted-foreground"
+                    }
                   >
                     {recording ? t("pvv_recording_own") : chosen ? chosen.name : t("pvv_no_voice")}
                   </span>
