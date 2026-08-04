@@ -52,6 +52,11 @@ export interface PvgVoiceover {
   audioUrl: string | null;
   /** The exact greeting the audio was spoken from, used to spot outdated audio. */
   greetingText: string;
+  /** How the greeting was spoken: one voice, separate parts or all together. */
+  speechMode?: string;
+  syncMode?: string | null;
+  /** Plain description of every track the finished recording was made from. */
+  trackSummary?: { label: string; durationSeconds: number; source: string }[];
 }
 
 /** Short sample sentences used by the voice preview, never stored in an order. */
