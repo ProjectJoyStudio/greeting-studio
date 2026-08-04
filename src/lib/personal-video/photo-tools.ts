@@ -102,8 +102,7 @@ function detailScore(ctx: CanvasRenderingContext2D, width: number, height: numbe
   for (let y = 1; y < height - 1; y += 1) {
     for (let x = 1; x < width - 1; x += 1) {
       const i = y * width + x;
-      const lap =
-        4 * gray[i]! - gray[i - 1]! - gray[i + 1]! - gray[i - width]! - gray[i + width]!;
+      const lap = 4 * gray[i]! - gray[i - 1]! - gray[i + 1]! - gray[i - width]! - gray[i + width]!;
       sum += lap;
       sumSq += lap * lap;
       count += 1;
@@ -122,10 +121,7 @@ export interface CroppedFace {
 }
 
 /** Cuts one marked area out of a photo and prepares it as a portrait. */
-export async function cropFace(
-  image: HTMLImageElement,
-  box: FaceBox,
-): Promise<CroppedFace> {
+export async function cropFace(image: HTMLImageElement, box: FaceBox): Promise<CroppedFace> {
   const x = Math.max(0, Math.round(box.x));
   const y = Math.max(0, Math.round(box.y));
   const w = Math.max(1, Math.round(Math.min(box.width, image.naturalWidth - x)));
@@ -155,7 +151,9 @@ export function overlapRatio(a: FaceBox, b: FaceBox): number {
   return inter / Math.min(a.width * a.height, b.width * b.height);
 }
 
-type FaceDetectorLike = { detect: (image: HTMLImageElement) => Promise<{ boundingBox: FaceBox }[]> };
+type FaceDetectorLike = {
+  detect: (image: HTMLImageElement) => Promise<{ boundingBox: FaceBox }[]>;
+};
 
 /**
  * Finds every face on a group photo and returns one cropped portrait per

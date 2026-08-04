@@ -66,7 +66,7 @@ export async function writeGreeting(args: ComposeArgs): Promise<string> {
   const duration = clampDuration(args.durationSeconds);
   const fit = greetingFit(args.text, duration);
   const language = languageName(args.language);
-  const apiKey = process.env['LOVABLE_API_KEY'];
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return capLength(localFallback(args));
 
   const system =

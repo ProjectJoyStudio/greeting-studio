@@ -71,7 +71,9 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [readOnly, setReadOnly] = useState(false);
   const loaded = useRef(false);
   const sessionId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random()),
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : String(Math.random()),
   );
 
   // One writer at a time: another open device is told instead of overwritten.
@@ -363,7 +365,11 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
               />
 
               {/* Reserved: audio levels */}
-              <Panel icon={<Sliders className="h-4 w-4" />} title={t("pvs_audio")} soon={t("pvs_soon")}>
+              <Panel
+                icon={<Sliders className="h-4 w-4" />}
+                title={t("pvs_audio")}
+                soon={t("pvs_soon")}
+              >
                 <div className="space-y-4 opacity-60">
                   {[t("pvs_voice_volume"), t("pvs_music_volume")].map((label) => (
                     <div key={label}>

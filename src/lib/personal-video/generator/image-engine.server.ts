@@ -214,7 +214,11 @@ export async function pollSceneRender(predictionId: string): Promise<PvgProgress
     }
     const url = extractUrl(prediction.output);
     if (!url) {
-      return { state: "failed", errorCode: "no_output", errorMessage: "The engine returned no picture." };
+      return {
+        state: "failed",
+        errorCode: "no_output",
+        errorMessage: "The engine returned no picture.",
+      };
     }
     return { state: "ready", url, contentType: "image/jpeg", fileExtension: "jpg" };
   } catch (err) {

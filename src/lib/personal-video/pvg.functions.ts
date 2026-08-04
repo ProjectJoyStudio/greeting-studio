@@ -72,8 +72,16 @@ async function loadProject(
   if (!row) return null;
 
   const [{ data: peopleData }, { data: sceneData }] = await Promise.all([
-    supabase.from("pvg_people").select(PERSON_COLUMNS).eq("project_id", projectId).order("position"),
-    supabase.from("pvg_scenes").select(SCENE_COLUMNS).eq("project_id", projectId).order("variation_index"),
+    supabase
+      .from("pvg_people")
+      .select(PERSON_COLUMNS)
+      .eq("project_id", projectId)
+      .order("position"),
+    supabase
+      .from("pvg_scenes")
+      .select(SCENE_COLUMNS)
+      .eq("project_id", projectId)
+      .order("variation_index"),
   ]);
 
   const people = await Promise.all(((peopleData ?? []) as PersonRow[]).map(toPerson));
@@ -86,7 +94,10 @@ async function loadProject(
   };
 }
 
-async function walletBalance(supabase: { from: (t: string) => any }, userId: string): Promise<number> {
+async function walletBalance(
+  supabase: { from: (t: string) => any },
+  userId: string,
+): Promise<number> {
   const { data } = await supabase
     .from("credit_wallets")
     .select("id, balance")
@@ -305,7 +316,9 @@ export const savePvgPerson = createServerFn({ method: "POST" })
 /** Keeps an extra picture of a person for later quality improvements. */
 export const addPvgPersonPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; personId: string; base64: string; contentType: string }) => input)
+  .inputValidator(
+    (input: { projectId: string; personId: string; base64: string; contentType: string }) => input,
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { pvgPhotoBucket } = await import("./env.server");
@@ -378,15 +391,19 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     // One request at a time: repeated clicks never start a second render and
     // never take a second credit.
     if (project.scenes.some((s) => s.status === "pending" || s.status === "processing")) {
-      return { ok: true as const, issues: [] as { field: string; key: string }[], project, balance };
+      return {
+        ok: true as const,
+        issues: [] as { field: string; key: string }[],
+        project,
+        balance,
+      };
     }
 
     // Beyond the included scenes every further scene costs exactly one credit.
     const isExtra = used >= included;
     // The one-off order price is taken only with the very first scene of the
     // project — reopening or refreshing the page never charges it again.
-    const packagePrice =
-      project.creditsCharged > 0 ? 0 : pvgPriceCredits(project.people.length);
+    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(project.people.length);
     const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -410,45 +427,45 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       }
       const charge = price;
       {
-      // Conditional write: a second click cannot take the same credit twice,
-      // because the row must still hold the balance we just read.
-      const { data: charged } = await supabaseAdmin
-        .from("credit_wallets")
-        .update({ balance: w.balance - charge, lifetime_spent: w.lifetime_spent + charge })
-        .eq("id", w.id)
-        .eq("balance", w.balance)
-        .select("id")
-        .maybeSingle();
-      if (!charged) {
-        return {
-          ok: false as const,
-          issues: [{ field: "credits", key: "pvg_err_credits" }],
-          project,
-          balance: await walletBalance(supabase, userId),
-        };
-      }
-      {
-        chargedAmount = charge;
-        await supabaseAdmin.from("credit_transactions").insert({
-          wallet_id: w.id,
-          user_id: userId,
-          txn_type: "order_charge",
-          amount: -charge,
-          balance_after: w.balance - charge,
-          description: isExtra
-            ? "Personal video greeting — one additional starting scene"
-            : "Personal video greeting — starting scene package",
-          metadata: {
-            project_id: project.id,
-            people: project.people.length,
-            extra_scene: isExtra,
-          },
-        });
-        await supabase
-          .from("pvg_projects")
-          .update({ credits_charged: project.creditsCharged + charge })
-          .eq("id", project.id);
-      }
+        // Conditional write: a second click cannot take the same credit twice,
+        // because the row must still hold the balance we just read.
+        const { data: charged } = await supabaseAdmin
+          .from("credit_wallets")
+          .update({ balance: w.balance - charge, lifetime_spent: w.lifetime_spent + charge })
+          .eq("id", w.id)
+          .eq("balance", w.balance)
+          .select("id")
+          .maybeSingle();
+        if (!charged) {
+          return {
+            ok: false as const,
+            issues: [{ field: "credits", key: "pvg_err_credits" }],
+            project,
+            balance: await walletBalance(supabase, userId),
+          };
+        }
+        {
+          chargedAmount = charge;
+          await supabaseAdmin.from("credit_transactions").insert({
+            wallet_id: w.id,
+            user_id: userId,
+            txn_type: "order_charge",
+            amount: -charge,
+            balance_after: w.balance - charge,
+            description: isExtra
+              ? "Personal video greeting — one additional starting scene"
+              : "Personal video greeting — starting scene package",
+            metadata: {
+              project_id: project.id,
+              people: project.people.length,
+              extra_scene: isExtra,
+            },
+          });
+          await supabase
+            .from("pvg_projects")
+            .update({ credits_charged: project.creditsCharged + charge })
+            .eq("id", project.id);
+        }
       }
     }
 
@@ -456,9 +473,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const variationIndex =
       project.scenes.reduce((max, s) => Math.max(max, s.variationIndex), 0) + 1;
 
-    const people = project.people
-      .map((p, i) => `${p.name.trim() || `person ${i + 1}`}`)
-      .join(", ");
+    const people = project.people.map((p, i) => `${p.name.trim() || `person ${i + 1}`}`).join(", ");
     const prompt = [
       project.sceneDescription.trim(),
       `The people in the scene: ${people}. Keep every face true to the supplied portraits.`,
@@ -508,7 +523,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .update({
           status: "failed",
           error_code: "engine_error",
-          error_message: err instanceof Error ? err.message.slice(0, 300) : "The engine refused the request.",
+          error_message:
+            err instanceof Error ? err.message.slice(0, 300) : "The engine refused the request.",
         })
         .eq("id", (sceneRow as SceneRow).id);
       // A technical failure uses up neither an included nor a paid scene.

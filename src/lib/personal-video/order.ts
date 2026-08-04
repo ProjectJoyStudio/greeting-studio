@@ -44,11 +44,18 @@ export function clampRetentionDays(value: unknown): number {
 }
 
 /** "2 days 4 hours" — the live countdown next to every deleted draft. */
-export function countdown(purgeAfter: string | null, now = Date.now()): { days: number; hours: number; expired: boolean } {
+export function countdown(
+  purgeAfter: string | null,
+  now = Date.now(),
+): { days: number; hours: number; expired: boolean } {
   if (!purgeAfter) return { days: 0, hours: 0, expired: true };
   const ms = new Date(purgeAfter).getTime() - now;
   if (!Number.isFinite(ms) || ms <= 0) return { days: 0, hours: 0, expired: true };
-  return { days: Math.floor(ms / 86_400_000), hours: Math.floor((ms % 86_400_000) / 3_600_000), expired: false };
+  return {
+    days: Math.floor(ms / 86_400_000),
+    hours: Math.floor((ms % 86_400_000) / 3_600_000),
+    expired: false,
+  };
 }
 
 export type SaveState = "idle" | "saving" | "saved" | "failed";
