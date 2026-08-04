@@ -73,6 +73,7 @@ import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
 import { Route as AdminVoiceSettingsIndexRouteImport } from './routes/admin.voice-settings.index'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
+import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
@@ -411,6 +412,12 @@ const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const ApiPublicVoicePreviewsMaintainRoute =
+  ApiPublicVoicePreviewsMaintainRouteImport.update({
+    id: '/api/public/voice-previews-maintain',
+    path: '/api/public/voice-previews-maintain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPvgReconcileRoute = ApiPublicPvgReconcileRouteImport.update({
   id: '/api/public/pvg-reconcile',
   path: '/api/public/pvg-reconcile',
@@ -580,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
+  '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -660,6 +668,7 @@ export interface FileRoutesByTo {
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
+  '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/voice-settings': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -744,6 +753,7 @@ export interface FileRoutesById {
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
+  '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
+    | '/api/public/voice-previews-maintain'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
@@ -909,6 +920,7 @@ export interface FileRouteTypes {
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
+    | '/api/public/voice-previews-maintain'
     | '/admin/catalog'
     | '/admin/voice-settings'
     | '/admin/catalog/backgrounds/$id'
@@ -992,6 +1004,7 @@ export interface FileRouteTypes {
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
+    | '/api/public/voice-previews-maintain'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
@@ -1035,6 +1048,7 @@ export interface RootRouteChildren {
   ApiPublicLiveCardsReconcileRoute: typeof ApiPublicLiveCardsReconcileRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
   ApiPublicPvgReconcileRoute: typeof ApiPublicPvgReconcileRoute
+  ApiPublicVoicePreviewsMaintainRoute: typeof ApiPublicVoicePreviewsMaintainRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1487,6 +1501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/api/public/voice-previews-maintain': {
+      id: '/api/public/voice-previews-maintain'
+      path: '/api/public/voice-previews-maintain'
+      fullPath: '/api/public/voice-previews-maintain'
+      preLoaderRoute: typeof ApiPublicVoicePreviewsMaintainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/pvg-reconcile': {
       id: '/api/public/pvg-reconcile'
       path: '/api/public/pvg-reconcile'
@@ -1779,6 +1800,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLiveCardsReconcileRoute: ApiPublicLiveCardsReconcileRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
   ApiPublicPvgReconcileRoute: ApiPublicPvgReconcileRoute,
+  ApiPublicVoicePreviewsMaintainRoute: ApiPublicVoicePreviewsMaintainRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
