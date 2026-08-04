@@ -24,6 +24,9 @@ async function signed(bucket: string, path: string): Promise<string | null> {
 
 function guessGender(labels: Record<string, string> | null | undefined, fallback: string): string {
   const value = (labels?.["gender"] ?? "").toLowerCase();
+  const age = (labels?.["age"] ?? "").toLowerCase();
+  // A child voice belongs to the children group, whatever else it says.
+  if (age.includes("child") || age.includes("kid") || value.includes("child")) return "children";
   if (value.includes("female")) return "female";
   if (value.includes("male")) return "male";
   return fallback || "neutral";
