@@ -15,7 +15,7 @@ export const listStudioVoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ voices: LibraryVoice[] }> => {
     const { readLibrary } = await import("./library.server");
-    return { voices: await readLibrary({ activeOnly: true }) };
+    return { voices: await readLibrary({ activeOnly: true, completePreviewsOnly: true }) };
   });
 
 /** The full library, including voices an administrator has switched off. */
