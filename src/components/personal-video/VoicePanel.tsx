@@ -21,9 +21,11 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
   assignPvgPersonVoice,
+  confirmPvgRecordingPermission,
   deletePvgPersonRecording,
   generatePvgVoiceover,
   getPvgVoiceover,
+  listPvgPersonRecordings,
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
@@ -40,6 +42,11 @@ import {
   type PvgSpeechMode,
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
+import {
+  validateVoiceSetup,
+  voiceIssueText,
+  type PvgVoiceRecording,
+} from "@/lib/personal-video/voice/recordings";
 import { mergeInOrder, mergeTogether, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
@@ -80,6 +87,7 @@ export function VoicePanel({
   people,
   greeting,
   language,
+  videoSeconds,
   disabled,
   speechMode: savedSpeechMode,
   syncMode: savedSyncMode,
@@ -90,6 +98,7 @@ export function VoicePanel({
   people: PvgPerson[];
   greeting: string;
   language: string;
+  videoSeconds?: number;
   disabled?: boolean;
   speechMode?: PvgSpeechMode;
   syncMode?: PvgSyncMode;
@@ -108,6 +117,8 @@ export function VoicePanel({
   const saveMerged = useServerFn(savePvgMergedVoiceover);
   const saveRecording = useServerFn(savePvgPersonRecording);
   const dropRecording = useServerFn(deletePvgPersonRecording);
+  const loadRecordings = useServerFn(listPvgPersonRecordings);
+  const confirmPermission = useServerFn(confirmPvgRecordingPermission);
 
   const library = useQuery({
     queryKey: ["voice-library", "active"],
@@ -126,9 +137,10 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
-  const [recordings, setRecordings] = useState<
-    Record<string, { url: string | null; seconds: number }>
-  >({});
+  const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
+  const [preparing, setPreparing] = useState(false);
+  const [prepared, setPrepared] = useState(false);
+  const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
@@ -148,23 +160,29 @@ export function VoicePanel({
 
   useEffect(() => {
     const nextVoices: Record<string, Assignment> = {};
-    const nextRecordings: Record<string, { url: string | null; seconds: number }> = {};
     const nextParts: Record<string, string> = {};
     for (const person of participants) {
       if (person.voiceId)
         nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
-      if (person.recordingUrl || person.voiceSource === "recording") {
-        nextRecordings[person.id] = {
-          url: person.recordingUrl,
-          seconds: person.recordingDurationSeconds,
-        };
-      }
       if (person.partText) nextParts[person.id] = person.partText;
     }
     setAssignments(nextVoices);
-    setRecordings(nextRecordings);
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
+
+  // Everything a person recorded before is restored exactly as they left it.
+  const storedRecordings = useQuery({
+    queryKey: ["pvg", "recordings", projectId],
+    queryFn: () => loadRecordings({ data: { projectId } }),
+  });
+
+  useEffect(() => {
+    const list = storedRecordings.data?.recordings;
+    if (!list) return;
+    const next: Record<string, PvgVoiceRecording> = {};
+    for (const recording of list) next[recording.personId] = recording;
+    setRecordings(next);
+  }, [storedRecordings.data]);
 
   useEffect(() => {
     if (!savedChorus?.length || chorus.length) return;
