@@ -958,6 +958,29 @@ export function VoicePanel({
                       {t("pvv_preview")}
                     </button>
                   )}
+                  {recording && !recording.permissionConfirmed && (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        setRecordings((prev) => {
+                          const current = prev[person.id];
+                          if (!current) return prev;
+                          return {
+                            ...prev,
+                            [person.id]: { ...current, permissionConfirmed: true },
+                          };
+                        });
+                        void confirmPermission({
+                          data: { projectId, personId: person.id, confirmed: true },
+                        }).catch(() => undefined);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
+                    >
+                      <Check className="h-3 w-3" />
+                      {t("pvv_permission_button")}
+                    </button>
+                  )}
                   {chosen && (
                     <button
                       type="button"
