@@ -60,6 +60,17 @@ const elevenLabs: VoiceEngine = {
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
+      const body = detail.toLowerCase();
+      // The reason is named plainly, so every page can explain what happened.
+      if (body.includes("quota") || body.includes("credits remaining")) {
+        throw new Error(`voice_quota_exhausted:${detail.slice(0, 300)}`);
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`voice_key_invalid:${detail.slice(0, 300)}`);
+      }
+      if (res.status === 404 || body.includes("voice_does_not_exist")) {
+        throw new Error(`voice_not_found:${detail.slice(0, 300)}`);
+      }
       throw new Error(`voice_request_failed:${res.status}:${detail.slice(0, 300)}`);
     }
 
