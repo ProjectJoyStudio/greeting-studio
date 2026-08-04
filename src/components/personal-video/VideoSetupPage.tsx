@@ -344,9 +344,11 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
               {/* Voice of the greeting */}
               <VoicePanel
                 projectId={project.id}
+                people={project.people}
                 greeting={greeting}
                 language={lang}
                 disabled={readOnly}
+                onAssigned={() => void query.refetch()}
               />
 
               {/* Reserved: music */}
