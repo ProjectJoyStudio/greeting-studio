@@ -295,6 +295,7 @@ export function VoicePanel({
       return next;
     });
     setPending(null);
+    setReplaceFor(null);
     try {
       await assign({
         data: {
@@ -334,6 +335,15 @@ export function VoicePanel({
 
   function choose(voice: LibraryVoice) {
     if (disabled) return;
+    // A voice is being replaced for one exact participant: nobody else changes.
+    if (replaceFor) {
+      const person = participants.find((p) => p.id === replaceFor);
+      if (person) {
+        void give(person, voice);
+        return;
+      }
+      setReplaceFor(null);
+    }
     if (speechMode === "chorus") {
       setChorus((prev) => {
         const exists = prev.some((v) => v.id === voice.externalVoiceId);
@@ -1023,8 +1033,10 @@ export function VoicePanel({
                     type="button"
                     disabled={disabled}
                     onClick={() => {
+                      setReplaceFor(person.id);
                       setMode("library");
-                      if (!category) setCategory("female");
+                      setCategory((current) => current ?? "female");
+                      setPending(null);
                     }}
                     className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
                   >
