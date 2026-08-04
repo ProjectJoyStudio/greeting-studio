@@ -656,7 +656,9 @@ export function VoicePanel({
           sources.push(track);
           summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
         }
-        const merged = await mergeTogether(sources, syncMode);
+        const merged = await mergeTogether(sources, syncMode, {
+          maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
+        });
         const res = await saveMerged({
           data: {
             projectId,
