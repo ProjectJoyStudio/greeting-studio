@@ -71,7 +71,9 @@ async function upload(
   const db = await admin();
   const bytes = new Uint8Array(Buffer.from(base64, "base64"));
   if (bytes.byteLength === 0) throw new Error("recording_empty");
-  const res = await db.storage.from(bucket).upload(path, bytes, { contentType: mimeType, upsert: true });
+  const res = await db.storage
+    .from(bucket)
+    .upload(path, bytes, { contentType: mimeType, upsert: true });
   if (res.error) throw new Error(res.error.message);
 }
 
@@ -122,8 +124,18 @@ export async function savePersonRecording(args: {
   );
 
   try {
-    await upload(RECORDING_BUCKET, originalPath, args.originalBase64, args.originalMime || "audio/webm");
-    await upload(RECORDING_BUCKET, processedPath, args.processedBase64, args.processedMime || "audio/wav");
+    await upload(
+      RECORDING_BUCKET,
+      originalPath,
+      args.originalBase64,
+      args.originalMime || "audio/webm",
+    );
+    await upload(
+      RECORDING_BUCKET,
+      processedPath,
+      args.processedBase64,
+      args.processedMime || "audio/wav",
+    );
   } catch (error) {
     await db
       .from("pvg_voice_recordings")
@@ -170,7 +182,9 @@ export async function savePersonRecording(args: {
   const old = previous as Record<string, string | null> | null;
   const stale = [
     old?.["original_path"] && old["original_path"] !== originalPath ? old["original_path"] : null,
-    old?.["processed_path"] && old["processed_path"] !== processedPath ? old["processed_path"] : null,
+    old?.["processed_path"] && old["processed_path"] !== processedPath
+      ? old["processed_path"]
+      : null,
   ].filter((p): p is string => Boolean(p));
   if (stale.length) await db.storage.from(RECORDING_BUCKET).remove(stale);
 
@@ -205,7 +219,9 @@ export async function deletePersonRecording(projectId: string, personId: string)
   const db = await admin();
   const { data } = await db
     .from("pvg_voice_recordings")
-    .select("original_bucket, original_path, processed_bucket, processed_path, enhanced_bucket, enhanced_path")
+    .select(
+      "original_bucket, original_path, processed_bucket, processed_path, enhanced_bucket, enhanced_path",
+    )
     .eq("person_id", personId)
     .eq("project_id", projectId)
     .maybeSingle();
@@ -215,7 +231,11 @@ export async function deletePersonRecording(projectId: string, personId: string)
   );
   if (paths.length) await db.storage.from(RECORDING_BUCKET).remove(paths);
 
-  await db.from("pvg_voice_recordings").delete().eq("person_id", personId).eq("project_id", projectId);
+  await db
+    .from("pvg_voice_recordings")
+    .delete()
+    .eq("person_id", personId)
+    .eq("project_id", projectId);
   await db
     .from("pvg_people")
     .update({

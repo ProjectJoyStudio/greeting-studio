@@ -80,7 +80,11 @@ export function validateVoiceSetup(input: PvgVoiceCheckInput): PvgVoiceIssue[] {
   }
 
   const speakers =
-    mode === "single" ? input.participants.slice(0, 1) : mode === "chorus" ? [] : input.participants;
+    mode === "single"
+      ? input.participants.slice(0, 1)
+      : mode === "chorus"
+        ? []
+        : input.participants;
 
   for (const person of speakers) {
     const recording = person.recording;

@@ -177,14 +177,14 @@ export function RecordingStudio({
             <button
               type="button"
               disabled={disabled}
-          onClick={() => {
-            if (!permission) {
-              toast.error(t("pvv_err_permission"));
-              return;
-            }
-            onReady(pending, true);
-          }}
-          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+              onClick={() => {
+                if (!permission) {
+                  toast.error(t("pvv_err_permission"));
+                  return;
+                }
+                onReady(pending, true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
             >
               {t("pvv_use_recording")}
             </button>
