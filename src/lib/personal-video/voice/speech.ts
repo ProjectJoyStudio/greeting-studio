@@ -52,7 +52,10 @@ export function splitGreeting(text: string, participants: number): string[] {
     .split(/(?<=[.!?…])\s+/)
     .map((s) => s.trim())
     .filter(Boolean);
-  const pieces = sentences.length >= people ? sentences : splitWords(clean, people);
+  let pieces = sentences.length >= people ? sentences : splitWords(clean, people);
+  // Every participant must receive words, so a sentence list that is still too
+  // short for the group is shared word by word instead.
+  if (pieces.length < people) pieces = splitWords(clean, people);
 
   const total = pieces.reduce((sum, s) => sum + s.length, 0);
   const target = total / people;
@@ -63,14 +66,21 @@ export function splitGreeting(text: string, participants: number): string[] {
   for (let i = 0; i < pieces.length; i += 1) {
     const piece = pieces[i]!;
     const remainingPieces = pieces.length - i;
-    if (index < people - 1 && filled >= target && remainingPieces > people - index - 1) {
+    const slotsAfterThisOne = people - index - 1;
+    // Move to the next person when this one has spoken enough, and always in
+    // time for everybody still waiting to receive at least one thought.
+    const mustMoveOn = remainingPieces <= slotsAfterThisOne;
+    const shouldMoveOn = filled >= target && remainingPieces > slotsAfterThisOne;
+    if (index < people - 1 && parts[index] && (mustMoveOn || shouldMoveOn)) {
       index += 1;
       filled = 0;
     }
     parts[index] = parts[index] ? `${parts[index]} ${piece}` : piece;
     filled += piece.length;
   }
-  return parts;
+  // Nobody is ever handed a silent part: a leftover empty slot repeats nothing
+  // and is filled from the longest part instead.
+  return parts.map((part) => part.trim() || clean);
 }
 
 function splitWords(text: string, people: number): string[] {
