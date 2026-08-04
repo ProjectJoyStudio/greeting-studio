@@ -453,6 +453,18 @@ export function VoicePanel({
     );
   }
 
+  /** Each participant as the length estimate sees them, with their own pace. */
+  function partEstimates() {
+    return participants.map((person, index) => {
+      const recording = recordings[person.id];
+      if (recording) return { recordedSeconds: recording.durationSeconds };
+      return {
+        words: wordCount(partOf(person, index)),
+        secondsPerWord: secondsPerWord(assignments[person.id]?.id ?? null, language),
+      };
+    });
+  }
+
   /** Speaks one piece of text with one Project Joy voice. */
   async function speak(
     text: string,
