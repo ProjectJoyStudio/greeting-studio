@@ -140,6 +140,7 @@ export function VoicePanel({
   const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
   const [preparing, setPreparing] = useState(false);
   const [prepared, setPrepared] = useState(false);
+  const [permissionForPending, setPermissionForPending] = useState(false);
   const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -909,7 +910,7 @@ export function VoicePanel({
               <button
                 key={person.id}
                 type="button"
-                onClick={() => void keepRecording(person, pendingRecording)}
+                onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
                 className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
                 {participantLabel(person, index)}
@@ -945,10 +946,12 @@ export function VoicePanel({
                   </span>
                 </span>
                 <span className="flex flex-wrap gap-1.5">
-                  {recording?.url && (
+                  {recording?.activeUrl && (
                     <button
                       type="button"
-                      onClick={() => void new Audio(recording.url!).play().catch(() => undefined)}
+                      onClick={() =>
+                        void new Audio(recording.activeUrl!).play().catch(() => undefined)
+                      }
                       className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
                     >
                       <Headphones className="h-3 w-3" />
