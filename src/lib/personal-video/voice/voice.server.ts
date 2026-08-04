@@ -193,7 +193,7 @@ export async function saveMergedVoiceover(args: {
   provider: string;
   speechMode: string;
   syncMode: string | null;
-  trackSummary: unknown[];
+  trackSummary: { label: string; durationSeconds: number; source: string }[];
 }): Promise<PvgVoiceover> {
   const db = await admin();
   const audio = new Uint8Array(Buffer.from(args.audioBase64, "base64"));
@@ -259,7 +259,7 @@ export async function saveMergedVoiceover(args: {
     greetingText: args.greetingText,
     speechMode: args.speechMode,
     syncMode: args.syncMode,
-    trackSummary: args.trackSummary as PvgVoiceover["trackSummary"],
+    trackSummary: args.trackSummary,
   };
 }
 
