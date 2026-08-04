@@ -23,6 +23,7 @@ import {
   assignPvgPersonVoice,
   confirmPvgRecordingPermission,
   deletePvgPersonRecording,
+  fitPvgGreetingToSpeech,
   generatePvgVoiceover,
   getPvgVoiceover,
   listPvgPersonRecordings,
@@ -38,6 +39,8 @@ import type { PvgPerson } from "@/lib/personal-video/types";
 import {
   PVG_MAX_CHORUS_VOICES,
   PVG_MIN_CHORUS_VOICES,
+  PVG_MIN_PART_GAP_SECONDS,
+  speechBudgetSeconds,
   splitGreeting,
   type PvgSpeechMode,
   type PvgSyncMode,
@@ -116,6 +119,7 @@ export function VoicePanel({
   const saveSpeech = useServerFn(savePvgSpeechSettings);
   const savePart = useServerFn(savePvgPersonPart);
   const speakTrack = useServerFn(synthesizePvgTrack);
+  const fitGreeting = useServerFn(fitPvgGreetingToSpeech);
   const saveMerged = useServerFn(savePvgMergedVoiceover);
   const saveRecording = useServerFn(savePvgPersonRecording);
   const dropRecording = useServerFn(deletePvgPersonRecording);
@@ -133,6 +137,7 @@ export function VoicePanel({
   const [chorus, setChorus] = useState<Assignment[]>([]);
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
+  const [replaceFor, setReplaceFor] = useState<string | null>(null);
   const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
   const [busy, setBusy] = useState(false);
