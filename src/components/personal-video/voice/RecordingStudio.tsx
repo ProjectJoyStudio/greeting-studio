@@ -29,11 +29,12 @@ export function RecordingStudio({
 }: {
   greeting: string;
   disabled?: boolean;
-  onReady: (recording: PendingRecording) => void;
+  onReady: (recording: PendingRecording, permissionConfirmed: boolean) => void;
 }) {
   const { t } = useI18n();
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [permission, setPermission] = useState(false);
   const [pending, setPending] = useState<PendingRecording | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -165,8 +166,14 @@ export function RecordingStudio({
             <button
               type="button"
               disabled={disabled}
-              onClick={() => onReady(pending)}
-              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+          onClick={() => {
+            if (!permission) {
+              toast.error(t("pvv_err_permission"));
+              return;
+            }
+            onReady(pending, true);
+          }}
+          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
             >
               {t("pvv_use_recording")}
             </button>
