@@ -124,7 +124,13 @@ export function ManualFaceEditor({
     const id = crypto.randomUUID();
     setMarks((prev) => [
       ...prev,
-      { id, box: { x: point.x, y: point.y, width: 1, height: 1 }, target: "", crop: null, working: false },
+      {
+        id,
+        box: { x: point.x, y: point.y, width: 1, height: 1 },
+        target: "",
+        crop: null,
+        working: false,
+      },
     ]);
     setActiveId(id);
     drag.current = { kind: "draw", id, startX: point.x, startY: point.y };
@@ -194,9 +200,7 @@ export function ManualFaceEditor({
   // --- validation ----------------------------------------------------------
   const newPersonCount = marks.filter((m) => m.target === "").length;
   const totalPeople = people.length + newPersonCount;
-  const tooSmall = marks.some(
-    (m) => m.box.width < MIN_FACE_SIDE || m.box.height < MIN_FACE_SIDE,
-  );
+  const tooSmall = marks.some((m) => m.box.width < MIN_FACE_SIDE || m.box.height < MIN_FACE_SIDE);
   const blurry = marks.some((m) => m.crop?.blurry);
   const overlapping = useMemo(() => {
     for (let i = 0; i < marks.length; i += 1) {
@@ -374,7 +378,9 @@ export function ManualFaceEditor({
                       </button>
                     </div>
                   </div>
-                  {small && <p className="mt-2 text-[11px] text-destructive">{t("pvg_face_err_small")}</p>}
+                  {small && (
+                    <p className="mt-2 text-[11px] text-destructive">{t("pvg_face_err_small")}</p>
+                  )}
                   {!small && m.crop?.blurry && (
                     <p className="mt-2 text-[11px] text-amber-600">{t("pvg_face_warn_blurry")}</p>
                   )}
@@ -386,7 +392,9 @@ export function ManualFaceEditor({
 
         <div className="border-t border-border/60 px-5 py-4">
           <div className="space-y-1">
-            {overlapping && <p className="text-xs text-destructive">{t("pvg_face_warn_overlap")}</p>}
+            {overlapping && (
+              <p className="text-xs text-destructive">{t("pvg_face_warn_overlap")}</p>
+            )}
             {duplicateTarget && (
               <p className="text-xs text-destructive">{t("pvg_face_err_duplicate")}</p>
             )}

@@ -2421,14 +2421,20 @@ export type Database = {
           optimized_path: string | null
           original_bucket: string | null
           original_path: string | null
+          part_text: string | null
           position: number
           project_id: string
+          recording_bucket: string | null
+          recording_duration_seconds: number | null
+          recording_mime: string | null
+          recording_path: string | null
           source: string
           updated_at: string
           user_id: string
           voice_id: string | null
           voice_name: string | null
           voice_provider: string | null
+          voice_source: string | null
         }
         Insert: {
           created_at?: string
@@ -2440,14 +2446,20 @@ export type Database = {
           optimized_path?: string | null
           original_bucket?: string | null
           original_path?: string | null
+          part_text?: string | null
           position?: number
           project_id: string
+          recording_bucket?: string | null
+          recording_duration_seconds?: number | null
+          recording_mime?: string | null
+          recording_path?: string | null
           source?: string
           updated_at?: string
           user_id: string
           voice_id?: string | null
           voice_name?: string | null
           voice_provider?: string | null
+          voice_source?: string | null
         }
         Update: {
           created_at?: string
@@ -2459,14 +2471,20 @@ export type Database = {
           optimized_path?: string | null
           original_bucket?: string | null
           original_path?: string | null
+          part_text?: string | null
           position?: number
           project_id?: string
+          recording_bucket?: string | null
+          recording_duration_seconds?: number | null
+          recording_mime?: string | null
+          recording_path?: string | null
           source?: string
           updated_at?: string
           user_id?: string
           voice_id?: string | null
           voice_name?: string | null
           voice_provider?: string | null
+          voice_source?: string | null
         }
         Relationships: [
           {
@@ -2515,6 +2533,7 @@ export type Database = {
       }
       pvg_projects: {
         Row: {
+          chorus_voice_ids: Json
           created_at: string
           credit_history: Json
           credits_charged: number
@@ -2538,7 +2557,9 @@ export type Database = {
           restored_by: string | null
           scene_description: string | null
           selected_scene_id: string | null
+          speech_mode: string
           status: string
+          sync_mode: string
           updated_at: string
           user_id: string
           version: number
@@ -2548,6 +2569,7 @@ export type Database = {
           workflow_step: string
         }
         Insert: {
+          chorus_voice_ids?: Json
           created_at?: string
           credit_history?: Json
           credits_charged?: number
@@ -2571,7 +2593,9 @@ export type Database = {
           restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
+          speech_mode?: string
           status?: string
+          sync_mode?: string
           updated_at?: string
           user_id: string
           version?: number
@@ -2581,6 +2605,7 @@ export type Database = {
           workflow_step?: string
         }
         Update: {
+          chorus_voice_ids?: Json
           created_at?: string
           credit_history?: Json
           credits_charged?: number
@@ -2604,7 +2629,9 @@ export type Database = {
           restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
+          speech_mode?: string
           status?: string
+          sync_mode?: string
           updated_at?: string
           user_id?: string
           version?: number
@@ -2748,8 +2775,11 @@ export type Database = {
           model_label: string
           project_id: string
           provider: string
+          speech_mode: string
           storage_bucket: string
           storage_path: string
+          sync_mode: string | null
+          track_summary: Json
           updated_at: string
           user_id: string
           voice_id: string
@@ -2769,8 +2799,11 @@ export type Database = {
           model_label?: string
           project_id: string
           provider?: string
+          speech_mode?: string
           storage_bucket?: string
           storage_path: string
+          sync_mode?: string | null
+          track_summary?: Json
           updated_at?: string
           user_id: string
           voice_id: string
@@ -2790,8 +2823,11 @@ export type Database = {
           model_label?: string
           project_id?: string
           provider?: string
+          speech_mode?: string
           storage_bucket?: string
           storage_path?: string
+          sync_mode?: string | null
+          track_summary?: Json
           updated_at?: string
           user_id?: string
           voice_id?: string

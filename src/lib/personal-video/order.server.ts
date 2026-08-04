@@ -28,7 +28,10 @@ export async function writeRetentionDays(days: number, actorUserId: string): Pro
   const value = clampRetentionDays(days);
   await supabaseAdmin
     .from("app_settings")
-    .upsert({ key: PVG_RETENTION_KEY, value: { days: value } as never, updated_by: actorUserId }, { onConflict: "key" });
+    .upsert(
+      { key: PVG_RETENTION_KEY, value: { days: value } as never, updated_by: actorUserId },
+      { onConflict: "key" },
+    );
   return value;
 }
 
@@ -100,7 +103,11 @@ export async function recordVersion(projectId: string): Promise<number> {
   const version = Number((project as { version?: number }).version ?? 0) + 1;
   const [{ data: people }, { data: scenes }] = await Promise.all([
     supabaseAdmin.from("pvg_people").select("*").eq("project_id", projectId).order("position"),
-    supabaseAdmin.from("pvg_scenes").select("*").eq("project_id", projectId).order("variation_index"),
+    supabaseAdmin
+      .from("pvg_scenes")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("variation_index"),
   ]);
 
   await supabaseAdmin.from("pvg_project_versions").insert({

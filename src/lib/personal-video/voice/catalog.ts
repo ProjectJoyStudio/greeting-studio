@@ -23,12 +23,48 @@ export interface PvgVoiceOption {
 
 /** The voices a person can choose from today. */
 export const PVG_VOICES: PvgVoiceOption[] = [
-  { id: "EXAVITQu4vr4xnSDxMaL", provider: "elevenlabs", name: "Sarah", description: "warm_female", gender: "female" },
-  { id: "FGY2WhTYpPnrIDTdsKH5", provider: "elevenlabs", name: "Laura", description: "bright_female", gender: "female" },
-  { id: "XrExE9yKIg1WjnnlVkGX", provider: "elevenlabs", name: "Matilda", description: "gentle_female", gender: "female" },
-  { id: "JBFqnCBsd6RMkjVDRZzb", provider: "elevenlabs", name: "George", description: "warm_male", gender: "male" },
-  { id: "onwK4e9ZLuTAKqWW03F9", provider: "elevenlabs", name: "Daniel", description: "calm_male", gender: "male" },
-  { id: "N2lVS1w4EtoT3dr4eOWO", provider: "elevenlabs", name: "Callum", description: "deep_male", gender: "male" },
+  {
+    id: "EXAVITQu4vr4xnSDxMaL",
+    provider: "elevenlabs",
+    name: "Sarah",
+    description: "warm_female",
+    gender: "female",
+  },
+  {
+    id: "FGY2WhTYpPnrIDTdsKH5",
+    provider: "elevenlabs",
+    name: "Laura",
+    description: "bright_female",
+    gender: "female",
+  },
+  {
+    id: "XrExE9yKIg1WjnnlVkGX",
+    provider: "elevenlabs",
+    name: "Matilda",
+    description: "gentle_female",
+    gender: "female",
+  },
+  {
+    id: "JBFqnCBsd6RMkjVDRZzb",
+    provider: "elevenlabs",
+    name: "George",
+    description: "warm_male",
+    gender: "male",
+  },
+  {
+    id: "onwK4e9ZLuTAKqWW03F9",
+    provider: "elevenlabs",
+    name: "Daniel",
+    description: "calm_male",
+    gender: "male",
+  },
+  {
+    id: "N2lVS1w4EtoT3dr4eOWO",
+    provider: "elevenlabs",
+    name: "Callum",
+    description: "deep_male",
+    gender: "male",
+  },
 ];
 
 export const PVG_DEFAULT_VOICE_ID = PVG_VOICES[0]!.id;
@@ -52,6 +88,11 @@ export interface PvgVoiceover {
   audioUrl: string | null;
   /** The exact greeting the audio was spoken from, used to spot outdated audio. */
   greetingText: string;
+  /** How the greeting was spoken: one voice, separate parts or all together. */
+  speechMode?: string;
+  syncMode?: string | null;
+  /** Plain description of every track the finished recording was made from. */
+  trackSummary?: { label: string; durationSeconds: number; source: string }[];
 }
 
 /** Short sample sentences used by the voice preview, never stored in an order. */

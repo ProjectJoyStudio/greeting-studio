@@ -1,6 +1,7 @@
 // Client-safe types and rules of the Personal Video Greeting section.
 
 import type { PvsVideoSetup } from "./video-setup";
+import type { PvgSpeechMode, PvgSyncMode, PvgVoiceSource } from "./voice/speech";
 
 /** Standard projects hold up to five people. Premium raises this later. */
 export const PVG_MAX_PEOPLE = 5;
@@ -31,6 +32,12 @@ export interface PvgPerson {
   /** The exact voice that speaks for this participant, kept with the order. */
   voiceId: string | null;
   voiceName: string | null;
+  /** A Project Joy voice or the participant's own recording. */
+  voiceSource: PvgVoiceSource | null;
+  /** The part of the greeting this participant speaks. */
+  partText: string;
+  recordingUrl: string | null;
+  recordingDurationSeconds: number;
 }
 
 export type PvgSceneStatus = "pending" | "processing" | "ready" | "failed";
@@ -66,6 +73,10 @@ export interface PvgProject {
   creditHistory: { at: string; amount: number; reason: string; balanceAfter?: number }[];
   /** Settings of the second page: length and greeting of the future video. */
   videoSetup: PvsVideoSetup;
+  /** How the greeting is spoken and, when several voices speak, their timing. */
+  speechMode: PvgSpeechMode;
+  syncMode: PvgSyncMode;
+  chorusVoiceIds: string[];
   people: PvgPerson[];
   scenes: PvgScene[];
 }

@@ -5,9 +5,9 @@ import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } 
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids";
 export const PERSON_COLUMNS =
-  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name";
+  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
   "id, project_id, variation_index, status, storage_bucket, storage_path, error_code, error_message, prediction_id, created_at";
 
@@ -34,6 +34,9 @@ export interface ProjectRow {
   greeting_mode?: string | null;
   greeting_text?: string | null;
   greeting_keywords?: string | null;
+  speech_mode?: string | null;
+  sync_mode?: string | null;
+  chorus_voice_ids?: unknown;
 }
 
 export interface PersonRow {
@@ -50,6 +53,11 @@ export interface PersonRow {
   source: string;
   voice_id?: string | null;
   voice_name?: string | null;
+  voice_source?: string | null;
+  part_text?: string | null;
+  recording_bucket?: string | null;
+  recording_path?: string | null;
+  recording_duration_seconds?: number | null;
 }
 
 export interface SceneRow {
@@ -65,7 +73,10 @@ export interface SceneRow {
   created_at: string;
 }
 
-export async function signedUrl(bucket: string | null, path: string | null): Promise<string | null> {
+export async function signedUrl(
+  bucket: string | null,
+  path: string | null,
+): Promise<string | null> {
   if (!bucket || !path) return null;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { pvgSignedUrlTtl } = await import("./env.server");
@@ -86,6 +97,15 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
     extraPhotoCount: Array.isArray(row.extra_photos) ? row.extra_photos.length : 0,
     voiceId: row.voice_id ?? null,
     voiceName: row.voice_name ?? null,
+    voiceSource:
+      row.voice_source === "recording"
+        ? "recording"
+        : row.voice_source === "library"
+          ? "library"
+          : null,
+    partText: row.part_text ?? "",
+    recordingUrl: await signedUrl(row.recording_bucket ?? null, row.recording_path ?? null),
+    recordingDurationSeconds: Number(row.recording_duration_seconds ?? 0),
   };
 }
 
@@ -121,13 +141,21 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     orderCost: row.order_cost ?? 0,
     version: row.version ?? 0,
     lastSavedAt: row.last_saved_at ?? row.updated_at,
-    creditHistory: Array.isArray(row.credit_history) ? (row.credit_history as PvgProject["creditHistory"]) : [],
+    creditHistory: Array.isArray(row.credit_history)
+      ? (row.credit_history as PvgProject["creditHistory"])
+      : [],
     videoSetup: {
       durationSeconds: clampDuration(row.video_duration_seconds ?? PVS_DEFAULT_SECONDS),
       greetingMode: row.greeting_mode === "keywords" ? "keywords" : "manual",
       greetingText: row.greeting_text ?? "",
       greetingKeywords: row.greeting_keywords ?? "",
     },
+    speechMode:
+      row.speech_mode === "parts" || row.speech_mode === "chorus" ? row.speech_mode : "single",
+    syncMode: row.sync_mode === "simultaneous" ? "simultaneous" : "delayed",
+    chorusVoiceIds: Array.isArray(row.chorus_voice_ids)
+      ? (row.chorus_voice_ids as unknown[]).filter((v): v is string => typeof v === "string")
+      : [],
   };
 }
 
@@ -143,7 +171,12 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
     .select("id, user_id, status, prediction_id")
     .eq("id", sceneId)
     .maybeSingle();
-  const row = data as { id: string; user_id: string; status: string; prediction_id: string | null } | null;
+  const row = data as {
+    id: string;
+    user_id: string;
+    status: string;
+    prediction_id: string | null;
+  } | null;
   if (!row || !row.prediction_id) return "pending";
   if (row.status === "ready" || row.status === "failed") return row.status;
 
@@ -151,7 +184,10 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
   const progress = await pollSceneRender(row.prediction_id);
 
   const patch = async (values: Record<string, unknown>) => {
-    await supabaseAdmin.from("pvg_scenes").update(values as never).eq("id", row.id);
+    await supabaseAdmin
+      .from("pvg_scenes")
+      .update(values as never)
+      .eq("id", row.id);
   };
 
   if (progress.state === "processing") {
@@ -190,7 +226,8 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
     await patch({
       status: "failed",
       error_code: "storage_failed",
-      error_message: err instanceof Error ? err.message.slice(0, 300) : "The picture could not be stored.",
+      error_message:
+        err instanceof Error ? err.message.slice(0, 300) : "The picture could not be stored.",
       completed_at: new Date().toISOString(),
     });
     return "failed";

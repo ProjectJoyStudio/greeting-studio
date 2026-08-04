@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Coins, ImagePlus, Loader2, Plus, ScanFace, Trash2, Users, Wand2, Check, X } from "lucide-react";
+import {
+  Coins,
+  ImagePlus,
+  Loader2,
+  Plus,
+  ScanFace,
+  Trash2,
+  Users,
+  Wand2,
+  Check,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -21,8 +32,16 @@ import {
   savePvgProject,
   selectPvgScene,
 } from "@/lib/personal-video/pvg.functions";
-import { detectFaces, fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
-import { ManualFaceEditor, type ManualFaceResult } from "@/components/personal-video/ManualFaceEditor";
+import {
+  detectFaces,
+  fileToBase64,
+  optimizeImage,
+  readImage,
+} from "@/lib/personal-video/photo-tools";
+import {
+  ManualFaceEditor,
+  type ManualFaceResult,
+} from "@/components/personal-video/ManualFaceEditor";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
@@ -63,7 +82,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
   const sessionId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random()),
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : String(Math.random()),
   );
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
@@ -400,7 +421,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
           <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
             <h2 className="font-display text-lg font-semibold tracking-tight">{t("pvg_basics")}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Field label={t("pvg_recipient")} error={issueFor("recipientName") && t("pvg_err_recipient")}>
+              <Field
+                label={t("pvg_recipient")}
+                error={issueFor("recipientName") && t("pvg_err_recipient")}
+              >
                 <input
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
@@ -409,7 +433,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                   className="w-full rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm outline-none transition focus:border-primary/60"
                 />
               </Field>
-              <Field label={t("pvg_occasion")} error={issueFor("occasion") && t("pvg_err_occasion")}>
+              <Field
+                label={t("pvg_occasion")}
+                error={issueFor("occasion") && t("pvg_err_occasion")}
+              >
                 <input
                   value={occasion}
                   onChange={(e) => setOccasion(e.target.value)}
@@ -554,7 +581,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 }}
                 className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {busy === "person" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {busy === "person" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 {t("pvg_add_person")}
               </button>
               <button
@@ -563,7 +594,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 onClick={() => groupInput.current?.click()}
                 className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {busy === "group" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                {busy === "group" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Users className="h-4 w-4" />
+                )}
                 {t("pvg_add_group")}
               </button>
               {manualOffered && (
@@ -724,7 +759,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                           {t("pvg_selected_badge")}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-muted-foreground">{t("pvg_enlarge_hint")}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("pvg_enlarge_hint")}
+                        </p>
                       )}
                     </div>
                     {mainScene.status === "ready" && project?.selectedSceneId !== mainScene.id && (
@@ -901,15 +938,13 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                   if (!project) return;
                   const sceneId = confirmSceneId;
                   setConfirmSceneId(null);
-                  void chooseScene({ data: { projectId: project.id, sceneId } }).then(
-                    (res) => {
-                      if (res.project) setProject(res.project);
-                      void navigate({
-                        to: "/video-greeting-setup",
-                        search: { project: project.id },
-                      });
-                    },
-                  );
+                  void chooseScene({ data: { projectId: project.id, sceneId } }).then((res) => {
+                    if (res.project) setProject(res.project);
+                    void navigate({
+                      to: "/video-greeting-setup",
+                      search: { project: project.id },
+                    });
+                  });
                 }}
                 className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
               >

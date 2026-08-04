@@ -37,7 +37,9 @@ export interface DeletedPvgDraftDetail extends DeletedPvgDraftRow {
 
 async function assertAdmin(context: { supabase: unknown; userId: string }) {
   const { data } = await (
-    context.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> }
+    context.supabase as {
+      rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }>;
+    }
   ).rpc("is_admin", { _user_id: context.userId });
   if (data !== true) throw new Error("forbidden");
 }
@@ -59,7 +61,12 @@ export const softDeletePvgProject = createServerFn({ method: "POST" })
       .select("id, user_id, status, deleted_at")
       .eq("id", data.projectId)
       .maybeSingle();
-    const project = row as { id: string; user_id: string; status: string; deleted_at: string | null } | null;
+    const project = row as {
+      id: string;
+      user_id: string;
+      status: string;
+      deleted_at: string | null;
+    } | null;
     if (!project || project.user_id !== userId) throw new Error("project_not_found");
     if (project.deleted_at) return { ok: true as const };
 
@@ -81,7 +88,9 @@ export const softDeletePvgProject = createServerFn({ method: "POST" })
 /** Keeps one browser tab as the writer, so two devices cannot fight. */
 export const claimPvgEditSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; sessionId: string; takeOver?: boolean | undefined }) => input)
+  .inputValidator(
+    (input: { projectId: string; sessionId: string; takeOver?: boolean | undefined }) => input,
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row } = await supabase
@@ -89,9 +98,12 @@ export const claimPvgEditSession = createServerFn({ method: "POST" })
       .select("id, user_id, edit_session_id, edit_heartbeat_at")
       .eq("id", data.projectId)
       .maybeSingle();
-    const project = row as
-      | { id: string; user_id: string; edit_session_id: string | null; edit_heartbeat_at: string | null }
-      | null;
+    const project = row as {
+      id: string;
+      user_id: string;
+      edit_session_id: string | null;
+      edit_heartbeat_at: string | null;
+    } | null;
     if (!project || project.user_id !== userId) throw new Error("project_not_found");
 
     const now = Date.now();
@@ -213,10 +225,14 @@ export const previewDeletedPvgDraft = createServerFn({ method: "POST" })
     if (!project) throw new Error("project_not_found");
     const p = project as Record<string, any>;
 
-    const { data: u } = await supabaseAdmin.auth.admin.getUserById(p['user_id']);
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(p["user_id"]);
     const [{ data: people }, { data: scenes }] = await Promise.all([
-      supabaseAdmin.from("pvg_people").select("*").eq("project_id", p['id']).order("position"),
-      supabaseAdmin.from("pvg_scenes").select("*").eq("project_id", p['id']).order("variation_index"),
+      supabaseAdmin.from("pvg_people").select("*").eq("project_id", p["id"]).order("position"),
+      supabaseAdmin
+        .from("pvg_scenes")
+        .select("*")
+        .eq("project_id", p["id"])
+        .order("variation_index"),
     ]);
 
     const files: { bucket: string; path: string }[] = [];
@@ -230,45 +246,47 @@ export const previewDeletedPvgDraft = createServerFn({ method: "POST" })
     const peopleOut = [];
     for (const person of (people ?? []) as Record<string, any>[]) {
       peopleOut.push({
-        id: person['id'],
-        name: person['name'] ?? "",
-        photoUrl: await sign(person['optimized_bucket'], person['optimized_path']),
-        faceQuality: person['face_quality'] ?? "unknown",
+        id: person["id"],
+        name: person["name"] ?? "",
+        photoUrl: await sign(person["optimized_bucket"], person["optimized_path"]),
+        faceQuality: person["face_quality"] ?? "unknown",
       });
-      if (person['original_path']) await sign(person['original_bucket'], person['original_path']);
+      if (person["original_path"]) await sign(person["original_bucket"], person["original_path"]);
     }
 
     const scenesOut = [];
     for (const scene of (scenes ?? []) as Record<string, any>[]) {
       scenesOut.push({
-        id: scene['id'],
-        status: scene['status'],
-        imageUrl: await sign(scene['storage_bucket'], scene['storage_path']),
-        approved: scene['id'] === p['selected_scene_id'],
+        id: scene["id"],
+        status: scene["status"],
+        imageUrl: await sign(scene["storage_bucket"], scene["storage_path"]),
+        approved: scene["id"] === p["selected_scene_id"],
       });
     }
 
     return {
-      id: p['id'],
-      userId: p['user_id'],
+      id: p["id"],
+      userId: p["user_id"],
       userEmail: u?.user?.email ?? null,
-      recipientName: p['recipient_name'] ?? "",
-      occasion: p['occasion'] ?? "",
-      workflowStep: normalizeStep(p['workflow_step']),
-      status: p['status'],
-      createdAt: p['created_at'],
-      deletedAt: p['deleted_at'],
-      purgeAfter: p['purge_after'],
-      creditsCharged: p['credits_charged'] ?? 0,
+      recipientName: p["recipient_name"] ?? "",
+      occasion: p["occasion"] ?? "",
+      workflowStep: normalizeStep(p["workflow_step"]),
+      status: p["status"],
+      createdAt: p["created_at"],
+      deletedAt: p["deleted_at"],
+      purgeAfter: p["purge_after"],
+      creditsCharged: p["credits_charged"] ?? 0,
       previewUrl: scenesOut.find((s) => s.approved)?.imageUrl ?? scenesOut[0]?.imageUrl ?? null,
-      sceneDescription: p['scene_description'] ?? "",
-      greetingText: p['greeting_text'] ?? "",
-      greetingKeywords: p['greeting_keywords'] ?? "",
-      greetingMode: p['greeting_mode'] ?? "manual",
-      durationSeconds: p['video_duration_seconds'] ?? 0,
-      orderCost: p['order_cost'] ?? 0,
-      version: p['version'] ?? 0,
-      creditHistory: Array.isArray(p['credit_history']) ? (p['credit_history'] as PvgCreditEntry[]) : [],
+      sceneDescription: p["scene_description"] ?? "",
+      greetingText: p["greeting_text"] ?? "",
+      greetingKeywords: p["greeting_keywords"] ?? "",
+      greetingMode: p["greeting_mode"] ?? "manual",
+      durationSeconds: p["video_duration_seconds"] ?? 0,
+      orderCost: p["order_cost"] ?? 0,
+      version: p["version"] ?? 0,
+      creditHistory: Array.isArray(p["credit_history"])
+        ? (p["credit_history"] as PvgCreditEntry[])
+        : [],
       people: peopleOut,
       scenes: scenesOut,
       files,

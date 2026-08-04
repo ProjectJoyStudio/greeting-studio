@@ -34,6 +34,7 @@ async function resolveVoice(
     .select("external_voice_id, name, display_name, provider, is_active")
     .eq("external_voice_id", voiceId)
     .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = data as Record<string, any> | null;
   if (row) {
     return {
@@ -86,21 +87,260 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
     .eq("project_id", projectId)
     .maybeSingle();
   if (!data) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = data as Record<string, any>;
   return {
-    voiceId: row['voice_id'],
-    voiceName: row['voice_name'] ?? findVoice(row['voice_id']).name,
-    provider: row['provider'],
-    language: row['language'],
-    durationSeconds: Number(row['duration_seconds'] ?? 0),
-    characterCount: Number(row['character_count'] ?? 0),
-    generatedAt: row['generated_at'],
-    modelId: row['model_id'] ?? "",
-    modelLabel: row['model_label'] || (row['model_id'] ?? ""),
-    creditsUsed: Number(row['credits_used'] ?? 0),
-    audioUrl: await signed(row['storage_bucket'] ?? BUCKET, row['storage_path']),
-    greetingText: row['greeting_text'] ?? "",
+    voiceId: row["voice_id"],
+    voiceName: row["voice_name"] ?? findVoice(row["voice_id"]).name,
+    provider: row["provider"],
+    language: row["language"],
+    durationSeconds: Number(row["duration_seconds"] ?? 0),
+    characterCount: Number(row["character_count"] ?? 0),
+    generatedAt: row["generated_at"],
+    modelId: row["model_id"] ?? "",
+    modelLabel: row["model_label"] || (row["model_id"] ?? ""),
+    creditsUsed: Number(row["credits_used"] ?? 0),
+    audioUrl: await signed(row["storage_bucket"] ?? BUCKET, row["storage_path"]),
+    greetingText: row["greeting_text"] ?? "",
+    speechMode: row["speech_mode"] ?? "single",
+    syncMode: row["sync_mode"] ?? null,
+    trackSummary: Array.isArray(row["track_summary"]) ? row["track_summary"] : [],
   };
+}
+
+/**
+ * Speaks one part of a greeting and hands it back without storing it. The
+ * finished, merged recording of the order is saved separately.
+ */
+export async function synthesizeTrack(args: {
+  projectId: string;
+  userId: string;
+  text: string;
+  voiceId: string;
+  language: string;
+}): Promise<{
+  audioBase64: string;
+  mimeType: string;
+  durationSeconds: number;
+  voiceId: string;
+  voiceName: string;
+  provider: string;
+  characterCount: number;
+}> {
+  const voice = await resolveVoice(args.voiceId);
+  const provider = voice.provider || DEFAULT_VOICE_PROVIDER;
+  const engine = getVoiceEngine(provider);
+  const text = args.text.trim();
+  if (!text) throw new Error("greeting_required");
+  const started = Date.now();
+  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
+
+  try {
+    const result = await engine.synthesize({
+      text,
+      voiceId: voice.id,
+      language: args.language,
+      modelId: await getProductionVoiceModel(provider),
+    });
+    await logVoiceRequest({
+      projectId: args.projectId,
+      userId: args.userId,
+      provider,
+      voiceId: voice.id,
+      language: args.language,
+      characterCount: text.length,
+      generationMs: Date.now() - started,
+      success: true,
+    });
+    return {
+      audioBase64: Buffer.from(result.audio).toString("base64"),
+      mimeType: result.mimeType,
+      durationSeconds: result.durationSeconds,
+      voiceId: voice.id,
+      voiceName: voice.name,
+      provider,
+      characterCount: text.length,
+    };
+  } catch (error) {
+    await logVoiceRequest({
+      projectId: args.projectId,
+      userId: args.userId,
+      provider,
+      voiceId: voice.id,
+      language: args.language,
+      characterCount: text.length,
+      generationMs: Date.now() - started,
+      success: false,
+      errorMessage: error instanceof Error ? error.message : "unknown_error",
+    });
+    throw error;
+  }
+}
+
+/**
+ * Stores the finished recording of the order — one merged voice made of the
+ * spoken parts or of several voices speaking together.
+ */
+export async function saveMergedVoiceover(args: {
+  projectId: string;
+  userId: string;
+  audioBase64: string;
+  mimeType: string;
+  durationSeconds: number;
+  characterCount: number;
+  language: string;
+  greetingText: string;
+  voiceId: string;
+  voiceName: string;
+  provider: string;
+  speechMode: string;
+  syncMode: string | null;
+  trackSummary: { label: string; durationSeconds: number; source: string }[];
+}): Promise<PvgVoiceover> {
+  const db = await admin();
+  const audio = new Uint8Array(Buffer.from(args.audioBase64, "base64"));
+  if (audio.byteLength === 0) throw new Error("voice_empty_response");
+
+  const { data: previous } = await db
+    .from("pvg_voiceovers")
+    .select("storage_bucket, storage_path")
+    .eq("project_id", args.projectId)
+    .maybeSingle();
+
+  const extension = args.mimeType.includes("wav") ? "wav" : "mp3";
+  const path = `${args.userId}/${args.projectId}/voice-${Date.now()}.${extension}`;
+  const upload = await db.storage
+    .from(BUCKET)
+    .upload(path, audio, { contentType: args.mimeType, upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+
+  const generatedAt = new Date().toISOString();
+  const { error } = await db.from("pvg_voiceovers").upsert(
+    {
+      project_id: args.projectId,
+      user_id: args.userId,
+      provider: args.provider,
+      voice_id: args.voiceId,
+      voice_name: args.voiceName,
+      language: args.language,
+      model_id: "",
+      model_label: "",
+      credits_used: 0,
+      storage_bucket: BUCKET,
+      storage_path: path,
+      mime_type: args.mimeType,
+      duration_seconds: args.durationSeconds,
+      character_count: args.characterCount,
+      greeting_text: args.greetingText,
+      generated_at: generatedAt,
+      speech_mode: args.speechMode,
+      sync_mode: args.syncMode,
+      track_summary: args.trackSummary,
+    },
+    { onConflict: "project_id" },
+  );
+  if (error) throw new Error(error.message);
+
+  const old = previous as { storage_bucket?: string; storage_path?: string } | null;
+  if (old?.storage_path && old.storage_path !== path) {
+    await db.storage.from(old.storage_bucket ?? BUCKET).remove([old.storage_path]);
+  }
+
+  return {
+    voiceId: args.voiceId,
+    voiceName: args.voiceName,
+    provider: args.provider,
+    language: args.language,
+    durationSeconds: args.durationSeconds,
+    characterCount: args.characterCount,
+    generatedAt,
+    modelId: "",
+    modelLabel: "",
+    creditsUsed: 0,
+    audioUrl: await signed(BUCKET, path),
+    greetingText: args.greetingText,
+    speechMode: args.speechMode,
+    syncMode: args.syncMode,
+    trackSummary: args.trackSummary,
+  };
+}
+
+const RECORDING_BUCKET = "voice-samples";
+
+/** Keeps the recording a participant brought with their own voice. */
+export async function savePersonRecording(args: {
+  projectId: string;
+  personId: string;
+  userId: string;
+  audioBase64: string;
+  mimeType: string;
+  extension: string;
+  durationSeconds: number;
+}): Promise<{ audioUrl: string | null; durationSeconds: number }> {
+  const db = await admin();
+  const audio = new Uint8Array(Buffer.from(args.audioBase64, "base64"));
+  if (audio.byteLength === 0) throw new Error("recording_empty");
+
+  const { data: previous } = await db
+    .from("pvg_people")
+    .select("recording_bucket, recording_path")
+    .eq("id", args.personId)
+    .maybeSingle();
+
+  const safe = (args.extension || "webm").replace(/[^a-z0-9]/gi, "").slice(0, 5) || "webm";
+  const path = `${args.userId}/${args.projectId}/${args.personId}-${Date.now()}.${safe}`;
+  const upload = await db.storage
+    .from(RECORDING_BUCKET)
+    .upload(path, audio, { contentType: args.mimeType || "audio/webm", upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+
+  const { error } = await db
+    .from("pvg_people")
+    .update({
+      voice_source: "recording",
+      voice_id: null,
+      voice_name: null,
+      recording_bucket: RECORDING_BUCKET,
+      recording_path: path,
+      recording_mime: args.mimeType || "audio/webm",
+      recording_duration_seconds: args.durationSeconds,
+    })
+    .eq("id", args.personId)
+    .eq("project_id", args.projectId);
+  if (error) throw new Error(error.message);
+
+  const old = previous as { recording_bucket?: string; recording_path?: string } | null;
+  if (old?.recording_path && old.recording_path !== path) {
+    await db.storage.from(old.recording_bucket ?? RECORDING_BUCKET).remove([old.recording_path]);
+  }
+
+  return { audioUrl: await signed(RECORDING_BUCKET, path), durationSeconds: args.durationSeconds };
+}
+
+/** Removes the personal recording of one participant. */
+export async function deletePersonRecording(projectId: string, personId: string): Promise<void> {
+  const db = await admin();
+  const { data } = await db
+    .from("pvg_people")
+    .select("recording_bucket, recording_path")
+    .eq("id", personId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  const row = data as { recording_bucket?: string; recording_path?: string } | null;
+  if (row?.recording_path) {
+    await db.storage.from(row.recording_bucket ?? RECORDING_BUCKET).remove([row.recording_path]);
+  }
+  await db
+    .from("pvg_people")
+    .update({
+      voice_source: null,
+      recording_bucket: null,
+      recording_path: null,
+      recording_mime: null,
+      recording_duration_seconds: null,
+    })
+    .eq("id", personId)
+    .eq("project_id", projectId);
 }
 
 /**
