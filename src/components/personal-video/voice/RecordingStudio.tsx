@@ -53,6 +53,7 @@ export function RecordingStudio({
       const objectUrl = URL.createObjectURL(blob);
       const durationSeconds = await audioDuration({ base64, mimeType });
       const next = { base64, mimeType, extension, durationSeconds, objectUrl };
+      setPermission(false);
       setPending((old) => {
         if (old) URL.revokeObjectURL(old.objectUrl);
         return next;

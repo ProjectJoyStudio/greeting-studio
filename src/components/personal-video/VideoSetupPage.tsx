@@ -349,6 +349,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 people={project.people}
                 greeting={greeting}
                 language={lang}
+                videoSeconds={duration}
                 disabled={readOnly}
                 speechMode={project.speechMode}
                 syncMode={project.syncMode}
