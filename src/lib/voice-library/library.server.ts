@@ -121,7 +121,11 @@ function rowToVoice(row: Record<string, any>, previews: Record<string, any>[]): 
 }
 
 /** The stored voice library, with a playable link for every saved preview. */
-export async function readLibrary(options?: { activeOnly?: boolean }): Promise<LibraryVoice[]> {
+export async function readLibrary(options?: {
+  activeOnly?: boolean;
+  /** Only voices that own a stored sample in every Project Joy language. */
+  completePreviewsOnly?: boolean;
+}): Promise<LibraryVoice[]> {
   const db = await admin();
   let query = db
     .from("voice_library")
@@ -147,7 +151,15 @@ export async function readLibrary(options?: { activeOnly?: boolean }): Promise<L
     byVoice.set(raw["voice_id"], list);
   }
 
-  return rows.map((row) => rowToVoice(row, byVoice.get(row["id"]) ?? []));
+  const voices = rows.map((row) => rowToVoice(row, byVoice.get(row["id"]) ?? []));
+  if (!options?.completePreviewsOnly) return voices;
+  // A voice is offered only when every language really has a playable sample,
+  // so a person can never meet an empty preview button.
+  return voices.filter((voice) =>
+    PREVIEW_LANGUAGES.every((code) =>
+      voice.previews.some((p) => p.language === code && Boolean(p.audioUrl)),
+    ),
+  );
 }
 
 /**
