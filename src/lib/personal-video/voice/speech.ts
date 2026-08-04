@@ -33,7 +33,26 @@ export function isAcceptedRecording(fileName: string, mime: string): boolean {
 }
 
 /** Quiet pause between two participants speaking one after the other. */
-export const PVG_PART_GAP_SECONDS = 0.35;
+export const PVG_PART_GAP_SECONDS = 0.12;
+
+/** The shortest pause Project Joy ever leaves between two participants. */
+export const PVG_MIN_PART_GAP_SECONDS = 0.05;
+
+/** Silence reserved at the very start of the video, before anyone speaks. */
+export const PVG_LEAD_IN_SECONDS = 0.5;
+
+/** Silence reserved at the very end of the video, after the last word. */
+export const PVG_TAIL_OUT_SECONDS = 0.5;
+
+/**
+ * How long the speech of a greeting may last inside a video of a given
+ * length: the first and the last half second always stay quiet.
+ */
+export function speechBudgetSeconds(videoSeconds: number): number {
+  const video = Number(videoSeconds);
+  if (!Number.isFinite(video) || video <= 0) return 0;
+  return Math.max(1, Math.round((video - PVG_LEAD_IN_SECONDS - PVG_TAIL_OUT_SECONDS) * 100) / 100);
+}
 
 /** How far apart voices start when they speak together, slightly delayed. */
 export const PVG_CHORUS_DELAY_SECONDS = 0.09;
