@@ -135,7 +135,13 @@ export const savePvgPersonPart = createServerFn({ method: "POST" })
 export const synthesizePvgTrack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { projectId: string; text: string; voiceId: string; language: string }) => input,
+    (input: {
+      projectId: string;
+      text: string;
+      voiceId: string;
+      language: string;
+      speed?: number;
+    }) => input,
   )
   .handler(async ({ data, context }) => {
     await assertOwner(context.supabase as never, data.projectId, context.userId);
@@ -146,7 +152,23 @@ export const synthesizePvgTrack = createServerFn({ method: "POST" })
       text: data.text,
       voiceId: data.voiceId,
       language: data.language,
+      speed: data.speed ?? 1,
     });
+  });
+
+/**
+ * Shortens a greeting, without changing its meaning, so it can be spoken
+ * calmly inside the time the chosen video leaves for speech.
+ */
+export const fitPvgGreetingToSpeech = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { projectId: string; text: string; budgetSeconds: number; language: string }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { shortenToBudget } = await import("./voice/fit.server");
+    return { text: await shortenToBudget(data.text, data.budgetSeconds, data.language) };
   });
 
 /** Stores the finished, merged recording of the whole greeting. */

@@ -2,7 +2,7 @@
 // Joy keeps for every recording, how it is prepared, and everything that must
 // be true before a greeting may be created.
 
-import type { PvgSpeechMode } from "./speech";
+import { speechBudgetSeconds, type PvgSpeechMode } from "./speech";
 
 /** How far Project Joy has come with preparing one recording. */
 export type PvgRecordingProcessing = "pending" | "processing" | "ready" | "failed";
@@ -104,7 +104,8 @@ export function validateVoiceSetup(input: PvgVoiceCheckInput): PvgVoiceIssue[] {
       issues.push({ key: "pvv_err_recording_failed_for", name: person.label });
       continue;
     }
-    if (input.videoSeconds > 0 && recording.durationSeconds > input.videoSeconds + 0.5) {
+    const budget = speechBudgetSeconds(input.videoSeconds);
+    if (budget > 0 && recording.durationSeconds > budget + 0.5) {
       issues.push({ key: "pvv_err_recording_long_for", name: person.label });
     }
     if (!recording.permissionConfirmed) {
