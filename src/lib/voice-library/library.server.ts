@@ -41,21 +41,32 @@ interface ElevenVoice {
   high_quality_base_model_ids?: string[] | null;
 }
 
+const PERMISSION_HINT =
+  "The saved voice list could not be read: the voice studio key is restricted and does not " +
+  "allow reading voices. Open the voice studio account settings, edit this API key and give it " +
+  '"Voices" → Read access (or use a key with full access), then run the import again. ' +
+  "Speech generation itself keeps working with the current key.";
+
 /** Every voice currently saved inside the connected voice studio account. */
 async function fetchStudioVoices(): Promise<ElevenVoice[]> {
   const apiKey = process.env["ELEVENLABS_API_KEY"];
   if (!apiKey) throw new Error("voice_service_unavailable");
+  const headers = { "xi-api-key": apiKey } as const;
 
+  // Preferred paginated endpoint, with the legacy list as a fallback for keys
+  // or accounts where the newer listing route is not available.
   const out: ElevenVoice[] = [];
   let page: string | null = null;
+  let firstFailure: { status: number; detail: string } | null = null;
+
   for (let i = 0; i < 20; i += 1) {
     const url = new URL("https://api.elevenlabs.io/v2/voices");
     url.searchParams.set("page_size", "100");
     if (page) url.searchParams.set("next_page_token", page);
-    const res = await fetch(url.toString(), { headers: { "xi-api-key": apiKey } });
+    const res = await fetch(url.toString(), { headers });
     if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`voice_import_failed:${res.status}:${detail.slice(0, 300)}`);
+      firstFailure = { status: res.status, detail: (await res.text().catch(() => "")).slice(0, 300) };
+      break;
     }
     const json = (await res.json()) as {
       voices?: ElevenVoice[];
@@ -63,10 +74,22 @@ async function fetchStudioVoices(): Promise<ElevenVoice[]> {
       next_page_token?: string | null;
     };
     out.push(...(json.voices ?? []));
-    if (!json.has_more || !json.next_page_token) break;
+    if (!json.has_more || !json.next_page_token) return out;
     page = json.next_page_token;
   }
-  return out;
+  if (!firstFailure) return out;
+
+  const legacy = await fetch("https://api.elevenlabs.io/v1/voices?show_legacy=true", { headers });
+  if (legacy.ok) {
+    const json = (await legacy.json()) as { voices?: ElevenVoice[] };
+    return json.voices ?? [];
+  }
+
+  const detail = (await legacy.text().catch(() => "")) || firstFailure.detail;
+  if (legacy.status === 401 || firstFailure.status === 401 || detail.includes("voices_read")) {
+    throw new Error(PERMISSION_HINT);
+  }
+  throw new Error(`voice_import_failed:${legacy.status}:${detail.slice(0, 300)}`);
 }
 
 function rowToVoice(row: Record<string, any>, previews: Record<string, any>[]): LibraryVoice {
