@@ -43,8 +43,33 @@ export const adminFillPreviews = createServerFn({ method: "POST" })
   .inputValidator((input: { voiceId?: string }) => input)
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { fillMissingPreviews } = await import("./library.server");
-    return fillMissingPreviews(data.voiceId ? [data.voiceId] : undefined);
+    const { verifyPreviews } = await import("./library.server");
+    return verifyPreviews(data.voiceId ? [data.voiceId] : undefined);
+  });
+
+/**
+ * Checks every stored sample of every voice and prepares again anything that
+ * is missing or damaged, in every Project Joy language.
+ */
+export const adminVerifyPreviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { voiceId?: string }) => input)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { verifyPreviews } = await import("./library.server");
+    return verifyPreviews(data.voiceId ? [data.voiceId] : undefined);
+  });
+
+/**
+ * The playable sample of one voice in the language a person is browsing in.
+ * A missing or damaged sample is prepared again before it is handed back.
+ */
+export const ensureVoicePreview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { voiceId: string; language: string }) => input)
+  .handler(async ({ data }): Promise<{ url: string | null }> => {
+    const { ensurePreviewUrl } = await import("./library.server");
+    return ensurePreviewUrl(data.voiceId, data.language);
   });
 
 /** Creates the preview of one voice again, replacing the stored recording. */

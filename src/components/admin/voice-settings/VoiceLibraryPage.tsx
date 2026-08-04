@@ -126,6 +126,7 @@ function VoiceCard({
             <option value="">—</option>
             <option value="female">female</option>
             <option value="male">male</option>
+            <option value="children">children</option>
             <option value="neutral">neutral</option>
           </select>
         </label>
@@ -219,7 +220,7 @@ export function VoiceLibraryPage() {
   const runFill = useMutation({
     mutationFn: () => fill({ data: {} }),
     onSuccess: (res) => {
-      toast.success(`${L("vl_preview_done")} · +${res.created}`);
+      toast.success(`${L("vl_preview_done")} · ${res.checked} · +${res.repaired}`);
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),

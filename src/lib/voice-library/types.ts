@@ -49,13 +49,12 @@ export function voiceCategory(voice: LibraryVoice): VoiceCategory {
   return "female";
 }
 
-/** The saved preview for one language, falling back to English then any. */
+/**
+ * The saved preview for exactly the language a person is browsing in. There is
+ * no fallback on purpose: nobody should hear an English sample on the Russian
+ * or Ukrainian site — the missing sample is prepared instead.
+ */
 export function previewFor(voice: LibraryVoice, language: string): VoicePreview | null {
   const code = language.slice(0, 2).toLowerCase();
-  return (
-    voice.previews.find((p) => p.language === code && p.audioUrl) ??
-    voice.previews.find((p) => p.language === "en" && p.audioUrl) ??
-    voice.previews.find((p) => p.audioUrl) ??
-    null
-  );
+  return voice.previews.find((p) => p.language === code && p.audioUrl) ?? null;
 }
