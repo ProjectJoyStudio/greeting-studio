@@ -756,6 +756,26 @@ export function VoicePanel({
               <p className="text-xs text-muted-foreground">{t("pvv_no_participants")}</p>
             )}
           </div>
+          {participants.length > 0 && videoSeconds ? (
+            (() => {
+              const budget = speechBudgetSeconds(videoSeconds);
+              const estimate = estimateSpeechSeconds(partEstimates());
+              const fastest = estimateSpeechSeconds(partEstimates(), PVG_MAX_SPEECH_SPEED);
+              const fits = fastest <= budget;
+              return (
+                <div
+                  className={`mt-4 rounded-2xl border p-3 text-[11px] ${
+                    fits ? "border-border/60 text-muted-foreground" : "border-destructive/50 text-destructive"
+                  }`}
+                >
+                  <p>
+                    {t("pvv_parts_estimate")}: {estimate.toFixed(1)}s / {budget.toFixed(1)}s
+                  </p>
+                  {!fits && <p className="mt-1 font-medium">{t("pvv_parts_too_long")}</p>}
+                </div>
+              );
+            })()
+          ) : null}
         </div>
       )}
 
