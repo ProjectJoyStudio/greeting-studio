@@ -235,6 +235,117 @@ export async function fillMissingPreviews(voiceRowIds?: string[]): Promise<{
   return { created, failed };
 }
 
+/** The stored sound files of one voice, with their size, as the storage sees them. */
+async function storedFiles(
+  provider: string,
+  externalVoiceId: string,
+): Promise<Map<string, number>> {
+  const db = await admin();
+  const folder = `${provider}/${externalVoiceId}`;
+  const { data } = await db.storage.from(VOICE_PREVIEW_BUCKET).list(folder, { limit: 200 });
+  const out = new Map<string, number>();
+  for (const file of (data ?? []) as { name: string; metadata?: { size?: number } | null }[]) {
+    out.set(`${folder}/${file.name}`, Number(file.metadata?.size ?? 0));
+  }
+  return out;
+}
+
+/** A preview counts as playable only when a real, non-empty file is behind it. */
+const MIN_PREVIEW_BYTES = 1024;
+
+/**
+ * Checks every preview of every active voice — the record, the file and its
+ * size — and prepares again anything that is missing or damaged. This is the
+ * routine that keeps "Preview" working for every voice and every language.
+ */
+export async function verifyPreviews(voiceRowIds?: string[]): Promise<{
+  checked: number;
+  repaired: number;
+  failed: number;
+}> {
+  const db = await admin();
+  let query = db.from("voice_library").select("id, provider, external_voice_id").eq("is_active", true);
+  if (voiceRowIds && voiceRowIds.length > 0) query = query.in("id", voiceRowIds);
+  const { data } = await query;
+  const voices = (data ?? []) as { id: string; provider: string; external_voice_id: string }[];
+  if (voices.length === 0) return { checked: 0, repaired: 0, failed: 0 };
+
+  const { data: previewRows } = await db
+    .from("voice_previews")
+    .select("voice_id, language, storage_path")
+    .in("voice_id", voices.map((v) => v.id));
+  const rows = (previewRows ?? []) as { voice_id: string; language: string; storage_path: string }[];
+  const byKey = new Map(rows.map((r) => [`${r.voice_id}:${r.language}`, r]));
+
+  let checked = 0;
+  let repaired = 0;
+  let failed = 0;
+
+  for (const voice of voices) {
+    const files = await storedFiles(voice.provider || DEFAULT_VOICE_PROVIDER, voice.external_voice_id);
+    for (const language of PREVIEW_LANGUAGES) {
+      checked += 1;
+      const row = byKey.get(`${voice.id}:${language}`);
+      const size = row ? (files.get(row.storage_path) ?? 0) : 0;
+      if (row && size >= MIN_PREVIEW_BYTES) continue;
+      try {
+        await generatePreview(voice.id, language);
+        repaired += 1;
+      } catch (error) {
+        failed += 1;
+        console.warn(
+          `[voice-library] preview repair failed voice=${voice.id} language=${language}: ` +
+            (error instanceof Error ? error.message : "unknown"),
+        );
+      }
+    }
+  }
+  return { checked, repaired, failed };
+}
+
+/**
+ * The playable sample of one voice in exactly one language. A missing or
+ * damaged file is prepared again on the spot, so a person always hears the
+ * voice in the language they are browsing in.
+ */
+export async function ensurePreviewUrl(
+  externalVoiceId: string,
+  language: string,
+): Promise<{ url: string | null }> {
+  const db = await admin();
+  const code = language.slice(0, 2).toLowerCase();
+  const { data } = await db
+    .from("voice_library")
+    .select("id, provider, external_voice_id")
+    .eq("external_voice_id", externalVoiceId)
+    .maybeSingle();
+  const voice = data as { id: string; provider: string; external_voice_id: string } | null;
+  if (!voice) throw new Error("voice_not_found");
+
+  const files = await storedFiles(voice.provider || DEFAULT_VOICE_PROVIDER, voice.external_voice_id);
+  const { data: rowData } = await db
+    .from("voice_previews")
+    .select("storage_bucket, storage_path")
+    .eq("voice_id", voice.id)
+    .eq("language", code)
+    .maybeSingle();
+  const row = rowData as { storage_bucket?: string; storage_path: string } | null;
+
+  if (!row || (files.get(row.storage_path) ?? 0) < MIN_PREVIEW_BYTES) {
+    await generatePreview(voice.id, code);
+    const { data: fresh } = await db
+      .from("voice_previews")
+      .select("storage_bucket, storage_path")
+      .eq("voice_id", voice.id)
+      .eq("language", code)
+      .maybeSingle();
+    const made = fresh as { storage_bucket?: string; storage_path: string } | null;
+    if (!made) throw new Error("voice_unavailable");
+    return { url: await signed(made.storage_bucket ?? VOICE_PREVIEW_BUCKET, made.storage_path) };
+  }
+  return { url: await signed(row.storage_bucket ?? VOICE_PREVIEW_BUCKET, row.storage_path) };
+}
+
 /**
  * Imports every voice saved in the studio account. Existing settings — display
  * name, description and the active switch — are never overwritten.
