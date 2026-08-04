@@ -1,0 +1,323 @@
+// Server-only voice library: importing every saved voice of the connected
+// voice studio, preparing one permanent preview recording per language and
+// keeping all of it inside Project Joy storage.
+
+import { voiceSample } from "@/lib/personal-video/voice/catalog";
+import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "@/lib/personal-video/voice/providers.server";
+
+import { PREVIEW_LANGUAGES, VOICE_PREVIEW_BUCKET, type LibraryVoice } from "./types";
+
+const SIGNED_TTL = 60 * 60 * 12;
+
+type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+
+async function admin(): Promise<Admin> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as Admin;
+}
+
+async function signed(bucket: string, path: string): Promise<string | null> {
+  const db = await admin();
+  const res = await db.storage.from(bucket).createSignedUrl(path, SIGNED_TTL);
+  return res.data?.signedUrl ?? null;
+}
+
+function guessGender(labels: Record<string, string> | null | undefined, fallback: string): string {
+  const value = (labels?.["gender"] ?? "").toLowerCase();
+  if (value.includes("female")) return "female";
+  if (value.includes("male")) return "male";
+  return fallback || "neutral";
+}
+
+interface ElevenVoice {
+  voice_id: string;
+  name?: string;
+  description?: string | null;
+  category?: string | null;
+  preview_url?: string | null;
+  labels?: Record<string, string> | null;
+  fine_tuning?: { language?: string | null } | null;
+  verified_languages?: { language?: string }[] | null;
+  high_quality_base_model_ids?: string[] | null;
+}
+
+/** Every voice currently saved inside the connected voice studio account. */
+async function fetchStudioVoices(): Promise<ElevenVoice[]> {
+  const apiKey = process.env["ELEVENLABS_API_KEY"];
+  if (!apiKey) throw new Error("voice_service_unavailable");
+
+  const out: ElevenVoice[] = [];
+  let page: string | null = null;
+  for (let i = 0; i < 20; i += 1) {
+    const url = new URL("https://api.elevenlabs.io/v2/voices");
+    url.searchParams.set("page_size", "100");
+    if (page) url.searchParams.set("next_page_token", page);
+    const res = await fetch(url.toString(), { headers: { "xi-api-key": apiKey } });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`voice_import_failed:${res.status}:${detail.slice(0, 300)}`);
+    }
+    const json = (await res.json()) as {
+      voices?: ElevenVoice[];
+      has_more?: boolean;
+      next_page_token?: string | null;
+    };
+    out.push(...(json.voices ?? []));
+    if (!json.has_more || !json.next_page_token) break;
+    page = json.next_page_token;
+  }
+  return out;
+}
+
+function rowToVoice(row: Record<string, any>, previews: Record<string, any>[]): LibraryVoice {
+  return {
+    id: row["id"],
+    provider: row["provider"],
+    externalVoiceId: row["external_voice_id"],
+    name: row["name"],
+    displayName: row["display_name"] ?? "",
+    description: row["description"] ?? "",
+    gender: row["gender"] ?? "",
+    language: row["language"] ?? "",
+    category: row["category"] ?? "",
+    modelCompatibility: (row["model_compatibility"] ?? []) as string[],
+    isActive: Boolean(row["is_active"]),
+    sortOrder: Number(row["sort_order"] ?? 0),
+    importedAt: row["imported_at"],
+    previews: previews.map((p) => ({
+      language: p["language"],
+      audioUrl: p["signedUrl"] ?? null,
+      durationSeconds: Number(p["duration_seconds"] ?? 0),
+      characterCount: Number(p["character_count"] ?? 0),
+      generatedAt: p["generated_at"],
+    })),
+  };
+}
+
+/** The stored voice library, with a playable link for every saved preview. */
+export async function readLibrary(options?: { activeOnly?: boolean }): Promise<LibraryVoice[]> {
+  const db = await admin();
+  let query = db
+    .from("voice_library")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (options?.activeOnly) query = query.eq("is_active", true);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Record<string, any>[];
+  if (rows.length === 0) return [];
+
+  const { data: previewRows } = await db
+    .from("voice_previews")
+    .select("*")
+    .in("voice_id", rows.map((r) => r["id"]));
+
+  const byVoice = new Map<string, Record<string, any>[]>();
+  for (const raw of (previewRows ?? []) as Record<string, any>[]) {
+    const url = await signed(raw["storage_bucket"] ?? VOICE_PREVIEW_BUCKET, raw["storage_path"]);
+    const list = byVoice.get(raw["voice_id"]) ?? [];
+    list.push({ ...raw, signedUrl: url });
+    byVoice.set(raw["voice_id"], list);
+  }
+
+  return rows.map((row) => rowToVoice(row, byVoice.get(row["id"]) ?? []));
+}
+
+/**
+ * Creates and permanently stores one preview recording. This is the only place
+ * the voice studio is ever asked for a sample — playback always uses the file.
+ */
+export async function generatePreview(voiceRowId: string, language: string): Promise<void> {
+  const db = await admin();
+  const { data } = await db.from("voice_library").select("*").eq("id", voiceRowId).maybeSingle();
+  const row = data as Record<string, any> | null;
+  if (!row) throw new Error("voice_not_found");
+
+  const provider = row["provider"] || DEFAULT_VOICE_PROVIDER;
+  const engine = getVoiceEngine(provider);
+  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
+  const text = voiceSample(language);
+
+  const result = await engine.synthesize({
+    text,
+    voiceId: row["external_voice_id"],
+    language,
+    modelId: await getProductionVoiceModel(provider),
+  });
+
+  const path = `${provider}/${row["external_voice_id"]}/${language}.${result.extension}`;
+  const upload = await db.storage
+    .from(VOICE_PREVIEW_BUCKET)
+    .upload(path, result.audio, { contentType: result.mimeType, upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+
+  const { error } = await db.from("voice_previews").upsert(
+    {
+      voice_id: voiceRowId,
+      language,
+      storage_bucket: VOICE_PREVIEW_BUCKET,
+      storage_path: path,
+      mime_type: result.mimeType,
+      duration_seconds: result.durationSeconds,
+      character_count: text.length,
+      model_key: result.modelId,
+      sample_text: text,
+      generated_at: new Date().toISOString(),
+    },
+    { onConflict: "voice_id,language" },
+  );
+  if (error) throw new Error(error.message);
+}
+
+/** Prepares every missing preview so playback never reaches the voice studio. */
+export async function fillMissingPreviews(voiceRowIds?: string[]): Promise<{
+  created: number;
+  failed: number;
+}> {
+  const db = await admin();
+  let query = db.from("voice_library").select("id").eq("is_active", true);
+  if (voiceRowIds && voiceRowIds.length > 0) query = query.in("id", voiceRowIds);
+  const { data } = await query;
+  const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+  if (ids.length === 0) return { created: 0, failed: 0 };
+
+  const { data: existing } = await db
+    .from("voice_previews")
+    .select("voice_id, language")
+    .in("voice_id", ids);
+  const have = new Set(
+    ((existing ?? []) as { voice_id: string; language: string }[]).map(
+      (p) => `${p.voice_id}:${p.language}`,
+    ),
+  );
+
+  let created = 0;
+  let failed = 0;
+  for (const id of ids) {
+    for (const language of PREVIEW_LANGUAGES) {
+      if (have.has(`${id}:${language}`)) continue;
+      try {
+        await generatePreview(id, language);
+        created += 1;
+      } catch (error) {
+        failed += 1;
+        console.warn(
+          `[voice-library] preview failed voice=${id} language=${language}: ` +
+            (error instanceof Error ? error.message : "unknown"),
+        );
+      }
+    }
+  }
+  return { created, failed };
+}
+
+/**
+ * Imports every voice saved in the studio account. Existing settings — display
+ * name, description and the active switch — are never overwritten.
+ */
+export async function importVoices(options?: { withPreviews?: boolean }): Promise<{
+  imported: number;
+  added: number;
+  previewsCreated: number;
+  previewsFailed: number;
+}> {
+  const db = await admin();
+  const provider = DEFAULT_VOICE_PROVIDER;
+  const studio = await fetchStudioVoices();
+
+  const { data: current } = await db
+    .from("voice_library")
+    .select("id, external_voice_id")
+    .eq("provider", provider);
+  const known = new Set(
+    ((current ?? []) as { external_voice_id: string }[]).map((r) => r.external_voice_id),
+  );
+
+  let added = 0;
+  let index = 0;
+  for (const voice of studio) {
+    const labels = voice.labels ?? {};
+    const verified = (voice.verified_languages ?? [])
+      .map((l) => l.language)
+      .filter(Boolean) as string[];
+    const language =
+      voice.fine_tuning?.language || verified[0] || labels["language"] || "";
+
+    const payload: Record<string, unknown> = {
+      provider,
+      external_voice_id: voice.voice_id,
+      name: voice.name ?? voice.voice_id,
+      gender: guessGender(labels, ""),
+      language,
+      category: voice.category ?? "",
+      labels,
+      model_compatibility: voice.high_quality_base_model_ids ?? [],
+      provider_preview_url: voice.preview_url ?? null,
+      sort_order: index,
+    };
+    if (!known.has(voice.voice_id)) {
+      // Only a brand-new voice receives the studio description and is enabled.
+      payload["description"] = voice.description ?? labels["description"] ?? "";
+      payload["is_active"] = true;
+      payload["imported_at"] = new Date().toISOString();
+      added += 1;
+    }
+
+    const { error } = await db
+      .from("voice_library")
+      .upsert(payload as never, { onConflict: "provider,external_voice_id" });
+    if (error) throw new Error(error.message);
+    index += 1;
+  }
+
+  const previews =
+    options?.withPreviews === false ? { created: 0, failed: 0 } : await fillMissingPreviews();
+
+  return {
+    imported: studio.length,
+    added,
+    previewsCreated: previews.created,
+    previewsFailed: previews.failed,
+  };
+}
+
+/** Administrator edits: display name, description, gender and availability. */
+export async function updateVoice(
+  voiceRowId: string,
+  patch: {
+    displayName?: string;
+    description?: string;
+    gender?: string;
+    language?: string;
+    isActive?: boolean;
+  },
+): Promise<void> {
+  const db = await admin();
+  const update: Record<string, unknown> = {};
+  if (patch.displayName !== undefined) update["display_name"] = patch.displayName;
+  if (patch.description !== undefined) update["description"] = patch.description;
+  if (patch.gender !== undefined) update["gender"] = patch.gender;
+  if (patch.language !== undefined) update["language"] = patch.language;
+  if (patch.isActive !== undefined) update["is_active"] = patch.isActive;
+  if (Object.keys(update).length === 0) return;
+  const { error } = await db.from("voice_library").update(update as never).eq("id", voiceRowId);
+  if (error) throw new Error(error.message);
+}
+
+/** Removes a voice from Project Joy only — the studio account is untouched. */
+export async function removeVoice(voiceRowId: string): Promise<void> {
+  const db = await admin();
+  const { data } = await db
+    .from("voice_previews")
+    .select("storage_bucket, storage_path")
+    .eq("voice_id", voiceRowId);
+  const files = (data ?? []) as { storage_bucket: string; storage_path: string }[];
+  if (files.length > 0) {
+    await db.storage
+      .from(files[0]!.storage_bucket || VOICE_PREVIEW_BUCKET)
+      .remove(files.map((f) => f.storage_path));
+  }
+  const { error } = await db.from("voice_library").delete().eq("id", voiceRowId);
+  if (error) throw new Error(error.message);
+}

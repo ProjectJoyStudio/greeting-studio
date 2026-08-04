@@ -21,6 +21,31 @@ async function signed(bucket: string, path: string): Promise<string | null> {
   return res.data?.signedUrl ?? null;
 }
 
+/**
+ * The chosen voice, looked up in the imported voice library first and in the
+ * built-in list afterwards, so both kinds of voice keep their real name.
+ */
+async function resolveVoice(
+  voiceId: string,
+): Promise<{ id: string; name: string; provider: string }> {
+  const db = await admin();
+  const { data } = await db
+    .from("voice_library")
+    .select("external_voice_id, name, display_name, provider, is_active")
+    .eq("external_voice_id", voiceId)
+    .maybeSingle();
+  const row = data as Record<string, any> | null;
+  if (row) {
+    return {
+      id: row["external_voice_id"],
+      name: row["display_name"] || row["name"],
+      provider: row["provider"] || DEFAULT_VOICE_PROVIDER,
+    };
+  }
+  const fallback = findVoice(voiceId);
+  return { id: fallback.id, name: fallback.name, provider: fallback.provider };
+}
+
 /** Testing record of one voice request — success or failure, always written. */
 export async function logVoiceRequest(entry: {
   projectId: string;
@@ -91,9 +116,9 @@ export async function generateVoiceover(args: {
   provider?: string;
 }): Promise<PvgVoiceover> {
   const db = await admin();
-  const provider = args.provider || DEFAULT_VOICE_PROVIDER;
+  const voice = await resolveVoice(args.voiceId);
+  const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
-  const voice = findVoice(args.voiceId);
   const text = args.text.trim();
   const started = Date.now();
 
@@ -200,9 +225,9 @@ export async function previewVoice(args: {
   provider?: string;
 }): Promise<{ audioBase64: string; mimeType: string }> {
   const { voiceSample } = await import("./catalog");
-  const provider = args.provider || DEFAULT_VOICE_PROVIDER;
+  const voice = await resolveVoice(args.voiceId);
+  const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
-  const voice = findVoice(args.voiceId);
   const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
   const result = await engine.synthesize({
     text: voiceSample(args.language),

@@ -17,6 +17,33 @@ import {
   findVoice,
   type PvgVoiceover,
 } from "@/lib/personal-video/voice/catalog";
+import { listStudioVoices } from "@/lib/voice-library/library.functions";
+import { previewFor, type LibraryVoice } from "@/lib/voice-library/types";
+
+/** One choice in the panel — an imported library voice or a built-in voice. */
+interface VoiceChoice {
+  id: string;
+  name: string;
+  description: string;
+  gender: string;
+  provider: string;
+  language: string;
+  /** Permanently stored sample; when absent a short sample is created once. */
+  previewUrl: string | null;
+}
+
+function fromLibrary(voice: LibraryVoice, language: string): VoiceChoice {
+  const preview = previewFor(voice, language);
+  return {
+    id: voice.externalVoiceId,
+    name: voice.displayName || voice.name,
+    description: voice.description,
+    gender: voice.gender,
+    provider: voice.provider,
+    language: voice.language || language,
+    previewUrl: preview?.audioUrl ?? null,
+  };
+}
 
 /**
  * The spoken greeting of one order. A person picks a voice, listens, and may
@@ -37,6 +64,14 @@ export function VoicePanel({
   const load = useServerFn(getPvgVoiceover);
   const create = useServerFn(generatePvgVoiceover);
   const preview = useServerFn(previewPvgVoice);
+  const loadVoices = useServerFn(listStudioVoices);
+
+  // The imported voice library. Playback of a sample always uses the stored
+  // file, so listening never costs anything.
+  const library = useQuery({
+    queryKey: ["voice-library", "active"],
+    queryFn: () => loadVoices({ data: undefined }),
+  });
 
   const [voiceId, setVoiceId] = useState(PVG_DEFAULT_VOICE_ID);
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
@@ -48,7 +83,31 @@ export function VoicePanel({
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const running = useRef(false);
 
-  const selected = findVoice(voiceId);
+  const libraryVoices = library.data?.voices ?? [];
+  const choices: VoiceChoice[] =
+    libraryVoices.length > 0
+      ? libraryVoices.map((v) => fromLibrary(v, language))
+      : PVG_VOICES.map((v) => ({
+          id: v.id,
+          name: v.name,
+          description: t(`pvv_${v.description}`),
+          gender: v.gender,
+          provider: v.provider,
+          language,
+          previewUrl: null,
+        }));
+
+  const selected: VoiceChoice =
+    choices.find((c) => c.id === voiceId) ??
+    choices[0] ?? {
+      id: PVG_DEFAULT_VOICE_ID,
+      name: findVoice(PVG_DEFAULT_VOICE_ID).name,
+      description: "",
+      gender: "female",
+      provider: "elevenlabs",
+      language,
+      previewUrl: null,
+    };
   const providerLabel = VOICE_PROVIDER_LABELS[selected.provider] ?? selected.provider;
 
   // The saved audio only matches while both the voice and the greeting are unchanged.
@@ -70,6 +129,11 @@ export function VoicePanel({
     setVoiceover(found);
     setVoiceId(found.voiceId);
   }, [saved.data]);
+
+  useEffect(() => {
+    if (choices.length === 0) return;
+    if (!choices.some((c) => c.id === voiceId)) setVoiceId(choices[0]!.id);
+  }, [choices, voiceId]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -113,10 +177,15 @@ export function VoicePanel({
     if (sampling || busy || disabled) return;
     setSampling(true);
     try {
-      const res = await preview({ data: { voiceId, language } });
       audioRef.current?.pause();
       sampleRef.current?.pause();
-      const audio = new Audio(`data:${res.mimeType};base64,${res.audioBase64}`);
+      // Stored preview first: it never reaches the voice studio.
+      let src = selected.previewUrl;
+      if (!src) {
+        const res = await preview({ data: { voiceId, language } });
+        src = `data:${res.mimeType};base64,${res.audioBase64}`;
+      }
+      const audio = new Audio(src);
       sampleRef.current = audio;
       await audio.play();
     } catch {
@@ -150,7 +219,7 @@ export function VoicePanel({
         {t("pvv_choose")}
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
-        {PVG_VOICES.map((voice) => (
+        {choices.map((voice) => (
           <button
             key={voice.id}
             type="button"
@@ -164,7 +233,17 @@ export function VoicePanel({
           >
             <span className="block text-sm font-medium">{voice.name}</span>
             <span className="block text-[11px] text-muted-foreground">
-              {t(`pvv_${voice.description}`)}
+              {voice.description || "—"}
+            </span>
+            <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
+              {t(
+                voice.gender === "male"
+                  ? "pvv_male"
+                  : voice.gender === "female"
+                    ? "pvv_female"
+                    : "pvv_provider",
+              )}
+              {voice.language ? ` · ${voice.language.toUpperCase()}` : ""}
             </span>
           </button>
         ))}
@@ -181,7 +260,12 @@ export function VoicePanel({
             {t("pvv_language")}: {language.toUpperCase()}
           </span>
           <span>
-            {t("pvv_gender")}: {t(selected.gender === "female" ? "pvv_female" : "pvv_male")}
+            {t("pvv_gender")}:{" "}
+            {selected.gender === "male"
+              ? t("pvv_male")
+              : selected.gender === "female"
+                ? t("pvv_female")
+                : "—"}
           </span>
           <span>
             {t("pvv_provider")}: {providerLabel}
@@ -200,7 +284,12 @@ export function VoicePanel({
           )}
           {sampling ? t("pvv_preview_working") : t("pvv_preview")}
         </button>
-        <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_preview_note")}</p>
+        {selected.description && (
+          <p className="mt-2 text-[11px] text-muted-foreground">{selected.description}</p>
+        )}
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {selected.previewUrl ? t("pvv_preview_stored") : t("pvv_preview_note")}
+        </p>
       </div>
 
       {voiceover && outdated && (

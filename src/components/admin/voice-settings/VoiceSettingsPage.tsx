@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, FlaskConical, Loader2, Mic2 } from "lucide-react";
+import { CheckCircle2, FlaskConical, Library, Loader2, Mic2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -68,12 +68,20 @@ export function VoiceSettingsPage() {
           <h1 className="font-[Fraunces] text-2xl font-semibold text-foreground">{L("vs_title")}</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{L("vs_sub")}</p>
         </div>
-        <Link
-          to="/admin/voice-settings/testing"
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90"
-        >
-          <FlaskConical className="h-4 w-4" /> {L("vs_testing_link")}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/admin/voice-settings/library"
+            className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-medium transition hover:bg-muted/50"
+          >
+            <Library className="h-4 w-4" /> {L("vl_link")}
+          </Link>
+          <Link
+            to="/admin/voice-settings/testing"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90"
+          >
+            <FlaskConical className="h-4 w-4" /> {L("vs_testing_link")}
+          </Link>
+        </div>
       </header>
 
       <section className="rounded-2xl border border-border/60 bg-card/80 p-5">

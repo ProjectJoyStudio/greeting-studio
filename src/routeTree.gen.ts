@@ -77,6 +77,7 @@ import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/p
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
 import { Route as AdminVoiceSettingsTestingRouteImport } from './routes/admin.voice-settings.testing'
+import { Route as AdminVoiceSettingsLibraryRouteImport } from './routes/admin.voice-settings.library'
 import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
 import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
 import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
@@ -433,6 +434,12 @@ const AdminVoiceSettingsTestingRoute =
     path: '/voice-settings/testing',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminVoiceSettingsLibraryRoute =
+  AdminVoiceSettingsLibraryRouteImport.update({
+    id: '/voice-settings/library',
+    path: '/voice-settings/library',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -568,6 +575,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/library': typeof AdminVoiceSettingsLibraryRoute
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
@@ -647,6 +655,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/library': typeof AdminVoiceSettingsLibraryRoute
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
@@ -730,6 +739,7 @@ export interface FileRoutesById {
   '/admin/catalog/taxonomy': typeof AdminCatalogTaxonomyRoute
   '/admin/catalog/translations': typeof AdminCatalogTranslationsRoute
   '/admin/catalog/upload': typeof AdminCatalogUploadRoute
+  '/admin/voice-settings/library': typeof AdminVoiceSettingsLibraryRoute
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
@@ -814,6 +824,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/library'
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
@@ -893,6 +904,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/library'
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
@@ -975,6 +987,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/taxonomy'
     | '/admin/catalog/translations'
     | '/admin/catalog/upload'
+    | '/admin/voice-settings/library'
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/purge-deleted-cards'
@@ -1502,6 +1515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVoiceSettingsTestingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/voice-settings/library': {
+      id: '/admin/voice-settings/library'
+      path: '/voice-settings/library'
+      fullPath: '/admin/voice-settings/library'
+      preLoaderRoute: typeof AdminVoiceSettingsLibraryRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/upload': {
       id: '/admin/catalog/upload'
       path: '/upload'
@@ -1660,6 +1680,7 @@ interface AdminRouteChildren {
   AdminUserLiveCardsRoute: typeof AdminUserLiveCardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminVoiceSettingsLibraryRoute: typeof AdminVoiceSettingsLibraryRoute
   AdminVoiceSettingsTestingRoute: typeof AdminVoiceSettingsTestingRoute
   AdminVoiceSettingsIndexRoute: typeof AdminVoiceSettingsIndexRoute
 }
@@ -1687,6 +1708,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUserLiveCardsRoute: AdminUserLiveCardsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminVoiceSettingsLibraryRoute: AdminVoiceSettingsLibraryRoute,
   AdminVoiceSettingsTestingRoute: AdminVoiceSettingsTestingRoute,
   AdminVoiceSettingsIndexRoute: AdminVoiceSettingsIndexRoute,
 }
