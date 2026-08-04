@@ -463,8 +463,8 @@ export function VoicePanel({
           audioRef.current?.pause();
           setPlaying(false);
           setVoiceover(res.voiceover);
-        } else if (ownRecording?.url && first) {
-          const merged = await mergeInOrder([{ url: ownRecording.url }]);
+        } else if (ownRecording?.activeUrl && first) {
+          const merged = await mergeInOrder([{ url: ownRecording.activeUrl }]);
           const res = await saveMerged({
             data: {
               projectId,
@@ -500,11 +500,11 @@ export function VoicePanel({
           const person = participants[index]!;
           const text = partOf(person, index).trim();
           const recording = recordings[person.id];
-          if (recording?.url) {
-            sources.push({ url: recording.url });
+          if (recording?.activeUrl) {
+            sources.push({ url: recording.activeUrl });
             summary.push({
               label: participantLabel(person, index),
-              durationSeconds: recording.seconds,
+              durationSeconds: recording.durationSeconds,
               source: "recording",
             });
             continue;
