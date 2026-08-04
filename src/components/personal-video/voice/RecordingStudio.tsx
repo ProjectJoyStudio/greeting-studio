@@ -162,6 +162,16 @@ export function RecordingStudio({
           <p className="mt-2 text-[11px] text-muted-foreground">
             {t("pvv_recording_duration")}: {Math.round(pending.durationSeconds * 10) / 10}s
           </p>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={permission}
+              disabled={disabled}
+              onChange={(event) => setPermission(event.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 accent-[hsl(var(--primary))]"
+            />
+            <span>{t("pvv_permission_confirm")}</span>
+          </label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
