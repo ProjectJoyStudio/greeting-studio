@@ -36,6 +36,7 @@ import {
 } from "@/lib/personal-video/voice.functions";
 import type { PvgVoiceover } from "@/lib/personal-video/voice/catalog";
 import type { PvgPerson } from "@/lib/personal-video/types";
+import { PVS_WORDS_PER_SECOND } from "@/lib/personal-video/video-setup";
 import {
   PVG_MAX_CHORUS_VOICES,
   PVG_MIN_CHORUS_VOICES,
@@ -452,8 +453,12 @@ export function VoicePanel({
   }
 
   /** Speaks one piece of text with one Project Joy voice. */
-  async function speak(text: string, voiceId: string): Promise<MixSource & { seconds: number }> {
-    const res = await speakTrack({ data: { projectId, text, voiceId, language } });
+  async function speak(
+    text: string,
+    voiceId: string,
+    speed = 1,
+  ): Promise<MixSource & { seconds: number }> {
+    const res = await speakTrack({ data: { projectId, text, voiceId, language, speed } });
     return { base64: res.audioBase64, mimeType: res.mimeType, seconds: res.durationSeconds };
   }
 
