@@ -122,7 +122,6 @@ export function VoicePanel({
   const saveSpeech = useServerFn(savePvgSpeechSettings);
   const savePart = useServerFn(savePvgPersonPart);
   const speakTrack = useServerFn(synthesizePvgTrack);
-  const fitGreeting = useServerFn(fitPvgGreetingToSpeech);
   const saveMerged = useServerFn(savePvgMergedVoiceover);
   const saveRecording = useServerFn(savePvgPersonRecording);
   const dropRecording = useServerFn(deletePvgPersonRecording);
