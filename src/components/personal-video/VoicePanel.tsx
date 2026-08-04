@@ -791,6 +791,27 @@ export function VoicePanel({
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
         <div className="mt-5">
+          {replaceFor && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-2.5">
+              <p className="text-xs font-medium text-primary">
+                {t("pvv_replacing_for").replace(
+                  "{name}",
+                  participantLabel(
+                    participants.find((p) => p.id === replaceFor) ?? participants[0]!,
+                    participants.findIndex((p) => p.id === replaceFor),
+                  ),
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => setReplaceFor(null)}
+                className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
+              >
+                <X className="h-3 w-3" />
+                {t("pvv_cancel")}
+              </button>
+            </div>
+          )}
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("pvv_choose_category")}
           </p>
