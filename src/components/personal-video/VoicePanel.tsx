@@ -274,9 +274,9 @@ export function VoicePanel({
       if (!src) {
         // The sample of this exact language is missing or damaged: Project Joy
         // prepares it again and keeps it, so it is instant from now on.
-        const stored = await ensurePreview({ data: { voiceId: voice.id, language } }).catch(
-          () => ({ url: null as string | null }),
-        );
+        const stored = await ensurePreview({ data: { voiceId: voice.id, language } }).catch(() => ({
+          url: null as string | null,
+        }));
         src = stored.url;
         if (!src) {
           const res = await preview({ data: { voiceId: voice.id, language } });
@@ -814,7 +814,11 @@ export function VoicePanel({
             {participants.map((person, index) => (
               <div key={person.id}>
                 <div className="mb-1 flex items-center gap-2">
-                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                    size="sm"
+                  />
                   <p className="text-xs font-medium">
                     {participantLabel(person, index)}
                     <span className="ml-2 text-[11px] font-normal text-muted-foreground">
@@ -837,26 +841,28 @@ export function VoicePanel({
               <p className="text-xs text-muted-foreground">{t("pvv_no_participants")}</p>
             )}
           </div>
-          {participants.length > 0 && videoSeconds ? (
-            (() => {
-              const budget = speechBudgetSeconds(videoSeconds);
-              const estimate = estimateSpeechSeconds(partEstimates());
-              const fastest = estimateSpeechSeconds(partEstimates(), PVG_MAX_SPEECH_SPEED);
-              const fits = fastest <= budget;
-              return (
-                <div
-                  className={`mt-4 rounded-2xl border p-3 text-[11px] ${
-                    fits ? "border-border/60 text-muted-foreground" : "border-destructive/50 text-destructive"
-                  }`}
-                >
-                  <p>
-                    {t("pvv_parts_estimate")}: {estimate.toFixed(1)}s / {budget.toFixed(1)}s
-                  </p>
-                  {!fits && <p className="mt-1 font-medium">{t("pvv_parts_too_long")}</p>}
-                </div>
-              );
-            })()
-          ) : null}
+          {participants.length > 0 && videoSeconds
+            ? (() => {
+                const budget = speechBudgetSeconds(videoSeconds);
+                const estimate = estimateSpeechSeconds(partEstimates());
+                const fastest = estimateSpeechSeconds(partEstimates(), PVG_MAX_SPEECH_SPEED);
+                const fits = fastest <= budget;
+                return (
+                  <div
+                    className={`mt-4 rounded-2xl border p-3 text-[11px] ${
+                      fits
+                        ? "border-border/60 text-muted-foreground"
+                        : "border-destructive/50 text-destructive"
+                    }`}
+                  >
+                    <p>
+                      {t("pvv_parts_estimate")}: {estimate.toFixed(1)}s / {budget.toFixed(1)}s
+                    </p>
+                    {!fits && <p className="mt-1 font-medium">{t("pvv_parts_too_long")}</p>}
+                  </div>
+                );
+              })()
+            : null}
         </div>
       )}
 
@@ -1224,7 +1230,11 @@ export function VoicePanel({
                 onClick={() => void give(person, pending)}
                 className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
-                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                <ParticipantAvatar
+                  photoUrl={person.photoUrl}
+                  label={participantLabel(person, index)}
+                  size="sm"
+                />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1257,7 +1267,11 @@ export function VoicePanel({
                 onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
                 className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
-                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                <ParticipantAvatar
+                  photoUrl={person.photoUrl}
+                  label={participantLabel(person, index)}
+                  size="sm"
+                />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1280,7 +1294,10 @@ export function VoicePanel({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
               >
                 <span className="flex items-center gap-2 text-sm">
-                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} />
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                  />
                   <span className="font-medium">{participantLabel(person, index)}</span>
                   <span className="text-muted-foreground"> — </span>
                   <span
