@@ -15,7 +15,12 @@ export function voiceFailureOf(error: unknown): VoiceFailure {
   if (raw.includes("quota") || raw.includes("credits remaining")) return "voice_quota_exhausted";
   if (raw.includes("voice_key_invalid") || raw.includes("missing the permission"))
     return "voice_key_invalid";
-  if (raw.includes("voice_not_found") || raw.includes("voice_does_not_exist")) return "voice_not_found";
+  if (
+    raw.includes("voice_not_found") ||
+    raw.includes("voice_does_not_exist") ||
+    raw.includes("voice_not_available")
+  )
+    return "voice_not_found";
   if (raw.includes("voice_service_unavailable") || raw.includes("voice_empty_response"))
     return "voice_unavailable";
   return "voice_failed";
