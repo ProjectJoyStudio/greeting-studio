@@ -2,7 +2,7 @@
 // place and are never written into a customer order.
 
 import { getVoiceEngine } from "@/lib/personal-video/voice/providers.server";
-import { findVoice } from "@/lib/personal-video/voice/catalog";
+import { lookupVoice } from "@/lib/personal-video/voice/catalog";
 
 import { VOICE_TEST_BUCKET, VOICE_TEST_PREFIX } from "./types";
 import type { VoiceTestRow } from "./types";
@@ -35,7 +35,9 @@ export async function runVoiceModelTest(args: {
 }): Promise<{ test: VoiceTestRow; audioUrl: string | null }> {
   const db = await admin();
   const engine = getVoiceEngine(args.provider);
-  const voice = findVoice(args.voiceId);
+  // The test always runs with the exact voice that was asked for.
+  const known = lookupVoice(args.voiceId);
+  const voice = { id: args.voiceId, name: known?.name ?? args.voiceId };
   const text = args.text.trim();
   if (!text) throw new Error("text_required");
   const started = Date.now();

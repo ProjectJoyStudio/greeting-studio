@@ -60,8 +60,13 @@ export const PVG_CHORUS_DELAY_SECONDS = 0.09;
 /** The fastest Project Joy ever speaks; the voice still sounds natural. */
 export const PVG_MAX_SPEECH_SPEED = 1.2;
 
-/** How long one voice needs for a single word before anything is measured. */
-export const PVG_DEFAULT_SECONDS_PER_WORD = 1 / 2.2;
+/**
+ * How long one voice needs for a single word before anything is measured.
+ * It follows the one safe word limit of Project Joy — seven words inside the
+ * four speaking seconds of a five second video — so the length promised while
+ * the greeting is written and the length after generation always agree.
+ */
+export const PVG_DEFAULT_SECONDS_PER_WORD = 4 / 7;
 
 export function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;

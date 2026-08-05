@@ -69,8 +69,19 @@ export const PVG_VOICES: PvgVoiceOption[] = [
 
 export const PVG_DEFAULT_VOICE_ID = PVG_VOICES[0]!.id;
 
+/** The known voice with this exact id, or nothing — never another voice. */
+export function lookupVoice(voiceId: string | null | undefined): PvgVoiceOption | null {
+  return PVG_VOICES.find((v) => v.id === voiceId) ?? null;
+}
+
+/**
+ * The chosen voice. A voice Project Joy does not know is an error: the
+ * greeting is never quietly spoken by somebody else.
+ */
 export function findVoice(voiceId: string | null | undefined): PvgVoiceOption {
-  return PVG_VOICES.find((v) => v.id === voiceId) ?? PVG_VOICES[0]!;
+  const found = lookupVoice(voiceId);
+  if (!found) throw new Error("voice_not_available");
+  return found;
 }
 
 export interface PvgVoiceover {

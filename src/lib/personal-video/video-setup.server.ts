@@ -1,7 +1,7 @@
 // Server-only helpers of the video preparation page: Project Joy writes and
 // re-shapes greetings so they comfortably fit the chosen video length.
 
-import { greetingFit, PVS_WORDS_PER_SECOND, clampDuration } from "./video-setup";
+import { greetingFit, safeWordLimit, clampDuration } from "./video-setup";
 import { PVG_VOICE_MAX_CHARS } from "./voice/catalog";
 
 export type GreetingTask = "compose" | "shorten" | "expand";
@@ -51,7 +51,7 @@ function capLength(text: string): string {
 
 /** Simple, dependable fallback when no writing service is reachable. */
 function localFallback(args: ComposeArgs): string {
-  const target = Math.round(clampDuration(args.durationSeconds) * PVS_WORDS_PER_SECOND);
+  const target = safeWordLimit(clampDuration(args.durationSeconds));
   const base =
     args.text.trim() ||
     [args.recipientName && `${args.recipientName},`, args.occasion, args.keywords]

@@ -1,11 +1,11 @@
 // Server-only helper: a greeting that would take longer to speak than the
 // video allows is quietly shortened, keeping its meaning and every name.
 
-import { PVS_WORDS_PER_SECOND } from "../video-setup";
+import { safeWordLimitForSpeech } from "../video-setup";
 
 /** Words that comfortably fit into the time left for speech. */
 function wordBudget(budgetSeconds: number): number {
-  return Math.max(4, Math.floor(budgetSeconds * PVS_WORDS_PER_SECOND));
+  return safeWordLimitForSpeech(budgetSeconds);
 }
 
 function trimWords(text: string, words: number): string {

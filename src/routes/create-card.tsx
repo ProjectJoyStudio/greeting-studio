@@ -31,13 +31,22 @@ import { uploadFinalCardImage } from "@/lib/greeting-card/save-final";
 
 type Stage = "edit" | "preview" | "design" | "done";
 
+interface CreateCardSearch {
+  prompt?: string;
+  text?: string;
+  keywords?: string;
+  cardId?: string;
+}
+
 export const Route = createFileRoute("/create-card")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    prompt: typeof search.prompt === "string" ? search.prompt.slice(0, 1000) : undefined,
-    text: typeof search.text === "string" ? search.text.slice(0, 2000) : undefined,
-    keywords: typeof search.keywords === "string" ? search.keywords.slice(0, 500) : undefined,
-    cardId: typeof search.cardId === "string" ? search.cardId.slice(0, 60) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): CreateCardSearch => {
+    const out: CreateCardSearch = {};
+    if (typeof search.prompt === "string") out.prompt = search.prompt.slice(0, 1000);
+    if (typeof search.text === "string") out.text = search.text.slice(0, 2000);
+    if (typeof search.keywords === "string") out.keywords = search.keywords.slice(0, 500);
+    if (typeof search.cardId === "string") out.cardId = search.cardId.slice(0, 60);
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Create a greeting card — Project Joy" },
