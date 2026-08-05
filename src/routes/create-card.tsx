@@ -31,6 +31,13 @@ import { uploadFinalCardImage } from "@/lib/greeting-card/save-final";
 
 type Stage = "edit" | "preview" | "design" | "done";
 
+interface CreateCardSearch {
+  prompt?: string;
+  text?: string;
+  keywords?: string;
+  cardId?: string;
+}
+
 export const Route = createFileRoute("/create-card")({
   validateSearch: (search: Record<string, unknown>): CreateCardSearch => {
     const out: CreateCardSearch = {};
