@@ -191,12 +191,18 @@ export function VoicePanel({
   useEffect(() => {
     const nextVoices: Record<string, Assignment> = {};
     const nextParts: Record<string, string> = {};
+    const nextCategories: Record<string, VoiceCategory> = {};
+    const nextConfirmed: Record<string, boolean> = {};
     for (const person of participants) {
       if (person.voiceId)
         nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
       if (person.partText) nextParts[person.id] = person.partText;
+      if (person.voiceCategory) nextCategories[person.id] = person.voiceCategory;
+      nextConfirmed[person.id] = Boolean(person.voiceConfirmed);
     }
     setAssignments(nextVoices);
+    setCategories((old) => ({ ...nextCategories, ...old }));
+    setConfirmed((old) => ({ ...nextConfirmed, ...old }));
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
