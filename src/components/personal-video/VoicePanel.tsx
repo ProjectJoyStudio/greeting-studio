@@ -456,18 +456,18 @@ export function VoicePanel({
   const recommended = useMemo(() => {
     if (!syncIssue) return [] as LibraryVoice[];
     const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
-    const wanted = current ? voiceCategory(current) : null;
+    // The group of the participant standing in this place always wins, so a
+    // male participant is never offered a female voice.
+    const person = participants[syncIssue.index];
+    const wanted =
+      (person ? (categories[person.id] ?? null) : null) ??
+      (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
-    return voices
-      .filter(
-        (v) =>
-          voiceCategory(v) === wanted &&
-          v.externalVoiceId !== syncIssue.voiceId &&
-          !chorus.some((c) => c.id === v.externalVoiceId) &&
-          Boolean(previewFor(v, language)),
-      )
-      .slice(0, 5);
-  }, [syncIssue, voices, chorus, language]);
+    return recommendVoices(voices, wanted, language, {
+      exclude: [syncIssue.voiceId, ...chorus.map((c) => c.id)],
+      limit: 5,
+    });
+  }, [syncIssue, voices, chorus, language, participants, categories]);
 
   /**
    * Only the highlighted place in the chorus receives the new voice. Everyone
@@ -527,6 +527,7 @@ export function VoicePanel({
       delete next[person.id];
       return next;
     });
+    setConfirmed((prev) => ({ ...prev, [person.id]: false }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
