@@ -490,7 +490,11 @@ export function VoicePanel({
 
   async function give(person: PvgPerson, voice: LibraryVoice) {
     const name = voice.displayName || voice.name;
+    const group = voiceCategory(voice);
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
+    // A voice the person picks themselves is kept straight away.
+    setCategories((prev) => ({ ...prev, [person.id]: group }));
+    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
@@ -506,6 +510,8 @@ export function VoicePanel({
           voiceId: voice.externalVoiceId,
           voiceName: name,
           provider: voice.provider,
+          category: group,
+          confirmed: true,
         },
       });
       toast.success(t("pvv_assigned_toast"));
