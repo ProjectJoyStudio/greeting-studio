@@ -1,7 +1,7 @@
 // Server-only storage of the spoken greeting of one order: the audio file, its
 // facts, and a testing record of every request that was made.
 
-import { findVoice } from "./catalog";
+import { lookupVoice } from "./catalog";
 import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "./providers.server";
 import type { PvgVoiceover } from "./catalog";
 
@@ -43,8 +43,11 @@ async function resolveVoice(
       provider: row["provider"] || DEFAULT_VOICE_PROVIDER,
     };
   }
-  const fallback = findVoice(voiceId);
-  return { id: fallback.id, name: fallback.name, provider: fallback.provider };
+  // The exact voice the person chose, or nothing at all — Project Joy never
+  // speaks a greeting with a voice the person did not select.
+  const known = lookupVoice(voiceId);
+  if (!known) throw new Error("voice_not_available");
+  return { id: known.id, name: known.name, provider: known.provider };
 }
 
 /** Testing record of one voice request — success or failure, always written. */
@@ -91,7 +94,7 @@ export async function readVoiceover(projectId: string): Promise<PvgVoiceover | n
   const row = data as Record<string, any>;
   return {
     voiceId: row["voice_id"],
-    voiceName: row["voice_name"] ?? findVoice(row["voice_id"]).name,
+    voiceName: row["voice_name"] ?? lookupVoice(row["voice_id"])?.name ?? row["voice_id"],
     provider: row["provider"],
     language: row["language"],
     durationSeconds: Number(row["duration_seconds"] ?? 0),
