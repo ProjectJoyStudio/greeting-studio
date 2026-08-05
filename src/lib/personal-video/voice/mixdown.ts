@@ -4,10 +4,9 @@
 // volume, timing or synchronisation themselves.
 
 import {
-  PVG_CHORUS_DELAY_SECONDS,
   PVG_MIN_PART_GAP_SECONDS,
   PVG_PART_GAP_SECONDS,
-  type PvgSyncMode,
+  PVG_MAX_SPEECH_SPEED,
 } from "./speech";
 
 const SAMPLE_RATE = 44100;
@@ -28,6 +27,11 @@ export interface MixResult {
   durationSeconds: number;
   /** True when the recording is still longer than the time allowed. */
   overflow?: boolean;
+  /**
+   * Set when one chosen voice cannot be brought in step with the others while
+   * it still sounds natural. The number is the place of that voice in the list.
+   */
+  unsyncable?: number;
 }
 
 function base64ToBytes(value: string): Uint8Array {
