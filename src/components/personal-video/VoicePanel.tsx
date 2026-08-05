@@ -1578,15 +1578,21 @@ export function VoicePanel({
                       {t("pvv_preview")}
                     </button>
                   )}
+                  {waiting && (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => confirmVoice(person)}
+                      className="inline-flex items-center gap-1 rounded-full bg-gold-gradient px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                    >
+                      <Check className="h-3 w-3" />
+                      {t("pvv_confirm")}
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={disabled}
-                    onClick={() => {
-                      setReplaceFor(person.id);
-                      setMode("library");
-                      setCategory((current) => current ?? "female");
-                      setPending(null);
-                    }}
+                    onClick={() => openReplace(person)}
                     className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -1604,6 +1610,34 @@ export function VoicePanel({
                     </button>
                   )}
                 </span>
+                </div>
+
+                {/* The group this participant's voice always comes from */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-muted-foreground">{t("pvv_group")}:</span>
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setPersonCategory(person, c)}
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] transition disabled:opacity-60 ${
+                        group === c
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      {t(CATEGORY_KEY[c])}
+                    </button>
+                  ))}
+                </div>
+
+                {waiting && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {t("pvv_err_confirm_for").replace("{name}", "").trim()}
+                  </p>
+                )}
               </li>
             );
           })}
