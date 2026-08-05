@@ -9,8 +9,36 @@ export const PVS_DEFAULT_SECONDS = 15;
 /** One second of finished video costs one credit. */
 export const PVS_CREDITS_PER_SECOND = 1;
 
-/** A comfortable, warm speaking pace. */
-export const PVS_WORDS_PER_SECOND = 2.2;
+/** Silence reserved at the very start and the very end of every video. */
+export const PVS_LEAD_IN_SECONDS = 0.5;
+export const PVS_TAIL_OUT_SECONDS = 0.5;
+
+/**
+ * The one safe word limit Project Joy uses everywhere: writing a greeting,
+ * recommending a length, checking the parts and generating the speech.
+ * A five second video carries seven words, and every further second of video
+ * carries one more word.
+ */
+export function safeWordLimit(videoSeconds: number): number {
+  return clampDuration(videoSeconds) + 2;
+}
+
+/** The same limit seen from the time left for speech inside the video. */
+export function safeWordLimitForSpeech(speechSeconds: number): number {
+  const speech = Number(speechSeconds);
+  if (!Number.isFinite(speech) || speech <= 0) return safeWordLimit(PVS_MIN_SECONDS);
+  return safeWordLimit(speech + PVS_LEAD_IN_SECONDS + PVS_TAIL_OUT_SECONDS);
+}
+
+/** Time the speech itself may take inside a video of this length. */
+export function speechSeconds(videoSeconds: number): number {
+  return Math.max(1, clampDuration(videoSeconds) - PVS_LEAD_IN_SECONDS - PVS_TAIL_OUT_SECONDS);
+}
+
+/** The pace that follows from the safe limit, in words per second of speech. */
+export function wordsPerSecond(videoSeconds: number): number {
+  return safeWordLimit(videoSeconds) / speechSeconds(videoSeconds);
+}
 
 export type PvsGreetingMode = "manual" | "keywords";
 
@@ -56,11 +84,12 @@ export interface PvsFit {
 /** How the written greeting relates to the chosen video length. */
 export function greetingFit(text: string, seconds: number): PvsFit {
   const duration = clampDuration(seconds);
-  const target = Math.round(duration * PVS_WORDS_PER_SECOND);
-  const min = Math.max(3, Math.round(target * 0.8));
-  const max = Math.round(target * 1.1);
+  const max = safeWordLimit(duration);
+  const target = max;
+  // A greeting that already fits is finished: only a nearly empty one is short.
+  const min = Math.min(3, max);
   const words = countWords(text);
-  const spokenSeconds = Math.round((words / PVS_WORDS_PER_SECOND) * 10) / 10;
+  const spokenSeconds = Math.round((words / wordsPerSecond(duration)) * 10) / 10;
   const state = words === 0 ? "empty" : words > max ? "long" : words < min ? "short" : "ok";
   return { words, target, min, max, state, spokenSeconds };
 }
