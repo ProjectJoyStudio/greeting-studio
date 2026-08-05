@@ -1275,7 +1275,16 @@ export function VoicePanel({
             {t("pvv_choose_category")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.filter((c) => voices.some((v) => voiceCategory(v) === c)).map((c) => (
+            {CATEGORIES.filter((c) => voices.some((v) => voiceCategory(v) === c))
+              // While one participant's voice is replaced, only their own group
+              // is shown: no unrelated voices ever appear.
+              .filter((c) => {
+                if (!replaceFor) return true;
+                const person = participants.find((p) => p.id === replaceFor);
+                const group = person ? categoryOf(person) : null;
+                return !group || group === c;
+              })
+              .map((c) => (
               <button
                 key={c}
                 type="button"
