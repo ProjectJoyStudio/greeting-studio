@@ -300,6 +300,52 @@ export function VoicePanel({
     return { id: voice.externalVoiceId, previewUrl: previewFor(voice, language)?.audioUrl ?? null };
   }
 
+  /** The name Project Joy shows for the voice that stands in a chorus place. */
+  function chorusLabel(index: number): string {
+    const person = participants[index];
+    return person ? participantLabel(person, index) : `${t("pvv_participant")} ${index + 1}`;
+  }
+
+  /**
+   * Voices of the very same category as the one that cannot keep step: never a
+   * male voice instead of a female one, and only voices with a ready sample
+   * that are not already singing along.
+   */
+  const recommended = useMemo(() => {
+    if (!syncIssue) return [] as LibraryVoice[];
+    const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
+    const wanted = current ? voiceCategory(current) : null;
+    if (!wanted) return [] as LibraryVoice[];
+    return voices
+      .filter(
+        (v) =>
+          voiceCategory(v) === wanted &&
+          v.externalVoiceId !== syncIssue.voiceId &&
+          !chorus.some((c) => c.id === v.externalVoiceId) &&
+          Boolean(previewFor(v, language)),
+      )
+      .slice(0, 5);
+  }, [syncIssue, voices, chorus, language]);
+
+  /**
+   * Only the highlighted place in the chorus receives the new voice. Everyone
+   * else keeps the voice the person chose, and the synchronisation is tried
+   * again straight away.
+   */
+  function replaceChorusVoice(voice: LibraryVoice) {
+    if (!syncIssue) return;
+    const next = chorus.map((entry, index) =>
+      index === syncIssue.index
+        ? { id: voice.externalVoiceId, name: voice.displayName || voice.name }
+        : entry,
+    );
+    setChorus(next);
+    persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+    setSyncIssue(null);
+    setShowRecommended(false);
+    void generate(next);
+  }
+
   async function give(person: PvgPerson, voice: LibraryVoice) {
     const name = voice.displayName || voice.name;
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
