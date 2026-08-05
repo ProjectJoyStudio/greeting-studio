@@ -178,30 +178,200 @@ export async function mergeInOrder(
   return options.compress === false ? { ...result, overflow: tooLong } : result;
 }
 
+/** The most a voice may be quickened or calmed and still sound like itself. */
+const SYNC_MAX_SPEED = PVG_MAX_SPEECH_SPEED;
+const SYNC_MIN_SPEED = 1 / PVG_MAX_SPEECH_SPEED;
+
 /**
- * Lets every chosen voice speak the whole greeting together. The tracks are
- * levelled, arranged in time and blended into one recording.
+ * Lets every chosen voice speak the whole greeting together, truly together:
+ * every recording is levelled, its quiet edges removed, and then brought word
+ * by word into step with the others, so the voices begin, speak and end as
+ * one. Nobody's voice is ever exchanged for another and no word is ever
+ * removed — only the pace of speaking is gently adjusted.
  */
-export async function mergeTogether(
+export async function blendTogether(
   sources: MixSource[],
-  sync: PvgSyncMode,
   options: MixOptions = {},
 ): Promise<MixResult> {
   const tracks = await Promise.all(sources.map(prepare));
-  const step = sync === "delayed" ? Math.round(PVG_CHORUS_DELAY_SECONDS * SAMPLE_RATE) : 0;
-  const total = Math.max(...tracks.map((t, i) => t.length + i * step), 1);
-  let out = new Float32Array(total);
-  const share = 1 / Math.sqrt(Math.max(1, tracks.length));
-  tracks.forEach((track, index) => {
-    const start = index * step;
-    for (let i = 0; i < track.length; i += 1) {
-      const at = start + i;
-      out[at] = (out[at] ?? 0) + track[i]! * share;
+  if (tracks.length === 0) return finish(new Float32Array(1));
+  if (tracks.length === 1) {
+    const only = tracks[0]!;
+    return withinLimit(only, options);
+  }
+
+  // The voice of the middle length leads: the others are neither hurried nor
+  // held back more than necessary.
+  const order = tracks.map((t, i) => ({ i, length: t.length })).sort((a, b) => a.length - b.length);
+  const lead = order[Math.floor(order.length / 2)]!.i;
+  const guide = tracks[lead]!;
+  const guideParts = speechSegments(guide);
+
+  const aligned: Float32Array[] = [];
+  for (let index = 0; index < tracks.length; index += 1) {
+    const track = tracks[index]!;
+    if (index === lead) {
+      aligned.push(track);
+      continue;
+    }
+    const parts = speechSegments(track);
+    const matched = parts.length === guideParts.length && parts.length > 0;
+    const factors: number[] = [];
+    let out: Float32Array;
+    if (matched) {
+      // Word by word: every spoken piece is placed exactly where the leading
+      // voice speaks it, and takes exactly as long.
+      out = new Float32Array(guide.length);
+      for (let p = 0; p < parts.length; p += 1) {
+        const from = parts[p]!;
+        const to = guideParts[p]!;
+        const piece = track.slice(from.start, from.end);
+        const room = Math.max(1, Math.min(to.end, guide.length) - to.start);
+        factors.push(piece.length / room);
+        const shaped = timeStretch(piece, room);
+        for (let i = 0; i < shaped.length && to.start + i < out.length; i += 1) {
+          out[to.start + i] = shaped[i]!;
+        }
+      }
+    } else {
+      factors.push(track.length / Math.max(1, guide.length));
+      out = timeStretch(track, guide.length);
+    }
+    const worst = factors.reduce((m, f) => (Math.abs(Math.log(f)) > Math.abs(Math.log(m)) ? f : m), 1);
+    if (worst > SYNC_MAX_SPEED || worst < SYNC_MIN_SPEED) {
+      return { ...finish(new Float32Array(1)), unsyncable: index };
+    }
+    aligned.push(out);
+  }
+
+  const total = Math.max(...aligned.map((t) => t.length), 1);
+  const mix = new Float32Array(total);
+  const share = 1 / Math.sqrt(aligned.length);
+  for (const track of aligned) {
+    for (let i = 0; i < track.length; i += 1) mix[i] = mix[i]! + track[i]! * share;
+  }
+  return withinLimit(mix, options);
+}
+
+/**
+ * The blended greeting is quickened, never cut, if the video leaves less time
+ * than the voices need. Beyond the natural limit the greeting simply does not
+ * fit and Project Joy says so.
+ */
+function withinLimit(samples: Float32Array, options: MixOptions): MixResult {
+  const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
+  if (!limit) return finish(samples);
+  const allowed = Math.floor(limit * SAMPLE_RATE);
+  if (samples.length <= allowed) return finish(samples);
+  const needed = samples.length / Math.max(1, allowed);
+  if (needed > SYNC_MAX_SPEED) return { ...finish(samples), overflow: true };
+  return finish(timeStretch(samples, allowed));
+}
+
+interface SpeechPart {
+  start: number;
+  end: number;
+}
+
+/**
+ * The spoken pieces of one recording: the words, separated by the little
+ * silences a person naturally leaves between them.
+ */
+function speechSegments(samples: Float32Array): SpeechPart[] {
+  const win = Math.round(0.02 * SAMPLE_RATE);
+  const loud: number[] = [];
+  let peak = 0;
+  for (let i = 0; i < samples.length; i += win) {
+    let sum = 0;
+    const end = Math.min(samples.length, i + win);
+    for (let j = i; j < end; j += 1) sum += samples[j]! * samples[j]!;
+    const rms = Math.sqrt(sum / Math.max(1, end - i));
+    loud.push(rms);
+    peak = Math.max(peak, rms);
+  }
+  const threshold = Math.max(0.008, peak * 0.15);
+  const gap = Math.round(0.12 * SAMPLE_RATE);
+  const shortest = Math.round(0.05 * SAMPLE_RATE);
+  const parts: SpeechPart[] = [];
+  let open: SpeechPart | null = null;
+  loud.forEach((rms, index) => {
+    const start = index * win;
+    const end = Math.min(samples.length, start + win);
+    if (rms >= threshold) {
+      if (open && start - open.end <= gap) open.end = end;
+      else {
+        if (open) parts.push(open);
+        open = { start, end };
+      }
     }
   });
-  const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
-  if (limit) out = fitWithin(out, limit);
-  return finish(out);
+  if (open) parts.push(open);
+  return parts.filter((p) => p.end - p.start >= shortest);
+}
+
+/** A Hann window, the gentle shape used when pieces of sound are joined. */
+function hann(size: number): Float32Array {
+  const w = new Float32Array(size);
+  for (let i = 0; i < size; i += 1) w[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / size);
+  return w;
+}
+
+/**
+ * Makes one recording last exactly as long as asked, without touching the
+ * pitch or the timbre of the voice: small overlapping pieces of sound are
+ * laid over one another, each placed where it fits the previous one best.
+ */
+function timeStretch(input: Float32Array, targetLength: number): Float32Array {
+  const target = Math.max(1, Math.round(targetLength));
+  if (input.length === 0) return new Float32Array(target);
+  const ratio = target / input.length;
+  if (Math.abs(ratio - 1) < 0.004 || input.length < 2048) {
+    const same = new Float32Array(target);
+    same.set(input.subarray(0, Math.min(input.length, target)));
+    return same;
+  }
+  const frame = 1024;
+  const synHop = frame >> 2;
+  const anaHop = Math.max(1, Math.round(synHop / ratio));
+  const search = Math.round(0.004 * SAMPLE_RATE);
+  const window = hann(frame);
+  const acc = new Float32Array(target + frame);
+  const norm = new Float32Array(target + frame);
+  let anaPos = 0;
+  let synPos = 0;
+  let tail: Float32Array | null = null;
+
+  while (synPos < target) {
+    let best = Math.min(anaPos, Math.max(0, input.length - frame));
+    if (tail) {
+      const lo = Math.max(0, best - search);
+      const hi = Math.min(Math.max(0, input.length - frame), best + search);
+      let bestScore = -Infinity;
+      for (let cand = lo; cand <= hi; cand += 8) {
+        let score = 0;
+        for (let i = 0; i < tail.length; i += 4) score += tail[i]! * (input[cand + i] ?? 0);
+        if (score > bestScore) {
+          bestScore = score;
+          best = cand;
+        }
+      }
+    }
+    for (let i = 0; i < frame; i += 1) {
+      const value = (input[best + i] ?? 0) * window[i]!;
+      acc[synPos + i] = acc[synPos + i]! + value;
+      norm[synPos + i] = norm[synPos + i]! + window[i]!;
+    }
+    tail = input.slice(best + synHop, best + frame);
+    anaPos = best + anaHop;
+    synPos += synHop;
+  }
+
+  const out = new Float32Array(target);
+  for (let i = 0; i < target; i += 1) {
+    const weight = norm[i]!;
+    out[i] = weight > 0.0001 ? acc[i]! / weight : acc[i]!;
+  }
+  return out;
 }
 
 /**
