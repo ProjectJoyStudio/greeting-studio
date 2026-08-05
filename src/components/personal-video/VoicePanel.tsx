@@ -98,7 +98,6 @@ export function VoicePanel({
   videoSeconds,
   disabled,
   speechMode: savedSpeechMode,
-  syncMode: savedSyncMode,
   chorusVoiceIds: savedChorus,
   onAssigned,
 }: {
@@ -137,7 +136,7 @@ export function VoicePanel({
   const [mode, setMode] = useState<VoiceMode | null>(null);
   const [speechMode, setSpeechMode] = useState<PvgSpeechMode>(savedSpeechMode ?? "single");
   // Voices speaking together always begin, speak and end as one.
-  const syncMode: PvgSyncMode = savedSyncMode === "delayed" ? "simultaneous" : "simultaneous";
+  const syncMode: PvgSyncMode = "simultaneous";
   const [chorus, setChorus] = useState<Assignment[]>([]);
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
