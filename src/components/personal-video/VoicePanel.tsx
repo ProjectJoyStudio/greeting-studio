@@ -1635,7 +1635,7 @@ export function VoicePanel({
                 {waiting && (
                   <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-destructive">
                     <AlertTriangle className="h-3 w-3" />
-                    {t("pvv_err_confirm_for").replace("{name}", "").trim()}
+                    {t("pvv_confirm_needed")}
                   </p>
                 )}
               </li>
