@@ -153,6 +153,17 @@ export function VoicePanel({
   const [permissionForPending, setPermissionForPending] = useState(false);
   const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
+  /**
+   * The one voice that could not be brought in step with the others. It stays
+   * visible — marked on its card and in a dialog that never closes by itself —
+   * until the person chooses another voice or closes it.
+   */
+  const [syncIssue, setSyncIssue] = useState<{
+    index: number;
+    voiceId: string;
+    voiceName: string;
+  } | null>(null);
+  const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const running = useRef(false);
@@ -263,9 +274,9 @@ export function VoicePanel({
       if (!src) {
         // The sample of this exact language is missing or damaged: Project Joy
         // prepares it again and keeps it, so it is instant from now on.
-        const stored = await ensurePreview({ data: { voiceId: voice.id, language } }).catch(
-          () => ({ url: null as string | null }),
-        );
+        const stored = await ensurePreview({ data: { voiceId: voice.id, language } }).catch(() => ({
+          url: null as string | null,
+        }));
         src = stored.url;
         if (!src) {
           const res = await preview({ data: { voiceId: voice.id, language } });
@@ -287,6 +298,52 @@ export function VoicePanel({
 
   function sampleOf(voice: LibraryVoice): { id: string; previewUrl: string | null } {
     return { id: voice.externalVoiceId, previewUrl: previewFor(voice, language)?.audioUrl ?? null };
+  }
+
+  /** The name Project Joy shows for the voice that stands in a chorus place. */
+  function chorusLabel(index: number): string {
+    const person = participants[index];
+    return person ? participantLabel(person, index) : `${t("pvv_participant")} ${index + 1}`;
+  }
+
+  /**
+   * Voices of the very same category as the one that cannot keep step: never a
+   * male voice instead of a female one, and only voices with a ready sample
+   * that are not already singing along.
+   */
+  const recommended = useMemo(() => {
+    if (!syncIssue) return [] as LibraryVoice[];
+    const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
+    const wanted = current ? voiceCategory(current) : null;
+    if (!wanted) return [] as LibraryVoice[];
+    return voices
+      .filter(
+        (v) =>
+          voiceCategory(v) === wanted &&
+          v.externalVoiceId !== syncIssue.voiceId &&
+          !chorus.some((c) => c.id === v.externalVoiceId) &&
+          Boolean(previewFor(v, language)),
+      )
+      .slice(0, 5);
+  }, [syncIssue, voices, chorus, language]);
+
+  /**
+   * Only the highlighted place in the chorus receives the new voice. Everyone
+   * else keeps the voice the person chose, and the synchronisation is tried
+   * again straight away.
+   */
+  function replaceChorusVoice(voice: LibraryVoice) {
+    if (!syncIssue) return;
+    const next = chorus.map((entry, index) =>
+      index === syncIssue.index
+        ? { id: voice.externalVoiceId, name: voice.displayName || voice.name }
+        : entry,
+    );
+    setChorus(next);
+    persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+    setSyncIssue(null);
+    setShowRecommended(false);
+    void generate(next);
   }
 
   async function give(person: PvgPerson, voice: LibraryVoice) {
@@ -476,13 +533,17 @@ export function VoicePanel({
     return { base64: res.audioBase64, mimeType: res.mimeType, seconds: res.durationSeconds };
   }
 
-  async function generate() {
+  async function generate(chorusOverride?: Assignment[]) {
     if (running.current || busy || disabled) return;
+    const chorusList = chorusOverride ?? chorus;
+    // Every new synchronisation check starts with a clean slate.
+    setSyncIssue(null);
+    setShowRecommended(false);
     const found = validateVoiceSetup({
       speechMode,
       greeting,
       videoSeconds: videoSeconds ?? 0,
-      chorusVoiceCount: chorus.length,
+      chorusVoiceCount: chorusList.length,
       participants: participants.map((person, index) => ({
         id: person.id,
         label: participantLabel(person, index),
@@ -622,13 +683,13 @@ export function VoicePanel({
         setPlaying(false);
         setVoiceover(res.voiceover);
       } else {
-        if (chorus.length < PVG_MIN_CHORUS_VOICES) {
+        if (chorusList.length < PVG_MIN_CHORUS_VOICES) {
           toast.error(t("pvv_chorus_min"));
           return;
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
-        for (const voice of chorus) {
+        for (const voice of chorusList) {
           const track = await speak(greeting, voice.id);
           sources.push(track);
           summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
@@ -639,7 +700,12 @@ export function VoicePanel({
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
         if (merged.unsyncable !== undefined) {
-          const voice = chorus[merged.unsyncable];
+          const voice = chorusList[merged.unsyncable];
+          setSyncIssue({
+            index: merged.unsyncable,
+            voiceId: voice?.id ?? "",
+            voiceName: voice?.name ?? "",
+          });
           toast.error(`${t("pvv_chorus_unsyncable")}${voice ? ` (${voice.name})` : ""}`);
           return;
         }
@@ -657,7 +723,7 @@ export function VoicePanel({
             language,
             greetingText: greeting.trim(),
             voiceId: "all-together",
-            voiceName: chorus.map((v) => v.name).join(" · "),
+            voiceName: chorusList.map((v) => v.name).join(" · "),
             provider: "project-joy",
             speechMode,
             syncMode,
@@ -748,7 +814,11 @@ export function VoicePanel({
             {participants.map((person, index) => (
               <div key={person.id}>
                 <div className="mb-1 flex items-center gap-2">
-                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                    size="sm"
+                  />
                   <p className="text-xs font-medium">
                     {participantLabel(person, index)}
                     <span className="ml-2 text-[11px] font-normal text-muted-foreground">
@@ -771,26 +841,28 @@ export function VoicePanel({
               <p className="text-xs text-muted-foreground">{t("pvv_no_participants")}</p>
             )}
           </div>
-          {participants.length > 0 && videoSeconds ? (
-            (() => {
-              const budget = speechBudgetSeconds(videoSeconds);
-              const estimate = estimateSpeechSeconds(partEstimates());
-              const fastest = estimateSpeechSeconds(partEstimates(), PVG_MAX_SPEECH_SPEED);
-              const fits = fastest <= budget;
-              return (
-                <div
-                  className={`mt-4 rounded-2xl border p-3 text-[11px] ${
-                    fits ? "border-border/60 text-muted-foreground" : "border-destructive/50 text-destructive"
-                  }`}
-                >
-                  <p>
-                    {t("pvv_parts_estimate")}: {estimate.toFixed(1)}s / {budget.toFixed(1)}s
-                  </p>
-                  {!fits && <p className="mt-1 font-medium">{t("pvv_parts_too_long")}</p>}
-                </div>
-              );
-            })()
-          ) : null}
+          {participants.length > 0 && videoSeconds
+            ? (() => {
+                const budget = speechBudgetSeconds(videoSeconds);
+                const estimate = estimateSpeechSeconds(partEstimates());
+                const fastest = estimateSpeechSeconds(partEstimates(), PVG_MAX_SPEECH_SPEED);
+                const fits = fastest <= budget;
+                return (
+                  <div
+                    className={`mt-4 rounded-2xl border p-3 text-[11px] ${
+                      fits
+                        ? "border-border/60 text-muted-foreground"
+                        : "border-destructive/50 text-destructive"
+                    }`}
+                  >
+                    <p>
+                      {t("pvv_parts_estimate")}: {estimate.toFixed(1)}s / {budget.toFixed(1)}s
+                    </p>
+                    {!fits && <p className="mt-1 font-medium">{t("pvv_parts_too_long")}</p>}
+                  </div>
+                );
+              })()
+            : null}
         </div>
       )}
 
@@ -805,29 +877,160 @@ export function VoicePanel({
             {t("pvv_chorus_count")}: {chorus.length} / {PVG_MAX_CHORUS_VOICES}
           </p>
           {chorus.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {chorus.map((voice) => (
-                <li
-                  key={voice.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary"
-                >
-                  {voice.name}
-                  <button
-                    type="button"
-                    aria-label={t("pvv_remove")}
-                    onClick={() =>
-                      setChorus((prev) => {
-                        const next = prev.filter((v) => v.id !== voice.id);
-                        persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-                        return next;
-                      })
-                    }
+            <ul className="mt-2 grid gap-2">
+              {chorus.map((voice, index) => {
+                const broken = syncIssue?.index === index;
+                return (
+                  <li
+                    key={voice.id}
+                    className={`rounded-2xl border px-3 py-2 ${
+                      broken
+                        ? "border-destructive bg-destructive/5"
+                        : "border-primary/40 bg-primary/5"
+                    }`}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <ParticipantAvatar
+                        photoUrl={participants[index]?.photoUrl ?? null}
+                        label={chorusLabel(index)}
+                        size="sm"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] text-muted-foreground">
+                          {chorusLabel(index)}
+                        </span>
+                        <span
+                          className={`block truncate text-xs font-medium ${
+                            broken ? "text-destructive" : "text-primary"
+                          }`}
+                        >
+                          {voice.name}
+                        </span>
+                      </span>
+                      {broken && (
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
+                      )}
+                      <button
+                        type="button"
+                        aria-label={t("pvv_remove")}
+                        className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+                        onClick={() => {
+                          const next = chorus.filter((v) => v.id !== voice.id);
+                          setChorus(next);
+                          persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+                          if (broken) {
+                            setSyncIssue(null);
+                            setShowRecommended(false);
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {broken && (
+                      <p className="mt-1.5 text-[11px] font-medium text-destructive">
+                        {t("pvv_sync_badge")}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
+          )}
+
+          {/* The voice that cannot keep step, explained and never closed by itself */}
+          {syncIssue && (
+            <div className="mt-3 rounded-2xl border border-destructive/60 bg-destructive/5 p-4">
+              <div className="flex items-start gap-3">
+                <ParticipantAvatar
+                  photoUrl={participants[syncIssue.index]?.photoUrl ?? null}
+                  label={chorusLabel(syncIssue.index)}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    {chorusLabel(syncIssue.index)}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {t("pvv_sync_current_voice")}: {syncIssue.voiceName}
+                  </p>
+                  <p className="mt-2 text-xs text-foreground">
+                    {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSyncIssue(null);
+                    setShowRecommended(false);
+                  }}
+                  className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+                >
+                  {t("pvv_sync_close")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRecommended(true)}
+                  className="rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm"
+                >
+                  {t("pvv_sync_recommend")}
+                </button>
+              </div>
+
+              {showRecommended && (
+                <div className="mt-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("pvv_sync_recommended_title")}
+                  </p>
+                  {recommended.length === 0 ? (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {t("pvv_sync_no_recommendations")}
+                    </p>
+                  ) : (
+                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {recommended.map((voice) => (
+                        <li
+                          key={voice.id}
+                          className="rounded-2xl border border-border/60 bg-background/60 p-3"
+                        >
+                          <p className="text-sm font-medium">{voice.displayName || voice.name}</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {t("pvv_sync_recommended_note")}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void playSample(sampleOf(voice))}
+                              disabled={samplingId !== null}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                            >
+                              {samplingId === voice.externalVoiceId ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Headphones className="h-3 w-3" />
+                              )}
+                              {t("pvv_preview")}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => replaceChorusVoice(voice)}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                            >
+                              <Check className="h-3 w-3" />
+                              {t("pvv_select")}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -1027,7 +1230,11 @@ export function VoicePanel({
                 onClick={() => void give(person, pending)}
                 className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
-                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                <ParticipantAvatar
+                  photoUrl={person.photoUrl}
+                  label={participantLabel(person, index)}
+                  size="sm"
+                />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1060,7 +1267,11 @@ export function VoicePanel({
                 onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
                 className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
-                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                <ParticipantAvatar
+                  photoUrl={person.photoUrl}
+                  label={participantLabel(person, index)}
+                  size="sm"
+                />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1083,7 +1294,10 @@ export function VoicePanel({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
               >
                 <span className="flex items-center gap-2 text-sm">
-                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} />
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                  />
                   <span className="font-medium">{participantLabel(person, index)}</span>
                   <span className="text-muted-foreground"> — </span>
                   <span

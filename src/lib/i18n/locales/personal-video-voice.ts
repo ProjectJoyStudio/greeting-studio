@@ -37,7 +37,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_created: "Created",
     pvv_language: "Language",
     pvv_need_text: "Write or create the greeting first.",
-    pvv_failed: "The voice could not be created. Your previous voice is untouched — please try again.",
+    pvv_failed:
+      "The voice could not be created. Your previous voice is untouched — please try again.",
     pvv_success: "Voice created",
     pvv_free_note: "Creating the voice does not use credits during testing.",
     pvv_selected: "Selected voice",
@@ -50,16 +51,20 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "The sample does not change your saved voice.",
     pvv_preview_stored: "A saved sample of this voice — listening is always free.",
     pvv_preview_failed: "The sample could not be played. Please try again.",
-    pvv_err_quota: "Project Joy has reached its voice capacity for now. Your previous recording is kept. Please try again a little later.",
+    pvv_err_quota:
+      "Project Joy has reached its voice capacity for now. Your previous recording is kept. Please try again a little later.",
     pvv_err_key: "The voice service needs to be reconnected. Your previous recording is kept.",
     pvv_err_voice: "This voice is no longer available. Please choose another voice.",
-    pvv_err_unavailable: "The voice service is not available right now. Your previous recording is kept.",
+    pvv_err_unavailable:
+      "The voice service is not available right now. Your previous recording is kept.",
     pvv_test_info: "Test information (development only)",
     pvv_status: "Generation status",
     pvv_status_ok: "Success",
     pvv_status_fail: "Failed",
-    pvv_outdated_voice: "The saved audio was created with another voice. Create the voice again before continuing.",
-    pvv_outdated_text: "The greeting changed after the audio was created. The audio no longer matches the text — create it again.",
+    pvv_outdated_voice:
+      "The saved audio was created with another voice. Create the voice again before continuing.",
+    pvv_outdated_text:
+      "The greeting changed after the audio was created. The audio no longer matches the text — create it again.",
     pvv_outdated_badge: "Outdated",
     pvv_warm_female: "Warm and gentle",
     pvv_bright_female: "Bright and friendly",
@@ -78,16 +83,29 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Share the greeting",
     pvv_parts_hint: "Every part can be edited freely.",
     pvv_parts_estimate: "Estimated length",
-    pvv_parts_too_long: "The complete greeting does not fit within the selected video duration. Please increase the video duration or edit the participant lines.",
-    pvv_chorus_too_long: "The greeting does not fit within the selected video duration. Please increase the video duration or shorten the greeting.",
-    pvv_chorus_unsyncable: "One of the selected voices cannot be synchronized with the other participants while maintaining natural speech quality. Please choose a different voice for this participant or increase the video duration.",
+    pvv_parts_too_long:
+      "The complete greeting does not fit within the selected video duration. Please increase the video duration or edit the participant lines.",
+    pvv_chorus_too_long:
+      "The greeting does not fit within the selected video duration. Please increase the video duration or shorten the greeting.",
+    pvv_chorus_unsyncable:
+      "One of the selected voices cannot be synchronized with the other participants while maintaining natural speech quality. Please choose a different voice for this participant or increase the video duration.",
     pvv_parts_missing: "Give the participants a voice or a recording first.",
     pvv_chorus_title: "Voices speaking together",
     pvv_chorus_hint: "Choose from two to five voices. Project Joy blends them for you.",
     pvv_chorus_count: "Chosen voices",
+    pvv_sync_badge: "This voice could not be synchronized with the other participants.",
+    pvv_sync_recommended_title: "Recommended voices",
+    pvv_sync_recommended_note: "Recommended for synchronized group speech.",
+    pvv_sync_current_voice: "Current voice",
+    pvv_sync_close: "Close",
+    pvv_sync_recommend: "View recommended voices",
+    pvv_sync_dialog_body:
+      "The voice assigned to {name} could not be synchronized with the other selected voices while maintaining natural speech quality. Please choose one of the recommended voices from the same category.",
+    pvv_sync_no_recommendations: "No other voices of this category are available right now.",
     pvv_chorus_min: "Choose at least two voices.",
     pvv_record_title: "Record your greeting with your own voice",
-    pvv_read_aloud: "Read this greeting aloud using your own voice.\nIf another participant is recording, they must read only the part assigned to them.\nOnly upload another person's voice with their permission.",
+    pvv_read_aloud:
+      "Read this greeting aloud using your own voice.\nIf another participant is recording, they must read only the part assigned to them.\nOnly upload another person's voice with their permission.",
     pvv_record_now: "Record now",
     pvv_record_stop: "Stop recording",
     pvv_record_upload: "Upload an existing recording",
@@ -97,7 +115,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_delete_recording: "Delete recording",
     pvv_recording_duration: "Recording length",
     pvv_recording_formats: "MP3, WAV, M4A, AAC and OGG files up to 15 MB.",
-    pvv_recording_unsupported: "This file cannot be used. Please choose an MP3, WAV, M4A, AAC or OGG file.",
+    pvv_recording_unsupported:
+      "This file cannot be used. Please choose an MP3, WAV, M4A, AAC or OGG file.",
     pvv_recording_too_big: "This recording is too large. Please choose a file up to 15 MB.",
     pvv_record_denied: "Project Joy could not reach your microphone.",
     pvv_recording_assigned: "Recording assigned",
@@ -116,7 +135,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_chorus_max: "Choose no more than five voices.",
     pvv_err_no_voice_for: "No voice has been selected for {name}.",
     pvv_err_no_text_for: "No text has been assigned to {name}.",
-    pvv_err_recording_failed_for: "{name}'s recording was not prepared successfully. Please record it again.",
+    pvv_err_recording_failed_for:
+      "{name}'s recording was not prepared successfully. Please record it again.",
     pvv_err_recording_long_for: "{name}'s recording is longer than the selected video duration.",
     pvv_err_permission_for: "Please confirm permission to use the voice of {name}.",
   },
@@ -169,7 +189,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "Образец не изменяет сохранённую запись.",
     pvv_preview_stored: "Сохранённый образец этого голоса — прослушивание всегда бесплатно.",
     pvv_preview_failed: "Не удалось воспроизвести образец. Попробуйте ещё раз.",
-    pvv_err_quota: "Голосовые возможности Project Joy сейчас исчерпаны. Прежняя запись сохранена. Попробуйте немного позже.",
+    pvv_err_quota:
+      "Голосовые возможности Project Joy сейчас исчерпаны. Прежняя запись сохранена. Попробуйте немного позже.",
     pvv_err_key: "Голосовой сервис нужно подключить заново. Прежняя запись сохранена.",
     pvv_err_voice: "Этот голос больше недоступен. Выберите другой голос.",
     pvv_err_unavailable: "Голосовой сервис сейчас недоступен. Прежняя запись сохранена.",
@@ -177,8 +198,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_status: "Статус генерации",
     pvv_status_ok: "Успешно",
     pvv_status_fail: "Ошибка",
-    pvv_outdated_voice: "Сохранённая запись создана другим голосом. Создайте голос заново, прежде чем продолжить.",
-    pvv_outdated_text: "Текст поздравления изменился после записи. Запись больше не соответствует тексту — создайте её заново.",
+    pvv_outdated_voice:
+      "Сохранённая запись создана другим голосом. Создайте голос заново, прежде чем продолжить.",
+    pvv_outdated_text:
+      "Текст поздравления изменился после записи. Запись больше не соответствует тексту — создайте её заново.",
     pvv_outdated_badge: "Устарело",
     pvv_warm_female: "Тёплый и мягкий",
     pvv_bright_female: "Светлый и дружелюбный",
@@ -197,16 +220,35 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Разделить поздравление",
     pvv_parts_hint: "Любую часть можно свободно изменить.",
     pvv_parts_estimate: "Расчётная длительность",
-    pvv_parts_too_long: "Полное поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или отредактируйте реплики участников.",
-    pvv_chorus_too_long: "Поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или сократите поздравление.",
-    pvv_chorus_unsyncable: "Один из выбранных голосов не удаётся синхронизировать с остальными участниками, сохранив естественное звучание. Выберите другой голос для этого участника или увеличьте длительность видео.",
+    pvv_parts_too_long:
+      "Полное поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или отредактируйте реплики участников.",
+    pvv_chorus_too_long:
+      "Поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или сократите поздравление.",
+    pvv_chorus_unsyncable:
+      "Один из выбранных голосов не удаётся синхронизировать с остальными участниками, сохранив естественное звучание. Выберите другой голос для этого участника или увеличьте длительность видео.",
     pvv_parts_missing: "Сначала выберите участникам голос или запись.",
     pvv_chorus_title: "Голоса, звучащие вместе",
     pvv_chorus_hint: "Выберите от двух до пяти голосов. Project Joy соединит их сам.",
     pvv_chorus_count: "Выбрано голосов",
+    pvv_sync_badge:
+      "\u042d\u0442\u043e\u0442 \u0433\u043e\u043b\u043e\u0441 \u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441 \u0434\u0440\u0443\u0433\u0438\u043c\u0438 \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0430\u043c\u0438.",
+    pvv_sync_recommended_title:
+      "\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c\u044b\u0435 \u0433\u043e\u043b\u043e\u0441\u0430",
+    pvv_sync_recommended_note:
+      "\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u0442\u0441\u044f \u0434\u043b\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u043d\u043e\u0433\u043e \u043e\u0431\u0449\u0435\u0433\u043e \u0437\u0432\u0443\u0447\u0430\u043d\u0438\u044f.",
+    pvv_sync_current_voice:
+      "\u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u0433\u043e\u043b\u043e\u0441",
+    pvv_sync_close: "\u0417\u0430\u043a\u0440\u044b\u0442\u044c",
+    pvv_sync_recommend:
+      "\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c\u044b\u0435 \u0433\u043e\u043b\u043e\u0441\u0430",
+    pvv_sync_dialog_body:
+      "\u0413\u043e\u043b\u043e\u0441, \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u043d\u044b\u0439 \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0443 {name}, \u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441 \u0434\u0440\u0443\u0433\u0438\u043c\u0438 \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u043c\u0438 \u0433\u043e\u043b\u043e\u0441\u0430\u043c\u0438 \u0441 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u0435\u043c \u0435\u0441\u0442\u0435\u0441\u0442\u0432\u0435\u043d\u043d\u043e\u0433\u043e \u0437\u0432\u0443\u0447\u0430\u043d\u0438\u044f. \u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043e\u0434\u0438\u043d \u0438\u0437 \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c\u044b\u0445 \u0433\u043e\u043b\u043e\u0441\u043e\u0432 \u0442\u043e\u0439 \u0436\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438.",
+    pvv_sync_no_recommendations:
+      "\u0421\u0435\u0439\u0447\u0430\u0441 \u043d\u0435\u0442 \u0434\u0440\u0443\u0433\u0438\u0445 \u0433\u043e\u043b\u043e\u0441\u043e\u0432 \u044d\u0442\u043e\u0439 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438.",
     pvv_chorus_min: "Выберите минимум два голоса.",
     pvv_record_title: "Запишите поздравление своим голосом",
-    pvv_read_aloud: "Прочитайте это поздравление вслух своим голосом.\nЕсли записывает другой участник, он читает только свою часть.\nЗагружайте чужой голос только с разрешения этого человека.",
+    pvv_read_aloud:
+      "Прочитайте это поздравление вслух своим голосом.\nЕсли записывает другой участник, он читает только свою часть.\nЗагружайте чужой голос только с разрешения этого человека.",
     pvv_record_now: "Записать сейчас",
     pvv_record_stop: "Остановить запись",
     pvv_record_upload: "Загрузить готовую запись",
@@ -235,7 +277,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_chorus_max: "Выберите не более пяти голосов.",
     pvv_err_no_voice_for: "Для участника {name} не выбран голос.",
     pvv_err_no_text_for: "Участнику {name} не назначен текст.",
-    pvv_err_recording_failed_for: "Запись участника {name} не была подготовлена. Запишите её ещё раз.",
+    pvv_err_recording_failed_for:
+      "Запись участника {name} не была подготовлена. Запишите её ещё раз.",
     pvv_err_recording_long_for: "Запись участника {name} длиннее выбранной длительности видео.",
     pvv_err_permission_for: "Подтвердите разрешение на использование голоса участника {name}.",
   },
@@ -275,7 +318,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_created: "Erstellt",
     pvv_language: "Sprache",
     pvv_need_text: "Schreiben oder erstellen Sie zuerst den Gruß.",
-    pvv_failed: "Die Stimme konnte nicht erstellt werden. Ihre bisherige Aufnahme bleibt erhalten — bitte erneut versuchen.",
+    pvv_failed:
+      "Die Stimme konnte nicht erstellt werden. Ihre bisherige Aufnahme bleibt erhalten — bitte erneut versuchen.",
     pvv_success: "Stimme erstellt",
     pvv_free_note: "Während des Tests kostet das Erstellen der Stimme keine Credits.",
     pvv_selected: "Gewählte Stimme",
@@ -288,16 +332,21 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "Die Probe verändert Ihre gespeicherte Aufnahme nicht.",
     pvv_preview_stored: "Eine gespeicherte Hörprobe dieser Stimme — Anhören ist immer kostenlos.",
     pvv_preview_failed: "Die Probe konnte nicht abgespielt werden. Bitte erneut versuchen.",
-    pvv_err_quota: "Die Sprachkapazität von Project Joy ist derzeit erschöpft. Ihre bisherige Aufnahme bleibt erhalten. Bitte später erneut versuchen.",
-    pvv_err_key: "Der Sprachdienst muss neu verbunden werden. Ihre bisherige Aufnahme bleibt erhalten.",
+    pvv_err_quota:
+      "Die Sprachkapazität von Project Joy ist derzeit erschöpft. Ihre bisherige Aufnahme bleibt erhalten. Bitte später erneut versuchen.",
+    pvv_err_key:
+      "Der Sprachdienst muss neu verbunden werden. Ihre bisherige Aufnahme bleibt erhalten.",
     pvv_err_voice: "Diese Stimme ist nicht mehr verfügbar. Bitte wählen Sie eine andere Stimme.",
-    pvv_err_unavailable: "Der Sprachdienst ist derzeit nicht verfügbar. Ihre bisherige Aufnahme bleibt erhalten.",
+    pvv_err_unavailable:
+      "Der Sprachdienst ist derzeit nicht verfügbar. Ihre bisherige Aufnahme bleibt erhalten.",
     pvv_test_info: "Testinformationen (nur Entwicklung)",
     pvv_status: "Status der Erstellung",
     pvv_status_ok: "Erfolgreich",
     pvv_status_fail: "Fehlgeschlagen",
-    pvv_outdated_voice: "Die gespeicherte Aufnahme wurde mit einer anderen Stimme erstellt. Bitte erneut erstellen.",
-    pvv_outdated_text: "Der Gruß hat sich nach der Aufnahme geändert. Die Aufnahme passt nicht mehr zum Text — bitte erneut erstellen.",
+    pvv_outdated_voice:
+      "Die gespeicherte Aufnahme wurde mit einer anderen Stimme erstellt. Bitte erneut erstellen.",
+    pvv_outdated_text:
+      "Der Gruß hat sich nach der Aufnahme geändert. Die Aufnahme passt nicht mehr zum Text — bitte erneut erstellen.",
     pvv_outdated_badge: "Veraltet",
     pvv_warm_female: "Warm und sanft",
     pvv_bright_female: "Hell und freundlich",
@@ -316,16 +365,31 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Gruß aufteilen",
     pvv_parts_hint: "Jeder Teil lässt sich frei bearbeiten.",
     pvv_parts_estimate: "Geschätzte Länge",
-    pvv_parts_too_long: "Der vollständige Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder bearbeiten Sie die Zeilen der Teilnehmenden.",
-    pvv_chorus_too_long: "Der Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder kürzen Sie den Gruß.",
-    pvv_chorus_unsyncable: "Eine der gewählten Stimmen lässt sich nicht mit den anderen Teilnehmenden synchronisieren, ohne die natürliche Sprachqualität zu verlieren. Bitte wählen Sie eine andere Stimme für diese Person oder erhöhen Sie die Videodauer.",
+    pvv_parts_too_long:
+      "Der vollständige Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder bearbeiten Sie die Zeilen der Teilnehmenden.",
+    pvv_chorus_too_long:
+      "Der Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder kürzen Sie den Gruß.",
+    pvv_chorus_unsyncable:
+      "Eine der gewählten Stimmen lässt sich nicht mit den anderen Teilnehmenden synchronisieren, ohne die natürliche Sprachqualität zu verlieren. Bitte wählen Sie eine andere Stimme für diese Person oder erhöhen Sie die Videodauer.",
     pvv_parts_missing: "Geben Sie den Teilnehmenden zuerst eine Stimme oder Aufnahme.",
     pvv_chorus_title: "Stimmen, die zusammen sprechen",
     pvv_chorus_hint: "Wählen Sie zwei bis fünf Stimmen. Project Joy fügt sie zusammen.",
     pvv_chorus_count: "Gewählte Stimmen",
+    pvv_sync_badge:
+      "Diese Stimme konnte nicht mit den anderen Teilnehmenden synchronisiert werden.",
+    pvv_sync_recommended_title: "Empfohlene Stimmen",
+    pvv_sync_recommended_note: "Empfohlen f\u00fcr synchrones Sprechen in der Gruppe.",
+    pvv_sync_current_voice: "Aktuelle Stimme",
+    pvv_sync_close: "Schlie\u00dfen",
+    pvv_sync_recommend: "Empfohlene Stimmen ansehen",
+    pvv_sync_dialog_body:
+      "Die {name} zugewiesene Stimme konnte nicht mit den anderen gew\u00e4hlten Stimmen synchronisiert werden, ohne die nat\u00fcrliche Sprachqualit\u00e4t zu verlieren. Bitte w\u00e4hlen Sie eine der empfohlenen Stimmen derselben Kategorie.",
+    pvv_sync_no_recommendations:
+      "Derzeit sind keine weiteren Stimmen dieser Kategorie verf\u00fcgbar.",
     pvv_chorus_min: "Wählen Sie mindestens zwei Stimmen.",
     pvv_record_title: "Nehmen Sie den Gruß mit Ihrer eigenen Stimme auf",
-    pvv_read_aloud: "Lesen Sie diesen Gruß laut mit Ihrer eigenen Stimme vor.\nWenn eine andere Person aufnimmt, liest sie nur ihren eigenen Teil.\nLaden Sie fremde Stimmen nur mit deren Erlaubnis hoch.",
+    pvv_read_aloud:
+      "Lesen Sie diesen Gruß laut mit Ihrer eigenen Stimme vor.\nWenn eine andere Person aufnimmt, liest sie nur ihren eigenen Teil.\nLaden Sie fremde Stimmen nur mit deren Erlaubnis hoch.",
     pvv_record_now: "Jetzt aufnehmen",
     pvv_record_stop: "Aufnahme beenden",
     pvv_record_upload: "Vorhandene Aufnahme hochladen",
@@ -335,14 +399,16 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_delete_recording: "Aufnahme löschen",
     pvv_recording_duration: "Länge der Aufnahme",
     pvv_recording_formats: "MP3-, WAV-, M4A-, AAC- und OGG-Dateien bis 15 MB.",
-    pvv_recording_unsupported: "Diese Datei lässt sich nicht verwenden. Bitte MP3, WAV, M4A, AAC oder OGG wählen.",
+    pvv_recording_unsupported:
+      "Diese Datei lässt sich nicht verwenden. Bitte MP3, WAV, M4A, AAC oder OGG wählen.",
     pvv_recording_too_big: "Diese Aufnahme ist zu groß. Bitte eine Datei bis 15 MB wählen.",
     pvv_record_denied: "Project Joy konnte nicht auf Ihr Mikrofon zugreifen.",
     pvv_recording_assigned: "Aufnahme zugewiesen",
     pvv_recording_own: "Eigene Aufnahme",
     pvv_assign_recording_title: "Wem soll diese Aufnahme zugewiesen werden?",
     pvv_no_greeting_text: "Schreiben oder erstellen Sie zuerst den Gruß.",
-    pvv_permission_confirm: "Ich bestätige, dass ich die Erlaubnis habe, diese Stimme zu verwenden.",
+    pvv_permission_confirm:
+      "Ich bestätige, dass ich die Erlaubnis habe, diese Stimme zu verwenden.",
     pvv_permission_button: "Erlaubnis bestätigen",
     pvv_processing: "Project Joy bereitet Ihre Aufnahme vor…",
     pvv_processed: "Ihre Aufnahme wurde erfolgreich vorbereitet.",
@@ -354,7 +420,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_chorus_max: "Wählen Sie höchstens fünf Stimmen.",
     pvv_err_no_voice_for: "Für {name} wurde keine Stimme ausgewählt.",
     pvv_err_no_text_for: "{name} wurde kein Text zugewiesen.",
-    pvv_err_recording_failed_for: "Die Aufnahme von {name} wurde nicht vorbereitet. Bitte nehmen Sie sie erneut auf.",
+    pvv_err_recording_failed_for:
+      "Die Aufnahme von {name} wurde nicht vorbereitet. Bitte nehmen Sie sie erneut auf.",
     pvv_err_recording_long_for: "Die Aufnahme von {name} ist länger als die gewählte Videolänge.",
     pvv_err_permission_for: "Bitte bestätigen Sie die Erlaubnis für die Stimme von {name}.",
   },
@@ -407,7 +474,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "Зразок не змінює збережений запис.",
     pvv_preview_stored: "Збережений зразок цього голосу — прослуховування завжди безкоштовне.",
     pvv_preview_failed: "Не вдалося відтворити зразок. Спробуйте ще раз.",
-    pvv_err_quota: "Голосові можливості Project Joy наразі вичерпані. Попередній запис збережено. Спробуйте трохи згодом.",
+    pvv_err_quota:
+      "Голосові можливості Project Joy наразі вичерпані. Попередній запис збережено. Спробуйте трохи згодом.",
     pvv_err_key: "Голосовий сервіс потрібно підключити заново. Попередній запис збережено.",
     pvv_err_voice: "Цей голос більше недоступний. Оберіть інший голос.",
     pvv_err_unavailable: "Голосовий сервіс наразі недоступний. Попередній запис збережено.",
@@ -415,8 +483,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_status: "Статус створення",
     pvv_status_ok: "Успішно",
     pvv_status_fail: "Помилка",
-    pvv_outdated_voice: "Збережений запис створено іншим голосом. Створіть голос знову, перш ніж продовжити.",
-    pvv_outdated_text: "Текст привітання змінився після запису. Запис більше не відповідає тексту — створіть його знову.",
+    pvv_outdated_voice:
+      "Збережений запис створено іншим голосом. Створіть голос знову, перш ніж продовжити.",
+    pvv_outdated_text:
+      "Текст привітання змінився після запису. Запис більше не відповідає тексту — створіть його знову.",
     pvv_outdated_badge: "Застаріло",
     pvv_warm_female: "Теплий і ніжний",
     pvv_bright_female: "Світлий і привітний",
@@ -435,16 +505,35 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Поділити привітання",
     pvv_parts_hint: "Будь-яку частину можна вільно змінити.",
     pvv_parts_estimate: "Орієнтовна тривалість",
-    pvv_parts_too_long: "Повне привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або відредагуйте репліки учасників.",
-    pvv_chorus_too_long: "Привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або скоротіть привітання.",
-    pvv_chorus_unsyncable: "Один із вибраних голосів не вдається синхронізувати з іншими учасниками зі збереженням природного звучання. Оберіть інший голос для цього учасника або збільште тривалість відео.",
+    pvv_parts_too_long:
+      "Повне привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або відредагуйте репліки учасників.",
+    pvv_chorus_too_long:
+      "Привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або скоротіть привітання.",
+    pvv_chorus_unsyncable:
+      "Один із вибраних голосів не вдається синхронізувати з іншими учасниками зі збереженням природного звучання. Оберіть інший голос для цього учасника або збільште тривалість відео.",
     pvv_parts_missing: "Спершу оберіть учасникам голос або запис.",
     pvv_chorus_title: "Голоси, що звучать разом",
     pvv_chorus_hint: "Оберіть від двох до п’яти голосів. Project Joy поєднає їх сам.",
     pvv_chorus_count: "Обрано голосів",
+    pvv_sync_badge:
+      "\u0426\u0435\u0439 \u0433\u043e\u043b\u043e\u0441 \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u0437 \u0456\u043d\u0448\u0438\u043c\u0438 \u0443\u0447\u0430\u0441\u043d\u0438\u043a\u0430\u043c\u0438.",
+    pvv_sync_recommended_title:
+      "\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u043e\u0432\u0430\u043d\u0456 \u0433\u043e\u043b\u043e\u0441\u0438",
+    pvv_sync_recommended_note:
+      "\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u043e\u0432\u0430\u043d\u043e \u0434\u043b\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u043d\u043e\u0433\u043e \u0441\u043f\u0456\u043b\u044c\u043d\u043e\u0433\u043e \u0437\u0432\u0443\u0447\u0430\u043d\u043d\u044f.",
+    pvv_sync_current_voice:
+      "\u041f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 \u0433\u043e\u043b\u043e\u0441",
+    pvv_sync_close: "\u0417\u0430\u043a\u0440\u0438\u0442\u0438",
+    pvv_sync_recommend:
+      "\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u0438 \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u043e\u0432\u0430\u043d\u0456 \u0433\u043e\u043b\u043e\u0441\u0438",
+    pvv_sync_dialog_body:
+      "\u0413\u043e\u043b\u043e\u0441, \u043f\u0440\u0438\u0437\u043d\u0430\u0447\u0435\u043d\u0438\u0439 \u0443\u0447\u0430\u0441\u043d\u0438\u043a\u0443 {name}, \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u0437 \u0456\u043d\u0448\u0438\u043c\u0438 \u0432\u0438\u0431\u0440\u0430\u043d\u0438\u043c\u0438 \u0433\u043e\u043b\u043e\u0441\u0430\u043c\u0438 \u0437\u0456 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f\u043c \u043f\u0440\u0438\u0440\u043e\u0434\u043d\u043e\u0433\u043e \u0437\u0432\u0443\u0447\u0430\u043d\u043d\u044f. \u041e\u0431\u0435\u0440\u0456\u0442\u044c \u043e\u0434\u0438\u043d \u0456\u0437 \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u043e\u0432\u0430\u043d\u0438\u0445 \u0433\u043e\u043b\u043e\u0441\u0456\u0432 \u0442\u0456\u0454\u0457 \u0441\u0430\u043c\u043e\u0457 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0456\u0457.",
+    pvv_sync_no_recommendations:
+      "\u041d\u0430\u0440\u0430\u0437\u0456 \u043d\u0435\u043c\u0430\u0454 \u0456\u043d\u0448\u0438\u0445 \u0433\u043e\u043b\u043e\u0441\u0456\u0432 \u0446\u0456\u0454\u0457 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0456\u0457.",
     pvv_chorus_min: "Оберіть щонайменше два голоси.",
     pvv_record_title: "Запишіть привітання власним голосом",
-    pvv_read_aloud: "Прочитайте це привітання вголос власним голосом.\nЯкщо записує інший учасник, він читає лише свою частину.\nЗавантажуйте чужий голос лише з дозволу цієї людини.",
+    pvv_read_aloud:
+      "Прочитайте це привітання вголос власним голосом.\nЯкщо записує інший учасник, він читає лише свою частину.\nЗавантажуйте чужий голос лише з дозволу цієї людини.",
     pvv_record_now: "Записати зараз",
     pvv_record_stop: "Зупинити запис",
     pvv_record_upload: "Завантажити готовий запис",
@@ -513,7 +602,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_created: "Créée",
     pvv_language: "Langue",
     pvv_need_text: "Écrivez ou créez d'abord le message.",
-    pvv_failed: "La voix n'a pas pu être créée. Votre enregistrement précédent est conservé — réessayez.",
+    pvv_failed:
+      "La voix n'a pas pu être créée. Votre enregistrement précédent est conservé — réessayez.",
     pvv_success: "Voix créée",
     pvv_free_note: "Pendant les tests, créer la voix ne consomme aucun crédit.",
     pvv_selected: "Voix sélectionnée",
@@ -526,16 +616,21 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "L’extrait ne modifie pas votre enregistrement sauvegardé.",
     pvv_preview_stored: "Un extrait enregistré de cette voix — l’écoute est toujours gratuite.",
     pvv_preview_failed: "L’extrait n’a pas pu être lu. Réessayez.",
-    pvv_err_quota: "La capacité vocale de Project Joy est atteinte pour le moment. Votre enregistrement précédent est conservé. Réessayez un peu plus tard.",
-    pvv_err_key: "Le service vocal doit être reconnecté. Votre enregistrement précédent est conservé.",
+    pvv_err_quota:
+      "La capacité vocale de Project Joy est atteinte pour le moment. Votre enregistrement précédent est conservé. Réessayez un peu plus tard.",
+    pvv_err_key:
+      "Le service vocal doit être reconnecté. Votre enregistrement précédent est conservé.",
     pvv_err_voice: "Cette voix n’est plus disponible. Choisissez une autre voix.",
-    pvv_err_unavailable: "Le service vocal est indisponible pour le moment. Votre enregistrement précédent est conservé.",
+    pvv_err_unavailable:
+      "Le service vocal est indisponible pour le moment. Votre enregistrement précédent est conservé.",
     pvv_test_info: "Informations de test (développement uniquement)",
     pvv_status: "Statut de création",
     pvv_status_ok: "Réussi",
     pvv_status_fail: "Échec",
-    pvv_outdated_voice: "L’enregistrement a été créé avec une autre voix. Créez la voix à nouveau avant de continuer.",
-    pvv_outdated_text: "Le message a changé après l’enregistrement. L’audio ne correspond plus au texte — créez-le à nouveau.",
+    pvv_outdated_voice:
+      "L’enregistrement a été créé avec une autre voix. Créez la voix à nouveau avant de continuer.",
+    pvv_outdated_text:
+      "Le message a changé après l’enregistrement. L’audio ne correspond plus au texte — créez-le à nouveau.",
     pvv_outdated_badge: "Obsolète",
     pvv_warm_female: "Chaleureuse et douce",
     pvv_bright_female: "Lumineuse et amicale",
@@ -554,16 +649,32 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Partager le message",
     pvv_parts_hint: "Chaque partie peut être modifiée librement.",
     pvv_parts_estimate: "Durée estimée",
-    pvv_parts_too_long: "Le message complet ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou modifier les répliques des participants.",
-    pvv_chorus_too_long: "Le message ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou raccourcir le message.",
-    pvv_chorus_unsyncable: "Une des voix sélectionnées ne peut pas être synchronisée avec les autres participants tout en conservant une qualité de parole naturelle. Veuillez choisir une autre voix pour ce participant ou augmenter la durée de la vidéo.",
+    pvv_parts_too_long:
+      "Le message complet ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou modifier les répliques des participants.",
+    pvv_chorus_too_long:
+      "Le message ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou raccourcir le message.",
+    pvv_chorus_unsyncable:
+      "Une des voix sélectionnées ne peut pas être synchronisée avec les autres participants tout en conservant une qualité de parole naturelle. Veuillez choisir une autre voix pour ce participant ou augmenter la durée de la vidéo.",
     pvv_parts_missing: "Donnez d’abord une voix ou un enregistrement aux participants.",
     pvv_chorus_title: "Voix qui parlent ensemble",
     pvv_chorus_hint: "Choisissez de deux à cinq voix. Project Joy les assemble pour vous.",
     pvv_chorus_count: "Voix choisies",
+    pvv_sync_badge:
+      "Cette voix n'a pas pu \u00eatre synchronis\u00e9e avec les autres participants.",
+    pvv_sync_recommended_title: "Voix recommand\u00e9es",
+    pvv_sync_recommended_note:
+      "Recommand\u00e9e pour une prise de parole de groupe synchronis\u00e9e.",
+    pvv_sync_current_voice: "Voix actuelle",
+    pvv_sync_close: "Fermer",
+    pvv_sync_recommend: "Voir les voix recommand\u00e9es",
+    pvv_sync_dialog_body:
+      "La voix attribu\u00e9e \u00e0 {name} n'a pas pu \u00eatre synchronis\u00e9e avec les autres voix s\u00e9lectionn\u00e9es tout en conservant une qualit\u00e9 de parole naturelle. Veuillez choisir l'une des voix recommand\u00e9es de la m\u00eame cat\u00e9gorie.",
+    pvv_sync_no_recommendations:
+      "Aucune autre voix de cette cat\u00e9gorie n'est disponible pour le moment.",
     pvv_chorus_min: "Choisissez au moins deux voix.",
     pvv_record_title: "Enregistrez le message avec votre propre voix",
-    pvv_read_aloud: "Lisez ce message à voix haute avec votre propre voix.\nSi un autre participant enregistre, il lit uniquement la partie qui lui est attribuée.\nN’envoyez la voix d’une autre personne qu’avec son autorisation.",
+    pvv_read_aloud:
+      "Lisez ce message à voix haute avec votre propre voix.\nSi un autre participant enregistre, il lit uniquement la partie qui lui est attribuée.\nN’envoyez la voix d’une autre personne qu’avec son autorisation.",
     pvv_record_now: "Enregistrer maintenant",
     pvv_record_stop: "Arrêter l’enregistrement",
     pvv_record_upload: "Envoyer un enregistrement existant",
@@ -573,8 +684,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_delete_recording: "Supprimer l’enregistrement",
     pvv_recording_duration: "Durée de l’enregistrement",
     pvv_recording_formats: "Fichiers MP3, WAV, M4A, AAC et OGG jusqu’à 15 Mo.",
-    pvv_recording_unsupported: "Ce fichier ne convient pas. Choisissez un MP3, WAV, M4A, AAC ou OGG.",
-    pvv_recording_too_big: "Cet enregistrement est trop lourd. Choisissez un fichier de 15 Mo maximum.",
+    pvv_recording_unsupported:
+      "Ce fichier ne convient pas. Choisissez un MP3, WAV, M4A, AAC ou OGG.",
+    pvv_recording_too_big:
+      "Cet enregistrement est trop lourd. Choisissez un fichier de 15 Mo maximum.",
     pvv_record_denied: "Project Joy n’a pas pu accéder à votre microphone.",
     pvv_recording_assigned: "Enregistrement attribué",
     pvv_recording_own: "Enregistrement personnel",
@@ -592,8 +705,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_chorus_max: "Choisissez au maximum cinq voix.",
     pvv_err_no_voice_for: "Aucune voix n’a été choisie pour {name}.",
     pvv_err_no_text_for: "Aucun texte n’a été attribué à {name}.",
-    pvv_err_recording_failed_for: "L’enregistrement de {name} n’a pas été préparé. Enregistrez-le à nouveau.",
-    pvv_err_recording_long_for: "L’enregistrement de {name} est plus long que la durée choisie de la vidéo.",
+    pvv_err_recording_failed_for:
+      "L’enregistrement de {name} n’a pas été préparé. Enregistrez-le à nouveau.",
+    pvv_err_recording_long_for:
+      "L’enregistrement de {name} est plus long que la durée choisie de la vidéo.",
     pvv_err_permission_for: "Veuillez confirmer l’autorisation d’utiliser la voix de {name}.",
   },
   pl: {
@@ -645,16 +760,21 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_preview_note: "Próbka nie zmienia zapisanego nagrania.",
     pvv_preview_stored: "Zapisana próbka tego głosu — odsłuch jest zawsze bezpłatny.",
     pvv_preview_failed: "Nie udało się odtworzyć próbki. Spróbuj ponownie.",
-    pvv_err_quota: "Możliwości głosowe Project Joy są chwilowo wyczerpane. Poprzednie nagranie zostało zachowane. Spróbuj nieco później.",
-    pvv_err_key: "Usługa głosowa wymaga ponownego połączenia. Poprzednie nagranie zostało zachowane.",
+    pvv_err_quota:
+      "Możliwości głosowe Project Joy są chwilowo wyczerpane. Poprzednie nagranie zostało zachowane. Spróbuj nieco później.",
+    pvv_err_key:
+      "Usługa głosowa wymaga ponownego połączenia. Poprzednie nagranie zostało zachowane.",
     pvv_err_voice: "Ten głos nie jest już dostępny. Wybierz inny głos.",
-    pvv_err_unavailable: "Usługa głosowa jest chwilowo niedostępna. Poprzednie nagranie zostało zachowane.",
+    pvv_err_unavailable:
+      "Usługa głosowa jest chwilowo niedostępna. Poprzednie nagranie zostało zachowane.",
     pvv_test_info: "Informacje testowe (tylko dla developmentu)",
     pvv_status: "Status tworzenia",
     pvv_status_ok: "Sukces",
     pvv_status_fail: "Błąd",
-    pvv_outdated_voice: "Zapisane nagranie utworzono innym głosem. Utwórz głos ponownie przed kontynuacją.",
-    pvv_outdated_text: "Życzenia zmieniły się po nagraniu. Nagranie nie pasuje już do tekstu — utwórz je ponownie.",
+    pvv_outdated_voice:
+      "Zapisane nagranie utworzono innym głosem. Utwórz głos ponownie przed kontynuacją.",
+    pvv_outdated_text:
+      "Życzenia zmieniły się po nagraniu. Nagranie nie pasuje już do tekstu — utwórz je ponownie.",
     pvv_outdated_badge: "Nieaktualne",
     pvv_warm_female: "Ciepły i łagodny",
     pvv_bright_female: "Jasny i przyjazny",
@@ -673,16 +793,30 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_auto: "Podziel życzenia",
     pvv_parts_hint: "Każdą część można dowolnie zmienić.",
     pvv_parts_estimate: "Szacowana długość",
-    pvv_parts_too_long: "Całe życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub edytuj kwestie uczestników.",
-    pvv_chorus_too_long: "Życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub skróć życzenie.",
-    pvv_chorus_unsyncable: "Jednego z wybranych głosów nie da się zsynchronizować z pozostałymi uczestnikami z zachowaniem naturalnej jakości mowy. Wybierz inny głos dla tego uczestnika lub zwiększ czas trwania wideo.",
+    pvv_parts_too_long:
+      "Całe życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub edytuj kwestie uczestników.",
+    pvv_chorus_too_long:
+      "Życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub skróć życzenie.",
+    pvv_chorus_unsyncable:
+      "Jednego z wybranych głosów nie da się zsynchronizować z pozostałymi uczestnikami z zachowaniem naturalnej jakości mowy. Wybierz inny głos dla tego uczestnika lub zwiększ czas trwania wideo.",
     pvv_parts_missing: "Najpierw przypisz uczestnikom głos lub nagranie.",
     pvv_chorus_title: "Głosy mówiące razem",
     pvv_chorus_hint: "Wybierz od dwóch do pięciu głosów. Project Joy sam je połączy.",
     pvv_chorus_count: "Wybrane głosy",
+    pvv_sync_badge:
+      "Tego g\u0142osu nie uda\u0142o si\u0119 zsynchronizowa\u0107 z pozosta\u0142ymi uczestnikami.",
+    pvv_sync_recommended_title: "Polecane g\u0142osy",
+    pvv_sync_recommended_note: "Polecany do zsynchronizowanej mowy grupowej.",
+    pvv_sync_current_voice: "Obecny g\u0142os",
+    pvv_sync_close: "Zamknij",
+    pvv_sync_recommend: "Poka\u017c polecane g\u0142osy",
+    pvv_sync_dialog_body:
+      "G\u0142osu przypisanego uczestnikowi {name} nie uda\u0142o si\u0119 zsynchronizowa\u0107 z pozosta\u0142ymi wybranymi g\u0142osami z zachowaniem naturalnej jako\u015bci mowy. Wybierz jeden z polecanych g\u0142os\u00f3w z tej samej kategorii.",
+    pvv_sync_no_recommendations: "Obecnie brak innych g\u0142os\u00f3w w tej kategorii.",
     pvv_chorus_min: "Wybierz co najmniej dwa głosy.",
     pvv_record_title: "Nagraj życzenia własnym głosem",
-    pvv_read_aloud: "Przeczytaj te życzenia na głos własnym głosem.\nJeśli nagrywa inny uczestnik, czyta wyłącznie swoją część.\nGłos innej osoby wysyłaj tylko za jej zgodą.",
+    pvv_read_aloud:
+      "Przeczytaj te życzenia na głos własnym głosem.\nJeśli nagrywa inny uczestnik, czyta wyłącznie swoją część.\nGłos innej osoby wysyłaj tylko za jej zgodą.",
     pvv_record_now: "Nagraj teraz",
     pvv_record_stop: "Zatrzymaj nagrywanie",
     pvv_record_upload: "Wyślij gotowe nagranie",
@@ -711,7 +845,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_chorus_max: "Wybierz najwyżej pięć głosów.",
     pvv_err_no_voice_for: "Dla uczestnika {name} nie wybrano głosu.",
     pvv_err_no_text_for: "Uczestnikowi {name} nie przypisano tekstu.",
-    pvv_err_recording_failed_for: "Nagranie uczestnika {name} nie zostało przygotowane. Nagraj je ponownie.",
+    pvv_err_recording_failed_for:
+      "Nagranie uczestnika {name} nie zostało przygotowane. Nagraj je ponownie.",
     pvv_err_recording_long_for: "Nagranie uczestnika {name} jest dłuższe niż wybrany czas filmu.",
     pvv_err_permission_for: "Potwierdź zgodę na użycie głosu uczestnika {name}.",
   },
