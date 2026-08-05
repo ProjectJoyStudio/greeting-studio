@@ -35,6 +35,7 @@ import {
 } from "@/lib/personal-video/voice.functions";
 import type { PvgVoiceover } from "@/lib/personal-video/voice/catalog";
 import type { PvgPerson } from "@/lib/personal-video/types";
+import { ParticipantAvatar } from "./ParticipantAvatar";
 import {
   PVG_MAX_CHORUS_VOICES,
   PVG_MIN_CHORUS_VOICES,
@@ -735,14 +736,17 @@ export function VoicePanel({
           <div className="mt-3 space-y-3">
             {participants.map((person, index) => (
               <div key={person.id}>
-                <p className="mb-1 text-xs font-medium">
-                  {participantLabel(person, index)}
-                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                    {recordings[person.id]
-                      ? t("pvv_recording_own")
-                      : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
-                  </span>
-                </p>
+                <div className="mb-1 flex items-center gap-2">
+                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                  <p className="text-xs font-medium">
+                    {participantLabel(person, index)}
+                    <span className="ml-2 text-[11px] font-normal text-muted-foreground">
+                      {recordings[person.id]
+                        ? t("pvv_recording_own")
+                        : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
+                    </span>
+                  </p>
+                </div>
                 <textarea
                   value={partOf(person, index)}
                   disabled={disabled}
