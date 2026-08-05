@@ -54,7 +54,7 @@ import {
   voiceIssueText,
   type PvgVoiceRecording,
 } from "@/lib/personal-video/voice/recordings";
-import { mergeInOrder, mergeTogether, type MixSource } from "@/lib/personal-video/voice/mixdown";
+import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
 import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
@@ -98,7 +98,6 @@ export function VoicePanel({
   videoSeconds,
   disabled,
   speechMode: savedSpeechMode,
-  syncMode: savedSyncMode,
   chorusVoiceIds: savedChorus,
   onAssigned,
 }: {
@@ -136,7 +135,8 @@ export function VoicePanel({
 
   const [mode, setMode] = useState<VoiceMode | null>(null);
   const [speechMode, setSpeechMode] = useState<PvgSpeechMode>(savedSpeechMode ?? "single");
-  const [syncMode] = useState<PvgSyncMode>(savedSyncMode ?? "delayed");
+  // Voices speaking together always begin, speak and end as one.
+  const syncMode: PvgSyncMode = "simultaneous";
   const [chorus, setChorus] = useState<Assignment[]>([]);
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
@@ -633,9 +633,20 @@ export function VoicePanel({
           sources.push(track);
           summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
         }
-        const merged = await mergeTogether(sources, syncMode, {
+        // Every chosen voice speaks the whole greeting, word for word. Only the
+        // pace is brought in step; no voice and no word is ever exchanged.
+        const merged = await blendTogether(sources, {
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
+        if (merged.unsyncable !== undefined) {
+          const voice = chorus[merged.unsyncable];
+          toast.error(`${t("pvv_chorus_unsyncable")}${voice ? ` (${voice.name})` : ""}`);
+          return;
+        }
+        if (merged.overflow) {
+          toast.error(t("pvv_chorus_too_long"));
+          return;
+        }
         const res = await saveMerged({
           data: {
             projectId,
