@@ -277,6 +277,134 @@ export function VoicePanel({
     return person.name.trim() || `${t("pvv_participant")} ${index + 1}`;
   }
 
+  /**
+   * The voice group of one participant. When it was never chosen, the group of
+   * the voice they already speak with is kept — never a group of another kind.
+   */
+  function categoryOf(person: PvgPerson): VoiceCategory | null {
+    const stored = categories[person.id];
+    if (stored) return stored;
+    const current = assignments[person.id];
+    const voice = current ? voices.find((v) => v.externalVoiceId === current.id) : undefined;
+    return voice ? voiceCategory(voice) : null;
+  }
+
+  /** The group a participant is put in. Only the person ever changes it. */
+  function setPersonCategory(person: PvgPerson, next: VoiceCategory) {
+    setCategories((prev) => ({ ...prev, [person.id]: next }));
+    void saveChoice({ data: { projectId, personId: person.id, category: next } }).catch(
+      () => undefined,
+    );
+    // A voice from another group may never stay: it has to be chosen again.
+    const current = assignments[person.id];
+    const voice = current ? voices.find((v) => v.externalVoiceId === current.id) : undefined;
+    if (voice && voiceCategory(voice) !== next) {
+      setConfirmed((prev) => ({ ...prev, [person.id]: false }));
+      void saveChoice({ data: { projectId, personId: person.id, confirmed: false } }).catch(
+        () => undefined,
+      );
+    }
+  }
+
+  /** The person listened to the suggested voice and keeps it. */
+  function confirmVoice(person: PvgPerson) {
+    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+    void saveChoice({ data: { projectId, personId: person.id, confirmed: true } }).catch(
+      () => undefined,
+    );
+    toast.success(t("pvv_confirmed_toast"));
+  }
+
+  /** Opens the voice library already filtered to this participant's group. */
+  function openReplace(person: PvgPerson) {
+    setReplaceFor(person.id);
+    setMode("library");
+    setCategory(categoryOf(person) ?? "female");
+    setPending(null);
+  }
+
+  /** Participants speaking in this mode whose voice still needs a decision. */
+  const speakingParticipants = useMemo(
+    () => (speechMode === "single" ? participants.slice(0, 1) : participants),
+    [speechMode, participants],
+  );
+
+  const unconfirmed = useMemo(
+    () =>
+      speechMode === "chorus"
+        ? []
+        : speakingParticipants.filter(
+            (person) =>
+              Boolean(assignments[person.id]) &&
+              !recordings[person.id] &&
+              !confirmed[person.id],
+          ),
+    [speechMode, speakingParticipants, assignments, recordings, confirmed],
+  );
+
+  /**
+   * A suitable voice for every participant that still needs one, always from
+   * the participant's own group. Nothing is final: each suggestion waits to be
+   * listened to and kept.
+   */
+  async function autoAssign(includeConfirmed: boolean) {
+    setAskReplaceConfirmed(false);
+    if (disabled || participants.length === 0) return;
+    const budget = speechBudgetSeconds(videoSeconds ?? 0);
+    const suggestions = autoAssignVoices({
+      participants: participants.map((person, index) => ({
+        id: person.id,
+        category: categoryOf(person),
+        confirmed: Boolean(confirmed[person.id]) && Boolean(assignments[person.id]),
+        voiceId: assignments[person.id]?.id ?? null,
+        words: wordCount(speechMode === "parts" ? partOf(person, index) : greeting),
+      })),
+      voices,
+      language,
+      budgetSeconds: budget,
+      secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
+      includeConfirmed,
+    });
+    if (suggestions.length === 0) {
+      toast.error(t("pvv_auto_nothing"));
+      return;
+    }
+    setAssignments((prev) => {
+      const next = { ...prev };
+      for (const s of suggestions) next[s.personId] = { id: s.voiceId, name: s.voiceName };
+      return next;
+    });
+    setConfirmed((prev) => {
+      const next = { ...prev };
+      for (const s of suggestions) next[s.personId] = false;
+      return next;
+    });
+    for (const s of suggestions) {
+      await assign({
+        data: {
+          projectId,
+          personId: s.personId,
+          voiceId: s.voiceId,
+          voiceName: s.voiceName,
+          provider: s.provider,
+          category: s.category,
+          confirmed: false,
+        },
+      }).catch(() => undefined);
+    }
+    toast.success(t("pvv_auto_done"));
+    onAssigned?.();
+  }
+
+  function startAutoAssign() {
+    const hasConfirmed = participants.some((p) => confirmed[p.id] && assignments[p.id]);
+    if (hasConfirmed) {
+      setAskReplaceConfirmed(true);
+      return;
+    }
+    void autoAssign(false);
+  }
+
   /** Listening always uses the sample stored inside Project Joy. */
   async function playSample(voice: { id: string; previewUrl: string | null }) {
     if (samplingId) return;
