@@ -459,9 +459,8 @@ export function VoicePanel({
     // The group of the participant standing in this place always wins, so a
     // male participant is never offered a female voice.
     const person = participants[syncIssue.index];
-    const wanted =
-      (person ? (categories[person.id] ?? null) : null) ??
-      (current ? voiceCategory(current) : null);
+    const chosenGroup = person ? categories[person.id] : undefined;
+    const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
     return recommendVoices(voices, wanted, language, {
       exclude: [syncIssue.voiceId, ...chorus.map((c) => c.id)],
