@@ -35,6 +35,7 @@ import {
 } from "@/lib/personal-video/voice.functions";
 import type { PvgVoiceover } from "@/lib/personal-video/voice/catalog";
 import type { PvgPerson } from "@/lib/personal-video/types";
+import { ParticipantAvatar } from "./ParticipantAvatar";
 import {
   PVG_MAX_CHORUS_VOICES,
   PVG_MIN_CHORUS_VOICES,
@@ -735,14 +736,17 @@ export function VoicePanel({
           <div className="mt-3 space-y-3">
             {participants.map((person, index) => (
               <div key={person.id}>
-                <p className="mb-1 text-xs font-medium">
-                  {participantLabel(person, index)}
-                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                    {recordings[person.id]
-                      ? t("pvv_recording_own")
-                      : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
-                  </span>
-                </p>
+                <div className="mb-1 flex items-center gap-2">
+                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
+                  <p className="text-xs font-medium">
+                    {participantLabel(person, index)}
+                    <span className="ml-2 text-[11px] font-normal text-muted-foreground">
+                      {recordings[person.id]
+                        ? t("pvv_recording_own")
+                        : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
+                    </span>
+                  </p>
+                </div>
                 <textarea
                   value={partOf(person, index)}
                   disabled={disabled}
@@ -863,15 +867,27 @@ export function VoicePanel({
         <div className="mt-5">
           {replaceFor && (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-2.5">
-              <p className="text-xs font-medium text-primary">
-                {t("pvv_replacing_for").replace(
-                  "{name}",
-                  participantLabel(
+              <span className="flex items-center gap-2">
+                <ParticipantAvatar
+                  photoUrl={
+                    (participants.find((p) => p.id === replaceFor) ?? participants[0]!).photoUrl
+                  }
+                  label={participantLabel(
                     participants.find((p) => p.id === replaceFor) ?? participants[0]!,
                     participants.findIndex((p) => p.id === replaceFor),
-                  ),
-                )}
-              </p>
+                  )}
+                  size="sm"
+                />
+                <p className="text-xs font-medium text-primary">
+                  {t("pvv_replacing_for").replace(
+                    "{name}",
+                    participantLabel(
+                      participants.find((p) => p.id === replaceFor) ?? participants[0]!,
+                      participants.findIndex((p) => p.id === replaceFor),
+                    ),
+                  )}
+                </p>
+              </span>
               <button
                 type="button"
                 onClick={() => setReplaceFor(null)}
@@ -998,8 +1014,9 @@ export function VoicePanel({
                 key={person.id}
                 type="button"
                 onClick={() => void give(person, pending)}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
+                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
+                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1030,8 +1047,9 @@ export function VoicePanel({
                 key={person.id}
                 type="button"
                 onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
+                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
+                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1053,7 +1071,8 @@ export function VoicePanel({
                 key={person.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
               >
-                <span className="text-sm">
+                <span className="flex items-center gap-2 text-sm">
+                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} />
                   <span className="font-medium">{participantLabel(person, index)}</span>
                   <span className="text-muted-foreground"> — </span>
                   <span
