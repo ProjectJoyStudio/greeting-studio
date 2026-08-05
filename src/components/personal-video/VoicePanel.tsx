@@ -1449,18 +1449,64 @@ export function VoicePanel({
 
       {/* Selected voices -------------------------------------------------- */}
       <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("pvv_selected_voices")}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("pvv_selected_voices")}
+          </p>
+          <button
+            type="button"
+            disabled={disabled || participants.length === 0 || voices.length === 0}
+            onClick={startAutoAssign}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
+          >
+            <Wand2 className="h-3 w-3" />
+            {t("pvv_auto_assign")}
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{t("pvv_auto_assign_note")}</p>
+
+        {askReplaceConfirmed && (
+          <div className="mt-3 rounded-2xl border border-primary/40 bg-primary/5 p-4">
+            <p className="text-xs font-medium">{t("pvv_auto_replace_question")}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void autoAssign(false)}
+                className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+              >
+                {t("pvv_auto_only_missing")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void autoAssign(true)}
+                className="rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm"
+              >
+                {t("pvv_auto_replace_all")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAskReplaceConfirmed(false)}
+                className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] transition hover:border-primary/50"
+              >
+                {t("pvv_cancel")}
+              </button>
+            </div>
+          </div>
+        )}
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
             const recording = recordings[person.id];
+            const group = categoryOf(person);
+            const waiting = Boolean(chosen) && !recording && !confirmed[person.id];
             return (
               <li
                 key={person.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
+                className={`rounded-xl border px-3 py-2 ${
+                  waiting ? "border-destructive bg-destructive/5" : "border-border/50"
+                }`}
               >
+                <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-sm">
                   <ParticipantAvatar
                     photoUrl={person.photoUrl}
