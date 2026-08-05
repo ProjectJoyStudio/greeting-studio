@@ -487,13 +487,17 @@ export function VoicePanel({
     return { base64: res.audioBase64, mimeType: res.mimeType, seconds: res.durationSeconds };
   }
 
-  async function generate() {
+  async function generate(chorusOverride?: Assignment[]) {
     if (running.current || busy || disabled) return;
+    const chorusList = chorusOverride ?? chorus;
+    // Every new synchronisation check starts with a clean slate.
+    setSyncIssue(null);
+    setShowRecommended(false);
     const found = validateVoiceSetup({
       speechMode,
       greeting,
       videoSeconds: videoSeconds ?? 0,
-      chorusVoiceCount: chorus.length,
+      chorusVoiceCount: chorusList.length,
       participants: participants.map((person, index) => ({
         id: person.id,
         label: participantLabel(person, index),
@@ -633,13 +637,13 @@ export function VoicePanel({
         setPlaying(false);
         setVoiceover(res.voiceover);
       } else {
-        if (chorus.length < PVG_MIN_CHORUS_VOICES) {
+        if (chorusList.length < PVG_MIN_CHORUS_VOICES) {
           toast.error(t("pvv_chorus_min"));
           return;
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
-        for (const voice of chorus) {
+        for (const voice of chorusList) {
           const track = await speak(greeting, voice.id);
           sources.push(track);
           summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
@@ -650,7 +654,12 @@ export function VoicePanel({
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
         if (merged.unsyncable !== undefined) {
-          const voice = chorus[merged.unsyncable];
+          const voice = chorusList[merged.unsyncable];
+          setSyncIssue({
+            index: merged.unsyncable,
+            voiceId: voice?.id ?? "",
+            voiceName: voice?.name ?? "",
+          });
           toast.error(`${t("pvv_chorus_unsyncable")}${voice ? ` (${voice.name})` : ""}`);
           return;
         }
@@ -668,7 +677,7 @@ export function VoicePanel({
             language,
             greetingText: greeting.trim(),
             voiceId: "all-together",
-            voiceName: chorus.map((v) => v.name).join(" · "),
+            voiceName: chorusList.map((v) => v.name).join(" · "),
             provider: "project-joy",
             speechMode,
             syncMode,
