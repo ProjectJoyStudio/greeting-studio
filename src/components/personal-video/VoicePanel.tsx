@@ -871,29 +871,160 @@ export function VoicePanel({
             {t("pvv_chorus_count")}: {chorus.length} / {PVG_MAX_CHORUS_VOICES}
           </p>
           {chorus.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {chorus.map((voice) => (
-                <li
-                  key={voice.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary"
-                >
-                  {voice.name}
-                  <button
-                    type="button"
-                    aria-label={t("pvv_remove")}
-                    onClick={() =>
-                      setChorus((prev) => {
-                        const next = prev.filter((v) => v.id !== voice.id);
-                        persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-                        return next;
-                      })
-                    }
+            <ul className="mt-2 grid gap-2">
+              {chorus.map((voice, index) => {
+                const broken = syncIssue?.index === index;
+                return (
+                  <li
+                    key={voice.id}
+                    className={`rounded-2xl border px-3 py-2 ${
+                      broken
+                        ? "border-destructive bg-destructive/5"
+                        : "border-primary/40 bg-primary/5"
+                    }`}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <ParticipantAvatar
+                        photoUrl={participants[index]?.photoUrl ?? null}
+                        label={chorusLabel(index)}
+                        size="sm"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] text-muted-foreground">
+                          {chorusLabel(index)}
+                        </span>
+                        <span
+                          className={`block truncate text-xs font-medium ${
+                            broken ? "text-destructive" : "text-primary"
+                          }`}
+                        >
+                          {voice.name}
+                        </span>
+                      </span>
+                      {broken && (
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
+                      )}
+                      <button
+                        type="button"
+                        aria-label={t("pvv_remove")}
+                        className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+                        onClick={() => {
+                          const next = chorus.filter((v) => v.id !== voice.id);
+                          setChorus(next);
+                          persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+                          if (broken) {
+                            setSyncIssue(null);
+                            setShowRecommended(false);
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {broken && (
+                      <p className="mt-1.5 text-[11px] font-medium text-destructive">
+                        {t("pvv_sync_badge")}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
+          )}
+
+          {/* The voice that cannot keep step, explained and never closed by itself */}
+          {syncIssue && (
+            <div className="mt-3 rounded-2xl border border-destructive/60 bg-destructive/5 p-4">
+              <div className="flex items-start gap-3">
+                <ParticipantAvatar
+                  photoUrl={participants[syncIssue.index]?.photoUrl ?? null}
+                  label={chorusLabel(syncIssue.index)}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    {chorusLabel(syncIssue.index)}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {t("pvv_sync_current_voice")}: {syncIssue.voiceName}
+                  </p>
+                  <p className="mt-2 text-xs text-foreground">
+                    {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSyncIssue(null);
+                    setShowRecommended(false);
+                  }}
+                  className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+                >
+                  {t("pvv_sync_close")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRecommended(true)}
+                  className="rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm"
+                >
+                  {t("pvv_sync_recommend")}
+                </button>
+              </div>
+
+              {showRecommended && (
+                <div className="mt-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("pvv_sync_recommended_title")}
+                  </p>
+                  {recommended.length === 0 ? (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {t("pvv_sync_no_recommendations")}
+                    </p>
+                  ) : (
+                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {recommended.map((voice) => (
+                        <li
+                          key={voice.id}
+                          className="rounded-2xl border border-border/60 bg-background/60 p-3"
+                        >
+                          <p className="text-sm font-medium">{voice.displayName || voice.name}</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {t("pvv_sync_recommended_note")}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void playSample(sampleOf(voice))}
+                              disabled={samplingId !== null}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                            >
+                              {samplingId === voice.externalVoiceId ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Headphones className="h-3 w-3" />
+                              )}
+                              {t("pvv_preview")}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => replaceChorusVoice(voice)}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                            >
+                              <Check className="h-3 w-3" />
+                              {t("pvv_select")}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
