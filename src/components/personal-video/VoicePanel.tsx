@@ -687,6 +687,17 @@ export function VoicePanel({
     // Every new synchronisation check starts with a clean slate.
     setSyncIssue(null);
     setShowRecommended(false);
+    // A voice Project Joy suggested is never used before the person has
+    // listened to it and kept it.
+    if (unconfirmed.length > 0) {
+      const waiting = unconfirmed.map((person) => ({
+        key: "pvv_err_confirm_for",
+        name: participantLabel(person, participants.indexOf(person)),
+      }));
+      setIssues(waiting);
+      toast.error(voiceIssueText(waiting[0]!, t));
+      return;
+    }
     const found = validateVoiceSetup({
       speechMode,
       greeting,
