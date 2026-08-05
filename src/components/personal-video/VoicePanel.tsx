@@ -867,15 +867,27 @@ export function VoicePanel({
         <div className="mt-5">
           {replaceFor && (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-2.5">
-              <p className="text-xs font-medium text-primary">
-                {t("pvv_replacing_for").replace(
-                  "{name}",
-                  participantLabel(
+              <span className="flex items-center gap-2">
+                <ParticipantAvatar
+                  photoUrl={
+                    (participants.find((p) => p.id === replaceFor) ?? participants[0]!).photoUrl
+                  }
+                  label={participantLabel(
                     participants.find((p) => p.id === replaceFor) ?? participants[0]!,
                     participants.findIndex((p) => p.id === replaceFor),
-                  ),
-                )}
-              </p>
+                  )}
+                  size="sm"
+                />
+                <p className="text-xs font-medium text-primary">
+                  {t("pvv_replacing_for").replace(
+                    "{name}",
+                    participantLabel(
+                      participants.find((p) => p.id === replaceFor) ?? participants[0]!,
+                      participants.findIndex((p) => p.id === replaceFor),
+                    ),
+                  )}
+                </p>
+              </span>
               <button
                 type="button"
                 onClick={() => setReplaceFor(null)}
