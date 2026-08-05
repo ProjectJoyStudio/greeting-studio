@@ -1014,8 +1014,9 @@ export function VoicePanel({
                 key={person.id}
                 type="button"
                 onClick={() => void give(person, pending)}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
+                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
+                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1046,8 +1047,9 @@ export function VoicePanel({
                 key={person.id}
                 type="button"
                 onClick={() => void keepRecording(person, pendingRecording, permissionForPending)}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
+                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
               >
+                <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} size="sm" />
                 {participantLabel(person, index)}
               </button>
             ))}
@@ -1069,7 +1071,8 @@ export function VoicePanel({
                 key={person.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
               >
-                <span className="text-sm">
+                <span className="flex items-center gap-2 text-sm">
+                  <ParticipantAvatar photoUrl={person.photoUrl} label={participantLabel(person, index)} />
                   <span className="font-medium">{participantLabel(person, index)}</span>
                   <span className="text-muted-foreground"> — </span>
                   <span
