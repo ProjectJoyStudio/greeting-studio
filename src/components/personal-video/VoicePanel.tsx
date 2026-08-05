@@ -153,6 +153,17 @@ export function VoicePanel({
   const [permissionForPending, setPermissionForPending] = useState(false);
   const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
+  /**
+   * The one voice that could not be brought in step with the others. It stays
+   * visible — marked on its card and in a dialog that never closes by itself —
+   * until the person chooses another voice or closes it.
+   */
+  const [syncIssue, setSyncIssue] = useState<{
+    index: number;
+    voiceId: string;
+    voiceName: string;
+  } | null>(null);
+  const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const running = useRef(false);
