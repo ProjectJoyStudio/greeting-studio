@@ -2431,6 +2431,8 @@ export type Database = {
           source: string
           updated_at: string
           user_id: string
+          voice_category: string | null
+          voice_confirmed: boolean
           voice_id: string | null
           voice_name: string | null
           voice_provider: string | null
@@ -2456,6 +2458,8 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id: string
+          voice_category?: string | null
+          voice_confirmed?: boolean
           voice_id?: string | null
           voice_name?: string | null
           voice_provider?: string | null
@@ -2481,6 +2485,8 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id?: string
+          voice_category?: string | null
+          voice_confirmed?: boolean
           voice_id?: string | null
           voice_name?: string | null
           voice_provider?: string | null
