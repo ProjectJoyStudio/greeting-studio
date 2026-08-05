@@ -29,6 +29,7 @@ import {
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
+  savePvgPersonVoiceChoice,
   savePvgPersonRecording,
   savePvgSpeechSettings,
   synthesizePvgTrack,
@@ -63,6 +64,7 @@ import {
   type LibraryVoice,
   type VoiceCategory,
 } from "@/lib/voice-library/types";
+import { autoAssignVoices, recommendVoices } from "@/lib/personal-video/voice/auto-assign";
 import { RecordingStudio, type PendingRecording } from "./voice/RecordingStudio";
 
 type VoiceMode = "library" | "own";
@@ -118,6 +120,7 @@ export function VoicePanel({
   const preview = useServerFn(previewPvgVoice);
   const ensurePreview = useServerFn(ensureVoicePreview);
   const assign = useServerFn(assignPvgPersonVoice);
+  const saveChoice = useServerFn(savePvgPersonVoiceChoice);
   const loadVoices = useServerFn(listStudioVoices);
   const saveSpeech = useServerFn(savePvgSpeechSettings);
   const savePart = useServerFn(savePvgPersonPart);
@@ -147,6 +150,11 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
+  /** The voice group every participant belongs to: female, male or children. */
+  const [categories, setCategories] = useState<Record<string, VoiceCategory>>({});
+  /** Voices the person has listened to and kept. Nothing else may be used. */
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
+  const [askReplaceConfirmed, setAskReplaceConfirmed] = useState(false);
   const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
   const [preparing, setPreparing] = useState(false);
   const [prepared, setPrepared] = useState(false);
