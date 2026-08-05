@@ -113,9 +113,9 @@ export const savePvgPersonVoiceChoice = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
     await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const patch: Record<string, unknown> = {};
-    if (data.category !== undefined) patch['voice_category'] = data.category;
-    if (data.confirmed !== undefined) patch['voice_confirmed'] = data.confirmed;
+    const patch: { voice_category?: string | null; voice_confirmed?: boolean } = {};
+    if (data.category !== undefined) patch.voice_category = data.category;
+    if (data.confirmed !== undefined) patch.voice_confirmed = data.confirmed;
     if (Object.keys(patch).length === 0) return { saved: true as const };
     const { error } = await context.supabase
       .from("pvg_people")
