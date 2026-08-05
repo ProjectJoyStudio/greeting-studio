@@ -29,6 +29,7 @@ import {
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
+  savePvgPersonVoiceChoice,
   savePvgPersonRecording,
   savePvgSpeechSettings,
   synthesizePvgTrack,
@@ -63,6 +64,7 @@ import {
   type LibraryVoice,
   type VoiceCategory,
 } from "@/lib/voice-library/types";
+import { autoAssignVoices, recommendVoices } from "@/lib/personal-video/voice/auto-assign";
 import { RecordingStudio, type PendingRecording } from "./voice/RecordingStudio";
 
 type VoiceMode = "library" | "own";
@@ -118,6 +120,7 @@ export function VoicePanel({
   const preview = useServerFn(previewPvgVoice);
   const ensurePreview = useServerFn(ensureVoicePreview);
   const assign = useServerFn(assignPvgPersonVoice);
+  const saveChoice = useServerFn(savePvgPersonVoiceChoice);
   const loadVoices = useServerFn(listStudioVoices);
   const saveSpeech = useServerFn(savePvgSpeechSettings);
   const savePart = useServerFn(savePvgPersonPart);
@@ -147,6 +150,11 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
+  /** The voice group every participant belongs to: female, male or children. */
+  const [categories, setCategories] = useState<Record<string, VoiceCategory>>({});
+  /** Voices the person has listened to and kept. Nothing else may be used. */
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
+  const [askReplaceConfirmed, setAskReplaceConfirmed] = useState(false);
   const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
   const [preparing, setPreparing] = useState(false);
   const [prepared, setPrepared] = useState(false);
@@ -183,12 +191,18 @@ export function VoicePanel({
   useEffect(() => {
     const nextVoices: Record<string, Assignment> = {};
     const nextParts: Record<string, string> = {};
+    const nextCategories: Record<string, VoiceCategory> = {};
+    const nextConfirmed: Record<string, boolean> = {};
     for (const person of participants) {
       if (person.voiceId)
         nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
       if (person.partText) nextParts[person.id] = person.partText;
+      if (person.voiceCategory) nextCategories[person.id] = person.voiceCategory;
+      nextConfirmed[person.id] = Boolean(person.voiceConfirmed);
     }
     setAssignments(nextVoices);
+    setCategories((old) => ({ ...nextCategories, ...old }));
+    setConfirmed((old) => ({ ...nextConfirmed, ...old }));
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
@@ -263,6 +277,134 @@ export function VoicePanel({
     return person.name.trim() || `${t("pvv_participant")} ${index + 1}`;
   }
 
+  /**
+   * The voice group of one participant. When it was never chosen, the group of
+   * the voice they already speak with is kept — never a group of another kind.
+   */
+  function categoryOf(person: PvgPerson): VoiceCategory | null {
+    const stored = categories[person.id];
+    if (stored) return stored;
+    const current = assignments[person.id];
+    const voice = current ? voices.find((v) => v.externalVoiceId === current.id) : undefined;
+    return voice ? voiceCategory(voice) : null;
+  }
+
+  /** The group a participant is put in. Only the person ever changes it. */
+  function setPersonCategory(person: PvgPerson, next: VoiceCategory) {
+    setCategories((prev) => ({ ...prev, [person.id]: next }));
+    void saveChoice({ data: { projectId, personId: person.id, category: next } }).catch(
+      () => undefined,
+    );
+    // A voice from another group may never stay: it has to be chosen again.
+    const current = assignments[person.id];
+    const voice = current ? voices.find((v) => v.externalVoiceId === current.id) : undefined;
+    if (voice && voiceCategory(voice) !== next) {
+      setConfirmed((prev) => ({ ...prev, [person.id]: false }));
+      void saveChoice({ data: { projectId, personId: person.id, confirmed: false } }).catch(
+        () => undefined,
+      );
+    }
+  }
+
+  /** The person listened to the suggested voice and keeps it. */
+  function confirmVoice(person: PvgPerson) {
+    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+    void saveChoice({ data: { projectId, personId: person.id, confirmed: true } }).catch(
+      () => undefined,
+    );
+    toast.success(t("pvv_confirmed_toast"));
+  }
+
+  /** Opens the voice library already filtered to this participant's group. */
+  function openReplace(person: PvgPerson) {
+    setReplaceFor(person.id);
+    setMode("library");
+    setCategory(categoryOf(person) ?? "female");
+    setPending(null);
+  }
+
+  /** Participants speaking in this mode whose voice still needs a decision. */
+  const speakingParticipants = useMemo(
+    () => (speechMode === "single" ? participants.slice(0, 1) : participants),
+    [speechMode, participants],
+  );
+
+  const unconfirmed = useMemo(
+    () =>
+      speechMode === "chorus"
+        ? []
+        : speakingParticipants.filter(
+            (person) =>
+              Boolean(assignments[person.id]) &&
+              !recordings[person.id] &&
+              !confirmed[person.id],
+          ),
+    [speechMode, speakingParticipants, assignments, recordings, confirmed],
+  );
+
+  /**
+   * A suitable voice for every participant that still needs one, always from
+   * the participant's own group. Nothing is final: each suggestion waits to be
+   * listened to and kept.
+   */
+  async function autoAssign(includeConfirmed: boolean) {
+    setAskReplaceConfirmed(false);
+    if (disabled || participants.length === 0) return;
+    const budget = speechBudgetSeconds(videoSeconds ?? 0);
+    const suggestions = autoAssignVoices({
+      participants: participants.map((person, index) => ({
+        id: person.id,
+        category: categoryOf(person),
+        confirmed: Boolean(confirmed[person.id]) && Boolean(assignments[person.id]),
+        voiceId: assignments[person.id]?.id ?? null,
+        words: wordCount(speechMode === "parts" ? partOf(person, index) : greeting),
+      })),
+      voices,
+      language,
+      budgetSeconds: budget,
+      secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
+      includeConfirmed,
+    });
+    if (suggestions.length === 0) {
+      toast.error(t("pvv_auto_nothing"));
+      return;
+    }
+    setAssignments((prev) => {
+      const next = { ...prev };
+      for (const s of suggestions) next[s.personId] = { id: s.voiceId, name: s.voiceName };
+      return next;
+    });
+    setConfirmed((prev) => {
+      const next = { ...prev };
+      for (const s of suggestions) next[s.personId] = false;
+      return next;
+    });
+    for (const s of suggestions) {
+      await assign({
+        data: {
+          projectId,
+          personId: s.personId,
+          voiceId: s.voiceId,
+          voiceName: s.voiceName,
+          provider: s.provider,
+          category: s.category,
+          confirmed: false,
+        },
+      }).catch(() => undefined);
+    }
+    toast.success(t("pvv_auto_done"));
+    onAssigned?.();
+  }
+
+  function startAutoAssign() {
+    const hasConfirmed = participants.some((p) => confirmed[p.id] && assignments[p.id]);
+    if (hasConfirmed) {
+      setAskReplaceConfirmed(true);
+      return;
+    }
+    void autoAssign(false);
+  }
+
   /** Listening always uses the sample stored inside Project Joy. */
   async function playSample(voice: { id: string; previewUrl: string | null }) {
     if (samplingId) return;
@@ -314,18 +456,17 @@ export function VoicePanel({
   const recommended = useMemo(() => {
     if (!syncIssue) return [] as LibraryVoice[];
     const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
-    const wanted = current ? voiceCategory(current) : null;
+    // The group of the participant standing in this place always wins, so a
+    // male participant is never offered a female voice.
+    const person = participants[syncIssue.index];
+    const chosenGroup = person ? categories[person.id] : undefined;
+    const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
-    return voices
-      .filter(
-        (v) =>
-          voiceCategory(v) === wanted &&
-          v.externalVoiceId !== syncIssue.voiceId &&
-          !chorus.some((c) => c.id === v.externalVoiceId) &&
-          Boolean(previewFor(v, language)),
-      )
-      .slice(0, 5);
-  }, [syncIssue, voices, chorus, language]);
+    return recommendVoices(voices, wanted, language, {
+      exclude: [syncIssue.voiceId, ...chorus.map((c) => c.id)],
+      limit: 5,
+    });
+  }, [syncIssue, voices, chorus, language, participants, categories]);
 
   /**
    * Only the highlighted place in the chorus receives the new voice. Everyone
@@ -348,7 +489,11 @@ export function VoicePanel({
 
   async function give(person: PvgPerson, voice: LibraryVoice) {
     const name = voice.displayName || voice.name;
+    const group = voiceCategory(voice);
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
+    // A voice the person picks themselves is kept straight away.
+    setCategories((prev) => ({ ...prev, [person.id]: group }));
+    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
@@ -364,6 +509,8 @@ export function VoicePanel({
           voiceId: voice.externalVoiceId,
           voiceName: name,
           provider: voice.provider,
+          category: group,
+          confirmed: true,
         },
       });
       toast.success(t("pvv_assigned_toast"));
@@ -379,6 +526,7 @@ export function VoicePanel({
       delete next[person.id];
       return next;
     });
+    setConfirmed((prev) => ({ ...prev, [person.id]: false }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
@@ -539,6 +687,17 @@ export function VoicePanel({
     // Every new synchronisation check starts with a clean slate.
     setSyncIssue(null);
     setShowRecommended(false);
+    // A voice Project Joy suggested is never used before the person has
+    // listened to it and kept it.
+    if (unconfirmed.length > 0) {
+      const waiting = unconfirmed.map((person) => ({
+        key: "pvv_err_confirm_for",
+        name: participantLabel(person, participants.indexOf(person)),
+      }));
+      setIssues(waiting);
+      toast.error(voiceIssueText(waiting[0]!, t));
+      return;
+    }
     const found = validateVoiceSetup({
       speechMode,
       greeting,
@@ -1116,7 +1275,16 @@ export function VoicePanel({
             {t("pvv_choose_category")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.filter((c) => voices.some((v) => voiceCategory(v) === c)).map((c) => (
+            {CATEGORIES.filter((c) => voices.some((v) => voiceCategory(v) === c))
+              // While one participant's voice is replaced, only their own group
+              // is shown: no unrelated voices ever appear.
+              .filter((c) => {
+                if (!replaceFor) return true;
+                const person = participants.find((p) => p.id === replaceFor);
+                const group = person ? categoryOf(person) : null;
+                return !group || group === c;
+              })
+              .map((c) => (
               <button
                 key={c}
                 type="button"
@@ -1281,18 +1449,64 @@ export function VoicePanel({
 
       {/* Selected voices -------------------------------------------------- */}
       <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("pvv_selected_voices")}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("pvv_selected_voices")}
+          </p>
+          <button
+            type="button"
+            disabled={disabled || participants.length === 0 || voices.length === 0}
+            onClick={startAutoAssign}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
+          >
+            <Wand2 className="h-3 w-3" />
+            {t("pvv_auto_assign")}
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{t("pvv_auto_assign_note")}</p>
+
+        {askReplaceConfirmed && (
+          <div className="mt-3 rounded-2xl border border-primary/40 bg-primary/5 p-4">
+            <p className="text-xs font-medium">{t("pvv_auto_replace_question")}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void autoAssign(false)}
+                className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+              >
+                {t("pvv_auto_only_missing")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void autoAssign(true)}
+                className="rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm"
+              >
+                {t("pvv_auto_replace_all")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAskReplaceConfirmed(false)}
+                className="rounded-full border border-border/60 px-3 py-1.5 text-[11px] transition hover:border-primary/50"
+              >
+                {t("pvv_cancel")}
+              </button>
+            </div>
+          </div>
+        )}
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
             const recording = recordings[person.id];
+            const group = categoryOf(person);
+            const waiting = Boolean(chosen) && !recording && !confirmed[person.id];
             return (
               <li
                 key={person.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2"
+                className={`rounded-xl border px-3 py-2 ${
+                  waiting ? "border-destructive bg-destructive/5" : "border-border/50"
+                }`}
               >
+                <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-sm">
                   <ParticipantAvatar
                     photoUrl={person.photoUrl}
@@ -1364,15 +1578,21 @@ export function VoicePanel({
                       {t("pvv_preview")}
                     </button>
                   )}
+                  {waiting && (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => confirmVoice(person)}
+                      className="inline-flex items-center gap-1 rounded-full bg-gold-gradient px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                    >
+                      <Check className="h-3 w-3" />
+                      {t("pvv_confirm")}
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={disabled}
-                    onClick={() => {
-                      setReplaceFor(person.id);
-                      setMode("library");
-                      setCategory((current) => current ?? "female");
-                      setPending(null);
-                    }}
+                    onClick={() => openReplace(person)}
                     className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -1390,6 +1610,34 @@ export function VoicePanel({
                     </button>
                   )}
                 </span>
+                </div>
+
+                {/* The group this participant's voice always comes from */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-muted-foreground">{t("pvv_group")}:</span>
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setPersonCategory(person, c)}
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] transition disabled:opacity-60 ${
+                        group === c
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      {t(CATEGORY_KEY[c])}
+                    </button>
+                  ))}
+                </div>
+
+                {waiting && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {t("pvv_confirm_needed")}
+                  </p>
+                )}
               </li>
             );
           })}

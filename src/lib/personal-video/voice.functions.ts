@@ -73,6 +73,10 @@ export const assignPvgPersonVoice = createServerFn({ method: "POST" })
       voiceId: string | null;
       voiceName?: string | null;
       provider?: string | null;
+      /** Female, male or children — the group the voice was taken from. */
+      category?: "female" | "male" | "children" | null;
+      /** True when the person picked this voice themselves. */
+      confirmed?: boolean;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
@@ -84,7 +88,38 @@ export const assignPvgPersonVoice = createServerFn({ method: "POST" })
         voice_name: data.voiceId ? (data.voiceName ?? null) : null,
         voice_provider: data.voiceId ? (data.provider ?? null) : null,
         voice_source: data.voiceId ? "library" : null,
+        ...(data.category !== undefined ? { voice_category: data.category } : {}),
+        voice_confirmed: data.voiceId ? Boolean(data.confirmed) : false,
       })
+      .eq("id", data.personId)
+      .eq("project_id", data.projectId);
+    if (error) throw new Error(error.message);
+    return { saved: true as const };
+  });
+
+/**
+ * The voice group of one participant, and whether the person has kept the
+ * voice suggested for them. Project Joy never changes the group by itself.
+ */
+export const savePvgPersonVoiceChoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      projectId: string;
+      personId: string;
+      category?: "female" | "male" | "children" | null;
+      confirmed?: boolean;
+    }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ saved: true }> => {
+    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const patch: { voice_category?: string | null; voice_confirmed?: boolean } = {};
+    if (data.category !== undefined) patch.voice_category = data.category;
+    if (data.confirmed !== undefined) patch.voice_confirmed = data.confirmed;
+    if (Object.keys(patch).length === 0) return { saved: true as const };
+    const { error } = await context.supabase
+      .from("pvg_people")
+      .update(patch)
       .eq("id", data.personId)
       .eq("project_id", data.projectId);
     if (error) throw new Error(error.message);

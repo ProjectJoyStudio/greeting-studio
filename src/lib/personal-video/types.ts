@@ -34,6 +34,13 @@ export interface PvgPerson {
   voiceName: string | null;
   /** A Project Joy voice or the participant's own recording. */
   voiceSource: PvgVoiceSource | null;
+  /**
+   * The voice group this participant belongs to. Project Joy only ever
+   * suggests and assigns voices from this very group.
+   */
+  voiceCategory: "female" | "male" | "children" | null;
+  /** True once the person has listened to the voice and kept it. */
+  voiceConfirmed: boolean;
   /** The part of the greeting this participant speaks. */
   partText: string;
   recordingUrl: string | null;
