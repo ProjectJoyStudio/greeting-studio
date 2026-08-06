@@ -1671,9 +1671,7 @@ export function VoicePanel({
                     />
                     <span className="font-medium">{participantLabel(person, index)}</span>
                     <span className="text-muted-foreground"> — </span>
-                    <span
-                      className={chosen ? "font-medium text-primary" : "text-muted-foreground"}
-                    >
+                    <span className={chosen ? "font-medium text-primary" : "text-muted-foreground"}>
                       {chosen ? chosen.name : t("pvv_no_voice")}
                     </span>
                   </span>
