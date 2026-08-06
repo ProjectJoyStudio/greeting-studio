@@ -1226,26 +1226,6 @@ export function VoicePanel({
           </span>
         </button>
 
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => setMode(mode === "own" ? null : "own")}
-          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
-            mode === "own"
-              ? "border-primary bg-primary/10"
-              : "border-border/60 hover:border-primary/40"
-          }`}
-        >
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <Mic className="h-4 w-4 text-primary" />
-            {t("pvv_option_own")}
-          </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">
-            {t("pvv_option_own_note")}
-          </span>
-        </button>
-
-        <button
           type="button"
           disabled={disabled}
           onClick={() => setMode(mode === "mine" ? null : "mine")}
@@ -1421,11 +1401,6 @@ export function VoicePanel({
           )}
           <p className="mt-3 text-[11px] text-muted-foreground">{t("pvv_preview_stored")}</p>
         </div>
-      )}
-
-      {/* Record the greeting with your own voice -------------------------- */}
-      {mode === "own" && (
-        <RecordingStudio greeting={greeting} disabled={disabled} onReady={acceptRecording} />
       )}
 
       {/* My voices ------------------------------------------------------- */}
