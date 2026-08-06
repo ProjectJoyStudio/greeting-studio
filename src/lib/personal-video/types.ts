@@ -41,6 +41,8 @@ export interface PvgPerson {
   voiceCategory: "female" | "male" | "children" | null;
   /** True once the person has listened to the voice and kept it. */
   voiceConfirmed: boolean;
+  /** The personal voice ("My voices" or this project only) assigned here. */
+  personalVoiceId: string | null;
   /** The part of the greeting this participant speaks. */
   partText: string;
   recordingUrl: string | null;
