@@ -15,6 +15,8 @@ function personalVoice(id: string): PersonalVoice {
     sourceUrl: `https://joy/${id}.mp3`,
     processedUrl: `https://joy/${id}-ready.mp3`,
     providerVoiceId: null,
+    sampleCount: 1,
+    previewUrl: null,
     processingStatus: "ready",
     processingError: null,
     consentConfirmed: true,
