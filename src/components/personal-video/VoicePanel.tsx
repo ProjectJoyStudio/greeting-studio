@@ -1565,6 +1565,108 @@ export function VoicePanel({
         <RecordingStudio greeting={greeting} disabled={disabled} onReady={acceptRecording} />
       )}
 
+      {/* My voices ------------------------------------------------------- */}
+      {mode === "mine" && (
+        <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("mv_tab_mine")}
+          </p>
+          {personalVoices.isLoading && (
+            <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("mv_loading")}
+            </p>
+          )}
+          {!personalVoices.isLoading && (personalVoices.data?.voices.length ?? 0) === 0 && (
+            <p className="mt-3 text-xs text-muted-foreground">{t("mv_no_saved")}</p>
+          )}
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {(personalVoices.data?.voices ?? []).map((voice) => (
+              <div key={voice.id} className="rounded-2xl border border-border/60 bg-card/60 p-3">
+                <p className="text-sm font-medium">{voice.displayName}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {t(voice.scope === "project" ? "mv_project_only" : "mv_from_my_voices")} ·{" "}
+                  {t(`mv_status_${voice.processingStatus}`)}
+                </p>
+                {voice.processedUrl && (
+                  <audio
+                    src={voice.processedUrl}
+                    controls
+                    preload="none"
+                    className="mt-2 w-full"
+                    aria-label={`${t("mv_preview")}: ${voice.displayName}`}
+                  />
+                )}
+                <button
+                  type="button"
+                  disabled={disabled || voice.processingStatus !== "ready"}
+                  onClick={() => {
+                    const only = participants[0];
+                    const entry = { id: voice.id, name: voice.displayName };
+                    if (participants.length === 1 && only) {
+                      void givePersonal(only, entry);
+                      return;
+                    }
+                    setPendingPersonal(entry);
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                >
+                  <Check className="h-3 w-3" />
+                  {t("pvv_select")}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Who should this saved voice be assigned to? --------------------- */}
+      {pendingPersonal && (
+        <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/5 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <Users className="h-4 w-4 text-primary" />
+              {t("mv_assign_title")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPendingPersonal(null)}
+              aria-label={t("pvv_cancel")}
+              className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {participants.map((person, index) => (
+              <button
+                key={person.id}
+                type="button"
+                onClick={() => void givePersonal(person, pendingPersonal)}
+                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
+              >
+                <ParticipantAvatar
+                  photoUrl={person.photoUrl}
+                  label={participantLabel(person, index)}
+                  size="sm"
+                />
+                {participantLabel(person, index)}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">{t("mv_style_note")}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PERSONAL_VOICE_STYLES.map((style) => (
+              <span
+                key={style}
+                className="rounded-full border border-border/60 px-3 py-1 text-[11px] text-muted-foreground"
+              >
+                {t(`mv_style_${style}`)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Who should this voice be assigned to? --------------------------- */}
       {pending && (
         <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/5 p-4">
