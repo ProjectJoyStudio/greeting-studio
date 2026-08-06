@@ -50,7 +50,8 @@ export interface PvgVoiceCheckInput {
     label: string;
     voiceId: string | null;
     partText: string;
-    recording: PvgVoiceRecording | null;
+    /** A voice from "My voices" counts exactly like a Project Joy voice. */
+    personalVoiceId?: string | null;
   }[];
 }
 
@@ -87,30 +88,11 @@ export function validateVoiceSetup(input: PvgVoiceCheckInput): PvgVoiceIssue[] {
         : input.participants;
 
   for (const person of speakers) {
-    const recording = person.recording;
-    if (!person.voiceId && !recording) {
+    if (!person.voiceId && !person.personalVoiceId) {
       issues.push({ key: "pvv_err_no_voice_for", name: person.label });
     }
     const text = mode === "parts" ? person.partText.trim() : input.greeting.trim();
     if (!text) issues.push({ key: "pvv_err_no_text_for", name: person.label });
-  }
-
-  // Recordings are checked for every participant that brought one, no matter
-  // which speech mode is chosen.
-  for (const person of input.participants) {
-    const recording = person.recording;
-    if (!recording) continue;
-    if (recording.processingStatus !== "ready") {
-      issues.push({ key: "pvv_err_recording_failed_for", name: person.label });
-      continue;
-    }
-    const budget = speechBudgetSeconds(input.videoSeconds);
-    if (budget > 0 && recording.durationSeconds > budget + 0.5) {
-      issues.push({ key: "pvv_err_recording_long_for", name: person.label });
-    }
-    if (!recording.permissionConfirmed) {
-      issues.push({ key: "pvv_err_permission_for", name: person.label });
-    }
   }
 
   return issues;

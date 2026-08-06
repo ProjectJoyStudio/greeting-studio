@@ -9,6 +9,7 @@ export type SampleIssue =
   | "noisy"
   | "multiple_speakers"
   | "incomplete"
+  | "tail_missing"
   | "clipped"
   | "long_silence"
   | "too_short"
@@ -31,16 +32,42 @@ export const SAMPLE_ISSUE_KEY: Record<SampleIssue, string> = {
   noisy: "mv_issue_noisy",
   multiple_speakers: "mv_issue_multiple_speakers",
   incomplete: "mv_issue_incomplete",
+  tail_missing: "mv_issue_tail_missing",
   clipped: "mv_issue_clipped",
   long_silence: "mv_issue_long_silence",
   too_short: "mv_issue_too_short",
   too_long: "mv_issue_too_long",
 };
 
+/**
+ * The order in which problems are reported. Only the single most important
+ * one is ever shown, so unrelated warnings are never mixed together.
+ */
+export const SAMPLE_ISSUE_ORDER: SampleIssue[] = [
+  "too_short",
+  "too_long",
+  "too_quiet",
+  "too_loud",
+  "clipped",
+  "noisy",
+  "long_silence",
+  "multiple_speakers",
+  "incomplete",
+  "tail_missing",
+];
+
+/** Keeps only the one problem that truly explains what went wrong. */
+export function primaryIssue(issues: SampleIssue[]): SampleIssue | null {
+  for (const issue of SAMPLE_ISSUE_ORDER) {
+    if (issues.includes(issue)) return issue;
+  }
+  return null;
+}
+
 const FRAME_SECONDS = 0.02;
 const CLIP_THRESHOLD = 0.99;
 const VOICED_DB_MARGIN = 6;
-const LONG_SILENCE_SECONDS = 1.5;
+const LONG_SILENCE_SECONDS = 3.5;
 
 function rmsToDb(rms: number): number {
   return rms > 0 ? 20 * Math.log10(rms) : -Infinity;
@@ -155,43 +182,22 @@ export async function checkVoiceSample(input: {
 
   const issues: SampleIssue[] = [];
 
+  // Every threshold below marks a real recording problem only. Normal, clear
+  // speech in an ordinary quiet room always passes.
   if (durationSeconds < 1.5) issues.push("too_short");
-  if (durationSeconds > 45) issues.push("too_long");
-  if (!Number.isFinite(speechDb) || speechDb < -40) issues.push("too_quiet");
-  if (speechDb > -6) issues.push("too_loud");
-  if (noiseDb - speechDb > -18) issues.push("noisy");
-  if (clippedSamples > mono.length * 0.001) issues.push("clipped");
+  if (durationSeconds > 60) issues.push("too_long");
+  if (!Number.isFinite(speechDb) || speechDb < -45) issues.push("too_quiet");
+  if (speechDb > -2) issues.push("too_loud");
+  // Background noise is only reported when the room is genuinely loud: the
+  // voice must stand less than 8 dB above everything else.
+  if (Number.isFinite(noiseDb) && Number.isFinite(speechDb) && speechDb - noiseDb < 8) {
+    issues.push("noisy");
+  }
+  if (clippedSamples > mono.length * 0.02) issues.push("clipped");
   if (longestSilenceSeconds > LONG_SILENCE_SECONDS) issues.push("long_silence");
-  if (
-    input.expectedWords > 0 &&
-    spokenWordsEstimate < input.expectedWords * 0.5
-  ) {
-    issues.push("incomplete");
-  }
-
-  // Conservative multiple-speaker heuristic: look for a strongly bimodal split
-  // of segment levels, only flagged when both groups are large and far apart.
-  if (segmentLevels.length >= 6) {
-    const sortedLevels = [...segmentLevels].sort((a, b) => a - b);
-    const midpoint = Math.floor(sortedLevels.length / 2);
-    const lowerHalf = sortedLevels.slice(0, midpoint);
-    const upperHalf = sortedLevels.slice(midpoint);
-    const lowerAvg =
-      lowerHalf.reduce((sum, v) => sum + v, 0) / Math.max(1, lowerHalf.length);
-    const upperAvg =
-      upperHalf.reduce((sum, v) => sum + v, 0) / Math.max(1, upperHalf.length);
-    const lowerDb = rmsToDb(lowerAvg);
-    const upperDb = rmsToDb(upperAvg);
-    if (
-      Number.isFinite(lowerDb) &&
-      Number.isFinite(upperDb) &&
-      upperDb - lowerDb > 14 &&
-      lowerHalf.length >= 3 &&
-      upperHalf.length >= 3
-    ) {
-      issues.push("multiple_speakers");
-    }
-  }
+  // Whether the whole sentence was read is decided from the words Project Joy
+  // actually hears, never from counting bursts of sound, and loudness alone
+  // never suggests that a second person was in the room.
 
   return {
     ok: issues.length === 0,

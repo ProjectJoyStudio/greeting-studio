@@ -21,16 +21,12 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
   assignPvgPersonVoice,
-  confirmPvgRecordingPermission,
-  deletePvgPersonRecording,
   generatePvgVoiceover,
   getPvgVoiceover,
-  listPvgPersonRecordings,
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
   savePvgPersonVoiceChoice,
-  savePvgPersonRecording,
   savePvgSpeechSettings,
   synthesizePvgTrack,
 } from "@/lib/personal-video/voice.functions";
@@ -50,11 +46,7 @@ import {
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
 import { rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
-import {
-  validateVoiceSetup,
-  voiceIssueText,
-  type PvgVoiceRecording,
-} from "@/lib/personal-video/voice/recordings";
+import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
 import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
@@ -66,11 +58,6 @@ import {
 } from "@/lib/voice-library/types";
 import { autoAssignVoices, recommendVoices } from "@/lib/personal-video/voice/auto-assign";
 import {
-  RecordingStudio,
-  type PendingRecording,
-  type RecordingChoice,
-} from "./voice/RecordingStudio";
-import {
   assignPersonalVoice,
   listProjectPersonalVoices,
 } from "@/lib/personal-video/voice/personal-voices.functions";
@@ -78,7 +65,7 @@ import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
-type VoiceMode = "library" | "own" | "mine" | "add";
+type VoiceMode = "library" | "mine" | "add";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
@@ -100,8 +87,8 @@ interface Assignment {
 }
 
 /**
- * The voices of one order: who speaks, how they speak together, and the
- * recordings people bring with their own voice.
+ * The voices of one order: who speaks and how they speak together. Every
+ * voice is a reusable one — a Project Joy voice or a saved personal voice.
  */
 export function VoicePanel({
   projectId,
@@ -137,10 +124,6 @@ export function VoicePanel({
   const savePart = useServerFn(savePvgPersonPart);
   const speakTrack = useServerFn(synthesizePvgTrack);
   const saveMerged = useServerFn(savePvgMergedVoiceover);
-  const saveRecording = useServerFn(savePvgPersonRecording);
-  const dropRecording = useServerFn(deletePvgPersonRecording);
-  const loadRecordings = useServerFn(listPvgPersonRecordings);
-  const confirmPermission = useServerFn(confirmPvgRecordingPermission);
   const applyPersonalVoice = useServerFn(assignPersonalVoice);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
 
@@ -174,9 +157,6 @@ export function VoicePanel({
     kind: "done" | "error";
     text: string;
   } | null>(null);
-  const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
-  /** What the person decided about the recording waiting to be assigned. */
-  const [recordingChoice, setRecordingChoice] = useState<RecordingChoice | null>(null);
   /** A saved personal voice waiting for the participant it belongs to. */
   const [pendingPersonal, setPendingPersonal] = useState<{ id: string; name: string } | null>(null);
   /** The speaking style chosen for one participant, for this greeting only. */
@@ -193,10 +173,6 @@ export function VoicePanel({
   /** Voices the person has listened to and kept. Nothing else may be used. */
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const [askReplaceConfirmed, setAskReplaceConfirmed] = useState(false);
-  const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
-  const [preparing, setPreparing] = useState(false);
-  const [prepared, setPrepared] = useState(false);
-  const [permissionForPending, setPermissionForPending] = useState(false);
   const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
   /**
@@ -245,20 +221,6 @@ export function VoicePanel({
     setConfirmed((old) => ({ ...nextConfirmed, ...old }));
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
-
-  // Everything a person recorded before is restored exactly as they left it.
-  const storedRecordings = useQuery({
-    queryKey: ["pvg", "recordings", projectId],
-    queryFn: () => loadRecordings({ data: { projectId } }),
-  });
-
-  useEffect(() => {
-    const list = storedRecordings.data?.recordings;
-    if (!list) return;
-    const next: Record<string, PvgVoiceRecording> = {};
-    for (const recording of list) next[recording.personId] = recording;
-    setRecordings(next);
-  }, [storedRecordings.data]);
 
   useEffect(() => {
     if (!savedChorus?.length || chorus.length) return;
@@ -391,7 +353,7 @@ export function VoicePanel({
   /**
    * Every participant that truly has a voice when all of them speak together,
    * no matter where that voice comes from: a Project Joy voice, a voice from
-   * "My voices" or a recording kept for this greeting only.
+   * "My voices" — every one of them a reusable voice profile.
    */
   const buildChorusEntries = useCallback(
     (list: Assignment[]): ChorusEntry[] => {
@@ -402,12 +364,12 @@ export function VoicePanel({
           personalVoiceId: person.personalVoiceId,
         })),
         assignments,
-        recordings,
+        recordings: {},
         personalVoices: personalVoices.data?.voices ?? [],
         chosen: list,
       });
     },
-    [participants, recordings, assignments, personalVoices.data, t],
+    [participants, assignments, personalVoices.data, t],
   );
 
   const chorusEntries = useMemo(() => buildChorusEntries(chorus), [buildChorusEntries, chorus]);
@@ -417,10 +379,9 @@ export function VoicePanel({
       speechMode === "chorus"
         ? []
         : speakingParticipants.filter(
-            (person) =>
-              Boolean(assignments[person.id]) && !recordings[person.id] && !confirmed[person.id],
+            (person) => Boolean(assignments[person.id]) && !confirmed[person.id],
           ),
-    [speechMode, speakingParticipants, assignments, recordings, confirmed],
+    [speechMode, speakingParticipants, assignments, confirmed],
   );
 
   /**
@@ -579,11 +540,6 @@ export function VoicePanel({
     setCategories((prev) => ({ ...prev, [person.id]: group }));
     // A replaced voice always waits to be listened to and kept again.
     setConfirmed((prev) => ({ ...prev, [person.id]: !viaReplace }));
-    setRecordings((prev) => {
-      const next = { ...prev };
-      delete next[person.id];
-      return next;
-    });
     setPending(null);
     // Voices speaking together: only this participant's place changes.
     if (speechMode === "chorus" && index >= 0) {
@@ -649,14 +605,8 @@ export function VoicePanel({
       return next;
     });
     setConfirmed((prev) => ({ ...prev, [person.id]: false }));
-    setRecordings((prev) => {
-      const next = { ...prev };
-      delete next[person.id];
-      return next;
-    });
     try {
       await assign({ data: { projectId, personId: person.id, voiceId: null } });
-      await dropRecording({ data: { projectId, personId: person.id } });
       onAssigned?.();
     } catch {
       toast.error(t("pvv_failed"));
@@ -693,69 +643,6 @@ export function VoicePanel({
       return;
     }
     setPending(voice);
-  }
-
-  /**
-   * A recording a person made or brought is prepared by Project Joy and kept
-   * with one participant. Nothing here is ever chosen by the person: the whole
-   * preparation simply happens.
-   */
-  async function keepRecording(
-    person: PvgPerson,
-    recording: PendingRecording,
-    choice: RecordingChoice,
-  ) {
-    setPendingRecording(null);
-    setPrepared(false);
-    setPreparing(true);
-    try {
-      // Project Joy levels and tidies the recording before it is stored.
-      const ready = await mergeInOrder([
-        { base64: recording.base64, mimeType: recording.mimeType },
-      ]);
-      const res = await saveRecording({
-        data: {
-          projectId,
-          personId: person.id,
-          language,
-          originalBase64: recording.base64,
-          originalMime: recording.mimeType,
-          extension: recording.extension,
-          processedBase64: ready.base64,
-          processedMime: ready.mimeType,
-          durationSeconds: ready.durationSeconds || recording.durationSeconds,
-          permissionConfirmed: choice.permissionConfirmed,
-        },
-      });
-
-      // "My voices" keeps reusable voice profiles only, so a greeting
-      // recording stays with this participant and is never saved there.
-      setAssignments((prev) => {
-        const next = { ...prev };
-        delete next[person.id];
-        return next;
-      });
-      setRecordings((prev) => ({ ...prev, [person.id]: res.recording }));
-      setPrepared(true);
-      toast.success(t("pvv_recording_assigned"));
-      onAssigned?.();
-      void storedRecordings.refetch();
-    } catch {
-      toast.error(t("pvv_failed"));
-    } finally {
-      setPreparing(false);
-    }
-  }
-
-  function acceptRecording(recording: PendingRecording, choice: RecordingChoice) {
-    const only = participants[0];
-    if (participants.length === 1 && only) {
-      void keepRecording(only, recording, choice);
-      return;
-    }
-    setPermissionForPending(choice.permissionConfirmed);
-    setRecordingChoice(choice);
-    setPendingRecording(recording);
   }
 
   /** Gives one participant a voice from "My voices". */
@@ -815,8 +702,6 @@ export function VoicePanel({
   /** Each participant as the length estimate sees them, with their own pace. */
   function partEstimates() {
     return participants.map((person, index) => {
-      const recording = recordings[person.id];
-      if (recording) return { recordedSeconds: recording.durationSeconds };
       return {
         words: wordCount(partOf(person, index)),
         secondsPerWord: secondsPerWord(assignments[person.id]?.id ?? null, language),
@@ -861,7 +746,7 @@ export function VoicePanel({
         label: participantLabel(person, index),
         voiceId: assignments[person.id]?.id ?? null,
         partText: partOf(person, index),
-        recording: recordings[person.id] ?? null,
+        personalVoiceId: person.personalVoiceId ?? null,
       })),
     });
     setIssues(found);
@@ -874,40 +759,12 @@ export function VoicePanel({
     setBusy(true);
     try {
       if (speechMode === "single") {
-        const first = participants[0];
-        const ownRecording = first ? recordings[first.id] : undefined;
         if (primary) {
           const res = await create({
             data: { projectId, text: greeting, voiceId: primary.id, language },
           });
           audioRef.current?.pause();
           setPlaying(false);
-          setVoiceover(res.voiceover);
-        } else if (ownRecording?.activeUrl && first) {
-          const merged = await mergeInOrder([{ url: ownRecording.activeUrl }]);
-          const res = await saveMerged({
-            data: {
-              projectId,
-              audioBase64: merged.base64,
-              mimeType: merged.mimeType,
-              durationSeconds: merged.durationSeconds,
-              characterCount: greeting.trim().length,
-              language,
-              greetingText: greeting.trim(),
-              voiceId: "personal-recording",
-              voiceName: t("pvv_recording_own"),
-              provider: "project-joy",
-              speechMode,
-              syncMode: null,
-              trackSummary: [
-                {
-                  label: participantLabel(first, 0),
-                  durationSeconds: merged.durationSeconds,
-                  source: "recording",
-                },
-              ],
-            },
-          });
           setVoiceover(res.voiceover);
         } else {
           toast.error(t("pvv_need_voice"));
@@ -938,16 +795,6 @@ export function VoicePanel({
         for (let index = 0; index < participants.length; index += 1) {
           const person = participants[index]!;
           const text = texts[index] ?? "";
-          const recording = recordings[person.id];
-          if (recording?.activeUrl) {
-            sources.push({ url: recording.activeUrl });
-            summary.push({
-              label: participantLabel(person, index),
-              durationSeconds: recording.durationSeconds,
-              source: "recording",
-            });
-            continue;
-          }
           const voice = assignments[person.id];
           if (!text || !voice) continue;
           const track = await speak(text, voice.id, speed);
@@ -1145,9 +992,7 @@ export function VoicePanel({
                   <p className="text-xs font-medium">
                     {participantLabel(person, index)}
                     <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                      {recordings[person.id]
-                        ? t("pvv_recording_own")
-                        : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
+                      {assignments[person.id]?.name ?? t("pvv_no_voice")}
                     </span>
                   </p>
                 </div>
@@ -1384,25 +1229,6 @@ export function VoicePanel({
         <button
           type="button"
           disabled={disabled}
-          onClick={() => setMode(mode === "own" ? null : "own")}
-          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
-            mode === "own"
-              ? "border-primary bg-primary/10"
-              : "border-border/60 hover:border-primary/40"
-          }`}
-        >
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <Mic className="h-4 w-4 text-primary" />
-            {t("pvv_option_own")}
-          </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">
-            {t("pvv_option_own_note")}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          disabled={disabled}
           onClick={() => setMode(mode === "mine" ? null : "mine")}
           className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
             mode === "mine"
@@ -1578,11 +1404,6 @@ export function VoicePanel({
         </div>
       )}
 
-      {/* Record the greeting with your own voice -------------------------- */}
-      {mode === "own" && (
-        <RecordingStudio greeting={greeting} disabled={disabled} onReady={acceptRecording} />
-      )}
-
       {/* My voices ------------------------------------------------------- */}
       {mode === "add" && (
         <VoiceProfileStudio
@@ -1753,53 +1574,6 @@ export function VoicePanel({
         </div>
       )}
 
-      {/* Who should this recording be assigned to? ----------------------- */}
-      {pendingRecording && (
-        <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/5 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Users className="h-4 w-4 text-primary" />
-              {t("pvv_assign_recording_title")}
-            </p>
-            <button
-              type="button"
-              onClick={() => setPendingRecording(null)}
-              aria-label={t("pvv_cancel")}
-              className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {participants.map((person, index) => (
-              <button
-                key={person.id}
-                type="button"
-                onClick={() =>
-                  void keepRecording(
-                    person,
-                    pendingRecording,
-                    recordingChoice ?? {
-                      permissionConfirmed: permissionForPending,
-                      scope: "project",
-                      displayName: participantLabel(person, index),
-                    },
-                  )
-                }
-                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
-              >
-                <ParticipantAvatar
-                  photoUrl={person.photoUrl}
-                  label={participantLabel(person, index)}
-                  size="sm"
-                />
-                {participantLabel(person, index)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Selected voices -------------------------------------------------- */}
       <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1873,9 +1647,8 @@ export function VoicePanel({
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
-            const recording = recordings[person.id];
             const group = categoryOf(person);
-            const waiting = Boolean(chosen) && !recording && !confirmed[person.id];
+            const waiting = Boolean(chosen) && !confirmed[person.id];
             return (
               <li
                 key={person.id}
@@ -1898,54 +1671,11 @@ export function VoicePanel({
                     />
                     <span className="font-medium">{participantLabel(person, index)}</span>
                     <span className="text-muted-foreground"> — </span>
-                    <span
-                      className={
-                        chosen || recording ? "font-medium text-primary" : "text-muted-foreground"
-                      }
-                    >
-                      {recording
-                        ? t("pvv_recording_own")
-                        : chosen
-                          ? chosen.name
-                          : t("pvv_no_voice")}
+                    <span className={chosen ? "font-medium text-primary" : "text-muted-foreground"}>
+                      {chosen ? chosen.name : t("pvv_no_voice")}
                     </span>
                   </span>
                   <span className="flex flex-wrap gap-1.5">
-                    {recording?.activeUrl && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void new Audio(recording.activeUrl!).play().catch(() => undefined)
-                        }
-                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
-                      >
-                        <Headphones className="h-3 w-3" />
-                        {t("pvv_preview")}
-                      </button>
-                    )}
-                    {recording && !recording.permissionConfirmed && (
-                      <button
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => {
-                          setRecordings((prev) => {
-                            const current = prev[person.id];
-                            if (!current) return prev;
-                            return {
-                              ...prev,
-                              [person.id]: { ...current, permissionConfirmed: true },
-                            };
-                          });
-                          void confirmPermission({
-                            data: { projectId, personId: person.id, confirmed: true },
-                          }).catch(() => undefined);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
-                      >
-                        <Check className="h-3 w-3" />
-                        {t("pvv_permission_button")}
-                      </button>
-                    )}
                     {chosen && (
                       <button
                         type="button"
@@ -1994,11 +1724,11 @@ export function VoicePanel({
                       )}
                       {openingFor === person.id
                         ? t("pvv_opening_library")
-                        : chosen || recording
+                        : chosen
                           ? t("pvv_replace")
                           : t("pvv_select")}
                     </button>
-                    {(chosen || recording) && (
+                    {chosen && (
                       <button
                         type="button"
                         disabled={disabled}
@@ -2051,19 +1781,6 @@ export function VoicePanel({
         <div className="mt-4 flex gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-xs text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{t(voiceChanged ? "pvv_outdated_voice" : "pvv_outdated_text")}</span>
-        </div>
-      )}
-
-      {preparing && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border/60 bg-background/60 p-4 text-xs text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          <span>{t("pvv_processing")}</span>
-        </div>
-      )}
-      {!preparing && prepared && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-xs">
-          <Check className="h-4 w-4 text-primary" />
-          <span>{t("pvv_processed")}</span>
         </div>
       )}
 

@@ -14,8 +14,14 @@ import {
   enrollmentText,
   enrollmentTexts,
 } from "@/lib/personal-video/voice/enrollment";
-import { checkVoiceSample, SAMPLE_ISSUE_KEY } from "@/lib/personal-video/voice/quality";
-import type { SampleCheck } from "@/lib/personal-video/voice/quality";
+import {
+  checkVoiceSample,
+  primaryIssue,
+  SAMPLE_ISSUE_KEY,
+} from "@/lib/personal-video/voice/quality";
+import type { SampleCheck, SampleIssue } from "@/lib/personal-video/voice/quality";
+import { coverageOf } from "@/lib/personal-video/voice/coverage";
+import { hearVoiceSample } from "@/lib/personal-video/voice/transcribe.functions";
 import {
   addVoiceSample,
   createVoiceProfile,
@@ -60,6 +66,7 @@ export function VoiceProfileStudio({
   const createProfile = useServerFn(createVoiceProfile);
   const addSample = useServerFn(addVoiceSample);
   const speakPreview = useServerFn(previewMyVoice);
+  const listen = useServerFn(hearVoiceSample);
 
   const textId: "sample1" | "sample2" = updateVoice ? "sample2" : "sample1";
   const prompt = enrollmentText(language, textId);
@@ -70,6 +77,8 @@ export function VoiceProfileStudio({
   const [saving, setSaving] = useState(false);
   const [sample, setSample] = useState<Sample | null>(null);
   const [check, setCheck] = useState<SampleCheck | null>(null);
+  /** The one problem worth telling the person about, if there is one. */
+  const [issue, setIssue] = useState<SampleIssue | null>(null);
   const [consent, setConsent] = useState(false);
   const [scope, setScope] = useState<PersonalVoiceScope>("library");
   const [name, setName] = useState("");
@@ -113,6 +122,19 @@ export function VoiceProfileStudio({
         expectedWords: activePrompt.words,
       }).catch(() => null);
       setCheck(result);
+
+      // What was really said decides whether the sentence was read in full.
+      // When listening is not possible, the recording is simply accepted.
+      const found = [...(result?.issues ?? [])];
+      const heard = await listen({
+        data: { base64, mimeType, language },
+      }).catch(() => ({ text: null as string | null }));
+      if (heard.text && heard.text.trim().length > 0) {
+        const spoken = coverageOf(activePrompt.text, heard.text);
+        if (spoken.coverage < 0.75) found.push("incomplete");
+        else if (spoken.missingTail >= 2) found.push("tail_missing");
+      }
+      setIssue(primaryIssue(found));
     } catch {
       toast.error(t("pvv_recording_unsupported"));
     } finally {
@@ -172,6 +194,7 @@ export function VoiceProfileStudio({
       return null;
     });
     setCheck(null);
+    setIssue(null);
   }
 
   /** Prepares the profile, then lets the person hear it before keeping it. */
@@ -302,16 +325,11 @@ export function VoiceProfileStudio({
             className="mt-2 w-full"
             aria-label={t("mv_step_preview")}
           />
-          {check && check.issues.length === 0 && (
-            <p className="mt-2 text-[11px] text-primary">{t("mv_check_ok")}</p>
-          )}
-          {check && check.issues.length > 0 && (
+          {check && !issue && <p className="mt-2 text-[11px] text-primary">{t("mv_check_ok")}</p>}
+          {issue && (
             <div className="mt-2 space-y-1">
-              {check.issues.map((issue) => (
-                <p key={issue} className="text-[11px] text-destructive">
-                  {t(SAMPLE_ISSUE_KEY[issue])}
-                </p>
-              ))}
+              {/* Only the real reason is ever shown, never a second guess. */}
+              <p className="text-[11px] text-destructive">{t(SAMPLE_ISSUE_KEY[issue])}</p>
               <p className="text-[11px] text-muted-foreground">{t("mv_issue_retry")}</p>
             </div>
           )}
