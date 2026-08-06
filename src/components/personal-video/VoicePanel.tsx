@@ -353,7 +353,7 @@ export function VoicePanel({
   /**
    * Every participant that truly has a voice when all of them speak together,
    * no matter where that voice comes from: a Project Joy voice, a voice from
-   * "My voices" or a recording kept for this greeting only.
+   * "My voices" — every one of them a reusable voice profile.
    */
   const buildChorusEntries = useCallback(
     (list: Assignment[]): ChorusEntry[] => {
@@ -364,12 +364,12 @@ export function VoicePanel({
           personalVoiceId: person.personalVoiceId,
         })),
         assignments,
-        recordings,
+        recordings: {},
         personalVoices: personalVoices.data?.voices ?? [],
         chosen: list,
       });
     },
-    [participants, recordings, assignments, personalVoices.data, t],
+    [participants, assignments, personalVoices.data, t],
   );
 
   const chorusEntries = useMemo(() => buildChorusEntries(chorus), [buildChorusEntries, chorus]);
@@ -379,10 +379,9 @@ export function VoicePanel({
       speechMode === "chorus"
         ? []
         : speakingParticipants.filter(
-            (person) =>
-              Boolean(assignments[person.id]) && !recordings[person.id] && !confirmed[person.id],
+            (person) => Boolean(assignments[person.id]) && !confirmed[person.id],
           ),
-    [speechMode, speakingParticipants, assignments, recordings, confirmed],
+    [speechMode, speakingParticipants, assignments, confirmed],
   );
 
   /**
@@ -541,11 +540,6 @@ export function VoicePanel({
     setCategories((prev) => ({ ...prev, [person.id]: group }));
     // A replaced voice always waits to be listened to and kept again.
     setConfirmed((prev) => ({ ...prev, [person.id]: !viaReplace }));
-    setRecordings((prev) => {
-      const next = { ...prev };
-      delete next[person.id];
-      return next;
-    });
     setPending(null);
     // Voices speaking together: only this participant's place changes.
     if (speechMode === "chorus" && index >= 0) {
@@ -611,14 +605,8 @@ export function VoicePanel({
       return next;
     });
     setConfirmed((prev) => ({ ...prev, [person.id]: false }));
-    setRecordings((prev) => {
-      const next = { ...prev };
-      delete next[person.id];
-      return next;
-    });
     try {
       await assign({ data: { projectId, personId: person.id, voiceId: null } });
-      await dropRecording({ data: { projectId, personId: person.id } });
       onAssigned?.();
     } catch {
       toast.error(t("pvv_failed"));
