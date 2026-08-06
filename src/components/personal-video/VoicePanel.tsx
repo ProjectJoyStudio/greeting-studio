@@ -898,7 +898,7 @@ export function VoicePanel({
 
   async function generate(chorusOverride?: Assignment[]) {
     if (running.current || busy || disabled) return;
-    const chorusList = chorusOverride ?? chorus;
+    const chorusList = chorusOverride ? buildChorusEntries(chorusOverride) : chorusEntries;
     // Every new synchronisation check starts with a clean slate.
     setSyncIssue(null);
     setShowRecommended(false);
