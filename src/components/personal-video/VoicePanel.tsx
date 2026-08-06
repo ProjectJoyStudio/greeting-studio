@@ -21,16 +21,12 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
   assignPvgPersonVoice,
-  confirmPvgRecordingPermission,
-  deletePvgPersonRecording,
   generatePvgVoiceover,
   getPvgVoiceover,
-  listPvgPersonRecordings,
   previewPvgVoice,
   savePvgMergedVoiceover,
   savePvgPersonPart,
   savePvgPersonVoiceChoice,
-  savePvgPersonRecording,
   savePvgSpeechSettings,
   synthesizePvgTrack,
 } from "@/lib/personal-video/voice.functions";
@@ -50,11 +46,7 @@ import {
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
 import { rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
-import {
-  validateVoiceSetup,
-  voiceIssueText,
-  type PvgVoiceRecording,
-} from "@/lib/personal-video/voice/recordings";
+import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
 import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
@@ -66,11 +58,6 @@ import {
 } from "@/lib/voice-library/types";
 import { autoAssignVoices, recommendVoices } from "@/lib/personal-video/voice/auto-assign";
 import {
-  RecordingStudio,
-  type PendingRecording,
-  type RecordingChoice,
-} from "./voice/RecordingStudio";
-import {
   assignPersonalVoice,
   listProjectPersonalVoices,
 } from "@/lib/personal-video/voice/personal-voices.functions";
@@ -78,7 +65,7 @@ import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
-type VoiceMode = "library" | "own" | "mine" | "add";
+type VoiceMode = "library" | "mine" | "add";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
@@ -100,8 +87,8 @@ interface Assignment {
 }
 
 /**
- * The voices of one order: who speaks, how they speak together, and the
- * recordings people bring with their own voice.
+ * The voices of one order: who speaks and how they speak together. Every
+ * voice is a reusable one — a Project Joy voice or a saved personal voice.
  */
 export function VoicePanel({
   projectId,
@@ -137,10 +124,6 @@ export function VoicePanel({
   const savePart = useServerFn(savePvgPersonPart);
   const speakTrack = useServerFn(synthesizePvgTrack);
   const saveMerged = useServerFn(savePvgMergedVoiceover);
-  const saveRecording = useServerFn(savePvgPersonRecording);
-  const dropRecording = useServerFn(deletePvgPersonRecording);
-  const loadRecordings = useServerFn(listPvgPersonRecordings);
-  const confirmPermission = useServerFn(confirmPvgRecordingPermission);
   const applyPersonalVoice = useServerFn(assignPersonalVoice);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
 
