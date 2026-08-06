@@ -47,6 +47,18 @@ export function chorusEntriesFor(input: ChorusInput): ChorusEntry[] {
     }
     const library = input.assignments[person.id] ?? input.chosen[index];
     if (library) entries.push({ kind: "voice", id: library.id, name: library.name });
+    else {
+      // A greeting the participant recorded themselves still sings along.
+      const recorded = input.recordings[person.id];
+      if (recorded?.activeUrl) {
+        entries.push({
+          kind: "audio",
+          url: recorded.activeUrl,
+          name: person.label,
+          seconds: recorded.durationSeconds,
+        });
+      }
+    }
   });
   // Voices picked beyond the participants themselves still sing along.
   for (let index = input.participants.length; index < input.chosen.length; index += 1) {
