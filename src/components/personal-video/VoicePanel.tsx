@@ -1358,8 +1358,8 @@ export function VoicePanel({
         </div>
       )}
 
-      {/* The two ways a greeting can be spoken --------------------------- */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      {/* The ways a greeting can be spoken ------------------------------- */}
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <button
           type="button"
           disabled={disabled}
@@ -1395,6 +1395,25 @@ export function VoicePanel({
           </span>
           <span className="mt-1 block text-[11px] text-muted-foreground">
             {t("pvv_option_own_note")}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMode(mode === "mine" ? null : "mine")}
+          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
+            mode === "mine"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
+          }`}
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <Mic className="h-4 w-4 text-primary" />
+            {t("mv_tab_mine")}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t("mv_scope_library_note")}
           </span>
         </button>
       </div>
