@@ -759,40 +759,12 @@ export function VoicePanel({
     setBusy(true);
     try {
       if (speechMode === "single") {
-        const first = participants[0];
-        const ownRecording = first ? recordings[first.id] : undefined;
         if (primary) {
           const res = await create({
             data: { projectId, text: greeting, voiceId: primary.id, language },
           });
           audioRef.current?.pause();
           setPlaying(false);
-          setVoiceover(res.voiceover);
-        } else if (ownRecording?.activeUrl && first) {
-          const merged = await mergeInOrder([{ url: ownRecording.activeUrl }]);
-          const res = await saveMerged({
-            data: {
-              projectId,
-              audioBase64: merged.base64,
-              mimeType: merged.mimeType,
-              durationSeconds: merged.durationSeconds,
-              characterCount: greeting.trim().length,
-              language,
-              greetingText: greeting.trim(),
-              voiceId: "personal-recording",
-              voiceName: t("pvv_recording_own"),
-              provider: "project-joy",
-              speechMode,
-              syncMode: null,
-              trackSummary: [
-                {
-                  label: participantLabel(first, 0),
-                  durationSeconds: merged.durationSeconds,
-                  source: "recording",
-                },
-              ],
-            },
-          });
           setVoiceover(res.voiceover);
         } else {
           toast.error(t("pvv_need_voice"));
@@ -823,16 +795,6 @@ export function VoicePanel({
         for (let index = 0; index < participants.length; index += 1) {
           const person = participants[index]!;
           const text = texts[index] ?? "";
-          const recording = recordings[person.id];
-          if (recording?.activeUrl) {
-            sources.push({ url: recording.activeUrl });
-            summary.push({
-              label: participantLabel(person, index),
-              durationSeconds: recording.durationSeconds,
-              source: "recording",
-            });
-            continue;
-          }
           const voice = assignments[person.id];
           if (!text || !voice) continue;
           const track = await speak(text, voice.id, speed);
