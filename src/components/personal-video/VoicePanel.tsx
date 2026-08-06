@@ -73,12 +73,12 @@ import {
 import {
   assignPersonalVoice,
   listProjectPersonalVoices,
-  savePersonalVoice as savePersonalVoiceFn,
 } from "@/lib/personal-video/voice/personal-voices.functions";
+import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
-type VoiceMode = "library" | "own" | "mine";
+type VoiceMode = "library" | "own" | "mine" | "add";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
@@ -141,7 +141,6 @@ export function VoicePanel({
   const dropRecording = useServerFn(deletePvgPersonRecording);
   const loadRecordings = useServerFn(listPvgPersonRecordings);
   const confirmPermission = useServerFn(confirmPvgRecordingPermission);
-  const keepPersonalVoice = useServerFn(savePersonalVoiceFn);
   const applyPersonalVoice = useServerFn(assignPersonalVoice);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
 
@@ -729,34 +728,8 @@ export function VoicePanel({
         },
       });
 
-      // The very same recording also becomes a named voice: kept with this
-      // greeting only, or saved to "My voices" for every future greeting.
-      const saved = await keepPersonalVoice({
-        data: {
-          projectId,
-          scope: choice.scope,
-          displayName: choice.displayName,
-          language,
-          originalBase64: recording.base64,
-          originalMime: recording.mimeType,
-          extension: recording.extension,
-          processedBase64: ready.base64,
-          processedMime: ready.mimeType,
-          durationSeconds: ready.durationSeconds || recording.durationSeconds,
-          consentConfirmed: choice.permissionConfirmed,
-        },
-      });
-      await applyPersonalVoice({
-        data: {
-          projectId,
-          personId: person.id,
-          voiceId: saved.voice.id,
-          voiceName: saved.voice.displayName,
-          style: styles[person.id] ?? "natural",
-        },
-      });
-      void personalVoices.refetch();
-
+      // "My voices" keeps reusable voice profiles only, so a greeting
+      // recording stays with this participant and is never saved there.
       setAssignments((prev) => {
         const next = { ...prev };
         delete next[person.id];
