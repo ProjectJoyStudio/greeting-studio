@@ -144,6 +144,16 @@ export function VoicePanel({
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
   const [replaceFor, setReplaceFor] = useState<string | null>(null);
+  /** The participant whose library is being opened right now (button feedback). */
+  const [openingFor, setOpeningFor] = useState<string | null>(null);
+  /** Short golden glow on the library header right after it opens. */
+  const [libraryGlow, setLibraryGlow] = useState(false);
+  /** Short glow on the participant card that just received a new voice. */
+  const [cardGlow, setCardGlow] = useState<string | null>(null);
+  /** The message that stays on screen after a replacement, good or bad. */
+  const [replaceNotice, setReplaceNotice] = useState<
+    { kind: "done" | "error"; text: string } | null
+  >(null);
   const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
   const [busy, setBusy] = useState(false);
