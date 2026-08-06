@@ -5,7 +5,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     nav_my_voices: "My voices",
     mv_title: "My voices",
     mv_sub: "Your personal voice library. Every voice saved here can be used in future greetings.",
-    mv_empty: "You have not saved a personal voice yet. Record or upload one while creating a video greeting.",
+    mv_empty:
+      "You have not saved a personal voice yet. Record or upload one while creating a video greeting.",
     mv_loading: "Loading your voices…",
     mv_created: "Created",
     mv_duration: "Recording length",
@@ -20,15 +21,18 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Cancel",
     mv_save: "Save",
     mv_delete_title: "Delete this voice?",
-    mv_delete_body: "Are you sure you want to delete this voice from My Voices? This action cannot be undone.",
+    mv_delete_body:
+      "Are you sure you want to delete this voice from My Voices? This action cannot be undone.",
     mv_deleted: "The voice has been deleted.",
-    mv_deleted_affected: "This voice was removed from {count} unfinished greeting(s). Please choose a new voice there.",
+    mv_deleted_affected:
+      "This voice was removed from {count} unfinished greeting(s). Please choose a new voice there.",
     mv_rename_title: "Rename this voice",
     mv_name_label: "Voice name",
     mv_name_placeholder: "For example: Mother, Sergey, My voice",
     mv_name_required: "Please enter a clear name for this voice.",
     mv_renamed: "The voice has been renamed.",
-    mv_consent: "I have the right to use this voice and have received permission from the person whose voice it is.",
+    mv_consent:
+      "I have the right to use this voice and have received permission from the person whose voice it is.",
     mv_consent_required: "Please confirm that you have permission to use this voice.",
     mv_scope_title: "Where should this voice be saved?",
     mv_scope_project: "Use only in this project",
@@ -71,8 +75,10 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
   ru: {
     nav_my_voices: "Мои голоса",
     mv_title: "Мои голоса",
-    mv_sub: "Ваша личная библиотека голосов. Каждый сохранённый голос можно использовать в будущих поздравлениях.",
-    mv_empty: "Вы ещё не сохранили ни одного личного голоса. Запишите или загрузите его при создании видеопоздравления.",
+    mv_sub:
+      "Ваша личная библиотека голосов. Каждый сохранённый голос можно использовать в будущих поздравлениях.",
+    mv_empty:
+      "Вы ещё не сохранили ни одного личного голоса. Запишите или загрузите его при создании видеопоздравления.",
     mv_loading: "Загружаем ваши голоса…",
     mv_created: "Создан",
     mv_duration: "Длительность записи",
@@ -87,15 +93,18 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Отмена",
     mv_save: "Сохранить",
     mv_delete_title: "Удалить этот голос?",
-    mv_delete_body: "Вы уверены, что хотите удалить этот голос из «Моих голосов»? Это действие нельзя отменить.",
+    mv_delete_body:
+      "Вы уверены, что хотите удалить этот голос из «Моих голосов»? Это действие нельзя отменить.",
     mv_deleted: "Голос удалён.",
-    mv_deleted_affected: "Голос удалён из незавершённых поздравлений: {count}. Выберите там новый голос.",
+    mv_deleted_affected:
+      "Голос удалён из незавершённых поздравлений: {count}. Выберите там новый голос.",
     mv_rename_title: "Переименовать голос",
     mv_name_label: "Название голоса",
     mv_name_placeholder: "Например: Мама, Сергей, Мой голос",
     mv_name_required: "Введите понятное название голоса.",
     mv_renamed: "Название голоса изменено.",
-    mv_consent: "Я имею право использовать этот голос и получил разрешение человека, которому он принадлежит.",
+    mv_consent:
+      "Я имею право использовать этот голос и получил разрешение человека, которому он принадлежит.",
     mv_consent_required: "Подтвердите, что у вас есть разрешение на использование этого голоса.",
     mv_scope_title: "Где сохранить этот голос?",
     mv_scope_project: "Использовать только в этом проекте",
@@ -128,7 +137,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_style_gentle: "Нежная",
     mv_style_humorous: "Шутливая",
     mv_record_again: "Записать заново",
-    mv_replace_question: "Заменить существующий голос или сохранить эту запись как нового человека?",
+    mv_replace_question:
+      "Заменить существующий голос или сохранить эту запись как нового человека?",
     mv_replace_existing: "Заменить: {name}",
     mv_save_as_new: "Сохранить как голос нового человека",
     mv_keep_previous: "Прежняя запись сохраняется, пока вы не подтвердите замену.",
@@ -138,8 +148,10 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
   de: {
     nav_my_voices: "Meine Stimmen",
     mv_title: "Meine Stimmen",
-    mv_sub: "Ihre persönliche Stimmbibliothek. Jede gespeicherte Stimme können Sie für künftige Grüße verwenden.",
-    mv_empty: "Sie haben noch keine persönliche Stimme gespeichert. Nehmen Sie eine beim Erstellen eines Videogrußes auf oder laden Sie eine hoch.",
+    mv_sub:
+      "Ihre persönliche Stimmbibliothek. Jede gespeicherte Stimme können Sie für künftige Grüße verwenden.",
+    mv_empty:
+      "Sie haben noch keine persönliche Stimme gespeichert. Nehmen Sie eine beim Erstellen eines Videogrußes auf oder laden Sie eine hoch.",
     mv_loading: "Ihre Stimmen werden geladen…",
     mv_created: "Erstellt",
     mv_duration: "Länge der Aufnahme",
@@ -154,15 +166,18 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Abbrechen",
     mv_save: "Speichern",
     mv_delete_title: "Diese Stimme löschen?",
-    mv_delete_body: "Möchten Sie diese Stimme wirklich aus „Meine Stimmen“ löschen? Das lässt sich nicht rückgängig machen.",
+    mv_delete_body:
+      "Möchten Sie diese Stimme wirklich aus „Meine Stimmen“ löschen? Das lässt sich nicht rückgängig machen.",
     mv_deleted: "Die Stimme wurde gelöscht.",
-    mv_deleted_affected: "Die Stimme wurde aus {count} unfertigen Grüßen entfernt. Bitte wählen Sie dort eine neue Stimme.",
+    mv_deleted_affected:
+      "Die Stimme wurde aus {count} unfertigen Grüßen entfernt. Bitte wählen Sie dort eine neue Stimme.",
     mv_rename_title: "Stimme umbenennen",
     mv_name_label: "Name der Stimme",
     mv_name_placeholder: "Zum Beispiel: Mutter, Sergej, Meine Stimme",
     mv_name_required: "Bitte geben Sie einen klaren Namen für diese Stimme ein.",
     mv_renamed: "Die Stimme wurde umbenannt.",
-    mv_consent: "Ich darf diese Stimme verwenden und habe die Erlaubnis der Person erhalten, der sie gehört.",
+    mv_consent:
+      "Ich darf diese Stimme verwenden und habe die Erlaubnis der Person erhalten, der sie gehört.",
     mv_consent_required: "Bitte bestätigen Sie, dass Sie die Stimme verwenden dürfen.",
     mv_scope_title: "Wo soll diese Stimme gespeichert werden?",
     mv_scope_project: "Nur in diesem Projekt verwenden",
@@ -176,7 +191,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_tab_library: "Project-Joy-Stimmen",
     mv_tab_mine: "Meine Stimmen",
     mv_tab_record: "Stimme aufnehmen oder hochladen",
-    mv_no_saved: "Noch keine persönlichen Stimmen. Nehmen Sie die erste auf oder laden Sie sie hoch.",
+    mv_no_saved:
+      "Noch keine persönlichen Stimmen. Nehmen Sie die erste auf oder laden Sie sie hoch.",
     mv_project_only: "Nur dieses Projekt",
     mv_permanent: "Meine Stimmen",
     mv_assign_title: "Wem soll diese Stimme zugeordnet werden?",
@@ -195,7 +211,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_style_gentle: "Zart",
     mv_style_humorous: "Humorvoll",
     mv_record_again: "Neu aufnehmen",
-    mv_replace_question: "Bestehende Stimme ersetzen oder diese Aufnahme als neue Person speichern?",
+    mv_replace_question:
+      "Bestehende Stimme ersetzen oder diese Aufnahme als neue Person speichern?",
     mv_replace_existing: "{name} ersetzen",
     mv_save_as_new: "Als Stimme einer neuen Person speichern",
     mv_keep_previous: "Ihre bisherige Aufnahme bleibt erhalten, bis Sie bestätigen.",
@@ -205,8 +222,10 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
   uk: {
     nav_my_voices: "Мої голоси",
     mv_title: "Мої голоси",
-    mv_sub: "Ваша особиста бібліотека голосів. Кожен збережений голос можна використати в майбутніх привітаннях.",
-    mv_empty: "Ви ще не зберегли жодного особистого голосу. Запишіть або завантажте його під час створення відеопривітання.",
+    mv_sub:
+      "Ваша особиста бібліотека голосів. Кожен збережений голос можна використати в майбутніх привітаннях.",
+    mv_empty:
+      "Ви ще не зберегли жодного особистого голосу. Запишіть або завантажте його під час створення відеопривітання.",
     mv_loading: "Завантажуємо ваші голоси…",
     mv_created: "Створено",
     mv_duration: "Тривалість запису",
@@ -221,9 +240,11 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Скасувати",
     mv_save: "Зберегти",
     mv_delete_title: "Видалити цей голос?",
-    mv_delete_body: "Ви впевнені, що хочете видалити цей голос із «Моїх голосів»? Цю дію не можна скасувати.",
+    mv_delete_body:
+      "Ви впевнені, що хочете видалити цей голос із «Моїх голосів»? Цю дію не можна скасувати.",
     mv_deleted: "Голос видалено.",
-    mv_deleted_affected: "Голос вилучено з незавершених привітань: {count}. Оберіть там новий голос.",
+    mv_deleted_affected:
+      "Голос вилучено з незавершених привітань: {count}. Оберіть там новий голос.",
     mv_rename_title: "Перейменувати голос",
     mv_name_label: "Назва голосу",
     mv_name_placeholder: "Наприклад: Мама, Сергій, Мій голос",
@@ -272,8 +293,10 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
   fr: {
     nav_my_voices: "Mes voix",
     mv_title: "Mes voix",
-    mv_sub: "Votre bibliothèque de voix personnelle. Chaque voix enregistrée ici peut servir à vos prochains vœux.",
-    mv_empty: "Vous n'avez pas encore enregistré de voix personnelle. Enregistrez-en une ou importez un fichier lors de la création d'un vœu vidéo.",
+    mv_sub:
+      "Votre bibliothèque de voix personnelle. Chaque voix enregistrée ici peut servir à vos prochains vœux.",
+    mv_empty:
+      "Vous n'avez pas encore enregistré de voix personnelle. Enregistrez-en une ou importez un fichier lors de la création d'un vœu vidéo.",
     mv_loading: "Chargement de vos voix…",
     mv_created: "Créée le",
     mv_duration: "Durée de l'enregistrement",
@@ -288,15 +311,18 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Annuler",
     mv_save: "Enregistrer",
     mv_delete_title: "Supprimer cette voix ?",
-    mv_delete_body: "Voulez-vous vraiment supprimer cette voix de Mes voix ? Cette action est irréversible.",
+    mv_delete_body:
+      "Voulez-vous vraiment supprimer cette voix de Mes voix ? Cette action est irréversible.",
     mv_deleted: "La voix a été supprimée.",
-    mv_deleted_affected: "La voix a été retirée de {count} vœu(x) inachevé(s). Choisissez-y une nouvelle voix.",
+    mv_deleted_affected:
+      "La voix a été retirée de {count} vœu(x) inachevé(s). Choisissez-y une nouvelle voix.",
     mv_rename_title: "Renommer cette voix",
     mv_name_label: "Nom de la voix",
     mv_name_placeholder: "Par exemple : Maman, Serge, Ma voix",
     mv_name_required: "Veuillez saisir un nom clair pour cette voix.",
     mv_renamed: "La voix a été renommée.",
-    mv_consent: "J'ai le droit d'utiliser cette voix et j'ai reçu l'autorisation de la personne concernée.",
+    mv_consent:
+      "J'ai le droit d'utiliser cette voix et j'ai reçu l'autorisation de la personne concernée.",
     mv_consent_required: "Veuillez confirmer que vous avez l'autorisation d'utiliser cette voix.",
     mv_scope_title: "Où enregistrer cette voix ?",
     mv_scope_project: "Utiliser uniquement dans ce projet",
@@ -329,7 +355,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_style_gentle: "Doux",
     mv_style_humorous: "Humoristique",
     mv_record_again: "Réenregistrer",
-    mv_replace_question: "Remplacer la voix existante ou enregistrer cet enregistrement comme une nouvelle personne ?",
+    mv_replace_question:
+      "Remplacer la voix existante ou enregistrer cet enregistrement comme une nouvelle personne ?",
     mv_replace_existing: "Remplacer {name}",
     mv_save_as_new: "Enregistrer comme voix d'une nouvelle personne",
     mv_keep_previous: "Votre enregistrement précédent est conservé jusqu'à confirmation.",
@@ -339,8 +366,10 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
   pl: {
     nav_my_voices: "Moje głosy",
     mv_title: "Moje głosy",
-    mv_sub: "Twoja osobista biblioteka głosów. Każdy zapisany głos możesz wykorzystać w przyszłych życzeniach.",
-    mv_empty: "Nie zapisano jeszcze żadnego osobistego głosu. Nagraj go lub prześlij podczas tworzenia życzeń wideo.",
+    mv_sub:
+      "Twoja osobista biblioteka głosów. Każdy zapisany głos możesz wykorzystać w przyszłych życzeniach.",
+    mv_empty:
+      "Nie zapisano jeszcze żadnego osobistego głosu. Nagraj go lub prześlij podczas tworzenia życzeń wideo.",
     mv_loading: "Wczytywanie Twoich głosów…",
     mv_created: "Utworzono",
     mv_duration: "Długość nagrania",
@@ -355,7 +384,8 @@ export const MY_VOICES_I18N: Record<Lang, Dict> = {
     mv_cancel: "Anuluj",
     mv_save: "Zapisz",
     mv_delete_title: "Usunąć ten głos?",
-    mv_delete_body: "Czy na pewno chcesz usunąć ten głos z Moich głosów? Tej operacji nie można cofnąć.",
+    mv_delete_body:
+      "Czy na pewno chcesz usunąć ten głos z Moich głosów? Tej operacji nie można cofnąć.",
     mv_deleted: "Głos został usunięty.",
     mv_deleted_affected: "Głos usunięto z niedokończonych życzeń: {count}. Wybierz tam nowy głos.",
     mv_rename_title: "Zmień nazwę głosu",

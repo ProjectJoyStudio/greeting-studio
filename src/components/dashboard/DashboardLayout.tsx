@@ -88,9 +88,7 @@ export function ComingSoonCard({ children }: { children?: ReactNode }) {
       <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {t("soon")}
       </span>
-      <p className="mt-3 text-sm text-muted-foreground">
-        {children ?? t("placeholder_soon")}
-      </p>
+      <p className="mt-3 text-sm text-muted-foreground">{children ?? t("placeholder_soon")}</p>
     </div>
   );
 }

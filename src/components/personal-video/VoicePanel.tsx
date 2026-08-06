@@ -170,16 +170,15 @@ export function VoicePanel({
   /** Short glow on the participant card that just received a new voice. */
   const [cardGlow, setCardGlow] = useState<string | null>(null);
   /** The message that stays on screen after a replacement, good or bad. */
-  const [replaceNotice, setReplaceNotice] = useState<
-    { kind: "done" | "error"; text: string } | null
-  >(null);
+  const [replaceNotice, setReplaceNotice] = useState<{
+    kind: "done" | "error";
+    text: string;
+  } | null>(null);
   const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
   /** What the person decided about the recording waiting to be assigned. */
   const [recordingChoice, setRecordingChoice] = useState<RecordingChoice | null>(null);
   /** A saved personal voice waiting for the participant it belongs to. */
-  const [pendingPersonal, setPendingPersonal] = useState<{ id: string; name: string } | null>(
-    null,
-  );
+  const [pendingPersonal, setPendingPersonal] = useState<{ id: string; name: string } | null>(null);
   /** The speaking style chosen for one participant, for this greeting only. */
   const [styles, setStyles] = useState<Record<string, string>>({});
   /** The style the next personal voice is given when it is assigned. */
@@ -395,9 +394,7 @@ export function VoicePanel({
         ? []
         : speakingParticipants.filter(
             (person) =>
-              Boolean(assignments[person.id]) &&
-              !recordings[person.id] &&
-              !confirmed[person.id],
+              Boolean(assignments[person.id]) && !recordings[person.id] && !confirmed[person.id],
           ),
     [speechMode, speakingParticipants, assignments, recordings, confirmed],
   );
@@ -789,7 +786,6 @@ export function VoicePanel({
       toast.error(t("pvv_failed"));
     }
   }
-
 
   function partOf(person: PvgPerson, index: number): string {
     const stored = parts[person.id];
@@ -1437,10 +1433,7 @@ export function VoicePanel({
                         {t("pvv_replacing_for").replace("{name}", label)}
                       </span>
                       <span className="block text-[11px] text-muted-foreground">
-                        {t("pvv_participant_n").replace(
-                          "{n}",
-                          String((index < 0 ? 0 : index) + 1),
-                        )}
+                        {t("pvv_participant_n").replace("{n}", String((index < 0 ? 0 : index) + 1))}
                         {" · "}
                         {t("pvv_sync_current_voice")}: {current ? current.name : t("pvv_no_voice")}
                       </span>
@@ -1475,22 +1468,22 @@ export function VoicePanel({
                 return !group || group === c;
               })
               .map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(category === c ? null : c)}
-                className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
-                  category === c
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/60 hover:border-primary/40"
-                }`}
-              >
-                {t(CATEGORY_KEY[c])}
-                <span className="ml-2 text-[10px] text-muted-foreground">
-                  {voices.filter((v) => voiceCategory(v) === c).length}
-                </span>
-              </button>
-            ))}
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(category === c ? null : c)}
+                  className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
+                    category === c
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/60 hover:border-primary/40"
+                  }`}
+                >
+                  {t(CATEGORY_KEY[c])}
+                  <span className="ml-2 text-[10px] text-muted-foreground">
+                    {voices.filter((v) => voiceCategory(v) === c).length}
+                  </span>
+                </button>
+              ))}
           </div>
 
           {category && (
@@ -1849,121 +1842,125 @@ export function VoicePanel({
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-sm">
-                  <ParticipantAvatar
-                    photoUrl={person.photoUrl}
-                    label={participantLabel(person, index)}
-                  />
-                  <span className="font-medium">{participantLabel(person, index)}</span>
-                  <span className="text-muted-foreground"> — </span>
-                  <span
-                    className={
-                      chosen || recording ? "font-medium text-primary" : "text-muted-foreground"
-                    }
-                  >
-                    {recording ? t("pvv_recording_own") : chosen ? chosen.name : t("pvv_no_voice")}
-                  </span>
-                </span>
-                <span className="flex flex-wrap gap-1.5">
-                  {recording?.activeUrl && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void new Audio(recording.activeUrl!).play().catch(() => undefined)
+                  <span className="flex items-center gap-2 text-sm">
+                    <ParticipantAvatar
+                      photoUrl={person.photoUrl}
+                      label={participantLabel(person, index)}
+                    />
+                    <span className="font-medium">{participantLabel(person, index)}</span>
+                    <span className="text-muted-foreground"> — </span>
+                    <span
+                      className={
+                        chosen || recording ? "font-medium text-primary" : "text-muted-foreground"
                       }
-                      className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
                     >
-                      <Headphones className="h-3 w-3" />
-                      {t("pvv_preview")}
-                    </button>
-                  )}
-                  {recording && !recording.permissionConfirmed && (
+                      {recording
+                        ? t("pvv_recording_own")
+                        : chosen
+                          ? chosen.name
+                          : t("pvv_no_voice")}
+                    </span>
+                  </span>
+                  <span className="flex flex-wrap gap-1.5">
+                    {recording?.activeUrl && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void new Audio(recording.activeUrl!).play().catch(() => undefined)
+                        }
+                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
+                      >
+                        <Headphones className="h-3 w-3" />
+                        {t("pvv_preview")}
+                      </button>
+                    )}
+                    {recording && !recording.permissionConfirmed && (
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          setRecordings((prev) => {
+                            const current = prev[person.id];
+                            if (!current) return prev;
+                            return {
+                              ...prev,
+                              [person.id]: { ...current, permissionConfirmed: true },
+                            };
+                          });
+                          void confirmPermission({
+                            data: { projectId, personId: person.id, confirmed: true },
+                          }).catch(() => undefined);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
+                      >
+                        <Check className="h-3 w-3" />
+                        {t("pvv_permission_button")}
+                      </button>
+                    )}
+                    {chosen && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const found = voices.find((v) => v.externalVoiceId === chosen.id);
+                          void playSample(
+                            found ? sampleOf(found) : { id: chosen.id, previewUrl: null },
+                          );
+                        }}
+                        disabled={samplingId !== null}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
+                      >
+                        {samplingId === chosen.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Headphones className="h-3 w-3" />
+                        )}
+                        {t("pvv_preview")}
+                      </button>
+                    )}
+                    {waiting && (
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => confirmVoice(person)}
+                        className="inline-flex items-center gap-1 rounded-full bg-gold-gradient px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                      >
+                        <Check className="h-3 w-3" />
+                        {t("pvv_confirm")}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      disabled={disabled}
-                      onClick={() => {
-                        setRecordings((prev) => {
-                          const current = prev[person.id];
-                          if (!current) return prev;
-                          return {
-                            ...prev,
-                            [person.id]: { ...current, permissionConfirmed: true },
-                          };
-                        });
-                        void confirmPermission({
-                          data: { projectId, personId: person.id, confirmed: true },
-                        }).catch(() => undefined);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
+                      disabled={disabled || openingFor !== null}
+                      onClick={() => openReplace(person)}
+                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] transition hover:border-primary/50 active:scale-95 disabled:opacity-60 ${
+                        openingFor === person.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60"
+                      }`}
                     >
-                      <Check className="h-3 w-3" />
-                      {t("pvv_permission_button")}
-                    </button>
-                  )}
-                  {chosen && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const found = voices.find((v) => v.externalVoiceId === chosen.id);
-                        void playSample(
-                          found ? sampleOf(found) : { id: chosen.id, previewUrl: null },
-                        );
-                      }}
-                      disabled={samplingId !== null}
-                      className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
-                    >
-                      {samplingId === chosen.id ? (
+                      {openingFor === person.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        <Headphones className="h-3 w-3" />
+                        <RefreshCw className="h-3 w-3" />
                       )}
-                      {t("pvv_preview")}
+                      {openingFor === person.id
+                        ? t("pvv_opening_library")
+                        : chosen || recording
+                          ? t("pvv_replace")
+                          : t("pvv_select")}
                     </button>
-                  )}
-                  {waiting && (
-                    <button
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => confirmVoice(person)}
-                      className="inline-flex items-center gap-1 rounded-full bg-gold-gradient px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-                    >
-                      <Check className="h-3 w-3" />
-                      {t("pvv_confirm")}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    disabled={disabled || openingFor !== null}
-                    onClick={() => openReplace(person)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] transition hover:border-primary/50 active:scale-95 disabled:opacity-60 ${
-                      openingFor === person.id
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border/60"
-                    }`}
-                  >
-                    {openingFor === person.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
+                    {(chosen || recording) && (
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => void take(person)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] text-destructive transition hover:border-destructive/60 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {t("pvv_remove")}
+                      </button>
                     )}
-                    {openingFor === person.id
-                      ? t("pvv_opening_library")
-                      : chosen || recording
-                        ? t("pvv_replace")
-                        : t("pvv_select")}
-                  </button>
-                  {(chosen || recording) && (
-                    <button
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => void take(person)}
-                      className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] text-destructive transition hover:border-destructive/60 disabled:opacity-60"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      {t("pvv_remove")}
-                    </button>
-                  )}
-                </span>
+                  </span>
                 </div>
 
                 {/* The group this participant's voice always comes from */}
