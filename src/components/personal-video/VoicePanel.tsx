@@ -619,7 +619,7 @@ export function VoicePanel({
     if (replaceFor) {
       const person = participants.find((p) => p.id === replaceFor);
       if (person) {
-        void give(person, voice);
+        void give(person, voice, true);
         return;
       }
       setReplaceFor(null);
