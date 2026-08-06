@@ -74,7 +74,6 @@ import {
   assignPersonalVoice,
   listProjectPersonalVoices,
   savePersonalVoice as savePersonalVoiceFn,
-  savePersonalVoiceStyle,
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 
@@ -143,7 +142,6 @@ export function VoicePanel({
   const confirmPermission = useServerFn(confirmPvgRecordingPermission);
   const keepPersonalVoice = useServerFn(savePersonalVoiceFn);
   const usePersonalVoice = useServerFn(assignPersonalVoice);
-  const setPersonalStyle = useServerFn(savePersonalVoiceStyle);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
 
   /** The person's own voices: saved permanently or kept in this project. */
@@ -792,12 +790,6 @@ export function VoicePanel({
     }
   }
 
-  function chooseStyle(person: PvgPerson, style: string) {
-    setStyles((prev) => ({ ...prev, [person.id]: style }));
-    void setPersonalStyle({ data: { projectId, personId: person.id, style } }).catch(
-      () => undefined,
-    );
-  }
 
   function partOf(person: PvgPerson, index: number): string {
     const stored = parts[person.id];
