@@ -9,6 +9,7 @@ export type SampleIssue =
   | "noisy"
   | "multiple_speakers"
   | "incomplete"
+  | "tail_missing"
   | "clipped"
   | "long_silence"
   | "too_short"
@@ -31,16 +32,42 @@ export const SAMPLE_ISSUE_KEY: Record<SampleIssue, string> = {
   noisy: "mv_issue_noisy",
   multiple_speakers: "mv_issue_multiple_speakers",
   incomplete: "mv_issue_incomplete",
+  tail_missing: "mv_issue_tail_missing",
   clipped: "mv_issue_clipped",
   long_silence: "mv_issue_long_silence",
   too_short: "mv_issue_too_short",
   too_long: "mv_issue_too_long",
 };
 
+/**
+ * The order in which problems are reported. Only the single most important
+ * one is ever shown, so unrelated warnings are never mixed together.
+ */
+export const SAMPLE_ISSUE_ORDER: SampleIssue[] = [
+  "too_short",
+  "too_long",
+  "too_quiet",
+  "too_loud",
+  "clipped",
+  "noisy",
+  "long_silence",
+  "multiple_speakers",
+  "incomplete",
+  "tail_missing",
+];
+
+/** Keeps only the one problem that truly explains what went wrong. */
+export function primaryIssue(issues: SampleIssue[]): SampleIssue | null {
+  for (const issue of SAMPLE_ISSUE_ORDER) {
+    if (issues.includes(issue)) return issue;
+  }
+  return null;
+}
+
 const FRAME_SECONDS = 0.02;
 const CLIP_THRESHOLD = 0.99;
 const VOICED_DB_MARGIN = 6;
-const LONG_SILENCE_SECONDS = 1.5;
+const LONG_SILENCE_SECONDS = 3.5;
 
 function rmsToDb(rms: number): number {
   return rms > 0 ? 20 * Math.log10(rms) : -Infinity;
