@@ -645,69 +645,6 @@ export function VoicePanel({
     setPending(voice);
   }
 
-  /**
-   * A recording a person made or brought is prepared by Project Joy and kept
-   * with one participant. Nothing here is ever chosen by the person: the whole
-   * preparation simply happens.
-   */
-  async function keepRecording(
-    person: PvgPerson,
-    recording: PendingRecording,
-    choice: RecordingChoice,
-  ) {
-    setPendingRecording(null);
-    setPrepared(false);
-    setPreparing(true);
-    try {
-      // Project Joy levels and tidies the recording before it is stored.
-      const ready = await mergeInOrder([
-        { base64: recording.base64, mimeType: recording.mimeType },
-      ]);
-      const res = await saveRecording({
-        data: {
-          projectId,
-          personId: person.id,
-          language,
-          originalBase64: recording.base64,
-          originalMime: recording.mimeType,
-          extension: recording.extension,
-          processedBase64: ready.base64,
-          processedMime: ready.mimeType,
-          durationSeconds: ready.durationSeconds || recording.durationSeconds,
-          permissionConfirmed: choice.permissionConfirmed,
-        },
-      });
-
-      // "My voices" keeps reusable voice profiles only, so a greeting
-      // recording stays with this participant and is never saved there.
-      setAssignments((prev) => {
-        const next = { ...prev };
-        delete next[person.id];
-        return next;
-      });
-      setRecordings((prev) => ({ ...prev, [person.id]: res.recording }));
-      setPrepared(true);
-      toast.success(t("pvv_recording_assigned"));
-      onAssigned?.();
-      void storedRecordings.refetch();
-    } catch {
-      toast.error(t("pvv_failed"));
-    } finally {
-      setPreparing(false);
-    }
-  }
-
-  function acceptRecording(recording: PendingRecording, choice: RecordingChoice) {
-    const only = participants[0];
-    if (participants.length === 1 && only) {
-      void keepRecording(only, recording, choice);
-      return;
-    }
-    setPermissionForPending(choice.permissionConfirmed);
-    setRecordingChoice(choice);
-    setPendingRecording(recording);
-  }
-
   /** Gives one participant a voice from "My voices". */
   async function givePersonal(person: PvgPerson, voice: { id: string; name: string }) {
     setPendingPersonal(null);
