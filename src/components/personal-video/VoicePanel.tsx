@@ -184,6 +184,8 @@ export function VoicePanel({
   const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
+  const libraryRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const running = useRef(false);
 
   const voices = useMemo(() => library.data?.voices ?? [], [library.data]);
