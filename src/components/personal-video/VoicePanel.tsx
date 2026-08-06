@@ -1682,12 +1682,24 @@ export function VoicePanel({
                   )}
                   <button
                     type="button"
-                    disabled={disabled}
+                    disabled={disabled || openingFor !== null}
                     onClick={() => openReplace(person)}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] transition hover:border-primary/50 active:scale-95 disabled:opacity-60 ${
+                      openingFor === person.id
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border/60"
+                    }`}
                   >
-                    <RefreshCw className="h-3 w-3" />
-                    {chosen || recording ? t("pvv_replace") : t("pvv_select")}
+                    {openingFor === person.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    {openingFor === person.id
+                      ? t("pvv_opening_library")
+                      : chosen || recording
+                        ? t("pvv_replace")
+                        : t("pvv_select")}
                   </button>
                   {(chosen || recording) && (
                     <button
