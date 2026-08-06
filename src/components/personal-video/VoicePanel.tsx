@@ -184,6 +184,8 @@ export function VoicePanel({
   );
   /** The speaking style chosen for one participant, for this greeting only. */
   const [styles, setStyles] = useState<Record<string, string>>({});
+  /** The style the next personal voice is given when it is assigned. */
+  const [pendingStyle, setPendingStyle] = useState<string>("natural");
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
   const [busy, setBusy] = useState(false);
   const [samplingId, setSamplingId] = useState<string | null>(null);
@@ -773,9 +775,10 @@ export function VoicePanel({
           personId: person.id,
           voiceId: voice.id,
           voiceName: voice.name,
-          style: styles[person.id] ?? "natural",
+          style: styles[person.id] ?? pendingStyle,
         },
       });
+      setStyles((prev) => ({ ...prev, [person.id]: prev[person.id] ?? pendingStyle }));
       setAssignments((prev) => {
         const next = { ...prev };
         delete next[person.id];
@@ -1653,15 +1656,24 @@ export function VoicePanel({
               </button>
             ))}
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">{t("mv_style_note")}</p>
+          <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {t("mv_style_title")}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{t("mv_style_note")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {PERSONAL_VOICE_STYLES.map((style) => (
-              <span
+              <button
                 key={style}
-                className="rounded-full border border-border/60 px-3 py-1 text-[11px] text-muted-foreground"
+                type="button"
+                onClick={() => setPendingStyle(style)}
+                className={`rounded-full border px-3 py-1 text-[11px] transition ${
+                  pendingStyle === style
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
               >
                 {t(`mv_style_${style}`)}
-              </span>
+              </button>
             ))}
           </div>
         </div>
