@@ -1577,6 +1577,30 @@ export function VoicePanel({
             </div>
           </div>
         )}
+        {replaceNotice && (
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-2xl border p-3 text-xs ${
+              replaceNotice.kind === "done"
+                ? "border-primary/50 bg-primary/10 text-foreground"
+                : "border-destructive/50 bg-destructive/10 text-destructive"
+            }`}
+          >
+            {replaceNotice.kind === "done" ? (
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            <span className="min-w-0 flex-1">{replaceNotice.text}</span>
+            <button
+              type="button"
+              aria-label={t("pvv_cancel")}
+              onClick={() => setReplaceNotice(null)}
+              className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
