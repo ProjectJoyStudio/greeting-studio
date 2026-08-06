@@ -18,6 +18,14 @@ export interface PendingRecording {
   objectUrl: string;
 }
 
+/** Everything a person decided about the recording they just made. */
+export interface RecordingChoice {
+  permissionConfirmed: boolean;
+  /** Kept only with this greeting, or saved to "My voices" for good. */
+  scope: "project" | "library";
+  displayName: string;
+}
+
 /**
  * The place where a person speaks the greeting themselves: they record it here
  * or bring a recording they already have.
@@ -29,12 +37,14 @@ export function RecordingStudio({
 }: {
   greeting: string;
   disabled?: boolean;
-  onReady: (recording: PendingRecording, permissionConfirmed: boolean) => void;
+  onReady: (recording: PendingRecording, choice: RecordingChoice) => void;
 }) {
   const { t } = useI18n();
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [permission, setPermission] = useState(false);
+  const [scope, setScope] = useState<"project" | "library">("project");
+  const [name, setName] = useState("");
   const [pending, setPending] = useState<PendingRecording | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -54,6 +64,7 @@ export function RecordingStudio({
       const durationSeconds = await audioDuration({ base64, mimeType });
       const next = { base64, mimeType, extension, durationSeconds, objectUrl };
       setPermission(false);
+      setName("");
       setPending((old) => {
         if (old) URL.revokeObjectURL(old.objectUrl);
         return next;
@@ -159,10 +170,51 @@ export function RecordingStudio({
 
       {pending && (
         <div className="mt-4 rounded-2xl border border-border/50 bg-card/60 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("mv_step_preview")}
+          </p>
           <audio src={pending.objectUrl} controls preload="metadata" className="w-full" />
           <p className="mt-2 text-[11px] text-muted-foreground">
             {t("pvv_recording_duration")}: {Math.round(pending.durationSeconds * 10) / 10}s
           </p>
+
+          <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("mv_scope_title")}
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {(["project", "library"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                disabled={disabled}
+                onClick={() => setScope(option)}
+                className={`rounded-2xl border px-3 py-3 text-left text-xs transition disabled:opacity-60 ${
+                  scope === option
+                    ? "border-primary bg-primary/10"
+                    : "border-border/60 hover:border-primary/40"
+                }`}
+              >
+                <span className="block font-semibold">
+                  {t(option === "project" ? "mv_scope_project" : "mv_scope_library")}
+                </span>
+                <span className="mt-1 block text-[11px] text-muted-foreground">
+                  {t(option === "project" ? "mv_scope_project_note" : "mv_scope_library_note")}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("mv_step_name")}
+          </label>
+          <input
+            value={name}
+            disabled={disabled}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={t("mv_name_placeholder")}
+            className="mt-2 w-full rounded-xl border border-border/60 bg-background/70 px-3 py-2 text-sm outline-none focus:border-primary/60"
+          />
+
           <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
             <input
               type="checkbox"
@@ -171,18 +223,27 @@ export function RecordingStudio({
               onChange={(event) => setPermission(event.target.checked)}
               className="mt-0.5 h-3.5 w-3.5 accent-[hsl(var(--primary))]"
             />
-            <span>{t("pvv_permission_confirm")}</span>
+            <span>{t("mv_consent")}</span>
           </label>
+          <p className="mt-2 text-[11px] text-muted-foreground">{t("mv_keep_previous")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               disabled={disabled}
               onClick={() => {
                 if (!permission) {
-                  toast.error(t("pvv_err_permission"));
+                  toast.error(t("mv_consent_required"));
                   return;
                 }
-                onReady(pending, true);
+                if (name.trim().length < 2) {
+                  toast.error(t("mv_name_required"));
+                  return;
+                }
+                onReady(pending, {
+                  permissionConfirmed: true,
+                  scope,
+                  displayName: name.trim(),
+                });
               }}
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
             >
