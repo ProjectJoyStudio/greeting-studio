@@ -403,50 +403,22 @@ export function VoicePanel({
    */
   const buildChorusEntries = useCallback(
     (list: Assignment[]): ChorusEntry[] => {
-      const saved = personalVoices.data?.voices ?? [];
-      const entries: ChorusEntry[] = [];
-      participants.forEach((person, index) => {
-        const label = person.name.trim() || `${t("pvv_participant")} ${index + 1}`;
-        const recording = recordings[person.id];
-        if (recording?.activeUrl) {
-          entries.push({
-            kind: "audio",
-            url: recording.activeUrl,
-            name: label,
-            seconds: recording.durationSeconds,
-          });
-          return;
-        }
-        const personal = person.personalVoiceId
-          ? saved.find((voice) => voice.id === person.personalVoiceId)
-          : undefined;
-        const personalUrl = personal ? personalVoiceAudio(personal) : null;
-        if (personal && personalUrl) {
-          entries.push({
-            kind: "audio",
-            url: personalUrl,
-            name: personal.displayName,
-            seconds: personal.durationSeconds,
-          });
-          return;
-        }
-        const library = assignments[person.id] ?? list[index];
-        if (library) entries.push({ kind: "voice", id: library.id, name: library.name });
+      return chorusEntriesFor({
+        participants: participants.map((person, index) => ({
+          id: person.id,
+          label: person.name.trim() || `${t("pvv_participant")} ${index + 1}`,
+          personalVoiceId: person.personalVoiceId,
+        })),
+        assignments,
+        recordings,
+        personalVoices: personalVoices.data?.voices ?? [],
+        chosen: list,
       });
-      // Voices chosen freely, beyond the participants themselves, still count.
-      for (let index = participants.length; index < list.length; index += 1) {
-        const extra = list[index]!;
-        entries.push({ kind: "voice", id: extra.id, name: extra.name });
-      }
-      return entries;
     },
     [participants, recordings, assignments, personalVoices.data, t],
   );
 
-  const chorusEntries = useMemo(
-    () => buildChorusEntries(chorus),
-    [buildChorusEntries, chorus],
-  );
+  const chorusEntries = useMemo(() => buildChorusEntries(chorus), [buildChorusEntries, chorus]);
 
   const unconfirmed = useMemo(
     () =>
