@@ -1309,40 +1309,52 @@ export function VoicePanel({
 
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
-        <div className="mt-5">
-          {replaceFor && (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-2.5">
-              <span className="flex items-center gap-2">
-                <ParticipantAvatar
-                  photoUrl={
-                    (participants.find((p) => p.id === replaceFor) ?? participants[0]!).photoUrl
-                  }
-                  label={participantLabel(
-                    participants.find((p) => p.id === replaceFor) ?? participants[0]!,
-                    participants.findIndex((p) => p.id === replaceFor),
-                  )}
-                  size="sm"
-                />
-                <p className="text-xs font-medium text-primary">
-                  {t("pvv_replacing_for").replace(
-                    "{name}",
-                    participantLabel(
-                      participants.find((p) => p.id === replaceFor) ?? participants[0]!,
-                      participants.findIndex((p) => p.id === replaceFor),
-                    ),
-                  )}
-                </p>
-              </span>
-              <button
-                type="button"
-                onClick={() => setReplaceFor(null)}
-                className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
-              >
-                <X className="h-3 w-3" />
-                {t("pvv_cancel")}
-              </button>
-            </div>
-          )}
+        <div className="mt-5 scroll-mt-24" ref={libraryRef}>
+          {replaceFor &&
+            (() => {
+              const index = participants.findIndex((p) => p.id === replaceFor);
+              const person = participants[index] ?? participants[0]!;
+              const label = participantLabel(person, index < 0 ? 0 : index);
+              const current = assignments[person.id];
+              return (
+                <div
+                  className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 ${
+                    libraryGlow
+                      ? "border-primary bg-primary/15 shadow-warm ring-2 ring-primary/40"
+                      : "border-primary/40 bg-primary/5"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <ParticipantAvatar photoUrl={person.photoUrl} label={label} size="md" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-primary">
+                        {t("pvv_replacing_for").replace("{name}", label)}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {t("pvv_participant_n").replace(
+                          "{n}",
+                          String((index < 0 ? 0 : index) + 1),
+                        )}
+                        {" · "}
+                        {t("pvv_sync_current_voice")}: {current ? current.name : t("pvv_no_voice")}
+                      </span>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplaceFor(null);
+                      setMode(null);
+                      returnToCard(person.id);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+                  >
+                    <X className="h-3 w-3" />
+                    {t("pvv_cancel_replacement")}
+                  </button>
+                </div>
+              );
+            })()}
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("pvv_choose_category")}
           </p>
