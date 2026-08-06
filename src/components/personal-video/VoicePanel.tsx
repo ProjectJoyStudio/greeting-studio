@@ -1647,9 +1647,8 @@ export function VoicePanel({
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
-            const recording = recordings[person.id];
             const group = categoryOf(person);
-            const waiting = Boolean(chosen) && !recording && !confirmed[person.id];
+            const waiting = Boolean(chosen) && !confirmed[person.id];
             return (
               <li
                 key={person.id}
@@ -1673,53 +1672,12 @@ export function VoicePanel({
                     <span className="font-medium">{participantLabel(person, index)}</span>
                     <span className="text-muted-foreground"> — </span>
                     <span
-                      className={
-                        chosen || recording ? "font-medium text-primary" : "text-muted-foreground"
-                      }
+                      className={chosen ? "font-medium text-primary" : "text-muted-foreground"}
                     >
-                      {recording
-                        ? t("pvv_recording_own")
-                        : chosen
-                          ? chosen.name
-                          : t("pvv_no_voice")}
+                      {chosen ? chosen.name : t("pvv_no_voice")}
                     </span>
                   </span>
                   <span className="flex flex-wrap gap-1.5">
-                    {recording?.activeUrl && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void new Audio(recording.activeUrl!).play().catch(() => undefined)
-                        }
-                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
-                      >
-                        <Headphones className="h-3 w-3" />
-                        {t("pvv_preview")}
-                      </button>
-                    )}
-                    {recording && !recording.permissionConfirmed && (
-                      <button
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => {
-                          setRecordings((prev) => {
-                            const current = prev[person.id];
-                            if (!current) return prev;
-                            return {
-                              ...prev,
-                              [person.id]: { ...current, permissionConfirmed: true },
-                            };
-                          });
-                          void confirmPermission({
-                            data: { projectId, personId: person.id, confirmed: true },
-                          }).catch(() => undefined);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:opacity-60"
-                      >
-                        <Check className="h-3 w-3" />
-                        {t("pvv_permission_button")}
-                      </button>
-                    )}
                     {chosen && (
                       <button
                         type="button"
