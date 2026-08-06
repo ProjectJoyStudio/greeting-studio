@@ -2524,6 +2524,9 @@ export type Database = {
           duration_seconds: number
           id: string
           language: string
+          preview_bucket: string | null
+          preview_mime: string | null
+          preview_path: string | null
           processed_bucket: string | null
           processed_mime: string | null
           processed_path: string | null
@@ -2532,10 +2535,13 @@ export type Database = {
           project_id: string | null
           provider: string | null
           provider_voice_id: string | null
+          sample_count: number
+          samples: Json
           scope: string
           source_bucket: string | null
           source_mime: string | null
           source_path: string | null
+          test_text: string | null
           updated_at: string
           user_id: string
         }
@@ -2547,6 +2553,9 @@ export type Database = {
           duration_seconds?: number
           id?: string
           language?: string
+          preview_bucket?: string | null
+          preview_mime?: string | null
+          preview_path?: string | null
           processed_bucket?: string | null
           processed_mime?: string | null
           processed_path?: string | null
@@ -2555,10 +2564,13 @@ export type Database = {
           project_id?: string | null
           provider?: string | null
           provider_voice_id?: string | null
+          sample_count?: number
+          samples?: Json
           scope?: string
           source_bucket?: string | null
           source_mime?: string | null
           source_path?: string | null
+          test_text?: string | null
           updated_at?: string
           user_id: string
         }
@@ -2570,6 +2582,9 @@ export type Database = {
           duration_seconds?: number
           id?: string
           language?: string
+          preview_bucket?: string | null
+          preview_mime?: string | null
+          preview_path?: string | null
           processed_bucket?: string | null
           processed_mime?: string | null
           processed_path?: string | null
@@ -2578,10 +2593,13 @@ export type Database = {
           project_id?: string | null
           provider?: string | null
           provider_voice_id?: string | null
+          sample_count?: number
+          samples?: Json
           scope?: string
           source_bucket?: string | null
           source_mime?: string | null
           source_path?: string | null
+          test_text?: string | null
           updated_at?: string
           user_id?: string
         }
