@@ -222,8 +222,6 @@ export function VoicePanel({
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
-  }, [storedRecordings.data]);
-
   useEffect(() => {
     if (!savedChorus?.length || chorus.length) return;
     const found = savedChorus
