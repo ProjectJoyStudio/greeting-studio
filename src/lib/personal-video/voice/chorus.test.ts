@@ -14,7 +14,9 @@ function personalVoice(id: string): PersonalVoice {
     durationSeconds: 4,
     sourceUrl: `https://joy/${id}.mp3`,
     processedUrl: `https://joy/${id}-ready.mp3`,
-    providerVoiceId: null,
+    providerVoiceId: `pv-${id}`,
+    sampleCount: 1,
+    previewUrl: null,
     processingStatus: "ready",
     processingError: null,
     consentConfirmed: true,
@@ -74,7 +76,7 @@ describe("chorus validation counts every valid voice", () => {
       personalVoices: [personalVoice("v1"), personalVoice("v2"), personalVoice("v3")],
     });
     expect(entries).toHaveLength(3);
-    expect(entries.every((e) => e.kind === "audio")).toBe(true);
+    expect(entries.every((e) => e.kind === "voice")).toBe(true);
   });
 
   it("three temporary project recordings", () => {
@@ -115,7 +117,7 @@ describe("chorus validation counts every valid voice", () => {
       recordings: { p3: recording("p3") },
     });
     expect(entries).toHaveLength(3);
-    expect(entries.map((e) => e.kind)).toEqual(["voice", "audio", "audio"]);
+    expect(entries.map((e) => e.kind)).toEqual(["voice", "voice", "audio"]);
   });
 
   it("five participants with mixed sources", () => {

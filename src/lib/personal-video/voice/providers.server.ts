@@ -2,6 +2,7 @@
 // voice studio can be registered here later and the pages stay unchanged.
 
 import { PVG_VOICE_MAX_CHARS } from "./catalog";
+import type { PersonalVoiceStyle } from "./personal-voices";
 
 export interface SynthesisRequest {
   text: string;
@@ -12,6 +13,8 @@ export interface SynthesisRequest {
   modelId?: string;
   /** Speaking pace, 1 = natural. Used to fit a greeting into the video. */
   speed?: number;
+  /** How the greeting is delivered; only meaningful for cloned personal voices. */
+  style?: string;
 }
 
 export interface SynthesisResult {
@@ -24,28 +27,63 @@ export interface SynthesisResult {
   creditsUsed: number | null;
 }
 
+/** One enrollment recording sent to the studio to clone a voice profile. */
+export interface VoiceCloneSample {
+  bytes: Uint8Array;
+  mimeType: string;
+  filename: string;
+}
+
 export interface VoiceEngine {
   id: string;
   isReady(): boolean;
   synthesize(request: SynthesisRequest): Promise<SynthesisResult>;
+  /** Clones a reusable voice profile from one or two short samples. */
+  cloneVoice?(args: {
+    name: string;
+    description?: string;
+    language?: string;
+    samples: VoiceCloneSample[];
+  }): Promise<{ providerVoiceId: string }>;
+  /** Removes a cloned voice profile from the studio for good. */
+  deleteClonedVoice?(providerVoiceId: string): Promise<void>;
 }
 
 function decodeBase64(value: string): Uint8Array {
   return new Uint8Array(Buffer.from(value, "base64"));
 }
 
+/**
+ * Turns a speaking style into the stability/expressiveness values ElevenLabs
+ * uses. Lower stability and higher style read as more expressive delivery.
+ */
+function voiceSettingsForStyle(style: string | undefined): { stability: number; style: number } {
+  const known: Record<PersonalVoiceStyle, { stability: number; style: number }> = {
+    natural: { stability: 0.5, style: 0.35 },
+    warm: { stability: 0.55, style: 0.4 },
+    calm: { stability: 0.7, style: 0.2 },
+    ceremonial: { stability: 0.65, style: 0.3 },
+    joyful: { stability: 0.35, style: 0.6 },
+    energetic: { stability: 0.3, style: 0.7 },
+    gentle: { stability: 0.65, style: 0.25 },
+    humorous: { stability: 0.35, style: 0.55 },
+  };
+  return known[style as PersonalVoiceStyle] ?? known.natural;
+}
+
 const elevenLabs: VoiceEngine = {
   id: "elevenlabs",
   isReady: () => Boolean(process.env["ELEVENLABS_API_KEY"]),
-  async synthesize({ text, voiceId, modelId, speed }) {
+  async synthesize({ text, voiceId, modelId, speed, style }) {
     const apiKey = process.env["ELEVENLABS_API_KEY"];
     if (!apiKey) throw new Error("voice_service_unavailable");
     const model = modelId || "eleven_multilingual_v2";
     const pace = Number(speed);
+    const { stability, style: styleValue } = voiceSettingsForStyle(style);
     const settings: Record<string, unknown> = {
-      stability: 0.5,
+      stability,
       similarity_boost: 0.75,
-      style: 0.35,
+      style: styleValue,
       use_speaker_boost: true,
     };
     if (Number.isFinite(pace) && pace > 1.001) settings["speed"] = Math.min(1.2, pace);
@@ -100,6 +138,52 @@ const elevenLabs: VoiceEngine = {
       modelId: model,
       creditsUsed: Number.isFinite(reported) && reported > 0 ? reported : null,
     };
+  },
+  async cloneVoice({ name, description, samples }) {
+    const apiKey = process.env["ELEVENLABS_API_KEY"];
+    if (!apiKey) throw new Error("voice_service_unavailable");
+    if (samples.length === 0) throw new Error("voice_clone_samples_required");
+
+    const form = new FormData();
+    form.set("name", name);
+    if (description) form.set("description", description);
+    samples.forEach((sample, index) => {
+      form.append(
+        "files",
+        new Blob([sample.bytes.slice().buffer], { type: sample.mimeType }),
+        sample.filename || `sample-${index}.webm`,
+      );
+    });
+
+    const res = await fetch("https://api.elevenlabs.io/v1/voices/add", {
+      method: "POST",
+      headers: { "xi-api-key": apiKey },
+      body: form,
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      const body = detail.toLowerCase();
+      if (body.includes("quota") || body.includes("credits remaining")) {
+        throw new Error(`voice_quota_exhausted:${detail.slice(0, 300)}`);
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("voice_key_invalid");
+      }
+      throw new Error(`voice_clone_failed:${res.status}:${detail.slice(0, 300)}`);
+    }
+
+    const json = (await res.json()) as { voice_id?: string };
+    if (!json.voice_id) throw new Error("voice_clone_failed:200:missing_voice_id");
+    return { providerVoiceId: json.voice_id };
+  },
+  async deleteClonedVoice(providerVoiceId) {
+    const apiKey = process.env["ELEVENLABS_API_KEY"];
+    if (!apiKey) return;
+    await fetch(`https://api.elevenlabs.io/v1/voices/${encodeURIComponent(providerVoiceId)}`, {
+      method: "DELETE",
+      headers: { "xi-api-key": apiKey },
+    }).catch(() => undefined);
   },
 };
 

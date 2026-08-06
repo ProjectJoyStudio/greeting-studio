@@ -3,6 +3,7 @@
 
 import { lookupVoice } from "./catalog";
 import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "./providers.server";
+import { isPersonalVoiceRef, personalVoiceIdOf } from "./personal-voices";
 import type { PvgVoiceover } from "./catalog";
 
 const BUCKET = "generated-audio";
@@ -22,12 +23,22 @@ async function signed(bucket: string, path: string): Promise<string | null> {
 }
 
 /**
- * The chosen voice, looked up in the imported voice library first and in the
- * built-in list afterwards, so both kinds of voice keep their real name.
+ * The chosen voice: a personal cloned profile when the reference points at
+ * one, the imported voice library next, and the built-in list afterwards, so
+ * every kind of voice keeps its real name.
  */
 async function resolveVoice(
   voiceId: string,
+  userId?: string,
 ): Promise<{ id: string; name: string; provider: string }> {
+  if (isPersonalVoiceRef(voiceId)) {
+    const personalId = personalVoiceIdOf(voiceId);
+    if (!personalId || !userId) throw new Error("voice_not_available");
+    const { resolvePersonalVoice } = await import("./personal-voices.server");
+    const personal = await resolvePersonalVoice(userId, personalId);
+    return { id: personal.providerVoiceId, name: personal.name, provider: personal.provider };
+  }
+
   const db = await admin();
   const { data } = await db
     .from("voice_library")
@@ -123,6 +134,8 @@ export async function synthesizeTrack(args: {
   language: string;
   /** Speaking pace, 1 = natural, up to 1.2 when the video is short. */
   speed?: number;
+  /** How the greeting is delivered; only meaningful for cloned personal voices. */
+  style?: string;
 }): Promise<{
   audioBase64: string;
   mimeType: string;
@@ -132,7 +145,7 @@ export async function synthesizeTrack(args: {
   provider: string;
   characterCount: number;
 }> {
-  const voice = await resolveVoice(args.voiceId);
+  const voice = await resolveVoice(args.voiceId, args.userId);
   const provider = voice.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
   const text = args.text.trim();
@@ -147,6 +160,7 @@ export async function synthesizeTrack(args: {
       language: args.language,
       modelId: await getProductionVoiceModel(provider),
       speed: args.speed ?? 1,
+      style: args.style,
     });
     await logVoiceRequest({
       projectId: args.projectId,
@@ -282,9 +296,11 @@ export async function generateVoiceover(args: {
   voiceId: string;
   language: string;
   provider?: string;
+  /** How the greeting is delivered; only meaningful for cloned personal voices. */
+  style?: string;
 }): Promise<PvgVoiceover> {
   const db = await admin();
-  const voice = await resolveVoice(args.voiceId);
+  const voice = await resolveVoice(args.voiceId, args.userId);
   const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
   const text = args.text.trim();
@@ -298,7 +314,13 @@ export async function generateVoiceover(args: {
 
   let result;
   try {
-    result = await engine.synthesize({ text, voiceId: voice.id, language: args.language, modelId });
+    result = await engine.synthesize({
+      text,
+      voiceId: voice.id,
+      language: args.language,
+      modelId,
+      style: args.style,
+    });
   } catch (error) {
     await logVoiceRequest({
       projectId: args.projectId,
@@ -391,9 +413,11 @@ export async function previewVoice(args: {
   voiceId: string;
   language: string;
   provider?: string;
+  userId?: string;
+  style?: string;
 }): Promise<{ audioBase64: string; mimeType: string }> {
   const { voiceSample } = await import("./catalog");
-  const voice = await resolveVoice(args.voiceId);
+  const voice = await resolveVoice(args.voiceId, args.userId);
   const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const engine = getVoiceEngine(provider);
   const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
@@ -402,6 +426,7 @@ export async function previewVoice(args: {
     voiceId: voice.id,
     language: args.language,
     modelId: await getProductionVoiceModel(provider),
+    style: args.style,
   });
   return {
     audioBase64: Buffer.from(result.audio).toString("base64"),
