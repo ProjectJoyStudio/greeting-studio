@@ -329,10 +329,29 @@ export function VoicePanel({
 
   /** Opens the voice library already filtered to this participant's group. */
   function openReplace(person: PvgPerson) {
+    if (openingFor) return;
+    setOpeningFor(person.id);
+    setReplaceNotice(null);
     setReplaceFor(person.id);
     setMode("library");
     setCategory(categoryOf(person) ?? "female");
     setPending(null);
+    // The library is brought into view by itself, so nobody has to look for it.
+    window.setTimeout(() => {
+      libraryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setOpeningFor(null);
+      setLibraryGlow(true);
+      window.setTimeout(() => setLibraryGlow(false), 1800);
+    }, 220);
+  }
+
+  /** Brings one participant card back into view and marks it for a moment. */
+  function returnToCard(personId: string) {
+    window.setTimeout(() => {
+      cardRefs.current[personId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setCardGlow(personId);
+      window.setTimeout(() => setCardGlow((id) => (id === personId ? null : id)), 2200);
+    }, 120);
   }
 
   /** Participants speaking in this mode whose voice still needs a decision. */
