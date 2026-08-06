@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Mic, Pencil, Plus, Trash2, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardPageHeader } from "@/components/dashboard/DashboardLayout";
@@ -10,9 +10,11 @@ import { useI18n } from "@/lib/i18n";
 import {
   deleteMyVoice,
   listMyVoices,
+  previewMyVoice,
   renameMyVoice,
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import type { PersonalVoice } from "@/lib/personal-video/voice/personal-voices";
+import { VoiceProfileStudio } from "@/components/personal-video/voice/VoiceProfileStudio";
 
 export const Route = createFileRoute("/dashboard/voices")({
   component: MyVoicesPage,
@@ -41,10 +43,31 @@ function MyVoicesPage() {
   const fetchVoices = useServerFn(listMyVoices);
   const rename = useServerFn(renameMyVoice);
   const remove = useServerFn(deleteMyVoice);
+  const speak = useServerFn(previewMyVoice);
 
   const [editing, setEditing] = useState<PersonalVoice | null>(null);
   const [name, setName] = useState("");
   const [confirm, setConfirm] = useState<PersonalVoice | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [updating, setUpdating] = useState<PersonalVoice | null>(null);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [previewing, setPreviewing] = useState<string | null>(null);
+
+  async function playPreview(voice: PersonalVoice) {
+    if (previews[voice.id]) return;
+    setPreviewing(voice.id);
+    try {
+      const res = await speak({ data: { voiceId: voice.id } });
+      setPreviews((prev) => ({
+        ...prev,
+        [voice.id]: `data:${res.mimeType};base64,${res.audioBase64}`,
+      }));
+    } catch {
+      toast.error(t("mv_preview_failed"));
+    } finally {
+      setPreviewing(null);
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-voices"],
@@ -80,6 +103,18 @@ function MyVoicesPage() {
     <>
       <DashboardPageHeader titleKey="mv_title" subtitleKey="mv_sub" />
 
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">{t("mv_only_profiles")}</p>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("mv_add_voice")}
+        </button>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,22 +144,34 @@ function MyVoicesPage() {
                 </span>
               </div>
 
-              {voice.processedUrl && (
+              {(previews[voice.id] ?? voice.previewUrl) ? (
                 <audio
-                  src={voice.processedUrl}
+                  src={previews[voice.id] ?? voice.previewUrl ?? undefined}
                   controls
                   preload="none"
                   className="mt-3 w-full"
                   aria-label={`${t("mv_preview")}: ${voice.displayName}`}
                 />
+              ) : (
+                <button
+                  type="button"
+                  disabled={previewing === voice.id}
+                  onClick={() => void playPreview(voice)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50 disabled:opacity-60"
+                >
+                  {previewing === voice.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-3.5 w-3.5" />
+                  )}
+                  {previewing === voice.id ? t("mv_preview_generating") : t("mv_preview")}
+                </button>
               )}
 
               <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                 <div>
-                  <dt className="uppercase tracking-wide">{t("mv_duration")}</dt>
-                  <dd className="text-foreground">
-                    {Math.round(voice.durationSeconds * 10) / 10}s
-                  </dd>
+                  <dt className="uppercase tracking-wide">{t("mv_samples")}</dt>
+                  <dd className="text-foreground">{voice.sampleCount}</dd>
                 </div>
                 <div>
                   <dt className="uppercase tracking-wide">{t("mv_created")}</dt>
@@ -145,6 +192,14 @@ function MyVoicesPage() {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   {t("mv_rename")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpdating(voice)}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-xs font-medium transition hover:border-primary/50"
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                  {t("mv_update_voice")}
                 </button>
                 <button
                   type="button"
