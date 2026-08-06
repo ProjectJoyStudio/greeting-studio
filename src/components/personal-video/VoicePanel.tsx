@@ -518,20 +518,36 @@ export function VoicePanel({
     void generate(next);
   }
 
-  async function give(person: PvgPerson, voice: LibraryVoice) {
+  async function give(person: PvgPerson, voice: LibraryVoice, viaReplace = false) {
     const name = voice.displayName || voice.name;
     const group = voiceCategory(voice);
+    const index = participants.findIndex((p) => p.id === person.id);
+    const label = participantLabel(person, index < 0 ? 0 : index);
+    const previous = assignments[person.id] ?? null;
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
     // A voice the person picks themselves is kept straight away.
     setCategories((prev) => ({ ...prev, [person.id]: group }));
-    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+    // A replaced voice always waits to be listened to and kept again.
+    setConfirmed((prev) => ({ ...prev, [person.id]: !viaReplace }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
       return next;
     });
     setPending(null);
-    setReplaceFor(null);
+    // Voices speaking together: only this participant's place changes.
+    if (speechMode === "chorus" && index >= 0) {
+      const nextChorus = [...chorus];
+      const entry = { id: voice.externalVoiceId, name };
+      if (index < nextChorus.length) nextChorus[index] = entry;
+      else nextChorus.push(entry);
+      setChorus(nextChorus);
+      persistSpeech({ chorusVoiceIds: nextChorus.map((v) => v.id) });
+      if (syncIssue?.index === index) {
+        setSyncIssue(null);
+        setShowRecommended(false);
+      }
+    }
     try {
       await assign({
         data: {
@@ -541,13 +557,38 @@ export function VoicePanel({
           voiceName: name,
           provider: voice.provider,
           category: group,
-          confirmed: true,
+          confirmed: !viaReplace,
         },
       });
-      toast.success(t("pvv_assigned_toast"));
+      setReplaceFor(null);
+      if (viaReplace) {
+        setMode(null);
+        setReplaceNotice({
+          kind: "done",
+          text: t("pvv_replaced_notice").replace("{name}", label).replace("{voice}", name),
+        });
+        returnToCard(person.id);
+      } else {
+        toast.success(t("pvv_assigned_toast"));
+      }
       onAssigned?.();
-    } catch {
-      toast.error(t("pvv_failed"));
+    } catch (e) {
+      // Nothing is lost: the library stays open and the old voice is kept.
+      setAssignments((prev) => {
+        const next = { ...prev };
+        if (previous) next[person.id] = previous;
+        else delete next[person.id];
+        return next;
+      });
+      const reason = e instanceof Error && e.message ? e.message : t("pvv_failed");
+      if (viaReplace) {
+        setReplaceNotice({
+          kind: "error",
+          text: t("pvv_replace_failed").replace("{reason}", reason),
+        });
+      } else {
+        toast.error(t("pvv_failed"));
+      }
     }
   }
 
