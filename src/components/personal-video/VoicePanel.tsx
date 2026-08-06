@@ -1586,8 +1586,15 @@ export function VoicePanel({
             return (
               <li
                 key={person.id}
-                className={`rounded-xl border px-3 py-2 ${
-                  waiting ? "border-destructive bg-destructive/5" : "border-border/50"
+                ref={(el) => {
+                  cardRefs.current[person.id] = el;
+                }}
+                className={`scroll-mt-24 rounded-xl border px-3 py-2 transition-all duration-500 ${
+                  cardGlow === person.id
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/40"
+                    : waiting
+                      ? "border-destructive bg-destructive/5"
+                      : "border-border/50"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
