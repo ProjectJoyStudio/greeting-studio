@@ -157,9 +157,6 @@ export function VoicePanel({
     kind: "done" | "error";
     text: string;
   } | null>(null);
-  const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
-  /** What the person decided about the recording waiting to be assigned. */
-  const [recordingChoice, setRecordingChoice] = useState<RecordingChoice | null>(null);
   /** A saved personal voice waiting for the participant it belongs to. */
   const [pendingPersonal, setPendingPersonal] = useState<{ id: string; name: string } | null>(null);
   /** The speaking style chosen for one participant, for this greeting only. */
@@ -176,10 +173,6 @@ export function VoicePanel({
   /** Voices the person has listened to and kept. Nothing else may be used. */
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const [askReplaceConfirmed, setAskReplaceConfirmed] = useState(false);
-  const [recordings, setRecordings] = useState<Record<string, PvgVoiceRecording>>({});
-  const [preparing, setPreparing] = useState(false);
-  const [prepared, setPrepared] = useState(false);
-  const [permissionForPending, setPermissionForPending] = useState(false);
   const [issues, setIssues] = useState<{ key: string; name?: string }[]>([]);
   const [parts, setParts] = useState<Record<string, string>>({});
   /**
@@ -229,18 +222,6 @@ export function VoicePanel({
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
-  // Everything a person recorded before is restored exactly as they left it.
-  const storedRecordings = useQuery({
-    queryKey: ["pvg", "recordings", projectId],
-    queryFn: () => loadRecordings({ data: { projectId } }),
-  });
-
-  useEffect(() => {
-    const list = storedRecordings.data?.recordings;
-    if (!list) return;
-    const next: Record<string, PvgVoiceRecording> = {};
-    for (const recording of list) next[recording.personId] = recording;
-    setRecordings(next);
   }, [storedRecordings.data]);
 
   useEffect(() => {
