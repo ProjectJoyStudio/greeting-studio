@@ -76,6 +76,7 @@ import {
   savePersonalVoice as savePersonalVoiceFn,
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
+import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
 type VoiceMode = "library" | "own" | "mine";
 
@@ -387,6 +388,30 @@ export function VoicePanel({
     () => (speechMode === "single" ? participants.slice(0, 1) : participants),
     [speechMode, participants],
   );
+
+  /**
+   * Every participant that truly has a voice when all of them speak together,
+   * no matter where that voice comes from: a Project Joy voice, a voice from
+   * "My voices" or a recording kept for this greeting only.
+   */
+  const buildChorusEntries = useCallback(
+    (list: Assignment[]): ChorusEntry[] => {
+      return chorusEntriesFor({
+        participants: participants.map((person, index) => ({
+          id: person.id,
+          label: person.name.trim() || `${t("pvv_participant")} ${index + 1}`,
+          personalVoiceId: person.personalVoiceId,
+        })),
+        assignments,
+        recordings,
+        personalVoices: personalVoices.data?.voices ?? [],
+        chosen: list,
+      });
+    },
+    [participants, recordings, assignments, personalVoices.data, t],
+  );
+
+  const chorusEntries = useMemo(() => buildChorusEntries(chorus), [buildChorusEntries, chorus]);
 
   const unconfirmed = useMemo(
     () =>
@@ -838,7 +863,7 @@ export function VoicePanel({
 
   async function generate(chorusOverride?: Assignment[]) {
     if (running.current || busy || disabled) return;
-    const chorusList = chorusOverride ?? chorus;
+    const chorusList = chorusOverride ? buildChorusEntries(chorusOverride) : chorusEntries;
     // Every new synchronisation check starts with a clean slate.
     setSyncIssue(null);
     setShowRecommended(false);
@@ -1003,10 +1028,21 @@ export function VoicePanel({
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
-        for (const voice of chorusList) {
-          const track = await speak(greeting, voice.id);
+        for (const entry of chorusList) {
+          if (entry.kind === "audio") {
+            // A recording or a personal voice already carries the whole
+            // greeting: it is used exactly as the person kept it.
+            sources.push({ url: entry.url });
+            summary.push({
+              label: entry.name,
+              durationSeconds: entry.seconds,
+              source: "recording",
+            });
+            continue;
+          }
+          const track = await speak(greeting, entry.id);
           sources.push(track);
-          summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
+          summary.push({ label: entry.name, durationSeconds: track.seconds, source: "voice" });
         }
         // Every chosen voice speaks the whole greeting, word for word. Only the
         // pace is brought in step; no voice and no word is ever exchanged.
@@ -1014,13 +1050,13 @@ export function VoicePanel({
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
         if (merged.unsyncable !== undefined) {
-          const voice = chorusList[merged.unsyncable];
+          const entry = chorusList[merged.unsyncable];
           setSyncIssue({
             index: merged.unsyncable,
-            voiceId: voice?.id ?? "",
-            voiceName: voice?.name ?? "",
+            voiceId: entry && entry.kind === "voice" ? entry.id : "",
+            voiceName: entry?.name ?? "",
           });
-          toast.error(`${t("pvv_chorus_unsyncable")}${voice ? ` (${voice.name})` : ""}`);
+          toast.error(`${t("pvv_chorus_unsyncable")}${entry ? ` (${entry.name})` : ""}`);
           return;
         }
         if (merged.overflow) {
@@ -1188,15 +1224,15 @@ export function VoicePanel({
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_chorus_hint")}</p>
           <p className="mt-2 text-xs font-medium text-primary">
-            {t("pvv_chorus_count")}: {chorus.length} / {PVG_MAX_CHORUS_VOICES}
+            {t("pvv_chorus_count")}: {chorusEntries.length} / {PVG_MAX_CHORUS_VOICES}
           </p>
-          {chorus.length > 0 && (
+          {chorusEntries.length > 0 && (
             <ul className="mt-2 grid gap-2">
-              {chorus.map((voice, index) => {
+              {chorusEntries.map((voice, index) => {
                 const broken = syncIssue?.index === index;
                 return (
                   <li
-                    key={voice.id}
+                    key={`${voice.kind}-${voice.kind === "voice" ? voice.id : voice.url}-${index}`}
                     className={`rounded-2xl border px-3 py-2 ${
                       broken
                         ? "border-destructive bg-destructive/5"
@@ -1224,22 +1260,24 @@ export function VoicePanel({
                       {broken && (
                         <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
                       )}
-                      <button
-                        type="button"
-                        aria-label={t("pvv_remove")}
-                        className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-                        onClick={() => {
-                          const next = chorus.filter((v) => v.id !== voice.id);
-                          setChorus(next);
-                          persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-                          if (broken) {
-                            setSyncIssue(null);
-                            setShowRecommended(false);
-                          }
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      {voice.kind === "voice" && (
+                        <button
+                          type="button"
+                          aria-label={t("pvv_remove")}
+                          className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+                          onClick={() => {
+                            const next = chorus.filter((v) => v.id !== voice.id);
+                            setChorus(next);
+                            persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+                            if (broken) {
+                              setSyncIssue(null);
+                              setShowRecommended(false);
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                     {broken && (
                       <p className="mt-1.5 text-[11px] font-medium text-destructive">
