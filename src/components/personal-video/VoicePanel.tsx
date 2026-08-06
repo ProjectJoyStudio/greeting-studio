@@ -1259,15 +1259,15 @@ export function VoicePanel({
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_chorus_hint")}</p>
           <p className="mt-2 text-xs font-medium text-primary">
-            {t("pvv_chorus_count")}: {chorus.length} / {PVG_MAX_CHORUS_VOICES}
+            {t("pvv_chorus_count")}: {chorusEntries.length} / {PVG_MAX_CHORUS_VOICES}
           </p>
-          {chorus.length > 0 && (
+          {chorusEntries.length > 0 && (
             <ul className="mt-2 grid gap-2">
-              {chorus.map((voice, index) => {
+              {chorusEntries.map((voice, index) => {
                 const broken = syncIssue?.index === index;
                 return (
                   <li
-                    key={voice.id}
+                    key={`${voice.kind}-${voice.kind === "voice" ? voice.id : voice.url}-${index}`}
                     className={`rounded-2xl border px-3 py-2 ${
                       broken
                         ? "border-destructive bg-destructive/5"
@@ -1295,6 +1295,7 @@ export function VoicePanel({
                       {broken && (
                         <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
                       )}
+                      {voice.kind === "voice" && (
                       <button
                         type="button"
                         aria-label={t("pvv_remove")}
@@ -1311,6 +1312,7 @@ export function VoicePanel({
                       >
                         <X className="h-3 w-3" />
                       </button>
+                      )}
                     </div>
                     {broken && (
                       <p className="mt-1.5 text-[11px] font-medium text-destructive">
