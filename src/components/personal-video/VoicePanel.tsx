@@ -144,6 +144,16 @@ export function VoicePanel({
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
   const [replaceFor, setReplaceFor] = useState<string | null>(null);
+  /** The participant whose library is being opened right now (button feedback). */
+  const [openingFor, setOpeningFor] = useState<string | null>(null);
+  /** Short golden glow on the library header right after it opens. */
+  const [libraryGlow, setLibraryGlow] = useState(false);
+  /** Short glow on the participant card that just received a new voice. */
+  const [cardGlow, setCardGlow] = useState<string | null>(null);
+  /** The message that stays on screen after a replacement, good or bad. */
+  const [replaceNotice, setReplaceNotice] = useState<
+    { kind: "done" | "error"; text: string } | null
+  >(null);
   const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
   const [busy, setBusy] = useState(false);
@@ -174,6 +184,8 @@ export function VoicePanel({
   const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
+  const libraryRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const running = useRef(false);
 
   const voices = useMemo(() => library.data?.voices ?? [], [library.data]);
@@ -317,10 +329,29 @@ export function VoicePanel({
 
   /** Opens the voice library already filtered to this participant's group. */
   function openReplace(person: PvgPerson) {
+    if (openingFor) return;
+    setOpeningFor(person.id);
+    setReplaceNotice(null);
     setReplaceFor(person.id);
     setMode("library");
     setCategory(categoryOf(person) ?? "female");
     setPending(null);
+    // The library is brought into view by itself, so nobody has to look for it.
+    window.setTimeout(() => {
+      libraryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setOpeningFor(null);
+      setLibraryGlow(true);
+      window.setTimeout(() => setLibraryGlow(false), 1800);
+    }, 220);
+  }
+
+  /** Brings one participant card back into view and marks it for a moment. */
+  function returnToCard(personId: string) {
+    window.setTimeout(() => {
+      cardRefs.current[personId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setCardGlow(personId);
+      window.setTimeout(() => setCardGlow((id) => (id === personId ? null : id)), 2200);
+    }, 120);
   }
 
   /** Participants speaking in this mode whose voice still needs a decision. */
@@ -487,20 +518,36 @@ export function VoicePanel({
     void generate(next);
   }
 
-  async function give(person: PvgPerson, voice: LibraryVoice) {
+  async function give(person: PvgPerson, voice: LibraryVoice, viaReplace = false) {
     const name = voice.displayName || voice.name;
     const group = voiceCategory(voice);
+    const index = participants.findIndex((p) => p.id === person.id);
+    const label = participantLabel(person, index < 0 ? 0 : index);
+    const previous = assignments[person.id] ?? null;
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
     // A voice the person picks themselves is kept straight away.
     setCategories((prev) => ({ ...prev, [person.id]: group }));
-    setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+    // A replaced voice always waits to be listened to and kept again.
+    setConfirmed((prev) => ({ ...prev, [person.id]: !viaReplace }));
     setRecordings((prev) => {
       const next = { ...prev };
       delete next[person.id];
       return next;
     });
     setPending(null);
-    setReplaceFor(null);
+    // Voices speaking together: only this participant's place changes.
+    if (speechMode === "chorus" && index >= 0) {
+      const nextChorus = [...chorus];
+      const entry = { id: voice.externalVoiceId, name };
+      if (index < nextChorus.length) nextChorus[index] = entry;
+      else nextChorus.push(entry);
+      setChorus(nextChorus);
+      persistSpeech({ chorusVoiceIds: nextChorus.map((v) => v.id) });
+      if (syncIssue?.index === index) {
+        setSyncIssue(null);
+        setShowRecommended(false);
+      }
+    }
     try {
       await assign({
         data: {
@@ -510,13 +557,38 @@ export function VoicePanel({
           voiceName: name,
           provider: voice.provider,
           category: group,
-          confirmed: true,
+          confirmed: !viaReplace,
         },
       });
-      toast.success(t("pvv_assigned_toast"));
+      setReplaceFor(null);
+      if (viaReplace) {
+        setMode(null);
+        setReplaceNotice({
+          kind: "done",
+          text: t("pvv_replaced_notice").replace("{name}", label).replace("{voice}", name),
+        });
+        returnToCard(person.id);
+      } else {
+        toast.success(t("pvv_assigned_toast"));
+      }
       onAssigned?.();
-    } catch {
-      toast.error(t("pvv_failed"));
+    } catch (e) {
+      // Nothing is lost: the library stays open and the old voice is kept.
+      setAssignments((prev) => {
+        const next = { ...prev };
+        if (previous) next[person.id] = previous;
+        else delete next[person.id];
+        return next;
+      });
+      const reason = e instanceof Error && e.message ? e.message : t("pvv_failed");
+      if (viaReplace) {
+        setReplaceNotice({
+          kind: "error",
+          text: t("pvv_replace_failed").replace("{reason}", reason),
+        });
+      } else {
+        toast.error(t("pvv_failed"));
+      }
     }
   }
 
@@ -547,7 +619,7 @@ export function VoicePanel({
     if (replaceFor) {
       const person = participants.find((p) => p.id === replaceFor);
       if (person) {
-        void give(person, voice);
+        void give(person, voice, true);
         return;
       }
       setReplaceFor(null);
@@ -1237,40 +1309,52 @@ export function VoicePanel({
 
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
-        <div className="mt-5">
-          {replaceFor && (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-2.5">
-              <span className="flex items-center gap-2">
-                <ParticipantAvatar
-                  photoUrl={
-                    (participants.find((p) => p.id === replaceFor) ?? participants[0]!).photoUrl
-                  }
-                  label={participantLabel(
-                    participants.find((p) => p.id === replaceFor) ?? participants[0]!,
-                    participants.findIndex((p) => p.id === replaceFor),
-                  )}
-                  size="sm"
-                />
-                <p className="text-xs font-medium text-primary">
-                  {t("pvv_replacing_for").replace(
-                    "{name}",
-                    participantLabel(
-                      participants.find((p) => p.id === replaceFor) ?? participants[0]!,
-                      participants.findIndex((p) => p.id === replaceFor),
-                    ),
-                  )}
-                </p>
-              </span>
-              <button
-                type="button"
-                onClick={() => setReplaceFor(null)}
-                className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50"
-              >
-                <X className="h-3 w-3" />
-                {t("pvv_cancel")}
-              </button>
-            </div>
-          )}
+        <div className="mt-5 scroll-mt-24" ref={libraryRef}>
+          {replaceFor &&
+            (() => {
+              const index = participants.findIndex((p) => p.id === replaceFor);
+              const person = participants[index] ?? participants[0]!;
+              const label = participantLabel(person, index < 0 ? 0 : index);
+              const current = assignments[person.id];
+              return (
+                <div
+                  className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 ${
+                    libraryGlow
+                      ? "border-primary bg-primary/15 shadow-warm ring-2 ring-primary/40"
+                      : "border-primary/40 bg-primary/5"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <ParticipantAvatar photoUrl={person.photoUrl} label={label} size="md" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-primary">
+                        {t("pvv_replacing_for").replace("{name}", label)}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {t("pvv_participant_n").replace(
+                          "{n}",
+                          String((index < 0 ? 0 : index) + 1),
+                        )}
+                        {" · "}
+                        {t("pvv_sync_current_voice")}: {current ? current.name : t("pvv_no_voice")}
+                      </span>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplaceFor(null);
+                      setMode(null);
+                      returnToCard(person.id);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+                  >
+                    <X className="h-3 w-3" />
+                    {t("pvv_cancel_replacement")}
+                  </button>
+                </div>
+              );
+            })()}
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("pvv_choose_category")}
           </p>
@@ -1493,6 +1577,30 @@ export function VoicePanel({
             </div>
           </div>
         )}
+        {replaceNotice && (
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-2xl border p-3 text-xs ${
+              replaceNotice.kind === "done"
+                ? "border-primary/50 bg-primary/10 text-foreground"
+                : "border-destructive/50 bg-destructive/10 text-destructive"
+            }`}
+          >
+            {replaceNotice.kind === "done" ? (
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            <span className="min-w-0 flex-1">{replaceNotice.text}</span>
+            <button
+              type="button"
+              aria-label={t("pvv_cancel")}
+              onClick={() => setReplaceNotice(null)}
+              className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
             const chosen = assignments[person.id];
@@ -1502,8 +1610,15 @@ export function VoicePanel({
             return (
               <li
                 key={person.id}
-                className={`rounded-xl border px-3 py-2 ${
-                  waiting ? "border-destructive bg-destructive/5" : "border-border/50"
+                ref={(el) => {
+                  cardRefs.current[person.id] = el;
+                }}
+                className={`scroll-mt-24 rounded-xl border px-3 py-2 transition-all duration-500 ${
+                  cardGlow === person.id
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/40"
+                    : waiting
+                      ? "border-destructive bg-destructive/5"
+                      : "border-border/50"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1591,12 +1706,24 @@ export function VoicePanel({
                   )}
                   <button
                     type="button"
-                    disabled={disabled}
+                    disabled={disabled || openingFor !== null}
                     onClick={() => openReplace(person)}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] transition hover:border-primary/50 active:scale-95 disabled:opacity-60 ${
+                      openingFor === person.id
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border/60"
+                    }`}
                   >
-                    <RefreshCw className="h-3 w-3" />
-                    {chosen || recording ? t("pvv_replace") : t("pvv_select")}
+                    {openingFor === person.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    {openingFor === person.id
+                      ? t("pvv_opening_library")
+                      : chosen || recording
+                        ? t("pvv_replace")
+                        : t("pvv_select")}
                   </button>
                   {(chosen || recording) && (
                     <button
