@@ -38,7 +38,7 @@ export const Route = createFileRoute("/dashboard/voices")({
 });
 
 function MyVoicesPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const fetchVoices = useServerFn(listMyVoices);
   const rename = useServerFn(renameMyVoice);
@@ -289,7 +289,7 @@ function MyVoicesPage() {
         >
           <div className="max-h-[70vh] overflow-y-auto">
             <VoiceProfileStudio
-              language={locale}
+              language={lang}
               updateVoice={updating}
               onSaved={() => void queryClient.invalidateQueries({ queryKey: ["my-voices"] })}
             />
