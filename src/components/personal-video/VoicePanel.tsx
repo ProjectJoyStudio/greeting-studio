@@ -1574,53 +1574,6 @@ export function VoicePanel({
         </div>
       )}
 
-      {/* Who should this recording be assigned to? ----------------------- */}
-      {pendingRecording && (
-        <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/5 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Users className="h-4 w-4 text-primary" />
-              {t("pvv_assign_recording_title")}
-            </p>
-            <button
-              type="button"
-              onClick={() => setPendingRecording(null)}
-              aria-label={t("pvv_cancel")}
-              className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {participants.map((person, index) => (
-              <button
-                key={person.id}
-                type="button"
-                onClick={() =>
-                  void keepRecording(
-                    person,
-                    pendingRecording,
-                    recordingChoice ?? {
-                      permissionConfirmed: permissionForPending,
-                      scope: "project",
-                      displayName: participantLabel(person, index),
-                    },
-                  )
-                }
-                className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-4 py-2.5 text-left text-sm font-medium transition hover:border-primary/50"
-              >
-                <ParticipantAvatar
-                  photoUrl={person.photoUrl}
-                  label={participantLabel(person, index)}
-                  size="sm"
-                />
-                {participantLabel(person, index)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Selected voices -------------------------------------------------- */}
       <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
