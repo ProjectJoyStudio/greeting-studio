@@ -682,7 +682,7 @@ export function VoicePanel({
   async function keepRecording(
     person: PvgPerson,
     recording: PendingRecording,
-    permissionConfirmed: boolean,
+    choice: RecordingChoice,
   ) {
     setPendingRecording(null);
     setPrepared(false);
@@ -703,9 +703,38 @@ export function VoicePanel({
           processedBase64: ready.base64,
           processedMime: ready.mimeType,
           durationSeconds: ready.durationSeconds || recording.durationSeconds,
-          permissionConfirmed,
+          permissionConfirmed: choice.permissionConfirmed,
         },
       });
+
+      // The very same recording also becomes a named voice: kept with this
+      // greeting only, or saved to "My voices" for every future greeting.
+      const saved = await keepPersonalVoice({
+        data: {
+          projectId,
+          scope: choice.scope,
+          displayName: choice.displayName,
+          language,
+          originalBase64: recording.base64,
+          originalMime: recording.mimeType,
+          extension: recording.extension,
+          processedBase64: ready.base64,
+          processedMime: ready.mimeType,
+          durationSeconds: ready.durationSeconds || recording.durationSeconds,
+          consentConfirmed: choice.permissionConfirmed,
+        },
+      });
+      await usePersonalVoice({
+        data: {
+          projectId,
+          personId: person.id,
+          voiceId: saved.voice.id,
+          voiceName: saved.voice.displayName,
+          style: styles[person.id] ?? "natural",
+        },
+      });
+      void personalVoices.refetch();
+
       setAssignments((prev) => {
         const next = { ...prev };
         delete next[person.id];
@@ -723,14 +752,48 @@ export function VoicePanel({
     }
   }
 
-  function acceptRecording(recording: PendingRecording, permissionConfirmed: boolean) {
+  function acceptRecording(recording: PendingRecording, choice: RecordingChoice) {
     const only = participants[0];
     if (participants.length === 1 && only) {
-      void keepRecording(only, recording, permissionConfirmed);
+      void keepRecording(only, recording, choice);
       return;
     }
-    setPermissionForPending(permissionConfirmed);
+    setPermissionForPending(choice.permissionConfirmed);
+    setRecordingChoice(choice);
     setPendingRecording(recording);
+  }
+
+  /** Gives one participant a voice from "My voices". */
+  async function givePersonal(person: PvgPerson, voice: { id: string; name: string }) {
+    setPendingPersonal(null);
+    try {
+      await usePersonalVoice({
+        data: {
+          projectId,
+          personId: person.id,
+          voiceId: voice.id,
+          voiceName: voice.name,
+          style: styles[person.id] ?? "natural",
+        },
+      });
+      setAssignments((prev) => {
+        const next = { ...prev };
+        delete next[person.id];
+        return next;
+      });
+      setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+      toast.success(t("mv_assigned"));
+      onAssigned?.();
+    } catch {
+      toast.error(t("pvv_failed"));
+    }
+  }
+
+  function chooseStyle(person: PvgPerson, style: string) {
+    setStyles((prev) => ({ ...prev, [person.id]: style }));
+    void setPersonalStyle({ data: { projectId, personId: person.id, style } }).catch(
+      () => undefined,
+    );
   }
 
   function partOf(person: PvgPerson, index: number): string {
