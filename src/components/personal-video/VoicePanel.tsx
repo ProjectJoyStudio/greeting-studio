@@ -75,10 +75,11 @@ import {
   listProjectPersonalVoices,
   savePersonalVoice as savePersonalVoiceFn,
 } from "@/lib/personal-video/voice/personal-voices.functions";
+import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 import {
-  PERSONAL_VOICE_STYLES,
-  personalVoiceAudio,
-} from "@/lib/personal-video/voice/personal-voices";
+  chorusEntriesFor,
+  type ChorusEntry,
+} from "@/lib/personal-video/voice/chorus";
 
 type VoiceMode = "library" | "own" | "mine";
 
