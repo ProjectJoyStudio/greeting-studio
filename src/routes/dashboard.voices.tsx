@@ -278,6 +278,24 @@ function MyVoicesPage() {
           </div>
         </Dialog>
       )}
+
+      {(adding || updating) && (
+        <Dialog
+          title={updating ? t("mv_update_voice") : t("mv_wizard_title")}
+          onClose={() => {
+            setAdding(false);
+            setUpdating(null);
+          }}
+        >
+          <div className="max-h-[70vh] overflow-y-auto">
+            <VoiceProfileStudio
+              language={locale}
+              updateVoice={updating}
+              onSaved={() => void queryClient.invalidateQueries({ queryKey: ["my-voices"] })}
+            />
+          </div>
+        </Dialog>
+      )}
     </>
   );
 }
