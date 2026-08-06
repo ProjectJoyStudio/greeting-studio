@@ -1726,11 +1726,11 @@ export function VoicePanel({
                       )}
                       {openingFor === person.id
                         ? t("pvv_opening_library")
-                        : chosen || recording
+                        : chosen
                           ? t("pvv_replace")
                           : t("pvv_select")}
                     </button>
-                    {(chosen || recording) && (
+                    {chosen && (
                       <button
                         type="button"
                         disabled={disabled}
@@ -1783,19 +1783,6 @@ export function VoicePanel({
         <div className="mt-4 flex gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-xs text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{t(voiceChanged ? "pvv_outdated_voice" : "pvv_outdated_text")}</span>
-        </div>
-      )}
-
-      {preparing && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border/60 bg-background/60 p-4 text-xs text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          <span>{t("pvv_processing")}</span>
-        </div>
-      )}
-      {!preparing && prepared && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-xs">
-          <Check className="h-4 w-4 text-primary" />
-          <span>{t("pvv_processed")}</span>
         </div>
       )}
 
