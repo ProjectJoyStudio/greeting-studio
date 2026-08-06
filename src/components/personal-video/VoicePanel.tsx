@@ -702,8 +702,6 @@ export function VoicePanel({
   /** Each participant as the length estimate sees them, with their own pace. */
   function partEstimates() {
     return participants.map((person, index) => {
-      const recording = recordings[person.id];
-      if (recording) return { recordedSeconds: recording.durationSeconds };
       return {
         words: wordCount(partOf(person, index)),
         secondsPerWord: secondsPerWord(assignments[person.id]?.id ?? null, language),
@@ -748,7 +746,7 @@ export function VoicePanel({
         label: participantLabel(person, index),
         voiceId: assignments[person.id]?.id ?? null,
         partText: partOf(person, index),
-        recording: recordings[person.id] ?? null,
+        personalVoiceId: person.personalVoiceId ?? null,
       })),
     });
     setIssues(found);
