@@ -76,10 +76,7 @@ import {
   savePersonalVoice as savePersonalVoiceFn,
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
-import {
-  chorusEntriesFor,
-  type ChorusEntry,
-} from "@/lib/personal-video/voice/chorus";
+import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
 type VoiceMode = "library" | "own" | "mine";
 
@@ -1264,22 +1261,22 @@ export function VoicePanel({
                         <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
                       )}
                       {voice.kind === "voice" && (
-                      <button
-                        type="button"
-                        aria-label={t("pvv_remove")}
-                        className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-                        onClick={() => {
-                          const next = chorus.filter((v) => v.id !== voice.id);
-                          setChorus(next);
-                          persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-                          if (broken) {
-                            setSyncIssue(null);
-                            setShowRecommended(false);
-                          }
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                        <button
+                          type="button"
+                          aria-label={t("pvv_remove")}
+                          className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+                          onClick={() => {
+                            const next = chorus.filter((v) => v.id !== voice.id);
+                            setChorus(next);
+                            persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+                            if (broken) {
+                              setSyncIssue(null);
+                              setShowRecommended(false);
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       )}
                     </div>
                     {broken && (
