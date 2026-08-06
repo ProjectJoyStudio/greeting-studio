@@ -1418,6 +1418,25 @@ export function VoicePanel({
             {t("mv_scope_library_note")}
           </span>
         </button>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMode(mode === "add" ? null : "add")}
+          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
+            mode === "add"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
+          }`}
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <Mic className="h-4 w-4 text-primary" />
+            {t("mv_tab_add")}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t("mv_only_profiles")}
+          </span>
+        </button>
       </div>
 
       {/* Female · Male · Children ---------------------------------------- */}
