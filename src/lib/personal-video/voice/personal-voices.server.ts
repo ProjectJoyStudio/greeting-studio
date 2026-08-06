@@ -276,7 +276,7 @@ export async function createVoiceProfile(args: {
     const { error: updateError } = await db
       .from("pvg_personal_voices")
       .update({
-        samples: stored,
+        samples: stored as unknown as import("@/integrations/supabase/types").Json,
         sample_count: stored.length,
         duration_seconds: totalSeconds,
         provider_voice_id: providerVoiceId,
@@ -366,7 +366,7 @@ export async function addVoiceSample(args: {
     const { error } = await db
       .from("pvg_personal_voices")
       .update({
-        samples: stored,
+        samples: stored as unknown as import("@/integrations/supabase/types").Json,
         sample_count: stored.length,
         duration_seconds: totalSeconds,
         provider_voice_id: providerVoiceId,

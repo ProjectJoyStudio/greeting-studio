@@ -150,7 +150,7 @@ const elevenLabs: VoiceEngine = {
     samples.forEach((sample, index) => {
       form.append(
         "files",
-        new Blob([sample.bytes], { type: sample.mimeType }),
+        new Blob([sample.bytes.slice().buffer], { type: sample.mimeType }),
         sample.filename || `sample-${index}.webm`,
       );
     });
