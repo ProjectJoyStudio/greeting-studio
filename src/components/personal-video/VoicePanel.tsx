@@ -1584,6 +1584,25 @@ export function VoicePanel({
       )}
 
       {/* My voices ------------------------------------------------------- */}
+      {mode === "add" && (
+        <VoiceProfileStudio
+          language={language}
+          projectId={projectId}
+          allowProjectScope
+          disabled={disabled}
+          onSaved={(voice) => {
+            void personalVoices.refetch();
+            const only = participants[0];
+            const entry = { id: voice.id, name: voice.displayName };
+            if (participants.length === 1 && only) {
+              void givePersonal(only, entry);
+              return;
+            }
+            setPendingPersonal(entry);
+          }}
+        />
+      )}
+
       {mode === "mine" && (
         <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
