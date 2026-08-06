@@ -1063,10 +1063,21 @@ export function VoicePanel({
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
-        for (const voice of chorusList) {
-          const track = await speak(greeting, voice.id);
+        for (const entry of chorusList) {
+          if (entry.kind === "audio") {
+            // A recording or a personal voice already carries the whole
+            // greeting: it is used exactly as the person kept it.
+            sources.push({ url: entry.url });
+            summary.push({
+              label: entry.name,
+              durationSeconds: entry.seconds,
+              source: "recording",
+            });
+            continue;
+          }
+          const track = await speak(greeting, entry.id);
           sources.push(track);
-          summary.push({ label: voice.name, durationSeconds: track.seconds, source: "voice" });
+          summary.push({ label: entry.name, durationSeconds: track.seconds, source: "voice" });
         }
         // Every chosen voice speaks the whole greeting, word for word. Only the
         // pace is brought in step; no voice and no word is ever exchanged.
@@ -1074,13 +1085,13 @@ export function VoicePanel({
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
         if (merged.unsyncable !== undefined) {
-          const voice = chorusList[merged.unsyncable];
+          const entry = chorusList[merged.unsyncable];
           setSyncIssue({
             index: merged.unsyncable,
-            voiceId: voice?.id ?? "",
-            voiceName: voice?.name ?? "",
+            voiceId: entry && entry.kind === "voice" ? entry.id : "",
+            voiceName: entry?.name ?? "",
           });
-          toast.error(`${t("pvv_chorus_unsyncable")}${voice ? ` (${voice.name})` : ""}`);
+          toast.error(`${t("pvv_chorus_unsyncable")}${entry ? ` (${entry.name})` : ""}`);
           return;
         }
         if (merged.overflow) {
