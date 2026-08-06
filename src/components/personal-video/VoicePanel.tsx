@@ -992,9 +992,7 @@ export function VoicePanel({
                   <p className="text-xs font-medium">
                     {participantLabel(person, index)}
                     <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                      {recordings[person.id]
-                        ? t("pvv_recording_own")
-                        : (assignments[person.id]?.name ?? t("pvv_no_voice"))}
+                      {assignments[person.id]?.name ?? t("pvv_no_voice")}
                     </span>
                   </p>
                 </div>
