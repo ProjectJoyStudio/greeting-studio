@@ -102,11 +102,6 @@ interface Assignment {
   name: string;
 }
 
-/** One place in the chorus: a Project Joy voice, or a person's own sound. */
-type ChorusEntry =
-  | { kind: "voice"; id: string; name: string }
-  | { kind: "audio"; url: string; name: string; seconds: number };
-
 /**
  * The voices of one order: who speaks, how they speak together, and the
  * recordings people bring with their own voice.
