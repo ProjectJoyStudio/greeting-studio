@@ -1226,6 +1226,7 @@ export function VoicePanel({
           </span>
         </button>
 
+        <button
           type="button"
           disabled={disabled}
           onClick={() => setMode(mode === "mine" ? null : "mine")}
