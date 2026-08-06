@@ -141,7 +141,7 @@ export function VoicePanel({
   const loadRecordings = useServerFn(listPvgPersonRecordings);
   const confirmPermission = useServerFn(confirmPvgRecordingPermission);
   const keepPersonalVoice = useServerFn(savePersonalVoiceFn);
-  const usePersonalVoice = useServerFn(assignPersonalVoice);
+  const applyPersonalVoice = useServerFn(assignPersonalVoice);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
 
   /** The person's own voices: saved permanently or kept in this project. */
@@ -721,7 +721,7 @@ export function VoicePanel({
           consentConfirmed: choice.permissionConfirmed,
         },
       });
-      await usePersonalVoice({
+      await applyPersonalVoice({
         data: {
           projectId,
           personId: person.id,
@@ -764,7 +764,7 @@ export function VoicePanel({
   async function givePersonal(person: PvgPerson, voice: { id: string; name: string }) {
     setPendingPersonal(null);
     try {
-      await usePersonalVoice({
+      await applyPersonalVoice({
         data: {
           projectId,
           personId: person.id,
