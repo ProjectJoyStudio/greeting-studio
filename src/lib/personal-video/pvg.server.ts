@@ -7,7 +7,7 @@ import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 export const PROJECT_COLUMNS =
   "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids";
 export const PERSON_COLUMNS =
-  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, part_text, recording_bucket, recording_path, recording_duration_seconds";
+  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
   "id, project_id, variation_index, status, storage_bucket, storage_path, error_code, error_message, prediction_id, created_at";
 
@@ -56,6 +56,7 @@ export interface PersonRow {
   voice_source?: string | null;
   voice_category?: string | null;
   voice_confirmed?: boolean | null;
+  personal_voice_id?: string | null;
   part_text?: string | null;
   recording_bucket?: string | null;
   recording_path?: string | null;
@@ -112,6 +113,7 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
         ? row.voice_category
         : null,
     voiceConfirmed: Boolean(row.voice_confirmed),
+    personalVoiceId: row.personal_voice_id ?? null,
     partText: row.part_text ?? "",
     recordingUrl: await signedUrl(row.recording_bucket ?? null, row.recording_path ?? null),
     recordingDurationSeconds: Number(row.recording_duration_seconds ?? 0),
