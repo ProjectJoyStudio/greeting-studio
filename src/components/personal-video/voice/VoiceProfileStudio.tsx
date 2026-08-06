@@ -4,11 +4,11 @@ import { Check, Loader2, Mic, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import { audioDuration, fileToBase64 } from "@/lib/personal-video/voice/audio";
+import { audioDuration, fileToBase64 } from "@/lib/personal-video/voice/mixdown";
 import {
   isAcceptedRecording,
   PVG_RECORDING_MAX_BYTES,
-} from "@/lib/personal-video/voice/recordings";
+} from "@/lib/personal-video/voice/speech";
 import {
   ENROLLMENT_RULE_KEYS,
   enrollmentText,
