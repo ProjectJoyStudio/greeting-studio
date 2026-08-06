@@ -15,11 +15,11 @@ const EXTENSIONS: Record<string, string> = {
   "audio/wave": "wav",
 };
 
-function bytesOf(base64: string): Uint8Array {
+function bytesOf(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+  return bytes.buffer;
 }
 
 /** The words heard in a short sample, or null when listening was not possible. */
