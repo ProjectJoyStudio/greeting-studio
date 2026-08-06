@@ -39,6 +39,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
+import { Route as DashboardVoicesRouteImport } from './routes/dashboard.voices'
 import { Route as DashboardVideoGreetingsRouteImport } from './routes/dashboard.video-greetings'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
@@ -241,6 +242,11 @@ const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
   id: '/live-editor/$animationId',
   path: '/live-editor/$animationId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardVoicesRoute = DashboardVoicesRouteImport.update({
+  id: '/voices',
+  path: '/voices',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardVideoGreetingsRoute = DashboardVideoGreetingsRouteImport.update({
   id: '/video-greetings',
@@ -571,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
+  '/dashboard/voices': typeof DashboardVoicesRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
@@ -652,6 +659,7 @@ export interface FileRoutesByTo {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
+  '/dashboard/voices': typeof DashboardVoicesRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
@@ -737,6 +745,7 @@ export interface FileRoutesById {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/video-greetings': typeof DashboardVideoGreetingsRoute
+  '/dashboard/voices': typeof DashboardVoicesRoute
   '/live-editor/$animationId': typeof LiveEditorAnimationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
@@ -823,6 +832,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
+    | '/dashboard/voices'
     | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
@@ -904,6 +914,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
+    | '/dashboard/voices'
     | '/live-editor/$animationId'
     | '/admin'
     | '/catalog'
@@ -988,6 +999,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/settings'
     | '/dashboard/video-greetings'
+    | '/dashboard/voices'
     | '/live-editor/$animationId'
     | '/admin/'
     | '/catalog/'
@@ -1262,6 +1274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/live-editor/$animationId'
       preLoaderRoute: typeof LiveEditorAnimationIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/voices': {
+      id: '/dashboard/voices'
+      path: '/voices'
+      fullPath: '/dashboard/voices'
+      preLoaderRoute: typeof DashboardVoicesRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/dashboard/video-greetings': {
       id: '/dashboard/video-greetings'
@@ -1746,6 +1765,7 @@ interface DashboardRouteChildren {
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardVideoGreetingsRoute: typeof DashboardVideoGreetingsRoute
+  DashboardVoicesRoute: typeof DashboardVoicesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -1759,6 +1779,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardVideoGreetingsRoute: DashboardVideoGreetingsRoute,
+  DashboardVoicesRoute: DashboardVoicesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
@@ -1805,13 +1826,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

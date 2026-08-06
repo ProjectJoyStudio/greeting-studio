@@ -65,9 +65,20 @@ import {
   type VoiceCategory,
 } from "@/lib/voice-library/types";
 import { autoAssignVoices, recommendVoices } from "@/lib/personal-video/voice/auto-assign";
-import { RecordingStudio, type PendingRecording } from "./voice/RecordingStudio";
+import {
+  RecordingStudio,
+  type PendingRecording,
+  type RecordingChoice,
+} from "./voice/RecordingStudio";
+import {
+  assignPersonalVoice,
+  listProjectPersonalVoices,
+  savePersonalVoice as savePersonalVoiceFn,
+  savePersonalVoiceStyle,
+} from "@/lib/personal-video/voice/personal-voices.functions";
+import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
 
-type VoiceMode = "library" | "own";
+type VoiceMode = "library" | "own" | "mine";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
@@ -130,6 +141,16 @@ export function VoicePanel({
   const dropRecording = useServerFn(deletePvgPersonRecording);
   const loadRecordings = useServerFn(listPvgPersonRecordings);
   const confirmPermission = useServerFn(confirmPvgRecordingPermission);
+  const keepPersonalVoice = useServerFn(savePersonalVoiceFn);
+  const usePersonalVoice = useServerFn(assignPersonalVoice);
+  const setPersonalStyle = useServerFn(savePersonalVoiceStyle);
+  const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
+
+  /** The person's own voices: saved permanently or kept in this project. */
+  const personalVoices = useQuery({
+    queryKey: ["pvg", "personal-voices", projectId],
+    queryFn: () => loadPersonalVoices({ data: { projectId } }),
+  });
 
   const library = useQuery({
     queryKey: ["voice-library", "active"],
@@ -155,6 +176,14 @@ export function VoicePanel({
     { kind: "done" | "error"; text: string } | null
   >(null);
   const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
+  /** What the person decided about the recording waiting to be assigned. */
+  const [recordingChoice, setRecordingChoice] = useState<RecordingChoice | null>(null);
+  /** A saved personal voice waiting for the participant it belongs to. */
+  const [pendingPersonal, setPendingPersonal] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  /** The speaking style chosen for one participant, for this greeting only. */
+  const [styles, setStyles] = useState<Record<string, string>>({});
   const [voiceover, setVoiceover] = useState<PvgVoiceover | null>(null);
   const [busy, setBusy] = useState(false);
   const [samplingId, setSamplingId] = useState<string | null>(null);

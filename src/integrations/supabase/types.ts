@@ -2422,6 +2422,7 @@ export type Database = {
           original_bucket: string | null
           original_path: string | null
           part_text: string | null
+          personal_voice_id: string | null
           position: number
           project_id: string
           recording_bucket: string | null
@@ -2429,6 +2430,7 @@ export type Database = {
           recording_mime: string | null
           recording_path: string | null
           source: string
+          speaking_style: string | null
           updated_at: string
           user_id: string
           voice_category: string | null
@@ -2449,6 +2451,7 @@ export type Database = {
           original_bucket?: string | null
           original_path?: string | null
           part_text?: string | null
+          personal_voice_id?: string | null
           position?: number
           project_id: string
           recording_bucket?: string | null
@@ -2456,6 +2459,7 @@ export type Database = {
           recording_mime?: string | null
           recording_path?: string | null
           source?: string
+          speaking_style?: string | null
           updated_at?: string
           user_id: string
           voice_category?: string | null
@@ -2476,6 +2480,7 @@ export type Database = {
           original_bucket?: string | null
           original_path?: string | null
           part_text?: string | null
+          personal_voice_id?: string | null
           position?: number
           project_id?: string
           recording_bucket?: string | null
@@ -2483,6 +2488,7 @@ export type Database = {
           recording_mime?: string | null
           recording_path?: string | null
           source?: string
+          speaking_style?: string | null
           updated_at?: string
           user_id?: string
           voice_category?: string | null
@@ -2494,7 +2500,94 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "pvg_people_personal_voice_id_fkey"
+            columns: ["personal_voice_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_personal_voices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pvg_people_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvg_personal_voices: {
+        Row: {
+          consent_confirmed: boolean
+          consent_confirmed_at: string | null
+          created_at: string
+          display_name: string
+          duration_seconds: number
+          id: string
+          language: string
+          processed_bucket: string | null
+          processed_mime: string | null
+          processed_path: string | null
+          processing_error: string | null
+          processing_status: string
+          project_id: string | null
+          provider: string | null
+          provider_voice_id: string | null
+          scope: string
+          source_bucket: string | null
+          source_mime: string | null
+          source_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent_confirmed?: boolean
+          consent_confirmed_at?: string | null
+          created_at?: string
+          display_name: string
+          duration_seconds?: number
+          id?: string
+          language?: string
+          processed_bucket?: string | null
+          processed_mime?: string | null
+          processed_path?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          project_id?: string | null
+          provider?: string | null
+          provider_voice_id?: string | null
+          scope?: string
+          source_bucket?: string | null
+          source_mime?: string | null
+          source_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent_confirmed?: boolean
+          consent_confirmed_at?: string | null
+          created_at?: string
+          display_name?: string
+          duration_seconds?: number
+          id?: string
+          language?: string
+          processed_bucket?: string | null
+          processed_mime?: string | null
+          processed_path?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          project_id?: string | null
+          provider?: string | null
+          provider_voice_id?: string | null
+          scope?: string
+          source_bucket?: string | null
+          source_mime?: string | null
+          source_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_personal_voices_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "pvg_projects"
