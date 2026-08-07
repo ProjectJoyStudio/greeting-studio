@@ -4,13 +4,7 @@
 // volume, timing or synchronisation themselves.
 
 import { PVG_MIN_PART_GAP_SECONDS, PVG_PART_GAP_SECONDS, PVG_MAX_SPEECH_SPEED } from "./speech";
-import {
-  groupSyncCheck,
-  naturalTarget,
-  PVG_SYNC_MAX_SPEEDUP,
-  PVG_SYNC_MAX_STRETCH,
-  PVG_SYNC_TOLERANCE,
-} from "./sync-limits";
+import { PVG_SYNC_MAX_SPEEDUP, PVG_SYNC_MAX_STRETCH } from "./sync-limits";
 
 const SAMPLE_RATE = 44100;
 /** Comfortable loudness of the finished recording. */
@@ -35,6 +29,10 @@ export interface MixResult {
    * it still sounds natural. The number is the place of that voice in the list.
    */
   unsyncable?: number;
+  /** How long the greeting really needs when spoken naturally, in seconds. */
+  neededSeconds?: number;
+  /** How much time the chosen video length leaves for speech, in seconds. */
+  allowedSeconds?: number;
   /** Plain numbers describing why that one voice could not be brought in step. */
   unsyncableDetail?: {
     /** Natural length of that voice, in seconds. */
@@ -192,14 +190,91 @@ export async function mergeInOrder(
 
 /** The most a voice may be quickened or calmed and still sound like itself. */
 const SYNC_MAX_SPEED = PVG_MAX_SPEECH_SPEED;
-const SYNC_MIN_SPEED = 1 / PVG_MAX_SPEECH_SPEED;
 
 /**
- * Lets every chosen voice speak the whole greeting together, truly together:
- * every recording is levelled, its quiet edges removed, and then brought word
- * by word into step with the others, so the voices begin, speak and end as
- * one. Nobody's voice is ever exchanged for another and no word is ever
- * removed — only the pace of speaking is gently adjusted.
+ * Aligns one real recording to one shared length, keeping the voice itself
+ * untouched: the natural pauses inside the greeting give way first, only then
+ * is the pace adjusted a little, and never beyond what still sounds like a
+ * person. The result always begins at the very same moment as every other
+ * voice and always lasts exactly the shared length.
+ */
+function alignTrack(track: Float32Array, target: number): Float32Array {
+  const out = new Float32Array(Math.max(1, target));
+  if (track.length === 0) return out;
+  const parts = speechSegments(track);
+  const pieces: SpeechPart[] = parts.length ? parts : [{ start: 0, end: track.length }];
+
+  const spokenTotal = pieces.reduce((sum, part) => sum + (part.end - part.start), 0);
+  const gaps: number[] = [];
+  for (let i = 1; i < pieces.length; i += 1) {
+    gaps.push(Math.max(0, pieces[i]!.start - pieces[i - 1]!.end));
+  }
+  const maxGap = Math.round(MAX_INNER_PAUSE * SAMPLE_RATE);
+  const minGap = Math.round(MIN_INNER_PAUSE * SAMPLE_RATE);
+  const kept = gaps.map((gap) => Math.min(gap, maxGap));
+  const keptTotal = kept.reduce((a, b) => a + b, 0);
+
+  let extra = target - (spokenTotal + keptTotal);
+  const finalGaps = [...kept];
+
+  if (extra < 0) {
+    // Too long: the pauses are tightened before a single word is hurried.
+    let owed = -extra;
+    const room = finalGaps.reduce((sum, gap) => sum + Math.max(0, gap - minGap), 0);
+    if (room > 0) {
+      const share = Math.min(1, owed / room);
+      for (let i = 0; i < finalGaps.length; i += 1) {
+        const give = Math.round(Math.max(0, finalGaps[i]! - minGap) * share);
+        finalGaps[i] = finalGaps[i]! - give;
+        owed -= give;
+      }
+    }
+    extra = -Math.max(0, owed);
+  } else if (extra > 0) {
+    // Too short: the pauses are widened before a single word is drawn out.
+    const room = finalGaps.reduce((sum, gap) => sum + Math.max(0, maxGap - gap), 0);
+    if (room > 0) {
+      const use = Math.min(extra, room);
+      const share = use / room;
+      for (let i = 0; i < finalGaps.length; i += 1) {
+        const add = Math.round(Math.max(0, maxGap - finalGaps[i]!) * share);
+        finalGaps[i] = finalGaps[i]! + add;
+        extra -= add;
+      }
+    }
+  }
+
+  // Whatever the pauses could not settle is left to a small, safe change of
+  // pace — never more than a voice can carry naturally.
+  const gapTotal = finalGaps.reduce((a, b) => a + b, 0);
+  const speechRoom = Math.max(1, target - gapTotal);
+  const wanted = Math.min(
+    Math.round(spokenTotal * PVG_SYNC_MAX_STRETCH),
+    Math.max(Math.round(spokenTotal / PVG_SYNC_MAX_SPEEDUP), speechRoom),
+  );
+  const factor = wanted / Math.max(1, spokenTotal);
+
+  let cursor = 0;
+  for (let i = 0; i < pieces.length; i += 1) {
+    const piece = track.slice(pieces[i]!.start, pieces[i]!.end);
+    const length = Math.max(1, Math.round(piece.length * factor));
+    const shaped = timeStretch(piece, length);
+    for (let j = 0; j < shaped.length && cursor + j < out.length; j += 1) {
+      out[cursor + j] = shaped[j]!;
+    }
+    cursor += length + (finalGaps[i] ?? 0);
+    if (cursor >= out.length) break;
+  }
+  return out;
+}
+
+/**
+ * Lets every chosen voice speak the whole greeting together, truly together.
+ * Project Joy first lets each voice speak normally, then measures the real
+ * length of what was actually spoken, and only then brings the recordings into
+ * step: the longest natural voice sets the length, the others keep their words
+ * and simply breathe a little differently. No voice is ever refused because of
+ * an estimate, and the same recordings always lead to the same result.
  */
 export async function blendTogether(
   sources: MixSource[],
@@ -209,172 +284,37 @@ export async function blendTogether(
   if (tracks.length === 0) return finish(new Float32Array(1));
   if (tracks.length === 1) return withinLimit(tracks[0]!, options);
 
-  // Voices that are already the very same recording — the same voice chosen for
-  // several participants — never need to be brought in step with themselves.
-  const shapes = tracks.map(speechShape);
-  const commonParts = Math.min(...shapes.map((s) => s.parts.length));
-  if (commonParts < 1) {
-    // Nothing recognisable as speech: the tracks are simply laid over one
-    // another, starting together.
-    return withinLimit(overlay(tracks), options);
-  }
-
-  // Every recording is described with the same number of spoken pieces, so the
-  // words of all voices can be placed side by side.
-  const grouped = shapes.map((shape) => regroup(shape.parts, commonParts));
-
-  // The shared shape of the greeting: each spoken piece lasts what the voices
-  // naturally agree on. Never the longest voice deciding for everybody — the
-  // balanced middle, so a naturally short voice is never drawn out to match a
-  // slow one.
-  const pieceLengths: number[] = [];
-  // Where a piece may land so that no single voice has to be hurried or held
-  // back beyond what still sounds natural. Slowing a voice is heard far sooner
-  // than quickening it, so the two limits are deliberately different.
-  const lowest: number[] = [];
-  const highest: number[] = [];
-  for (let p = 0; p < commonParts; p += 1) {
-    const spoken = grouped.map((g) => Math.max(1, g[p]!.end - g[p]!.start));
-    const balanced = naturalTarget(spoken);
-    if (balanced === null) {
-      // A voice so much slower or quicker than the others that no shared
-      // length exists for a piece of the greeting is the only true failure.
-      const fit = groupSyncCheck(spoken);
-      const index = fit.worstIndex;
-      return {
-        ...finish(new Float32Array(1)),
-        unsyncable: index,
-        unsyncableDetail: {
-          spokenSeconds: Math.round((tracks[index]!.length / SAMPLE_RATE) * 100) / 100,
-          targetSeconds:
-            Math.round((middleOf(tracks.map((t) => t.length)) / SAMPLE_RATE) * 100) / 100,
-          factor: Math.round(fit.factor * 100) / 100,
-        },
-      };
-    }
-    lowest.push(Math.max(...spoken) / PVG_SYNC_MAX_SPEEDUP);
-    highest.push(Math.min(...spoken) * PVG_SYNC_MAX_STRETCH);
-    pieceLengths.push(balanced);
-  }
-  // Pauses are the first thing that gives way: the shortest natural pause any
-  // voice leaves is the one everybody keeps.
-  const gapLengths: number[] = [];
-  for (let p = 1; p < commonParts; p += 1) {
-    const shortest = Math.min(...grouped.map((g) => Math.max(0, g[p]!.start - g[p - 1]!.end)));
-    gapLengths.push(Math.min(shortest, Math.round(MAX_INNER_PAUSE * SAMPLE_RATE)));
-  }
-
-  let natural = pieceLengths.reduce((a, b) => a + b, 0) + gapLengths.reduce((a, b) => a + b, 0);
-  natural = Math.max(1, natural);
-
-  // A greeting is never stretched to fill the video: the time available is a
-  // limit, never a length that has to be reached.
+  // The real, measured length of the longest voice is the reference everybody
+  // meets at. Nothing here depends on guessed speaking rates.
+  const longest = Math.max(...tracks.map((t) => t.length));
   const limit = options.maxSeconds && options.maxSeconds > 0 ? options.maxSeconds : 0;
   const allowed = limit ? Math.floor(limit * SAMPLE_RATE) : 0;
-  const squeeze = allowed && natural > allowed ? allowed / natural : 1;
 
-  const targets: SpeechPart[] = [];
-  let cursor = 0;
-  for (let p = 0; p < commonParts; p += 1) {
-    // Even when time is short, no piece is squeezed past what the voices can
-    // still speak naturally; the pauses give way first.
-    const wanted = Math.max(1, Math.round(pieceLengths[p]! * squeeze));
-    const length = Math.max(Math.round(lowest[p]!), wanted);
-    targets.push({ start: cursor, end: cursor + length });
-    cursor += length + Math.round((gapLengths[p] ?? 0) * squeeze);
-  }
-  const total = Math.max(1, targets[targets.length - 1]!.end);
-
-  const aligned: Float32Array[] = [];
-  for (let index = 0; index < tracks.length; index += 1) {
-    const track = tracks[index]!;
-    const parts = grouped[index]!;
-    const out = new Float32Array(total);
-    let worst = 1;
-    for (let p = 0; p < commonParts; p += 1) {
-      const from = parts[p]!;
-      const to = targets[p]!;
-      const piece = track.slice(from.start, from.end);
-      const room = Math.max(1, to.end - to.start);
-      const factor = piece.length / room;
-      if (Math.abs(Math.log(factor)) > Math.abs(Math.log(worst))) worst = factor;
-      const shaped = timeStretch(piece, room);
-      for (let i = 0; i < shaped.length && to.start + i < out.length; i += 1) {
-        out[to.start + i] = shaped[i]!;
-      }
-    }
-    // The finished track is listened to once more before anybody hears it: a
-    // voice that ended up hurried or, worse, drawn out beyond what still sounds
-    // like a person never leaves this workshop, no matter how neatly the tracks
-    // begin and end together.
-    const overall = track.length / total;
-    const hurried = Math.max(worst, overall);
-    const heldBack = Math.min(worst, overall);
-    if (
-      hurried > PVG_SYNC_MAX_SPEEDUP * PVG_SYNC_TOLERANCE ||
-      heldBack < 1 / (PVG_SYNC_MAX_STRETCH * PVG_SYNC_TOLERANCE)
-    ) {
-      const reported =
-        Math.abs(Math.log(hurried)) > Math.abs(Math.log(heldBack)) ? hurried : heldBack;
-      return {
-        ...finish(new Float32Array(1)),
-        unsyncable: index,
-        unsyncableDetail: {
-          spokenSeconds: Math.round((track.length / SAMPLE_RATE) * 100) / 100,
-          targetSeconds: Math.round((total / SAMPLE_RATE) * 100) / 100,
-          factor: Math.round(reported * 100) / 100,
-        },
-      };
-    }
-    aligned.push(out);
+  let target = longest;
+  let overflow = false;
+  if (allowed && longest > allowed) {
+    // The video simply leaves less time than the greeting needs. The voices
+    // may be hurried a little, never past what still sounds natural.
+    const quickest = Math.round(longest / PVG_SYNC_MAX_SPEEDUP);
+    target = Math.max(allowed, quickest);
+    overflow = quickest > allowed;
   }
 
-  return withinLimit(overlay(aligned), options);
+  const aligned = tracks.map((track) => alignTrack(track, target));
+  const mixed = finish(overlay(aligned));
+  if (!overflow) return mixed;
+  return {
+    ...mixed,
+    overflow: true,
+    neededSeconds: Math.round((longest / SAMPLE_RATE) * 100) / 100,
+    allowedSeconds: Math.round((allowed / SAMPLE_RATE) * 100) / 100,
+  };
 }
 
 /** The longest pause Project Joy keeps inside a greeting spoken together. */
 const MAX_INNER_PAUSE = 0.35;
-
-/** Several recordings sounding at once, each clearly audible, none clipping. */
-function overlay(tracks: Float32Array[]): Float32Array {
-  const total = Math.max(...tracks.map((t) => t.length), 1);
-  const mix = new Float32Array(total);
-  const share = 1 / Math.sqrt(tracks.length);
-  for (const track of tracks) {
-    for (let i = 0; i < track.length; i += 1) mix[i] = mix[i]! + track[i]! * share;
-  }
-  return mix;
-}
-
-/** The middle value of a set of lengths — never the slowest, never the fastest. */
-function middleOf(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2
-    ? sorted[middle]!
-    : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
-}
-
-function speechShape(samples: Float32Array): { parts: SpeechPart[] } {
-  const parts = speechSegments(samples);
-  return { parts: parts.length ? parts : [{ start: 0, end: samples.length }] };
-}
-
-/**
- * Describes one recording with a chosen number of spoken pieces: neighbouring
- * words are joined until every voice can be compared piece by piece.
- */
-function regroup(parts: SpeechPart[], count: number): SpeechPart[] {
-  if (parts.length <= count) return parts.slice(0, count);
-  const out: SpeechPart[] = [];
-  const per = parts.length / count;
-  for (let i = 0; i < count; i += 1) {
-    const from = parts[Math.floor(i * per)]!;
-    const last = parts[Math.min(parts.length - 1, Math.floor((i + 1) * per) - 1)]!;
-    out.push({ start: from.start, end: Math.max(from.end, last.end) });
-  }
-  return out;
-}
+/** The shortest pause left between words, so speech never runs together. */
+const MIN_INNER_PAUSE = 0.06;
 
 /**
  * The blended greeting is quickened, never cut, if the video leaves less time
@@ -394,6 +334,17 @@ function withinLimit(samples: Float32Array, options: MixOptions): MixResult {
 interface SpeechPart {
   start: number;
   end: number;
+}
+
+/** Several recordings sounding at once, each clearly audible, none clipping. */
+function overlay(tracks: Float32Array[]): Float32Array {
+  const total = Math.max(...tracks.map((t) => t.length), 1);
+  const mix = new Float32Array(total);
+  const share = 1 / Math.sqrt(tracks.length);
+  for (const track of tracks) {
+    for (let i = 0; i < track.length; i += 1) mix[i] = mix[i]! + track[i]! * share;
+  }
+  return mix;
 }
 
 /**
