@@ -842,7 +842,7 @@ export function VoicePanel({
     return participants.map((person, index) => {
       return {
         words: wordCount(partOf(person, index)),
-        secondsPerWord: secondsPerWord(assignments[person.id]?.id ?? null, language),
+        secondsPerWord: secondsPerWord(chosenFor(person)?.id ?? null, language),
       };
     });
   }
@@ -930,12 +930,26 @@ export function VoicePanel({
 
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
+        // Every participant with a line must have a voice: the exact voice the
+        // person sees next to their name is the voice that speaks.
+        const missing = participants.find(
+          (person, index) => Boolean(texts[index]) && !chosenFor(person),
+        );
+        if (missing) {
+          const index = participants.indexOf(missing);
+          const waiting = [
+            { key: "pvv_err_no_voice_for", name: participantLabel(missing, index) },
+          ];
+          setIssues(waiting);
+          toast.error(voiceIssueText(waiting[0]!, t));
+          return;
+        }
         for (let index = 0; index < participants.length; index += 1) {
           const person = participants[index]!;
           const text = texts[index] ?? "";
-          const voice = assignments[person.id];
+          const voice = chosenFor(person);
           if (!text || !voice) continue;
-          const track = await speak(text, voice.id, speed);
+          const track = await speak(text, voice.speakId, speed);
           rememberPace(voice.id, language, wordCount(text), track.seconds, speed);
           sources.push(track);
           summary.push({
