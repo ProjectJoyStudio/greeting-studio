@@ -307,17 +307,22 @@ export function VoicePanel({
   }, [voiceover?.audioUrl]);
 
   const persistSpeech = useCallback(
-    (next: { speechMode?: PvgSpeechMode; chorusVoiceIds?: string[] }) => {
+    (next: {
+      speechMode?: PvgSpeechMode;
+      chorusVoiceIds?: string[];
+      speakerPersonId?: string | null;
+    }) => {
       void saveSpeech({
         data: {
           projectId,
           speechMode: next.speechMode ?? speechMode,
           syncMode,
           chorusVoiceIds: next.chorusVoiceIds ?? [],
+          speakerPersonId: next.speakerPersonId !== undefined ? next.speakerPersonId : speakerId,
         },
       }).catch(() => undefined);
     },
-    [saveSpeech, projectId, speechMode, syncMode],
+    [saveSpeech, projectId, speechMode, syncMode, speakerId],
   );
 
   function participantLabel(person: PvgPerson, index: number): string {
@@ -391,9 +396,16 @@ export function VoicePanel({
 
   /** Participants speaking in this mode whose voice still needs a decision. */
   const speakingParticipants = useMemo(
-    () => (speechMode === "single" ? participants.slice(0, 1) : participants),
-    [speechMode, participants],
+    () => (speechMode === "single" ? (speaker ? [speaker] : []) : participants),
+    [speechMode, participants, speaker],
   );
+
+  /** The one participant chosen to speak everything keeps their choice. */
+  function selectSpeaker(person: PvgPerson) {
+    if (disabled) return;
+    setSpeakerId(person.id);
+    persistSpeech({ speakerPersonId: person.id });
+  }
 
   /**
    * The one voice a participant speaks with, wherever it comes from. A voice
@@ -444,10 +456,21 @@ export function VoicePanel({
       speechMode === "chorus"
         ? []
         : speakingParticipants.filter(
-            (person) => Boolean(assignments[person.id]) && !confirmed[person.id],
+            (person) =>
+              Boolean(assignments[person.id] ?? personalAssigned[person.id]) &&
+              !confirmed[person.id],
           ),
-    [speechMode, speakingParticipants, assignments, confirmed],
+    [speechMode, speakingParticipants, assignments, personalAssigned, confirmed],
   );
+
+  /** The voice the single speaker uses, wherever it comes from. */
+  const speakerVoice = speaker ? chosenFor(speaker) : null;
+
+  const voiceChanged = Boolean(
+    voiceover && speechMode === "single" && speakerVoice && voiceover.voiceId !== speakerVoice.id,
+  );
+  const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
+  const outdated = voiceChanged || textChanged;
 
   /**
    * A suitable voice for every participant that still needs one, always from
