@@ -110,9 +110,15 @@ describe("whole-group voice solving", () => {
       comboKey(["papa", "mama", "emma"]),
       comboKey(["papa", "mama", "nora"]),
     ]);
-    const plan = solveGroup(members, library, "en", { ...context, failedCombos: failed }, {
-      failingPersonId: "c",
-    });
+    const plan = solveGroup(
+      members,
+      library,
+      "en",
+      { ...context, failedCombos: failed },
+      {
+        failingPersonId: "c",
+      },
+    );
     // Whatever it proposes, the resulting complete set is never one that has
     // already been proven not to work.
     const resulting = members.map(
@@ -123,10 +129,7 @@ describe("whole-group voice solving", () => {
 
   it("stops instead of looping when nothing can work", () => {
     const plan = solveGroup(
-      [
-        member("a", "papa", "male", "manual"),
-        member("b", "bella", "female", "manual"),
-      ],
+      [member("a", "papa", "male", "manual"), member("b", "bella", "female", "manual")],
       [voice("slowa", "female", 1)],
       "en",
       { ...context, blocked: new Set(["slowa"]) },

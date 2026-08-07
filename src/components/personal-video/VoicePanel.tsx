@@ -47,11 +47,7 @@ import {
 } from "@/lib/personal-video/voice/speech";
 import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
 import { compatibilityKey } from "@/lib/personal-video/voice/compatibility";
-import {
-  comboKey,
-  solveGroup,
-  type GroupMember,
-} from "@/lib/personal-video/voice/group-solver";
+import { comboKey, solveGroup, type GroupMember } from "@/lib/personal-video/voice/group-solver";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
@@ -582,8 +578,7 @@ export function VoicePanel({
         label: participantLabel(person, index),
         voiceId: voice.speakId,
         voiceName: voice.name,
-        category:
-          categories[person.id] ?? (library ? voiceCategory(library) : null) ?? null,
+        category: categories[person.id] ?? (library ? voiceCategory(library) : null) ?? null,
         // A voice from "My voices" is the person's own: it is held on to
         // longest and only ever exchanged when nothing else can help.
         preservation: voice.personal ? "personal" : "manual",
@@ -1509,39 +1504,41 @@ export function VoicePanel({
                           </p>
                           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                             {plan.alternatives.map((voice) => (
-                        <li
-                          key={voice.id}
-                          className="rounded-2xl border border-border/60 bg-background/60 p-3"
-                        >
-                          <p className="text-sm font-medium">{voice.displayName || voice.name}</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            {t("pvv_sync_recommended_note")}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => void playSample(sampleOf(voice))}
-                              disabled={samplingId !== null}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
-                            >
-                              {samplingId === voice.externalVoiceId ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Headphones className="h-3 w-3" />
-                              )}
-                              {t("pvv_preview")}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => replaceChorusVoice(voice)}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-                            >
-                              <Check className="h-3 w-3" />
-                              {t("pvv_select")}
-                            </button>
-                          </div>
-                        </li>
+                              <li
+                                key={voice.id}
+                                className="rounded-2xl border border-border/60 bg-background/60 p-3"
+                              >
+                                <p className="text-sm font-medium">
+                                  {voice.displayName || voice.name}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {t("pvv_sync_recommended_note")}
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void playSample(sampleOf(voice))}
+                                    disabled={samplingId !== null}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                                  >
+                                    {samplingId === voice.externalVoiceId ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Headphones className="h-3 w-3" />
+                                    )}
+                                    {t("pvv_preview")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => replaceChorusVoice(voice)}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                    {t("pvv_select")}
+                                  </button>
+                                </div>
+                              </li>
                             ))}
                           </ul>
                         </>

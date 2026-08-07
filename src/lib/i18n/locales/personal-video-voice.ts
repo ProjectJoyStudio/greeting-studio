@@ -130,8 +130,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Keep",
     pvv_sync_plan_replace: "Replace",
     pvv_sync_plan_confirm: "Confirm changes",
-    pvv_sync_no_combination: "Project Joy could not find a natural combination for this greeting within the chosen video length.",
-    pvv_sync_no_combination_hint: "Try a longer video, choose different voices yourself, or shorten the greeting.",
+    pvv_sync_no_combination:
+      "Project Joy could not find a natural combination for this greeting within the chosen video length.",
+    pvv_sync_no_combination_hint:
+      "Try a longer video, choose different voices yourself, or shorten the greeting.",
     pvv_sync_no_recommendations: "No other voices of this category are available right now.",
     pvv_chorus_min: "Choose at least two voices.",
     pvv_record_title: "Record your greeting with your own voice",
@@ -303,8 +305,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Оставить",
     pvv_sync_plan_replace: "Заменить",
     pvv_sync_plan_confirm: "Подтвердить изменения",
-    pvv_sync_no_combination: "Project Joy не нашёл естественную комбинацию для этого поздравления при выбранной длительности видео.",
-    pvv_sync_no_combination_hint: "Увеличьте длительность видео, выберите другие голоса вручную или сократите текст.",
+    pvv_sync_no_combination:
+      "Project Joy не нашёл естественную комбинацию для этого поздравления при выбранной длительности видео.",
+    pvv_sync_no_combination_hint:
+      "Увеличьте длительность видео, выберите другие голоса вручную или сократите текст.",
     pvv_sync_no_recommendations:
       "\u0421\u0435\u0439\u0447\u0430\u0441 \u043d\u0435\u0442 \u0434\u0440\u0443\u0433\u0438\u0445 \u0433\u043e\u043b\u043e\u0441\u043e\u0432 \u044d\u0442\u043e\u0439 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438.",
     pvv_chorus_min: "Выберите минимум два голоса.",
@@ -476,7 +480,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Behalten",
     pvv_sync_plan_replace: "Ersetzen",
     pvv_sync_plan_confirm: "Änderungen bestätigen",
-    pvv_sync_no_combination: "Project Joy hat für diesen Gruß in der gewählten Videolänge keine natürliche Kombination gefunden.",
+    pvv_sync_no_combination:
+      "Project Joy hat für diesen Gruß in der gewählten Videolänge keine natürliche Kombination gefunden.",
     pvv_sync_no_combination_hint: "Wähle ein längeres Video, andere Stimmen oder kürze den Gruß.",
     pvv_sync_no_recommendations:
       "Derzeit sind keine weiteren Stimmen dieser Kategorie verf\u00fcgbar.",
@@ -651,8 +656,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Залишити",
     pvv_sync_plan_replace: "Замінити",
     pvv_sync_plan_confirm: "Підтвердити зміни",
-    pvv_sync_no_combination: "Project Joy не знайшов природну комбінацію для цього привітання за обраної тривалості відео.",
-    pvv_sync_no_combination_hint: "Збільште тривалість відео, оберіть інші голоси або скоротіть текст.",
+    pvv_sync_no_combination:
+      "Project Joy не знайшов природну комбінацію для цього привітання за обраної тривалості відео.",
+    pvv_sync_no_combination_hint:
+      "Збільште тривалість відео, оберіть інші голоси або скоротіть текст.",
     pvv_sync_no_recommendations:
       "\u041d\u0430\u0440\u0430\u0437\u0456 \u043d\u0435\u043c\u0430\u0454 \u0456\u043d\u0448\u0438\u0445 \u0433\u043e\u043b\u043e\u0441\u0456\u0432 \u0446\u0456\u0454\u0457 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0456\u0457.",
     pvv_chorus_min: "Оберіть щонайменше два голоси.",
@@ -824,8 +831,10 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Garder",
     pvv_sync_plan_replace: "Remplacer",
     pvv_sync_plan_confirm: "Confirmer les changements",
-    pvv_sync_no_combination: "Project Joy n'a pas trouvé de combinaison naturelle pour ce message dans la durée vidéo choisie.",
-    pvv_sync_no_combination_hint: "Allongez la vidéo, choisissez d'autres voix ou raccourcissez le message.",
+    pvv_sync_no_combination:
+      "Project Joy n'a pas trouvé de combinaison naturelle pour ce message dans la durée vidéo choisie.",
+    pvv_sync_no_combination_hint:
+      "Allongez la vidéo, choisissez d'autres voix ou raccourcissez le message.",
     pvv_sync_no_recommendations:
       "Aucune autre voix de cette cat\u00e9gorie n'est disponible pour le moment.",
     pvv_chorus_min: "Choisissez au moins deux voix.",
@@ -998,7 +1007,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_sync_plan_keep: "Zachowaj",
     pvv_sync_plan_replace: "Zamień",
     pvv_sync_plan_confirm: "Potwierdź zmiany",
-    pvv_sync_no_combination: "Project Joy nie znalazł naturalnej kombinacji dla tego życzenia przy wybranej długości wideo.",
+    pvv_sync_no_combination:
+      "Project Joy nie znalazł naturalnej kombinacji dla tego życzenia przy wybranej długości wideo.",
     pvv_sync_no_combination_hint: "Wydłuż wideo, wybierz inne głosy lub skróć życzenie.",
     pvv_sync_no_recommendations: "Obecnie brak innych g\u0142os\u00f3w w tej kategorii.",
     pvv_chorus_min: "Wybierz co najmniej dwa głosy.",
