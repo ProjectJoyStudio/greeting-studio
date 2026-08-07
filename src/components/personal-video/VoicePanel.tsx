@@ -62,8 +62,11 @@ import {
   listProjectPersonalVoices,
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
-import { PERSONAL_VOICE_STYLES } from "@/lib/personal-video/voice/personal-voices";
-import { chorusEntriesFor, type ChorusEntry } from "@/lib/personal-video/voice/chorus";
+import {
+  PERSONAL_VOICE_STYLES,
+  personalVoiceRef,
+} from "@/lib/personal-video/voice/personal-voices";
+import type { ChorusEntry } from "@/lib/personal-video/voice/chorus";
 
 type VoiceMode = "library" | "mine" | "add";
 
@@ -84,6 +87,16 @@ const SPEECH_MODES: { id: PvgSpeechMode; title: string; note: string }[] = [
 interface Assignment {
   id: string;
   name: string;
+}
+
+/** One participant's voice, wherever it comes from. */
+interface ChosenVoice {
+  /** The id used for speaking: a library voice id or `personal:<uuid>`. */
+  speakId: string;
+  /** The plain id of the voice itself. */
+  id: string;
+  name: string;
+  personal: boolean;
 }
 
 /**
@@ -142,7 +155,6 @@ export function VoicePanel({
   const [speechMode, setSpeechMode] = useState<PvgSpeechMode>(savedSpeechMode ?? "single");
   // Voices speaking together always begin, speak and end as one.
   const syncMode: PvgSyncMode = "simultaneous";
-  const [chorus, setChorus] = useState<Assignment[]>([]);
   const [category, setCategory] = useState<VoiceCategory | null>(null);
   const [pending, setPending] = useState<LibraryVoice | null>(null);
   const [replaceFor, setReplaceFor] = useState<string | null>(null);
@@ -168,6 +180,8 @@ export function VoicePanel({
   const [samplingId, setSamplingId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [assignments, setAssignments] = useState<Record<string, Assignment>>({});
+  /** The voice from "My voices" one participant speaks with, when they have one. */
+  const [personalAssigned, setPersonalAssigned] = useState<Record<string, Assignment>>({});
   /** The voice group every participant belongs to: female, male or children. */
   const [categories, setCategories] = useState<Record<string, VoiceCategory>>({});
   /** Voices the person has listened to and kept. Nothing else may be used. */
@@ -181,6 +195,7 @@ export function VoicePanel({
    * until the person chooses another voice or closes it.
    */
   const [syncIssue, setSyncIssue] = useState<{
+    personId: string;
     index: number;
     voiceId: string;
     voiceName: string;
@@ -206,30 +221,28 @@ export function VoicePanel({
 
   useEffect(() => {
     const nextVoices: Record<string, Assignment> = {};
+    const nextPersonal: Record<string, Assignment> = {};
     const nextParts: Record<string, string> = {};
     const nextCategories: Record<string, VoiceCategory> = {};
     const nextConfirmed: Record<string, boolean> = {};
     for (const person of participants) {
       if (person.voiceId)
         nextVoices[person.id] = { id: person.voiceId, name: person.voiceName ?? person.voiceId };
+      if (person.personalVoiceId)
+        nextPersonal[person.id] = {
+          id: person.personalVoiceId,
+          name: person.voiceName ?? person.personalVoiceId,
+        };
       if (person.partText) nextParts[person.id] = person.partText;
       if (person.voiceCategory) nextCategories[person.id] = person.voiceCategory;
       nextConfirmed[person.id] = Boolean(person.voiceConfirmed);
     }
     setAssignments(nextVoices);
+    setPersonalAssigned(nextPersonal);
     setCategories((old) => ({ ...nextCategories, ...old }));
     setConfirmed((old) => ({ ...nextConfirmed, ...old }));
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
-
-  useEffect(() => {
-    if (!savedChorus?.length || chorus.length) return;
-    const found = savedChorus
-      .map((id) => voices.find((v) => v.externalVoiceId === id))
-      .filter((v): v is LibraryVoice => Boolean(v))
-      .map((v) => ({ id: v.externalVoiceId, name: v.displayName || v.name }));
-    if (found.length) setChorus(found);
-  }, [savedChorus, voices, chorus.length]);
 
   const primary = participants[0] ? assignments[participants[0].id] : undefined;
 
@@ -268,11 +281,11 @@ export function VoicePanel({
           projectId,
           speechMode: next.speechMode ?? speechMode,
           syncMode,
-          chorusVoiceIds: next.chorusVoiceIds ?? chorus.map((c) => c.id),
+          chorusVoiceIds: next.chorusVoiceIds ?? [],
         },
       }).catch(() => undefined);
     },
-    [saveSpeech, projectId, speechMode, syncMode, chorus],
+    [saveSpeech, projectId, speechMode, syncMode],
   );
 
   function participantLabel(person: PvgPerson, index: number): string {
@@ -351,28 +364,48 @@ export function VoicePanel({
   );
 
   /**
-   * Every participant that truly has a voice when all of them speak together,
-   * no matter where that voice comes from: a Project Joy voice, a voice from
-   * "My voices" — every one of them a reusable voice profile.
+   * The one voice a participant speaks with, wherever it comes from. A voice
+   * from "My voices" counts exactly like a Project Joy voice.
    */
-  const buildChorusEntries = useCallback(
-    (list: Assignment[]): ChorusEntry[] => {
-      return chorusEntriesFor({
-        participants: participants.map((person, index) => ({
-          id: person.id,
-          label: person.name.trim() || `${t("pvv_participant")} ${index + 1}`,
-          personalVoiceId: person.personalVoiceId,
-        })),
-        assignments,
-        recordings: {},
-        personalVoices: personalVoices.data?.voices ?? [],
-        chosen: list,
-      });
+  const chosenFor = useCallback(
+    (person: PvgPerson): ChosenVoice | null => {
+      const personal = personalAssigned[person.id];
+      if (personal) {
+        const found = (personalVoices.data?.voices ?? []).find((v) => v.id === personal.id);
+        return {
+          speakId: personalVoiceRef(personal.id),
+          id: personal.id,
+          name: found?.displayName ?? personal.name,
+          personal: true,
+        };
+      }
+      const library = assignments[person.id];
+      if (library) {
+        return { speakId: library.id, id: library.id, name: library.name, personal: false };
+      }
+      return null;
     },
-    [participants, assignments, personalVoices.data, t],
+    [assignments, personalAssigned, personalVoices.data],
   );
 
-  const chorusEntries = useMemo(() => buildChorusEntries(chorus), [buildChorusEntries, chorus]);
+  /**
+   * Everyone who truly has a voice when all participants speak together. There
+   * is only ever one list: the participants and the voice each of them keeps.
+   */
+  const chorusMembers = useMemo(
+    () =>
+      participants
+        .map((person, index) => ({ person, index, voice: chosenFor(person) }))
+        .filter((m): m is { person: PvgPerson; index: number; voice: ChosenVoice } =>
+          Boolean(m.voice),
+        ),
+    [participants, chosenFor],
+  );
+
+  const chorusEntries = useMemo<ChorusEntry[]>(
+    () => chorusMembers.map((m) => ({ kind: "voice", id: m.voice.speakId, name: m.voice.name })),
+    [chorusMembers],
+  );
 
   const unconfirmed = useMemo(
     () =>
@@ -500,15 +533,15 @@ export function VoicePanel({
     const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
     // The group of the participant standing in this place always wins, so a
     // male participant is never offered a female voice.
-    const person = participants[syncIssue.index];
+    const person = participants.find((p) => p.id === syncIssue.personId);
     const chosenGroup = person ? categories[person.id] : undefined;
     const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
     return recommendVoices(voices, wanted, language, {
-      exclude: [syncIssue.voiceId, ...chorus.map((c) => c.id)],
+      exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
       limit: 5,
     });
-  }, [syncIssue, voices, chorus, language, participants, categories]);
+  }, [syncIssue, voices, chorusMembers, language, participants, categories]);
 
   /**
    * Only the highlighted place in the chorus receives the new voice. Everyone
@@ -517,16 +550,11 @@ export function VoicePanel({
    */
   function replaceChorusVoice(voice: LibraryVoice) {
     if (!syncIssue) return;
-    const next = chorus.map((entry, index) =>
-      index === syncIssue.index
-        ? { id: voice.externalVoiceId, name: voice.displayName || voice.name }
-        : entry,
-    );
-    setChorus(next);
-    persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
+    const person = participants.find((p) => p.id === syncIssue.personId);
+    if (!person) return;
     setSyncIssue(null);
     setShowRecommended(false);
-    void generate(next);
+    void give(person, voice, true);
   }
 
   async function give(person: PvgPerson, voice: LibraryVoice, viaReplace = false) {
@@ -536,23 +564,20 @@ export function VoicePanel({
     const label = participantLabel(person, index < 0 ? 0 : index);
     const previous = assignments[person.id] ?? null;
     setAssignments((prev) => ({ ...prev, [person.id]: { id: voice.externalVoiceId, name } }));
+    // A Project Joy voice always replaces a personal one, never both at once.
+    setPersonalAssigned((prev) => {
+      const next = { ...prev };
+      delete next[person.id];
+      return next;
+    });
     // A voice the person picks themselves is kept straight away.
     setCategories((prev) => ({ ...prev, [person.id]: group }));
     // A replaced voice always waits to be listened to and kept again.
     setConfirmed((prev) => ({ ...prev, [person.id]: !viaReplace }));
     setPending(null);
-    // Voices speaking together: only this participant's place changes.
-    if (speechMode === "chorus" && index >= 0) {
-      const nextChorus = [...chorus];
-      const entry = { id: voice.externalVoiceId, name };
-      if (index < nextChorus.length) nextChorus[index] = entry;
-      else nextChorus.push(entry);
-      setChorus(nextChorus);
-      persistSpeech({ chorusVoiceIds: nextChorus.map((v) => v.id) });
-      if (syncIssue?.index === index) {
-        setSyncIssue(null);
-        setShowRecommended(false);
-      }
+    if (syncIssue?.personId === person.id) {
+      setSyncIssue(null);
+      setShowRecommended(false);
     }
     try {
       await assign({
@@ -599,14 +624,30 @@ export function VoicePanel({
   }
 
   async function take(person: PvgPerson) {
+    const wasPersonal = Boolean(personalAssigned[person.id]);
     setAssignments((prev) => {
       const next = { ...prev };
       delete next[person.id];
       return next;
     });
+    setPersonalAssigned((prev) => {
+      const next = { ...prev };
+      delete next[person.id];
+      return next;
+    });
     setConfirmed((prev) => ({ ...prev, [person.id]: false }));
+    if (syncIssue?.personId === person.id) {
+      setSyncIssue(null);
+      setShowRecommended(false);
+    }
     try {
-      await assign({ data: { projectId, personId: person.id, voiceId: null } });
+      // The saved voice profile itself always stays in "My voices": only the
+      // link to this participant is removed.
+      if (wasPersonal) {
+        await applyPersonalVoice({ data: { projectId, personId: person.id, voiceId: null } });
+      } else {
+        await assign({ data: { projectId, personId: person.id, voiceId: null } });
+      }
       onAssigned?.();
     } catch {
       toast.error(t("pvv_failed"));
@@ -624,19 +665,6 @@ export function VoicePanel({
       }
       setReplaceFor(null);
     }
-    if (speechMode === "chorus") {
-      setChorus((prev) => {
-        const exists = prev.some((v) => v.id === voice.externalVoiceId);
-        const next = exists
-          ? prev.filter((v) => v.id !== voice.externalVoiceId)
-          : prev.length >= PVG_MAX_CHORUS_VOICES
-            ? prev
-            : [...prev, { id: voice.externalVoiceId, name: voice.displayName || voice.name }];
-        persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-        return next;
-      });
-      return;
-    }
     const only = participants[0];
     if (participants.length === 1 && only) {
       void give(only, voice);
@@ -646,8 +674,14 @@ export function VoicePanel({
   }
 
   /** Gives one participant a voice from "My voices". */
-  async function givePersonal(person: PvgPerson, voice: { id: string; name: string }) {
+  async function givePersonal(
+    person: PvgPerson,
+    voice: { id: string; name: string },
+    viaReplace = false,
+  ) {
     setPendingPersonal(null);
+    const index = participants.findIndex((p) => p.id === person.id);
+    const label = participantLabel(person, index < 0 ? 0 : index);
     try {
       await applyPersonalVoice({
         data: {
@@ -664,8 +698,23 @@ export function VoicePanel({
         delete next[person.id];
         return next;
       });
+      setPersonalAssigned((prev) => ({ ...prev, [person.id]: voice }));
       setConfirmed((prev) => ({ ...prev, [person.id]: true }));
-      toast.success(t("mv_assigned"));
+      if (syncIssue?.personId === person.id) {
+        setSyncIssue(null);
+        setShowRecommended(false);
+      }
+      setReplaceFor(null);
+      if (viaReplace) {
+        setMode(null);
+        setReplaceNotice({
+          kind: "done",
+          text: t("pvv_replaced_notice").replace("{name}", label).replace("{voice}", voice.name),
+        });
+        returnToCard(person.id);
+      } else {
+        toast.success(t("mv_assigned"));
+      }
       onAssigned?.();
     } catch {
       toast.error(t("pvv_failed"));
@@ -719,9 +768,9 @@ export function VoicePanel({
     return { base64: res.audioBase64, mimeType: res.mimeType, seconds: res.durationSeconds };
   }
 
-  async function generate(chorusOverride?: Assignment[]) {
+  async function generate() {
     if (running.current || busy || disabled) return;
-    const chorusList = chorusOverride ? buildChorusEntries(chorusOverride) : chorusEntries;
+    const chorusList = chorusEntries;
     // Every new synchronisation check starts with a clean slate.
     setSyncIssue(null);
     setShowRecommended(false);
@@ -744,9 +793,9 @@ export function VoicePanel({
       participants: participants.map((person, index) => ({
         id: person.id,
         label: participantLabel(person, index),
-        voiceId: assignments[person.id]?.id ?? null,
+        voiceId: chosenFor(person)?.speakId ?? null,
         partText: partOf(person, index),
-        personalVoiceId: person.personalVoiceId ?? null,
+        personalVoiceId: personalAssigned[person.id]?.id ?? null,
       })),
     });
     setIssues(found);
@@ -870,13 +919,18 @@ export function VoicePanel({
           maxSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         });
         if (merged.unsyncable !== undefined) {
-          const entry = chorusList[merged.unsyncable];
-          setSyncIssue({
-            index: merged.unsyncable,
-            voiceId: entry && entry.kind === "voice" ? entry.id : "",
-            voiceName: entry?.name ?? "",
-          });
-          toast.error(`${t("pvv_chorus_unsyncable")}${entry ? ` (${entry.name})` : ""}`);
+          const member = chorusMembers[merged.unsyncable];
+          if (member) {
+            setSyncIssue({
+              personId: member.person.id,
+              index: merged.unsyncable,
+              voiceId: member.voice.personal ? "" : member.voice.id,
+              voiceName: member.voice.name,
+            });
+          }
+          toast.error(
+            `${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`,
+          );
           return;
         }
         if (merged.overflow) {
@@ -925,6 +979,73 @@ export function VoicePanel({
         .then(() => setPlaying(true))
         .catch(() => setPlaying(false));
     }
+  }
+
+  /**
+   * The participant a voice is being chosen for right now. It is shown above
+   * every voice source, so it is always clear who is being edited.
+   */
+  function pickPersonal(voice: { id: string; name: string }) {
+    if (disabled) return;
+    // The participant chosen through "Replace" always keeps the voice.
+    if (replaceFor) {
+      const person = participants.find((p) => p.id === replaceFor);
+      if (person) {
+        void givePersonal(person, voice, true);
+        return;
+      }
+      setReplaceFor(null);
+    }
+    const only = participants[0];
+    if (participants.length === 1 && only) {
+      void givePersonal(only, voice);
+      return;
+    }
+    setPendingPersonal(voice);
+  }
+
+  function renderReplaceBanner() {
+    if (!replaceFor) return null;
+    const index = participants.findIndex((p) => p.id === replaceFor);
+    const person = participants[index] ?? participants[0];
+    if (!person) return null;
+    const label = participantLabel(person, index < 0 ? 0 : index);
+    const current = chosenFor(person);
+    return (
+      <div
+        className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 ${
+          libraryGlow
+            ? "border-primary bg-primary/15 shadow-warm ring-2 ring-primary/40"
+            : "border-primary/40 bg-primary/5"
+        }`}
+      >
+        <span className="flex items-center gap-3">
+          <ParticipantAvatar photoUrl={person.photoUrl} label={label} size="md" />
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-primary">
+              {t("pvv_replacing_for").replace("{name}", label)}
+            </span>
+            <span className="block text-[11px] text-muted-foreground">
+              {t("pvv_participant_n").replace("{n}", String((index < 0 ? 0 : index) + 1))}
+              {" · "}
+              {t("pvv_sync_current_voice")}: {current ? current.name : t("pvv_no_voice")}
+            </span>
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setReplaceFor(null);
+            setMode(null);
+            returnToCard(person.id);
+          }}
+          className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
+        >
+          <X className="h-3 w-3" />
+          {t("pvv_cancel_replacement")}
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -1044,13 +1165,14 @@ export function VoicePanel({
           <p className="mt-2 text-xs font-medium text-primary">
             {t("pvv_chorus_count")}: {chorusEntries.length} / {PVG_MAX_CHORUS_VOICES}
           </p>
-          {chorusEntries.length > 0 && (
+          {chorusMembers.length > 0 && (
             <ul className="mt-2 grid gap-2">
-              {chorusEntries.map((voice, index) => {
-                const broken = syncIssue?.index === index;
+              {chorusMembers.map(({ person, index, voice }) => {
+                const broken = syncIssue?.personId === person.id;
+                const label = participantLabel(person, index);
                 return (
                   <li
-                    key={`${voice.kind}-${voice.kind === "voice" ? voice.id : voice.url}-${index}`}
+                    key={person.id}
                     className={`rounded-2xl border px-3 py-2 ${
                       broken
                         ? "border-destructive bg-destructive/5"
@@ -1059,14 +1181,12 @@ export function VoicePanel({
                   >
                     <div className="flex items-center gap-2">
                       <ParticipantAvatar
-                        photoUrl={participants[index]?.photoUrl ?? null}
-                        label={chorusLabel(index)}
+                        photoUrl={person.photoUrl}
+                        label={label}
                         size="sm"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[11px] text-muted-foreground">
-                          {chorusLabel(index)}
-                        </span>
+                        <span className="block text-[11px] text-muted-foreground">{label}</span>
                         <span
                           className={`block truncate text-xs font-medium ${
                             broken ? "text-destructive" : "text-primary"
@@ -1078,24 +1198,24 @@ export function VoicePanel({
                       {broken && (
                         <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
                       )}
-                      {voice.kind === "voice" && (
-                        <button
-                          type="button"
-                          aria-label={t("pvv_remove")}
-                          className="rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-                          onClick={() => {
-                            const next = chorus.filter((v) => v.id !== voice.id);
-                            setChorus(next);
-                            persistSpeech({ chorusVoiceIds: next.map((v) => v.id) });
-                            if (broken) {
-                              setSyncIssue(null);
-                              setShowRecommended(false);
-                            }
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        disabled={disabled || openingFor !== null}
+                        onClick={() => openReplace(person)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        {t("pvv_replace")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        aria-label={t("pvv_remove")}
+                        className="rounded-full p-1 text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+                        onClick={() => void take(person)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
                     {broken && (
                       <p className="mt-1.5 text-[11px] font-medium text-destructive">
@@ -1113,7 +1233,9 @@ export function VoicePanel({
             <div className="mt-3 rounded-2xl border border-destructive/60 bg-destructive/5 p-4">
               <div className="flex items-start gap-3">
                 <ParticipantAvatar
-                  photoUrl={participants[syncIssue.index]?.photoUrl ?? null}
+                  photoUrl={
+                    participants.find((p) => p.id === syncIssue.personId)?.photoUrl ?? null
+                  }
                   label={chorusLabel(syncIssue.index)}
                   size="md"
                 />
@@ -1268,48 +1390,7 @@ export function VoicePanel({
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
         <div className="mt-5 scroll-mt-24" ref={libraryRef}>
-          {replaceFor &&
-            (() => {
-              const index = participants.findIndex((p) => p.id === replaceFor);
-              const person = participants[index] ?? participants[0]!;
-              const label = participantLabel(person, index < 0 ? 0 : index);
-              const current = assignments[person.id];
-              return (
-                <div
-                  className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 ${
-                    libraryGlow
-                      ? "border-primary bg-primary/15 shadow-warm ring-2 ring-primary/40"
-                      : "border-primary/40 bg-primary/5"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <ParticipantAvatar photoUrl={person.photoUrl} label={label} size="md" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-primary">
-                        {t("pvv_replacing_for").replace("{name}", label)}
-                      </span>
-                      <span className="block text-[11px] text-muted-foreground">
-                        {t("pvv_participant_n").replace("{n}", String((index < 0 ? 0 : index) + 1))}
-                        {" · "}
-                        {t("pvv_sync_current_voice")}: {current ? current.name : t("pvv_no_voice")}
-                      </span>
-                    </span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReplaceFor(null);
-                      setMode(null);
-                      returnToCard(person.id);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50"
-                  >
-                    <X className="h-3 w-3" />
-                    {t("pvv_cancel_replacement")}
-                  </button>
-                </div>
-              );
-            })()}
+          {renderReplaceBanner()}
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("pvv_choose_category")}
           </p>
@@ -1353,12 +1434,12 @@ export function VoicePanel({
                 <p className="text-xs text-muted-foreground">{t("pvv_no_voices")}</p>
               )}
               {byCategory.map((voice) => {
-                const inChorus = chorus.some((v) => v.id === voice.externalVoiceId);
+                const inUse = chorusMembers.some((m) => m.voice.id === voice.externalVoiceId);
                 return (
                   <div
                     key={voice.id}
                     className={`rounded-2xl border bg-background/60 p-3 ${
-                      inChorus ? "border-primary/60" : "border-border/60"
+                      inUse ? "border-primary/60" : "border-border/60"
                     }`}
                   >
                     <p className="text-sm font-medium">{voice.name}</p>
@@ -1388,11 +1469,7 @@ export function VoicePanel({
                         className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
                       >
                         <Check className="h-3 w-3" />
-                        {speechMode === "chorus"
-                          ? inChorus
-                            ? t("pvv_remove")
-                            : t("pvv_select")
-                          : t("pvv_select")}
+                        {t("pvv_select")}
                       </button>
                     </div>
                   </div>
@@ -1404,28 +1481,29 @@ export function VoicePanel({
         </div>
       )}
 
-      {/* My voices ------------------------------------------------------- */}
+      {/* Add your voice --------------------------------------------------- */}
       {mode === "add" && (
-        <VoiceProfileStudio
-          language={language}
-          projectId={projectId}
-          allowProjectScope
-          disabled={disabled}
-          onSaved={(voice) => {
-            void personalVoices.refetch();
-            const only = participants[0];
-            const entry = { id: voice.id, name: voice.displayName };
-            if (participants.length === 1 && only) {
-              void givePersonal(only, entry);
-              return;
-            }
-            setPendingPersonal(entry);
-          }}
-        />
+        <div className="mt-5">
+          {renderReplaceBanner()}
+          <VoiceProfileStudio
+            language={language}
+            projectId={projectId}
+            allowProjectScope
+            disabled={disabled}
+            onSaved={(voice) => {
+              void personalVoices.refetch();
+              // A voice created through "Replace" goes straight back to the
+              // participant it was started for.
+              pickPersonal({ id: voice.id, name: voice.displayName });
+            }}
+          />
+        </div>
       )}
 
+      {/* My voices ------------------------------------------------------- */}
       {mode === "mine" && (
         <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
+          {renderReplaceBanner()}
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("mv_tab_mine")}
           </p>
@@ -1457,15 +1535,7 @@ export function VoicePanel({
                 <button
                   type="button"
                   disabled={disabled || voice.processingStatus !== "ready"}
-                  onClick={() => {
-                    const only = participants[0];
-                    const entry = { id: voice.id, name: voice.displayName };
-                    if (participants.length === 1 && only) {
-                      void givePersonal(only, entry);
-                      return;
-                    }
-                    setPendingPersonal(entry);
-                  }}
+                  onClick={() => pickPersonal({ id: voice.id, name: voice.displayName })}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
                 >
                   <Check className="h-3 w-3" />
@@ -1646,7 +1716,7 @@ export function VoicePanel({
         )}
         <ul className="mt-3 space-y-2">
           {participants.map((person, index) => {
-            const chosen = assignments[person.id];
+            const chosen = chosenFor(person);
             const group = categoryOf(person);
             const waiting = Boolean(chosen) && !confirmed[person.id];
             return (
@@ -1680,6 +1750,16 @@ export function VoicePanel({
                       <button
                         type="button"
                         onClick={() => {
+                          if (chosen.personal) {
+                            const profile = (personalVoices.data?.voices ?? []).find(
+                              (v) => v.id === chosen.id,
+                            );
+                            void playSample({
+                              id: chosen.id,
+                              previewUrl: profile?.previewUrl ?? profile?.processedUrl ?? null,
+                            });
+                            return;
+                          }
                           const found = voices.find((v) => v.externalVoiceId === chosen.id);
                           void playSample(
                             found ? sampleOf(found) : { id: chosen.id, previewUrl: null },
