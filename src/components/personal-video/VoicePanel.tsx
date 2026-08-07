@@ -1067,7 +1067,14 @@ export function VoicePanel({
           return;
         }
         if (merged.overflow) {
-          toast.error(t("pvv_chorus_too_long"));
+          // The real, measured length of the spoken greeting is the reason —
+          // never an estimate, and never a particular voice.
+          const needed = merged.neededSeconds;
+          toast.error(
+            needed
+              ? `${t("pvv_chorus_too_long")} (${needed}s / ${merged.allowedSeconds ?? 0}s)`
+              : t("pvv_chorus_too_long"),
+          );
           return;
         }
         const res = await saveMerged({
