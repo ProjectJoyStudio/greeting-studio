@@ -46,7 +46,8 @@ import {
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
 import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
-import { compatibilityKey, compatibleReplacements } from "@/lib/personal-video/voice/compatibility";
+import { compatibilityKey } from "@/lib/personal-video/voice/compatibility";
+import { comboKey, solveGroup, type GroupMember } from "@/lib/personal-video/voice/group-solver";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
@@ -214,6 +215,16 @@ export function VoicePanel({
     key: "",
     ids: [],
   });
+  /**
+   * Complete voice combinations that already failed for exactly this greeting
+   * and this video length. Project Joy never walks the same circle twice.
+   */
+  const [failedCombos, setFailedCombos] = useState<{ key: string; combos: string[] }>({
+    key: "",
+    combos: [],
+  });
+  /** True while Project Joy is looking for a whole combination that works. */
+  const [applyingPlan, setApplyingPlan] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const libraryRef = useRef<HTMLDivElement | null>(null);
@@ -541,49 +552,51 @@ export function VoicePanel({
    * male voice instead of a female one, and only voices with a ready sample
    * that are not already singing along.
    */
-  const recommended = useMemo(() => {
-    if (!syncIssue) return [] as LibraryVoice[];
-    const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
-    // The group of the participant standing in this place always wins, so a
-    // male participant is never offered a female voice.
-    const person = participants.find((p) => p.id === syncIssue.personId);
-    const chosenGroup = person ? categories[person.id] : undefined;
-    const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
-    if (!wanted) return [] as LibraryVoice[];
-    // A voice is only ever called "recommended" once Project Joy has checked
-    // it against this greeting, this video length and the very voices the
-    // other participants keep right now.
+  /**
+   * The whole answer, not a single voice: Project Joy searches complete
+   * combinations, keeps every voice it can — personal voices first of all —
+   * and proposes the smallest change that lets everyone speak together. Only a
+   * combination checked as a whole is ever shown to the person.
+   */
+  const plan = useMemo(() => {
+    if (!syncIssue) return null;
     const words = wordCount(greeting);
-    const others = chorusMembers
-      .filter((m) => m.person.id !== syncIssue.personId)
-      .map((m) => words * secondsPerWord(m.voice.speakId, language));
     const key = compatibilityKey({
       projectId,
       greeting,
       language,
       videoSeconds: videoSeconds ?? 0,
       speechMode,
-      otherVoiceIds: chorusMembers
-        .filter((m) => m.person.id !== syncIssue.personId)
-        .map((m) => m.voice.speakId),
+      // The memory belongs to this greeting and this length, not to one
+      // particular set of voices — otherwise every change would forget it.
+      otherVoiceIds: [],
     });
-    const blocked = new Set(incompatible.key === key ? incompatible.ids : []);
-    return compatibleReplacements(
+    const members: GroupMember[] = chorusMembers.map(({ person, index, voice }) => {
+      const library = voices.find((v) => v.externalVoiceId === voice.speakId);
+      return {
+        personId: person.id,
+        label: participantLabel(person, index),
+        voiceId: voice.speakId,
+        voiceName: voice.name,
+        category: categories[person.id] ?? (library ? voiceCategory(library) : null) ?? null,
+        // A voice from "My voices" is the person's own: it is held on to
+        // longest and only ever exchanged when nothing else can help.
+        preservation: voice.personal ? "personal" : "manual",
+      };
+    });
+    return solveGroup(
+      members,
       voices,
-      wanted,
       language,
       {
-        others,
         words,
         budgetSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
         measured: (voiceId) => hasMeasuredPace(voiceId, language),
-        blocked,
+        blocked: new Set(incompatible.key === key ? incompatible.ids : []),
+        failedCombos: new Set(failedCombos.key === key ? failedCombos.combos : []),
       },
-      {
-        exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
-        limit: 3,
-      },
+      { failingPersonId: syncIssue.personId, maxChanges: 2, alternatives: 3 },
     );
   }, [
     syncIssue,
@@ -597,6 +610,7 @@ export function VoicePanel({
     speechMode,
     projectId,
     incompatible,
+    failedCombos,
   ]);
 
   /**
@@ -611,6 +625,25 @@ export function VoicePanel({
     setSyncIssue(null);
     setShowRecommended(false);
     void give(person, voice, true);
+  }
+
+  /**
+   * The proposed combination as a whole. Nothing is ever changed silently: the
+   * person sees every keep and every replacement first, and only then confirms.
+   */
+  async function applyPlan() {
+    if (!plan || plan.changes.length === 0) return;
+    setApplyingPlan(true);
+    try {
+      for (const change of plan.changes) {
+        const person = participants.find((p) => p.id === change.personId);
+        if (person) await give(person, change.to, true);
+      }
+      setSyncIssue(null);
+      setShowRecommended(false);
+    } finally {
+      setApplyingPlan(false);
+    }
   }
 
   async function give(person: PvgPerson, voice: LibraryVoice, viaReplace = false) {
@@ -1003,15 +1036,32 @@ export function VoicePanel({
               language,
               videoSeconds: videoSeconds ?? 0,
               speechMode,
-              otherVoiceIds: chorusMembers
-                .filter((m) => m.person.id !== member.person.id)
-                .map((m) => m.voice.speakId),
+              otherVoiceIds: [],
             });
             setIncompatible((prev) =>
               prev.key === key
                 ? { key, ids: [...new Set([...prev.ids, member.voice.speakId])] }
                 : { key, ids: [member.voice.speakId] },
             );
+            // The complete combination is remembered as well, so Project Joy
+            // never proposes a set of voices it has already seen fail.
+            const whole = comboKey(chorusMembers.map((m) => m.voice.speakId));
+            const groupKey = compatibilityKey({
+              projectId,
+              greeting,
+              language,
+              videoSeconds: videoSeconds ?? 0,
+              speechMode,
+              otherVoiceIds: [],
+            });
+            setFailedCombos((prev) =>
+              prev.key === groupKey
+                ? { key: groupKey, combos: [...new Set([...prev.combos, whole])] }
+                : { key: groupKey, combos: [whole] },
+            );
+            // Project Joy looks for a whole working combination right away,
+            // instead of sending the person from one voice to the next.
+            setShowRecommended(true);
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
           return;
@@ -1359,50 +1409,141 @@ export function VoicePanel({
               {showRecommended && (
                 <div className="mt-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {t("pvv_sync_recommended_title")}
+                    {plan && plan.changes.length > 0
+                      ? t(
+                          plan.changes.length > 1
+                            ? "pvv_sync_plan_title_many"
+                            : "pvv_sync_plan_title_one",
+                        )
+                      : t("pvv_sync_recommended_title")}
                   </p>
-                  {recommended.length === 0 ? (
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      {t("pvv_sync_no_recommendations")}
-                    </p>
+                  {!plan || plan.impossible || plan.changes.length === 0 ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("pvv_sync_no_combination")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("pvv_sync_no_combination_hint")}
+                      </p>
+                    </div>
                   ) : (
-                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {recommended.map((voice) => (
-                        <li
-                          key={voice.id}
-                          className="rounded-2xl border border-border/60 bg-background/60 p-3"
+                    <>
+                      {/* The whole group at once: what is kept and what changes */}
+                      <ul className="mt-2 grid gap-1.5">
+                        {chorusMembers.map(({ person, index, voice }) => {
+                          const change = plan.changes.find((c) => c.personId === person.id);
+                          return (
+                            <li
+                              key={person.id}
+                              className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-[11px]"
+                            >
+                              <ParticipantAvatar
+                                photoUrl={person.photoUrl}
+                                label={participantLabel(person, index)}
+                                size="sm"
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-muted-foreground">
+                                  {participantLabel(person, index)}
+                                </span>
+                                <span className="block truncate font-medium">
+                                  {change
+                                    ? `${voice.name} → ${change.to.displayName || change.to.name}`
+                                    : voice.name}
+                                </span>
+                              </span>
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                                  change
+                                    ? "bg-primary/15 text-primary"
+                                    : "bg-secondary text-muted-foreground"
+                                }`}
+                              >
+                                {t(change ? "pvv_sync_plan_replace" : "pvv_sync_plan_keep")}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {plan.changes.map((change) => (
+                          <button
+                            key={change.to.id}
+                            type="button"
+                            onClick={() => void playSample(sampleOf(change.to))}
+                            disabled={samplingId !== null}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                          >
+                            {samplingId === change.to.externalVoiceId ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Headphones className="h-3 w-3" />
+                            )}
+                            {change.to.displayName || change.to.name}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          disabled={disabled || applyingPlan}
+                          onClick={() => void applyPlan()}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
                         >
-                          <p className="text-sm font-medium">{voice.displayName || voice.name}</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            {t("pvv_sync_recommended_note")}
+                          {applyingPlan ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3" />
+                          )}
+                          {t("pvv_sync_plan_confirm")}
+                        </button>
+                      </div>
+
+                      {plan.alternatives.length > 0 && (
+                        <>
+                          <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {t("pvv_sync_recommended_title")}
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => void playSample(sampleOf(voice))}
-                              disabled={samplingId !== null}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
-                            >
-                              {samplingId === voice.externalVoiceId ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Headphones className="h-3 w-3" />
-                              )}
-                              {t("pvv_preview")}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => replaceChorusVoice(voice)}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-                            >
-                              <Check className="h-3 w-3" />
-                              {t("pvv_select")}
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {plan.alternatives.map((voice) => (
+                              <li
+                                key={voice.id}
+                                className="rounded-2xl border border-border/60 bg-background/60 p-3"
+                              >
+                                <p className="text-sm font-medium">
+                                  {voice.displayName || voice.name}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {t("pvv_sync_recommended_note")}
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void playSample(sampleOf(voice))}
+                                    disabled={samplingId !== null}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                                  >
+                                    {samplingId === voice.externalVoiceId ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Headphones className="h-3 w-3" />
+                                    )}
+                                    {t("pvv_preview")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => replaceChorusVoice(voice)}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                    {t("pvv_select")}
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               )}
