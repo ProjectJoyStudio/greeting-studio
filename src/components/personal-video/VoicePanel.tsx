@@ -571,7 +571,9 @@ export function VoicePanel({
       language,
       videoSeconds: videoSeconds ?? 0,
       speechMode,
-      otherVoiceIds: chorusMembers.map((m) => m.voice.speakId),
+      // The memory belongs to this greeting and this length, not to one
+      // particular set of voices — otherwise every change would forget it.
+      otherVoiceIds: [],
     });
     const members: GroupMember[] = chorusMembers.map(({ person, index, voice }) => {
       const library = voices.find((v) => v.externalVoiceId === voice.speakId);
@@ -1039,9 +1041,7 @@ export function VoicePanel({
               language,
               videoSeconds: videoSeconds ?? 0,
               speechMode,
-              otherVoiceIds: chorusMembers
-                .filter((m) => m.person.id !== member.person.id)
-                .map((m) => m.voice.speakId),
+              otherVoiceIds: [],
             });
             setIncompatible((prev) =>
               prev.key === key
@@ -1057,7 +1057,7 @@ export function VoicePanel({
               language,
               videoSeconds: videoSeconds ?? 0,
               speechMode,
-              otherVoiceIds: chorusMembers.map((m) => m.voice.speakId),
+              otherVoiceIds: [],
             });
             setFailedCombos((prev) =>
               prev.key === groupKey
