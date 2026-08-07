@@ -45,7 +45,11 @@ import {
   type PvgSpeechMode,
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
-import { rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
+import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
+import {
+  compatibilityKey,
+  compatibleReplacements,
+} from "@/lib/personal-video/voice/compatibility";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
@@ -204,6 +208,15 @@ export function VoicePanel({
     targetSeconds?: number;
   } | null>(null);
   const [showRecommended, setShowRecommended] = useState(false);
+  /**
+   * Voices that were recommended, chosen, and still could not keep step with
+   * this exact greeting. They are set aside only for this greeting and this
+   * video length — with other words or another duration they may be perfect.
+   */
+  const [incompatible, setIncompatible] = useState<{ key: string; ids: string[] }>({
+    key: "",
+    ids: [],
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const libraryRef = useRef<HTMLDivElement | null>(null);
