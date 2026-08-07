@@ -1754,10 +1754,12 @@ export function VoicePanel({
                             const profile = (personalVoices.data?.voices ?? []).find(
                               (v) => v.id === chosen.id,
                             );
-                            void playSample({
-                              id: chosen.id,
-                              previewUrl: profile?.previewUrl ?? profile?.processedUrl ?? null,
-                            });
+                            const url = profile?.previewUrl ?? profile?.processedUrl ?? null;
+                            if (!url) {
+                              toast.error(t("pvv_preview_failed"));
+                              return;
+                            }
+                            void playSample({ id: chosen.id, previewUrl: url });
                             return;
                           }
                           const found = voices.find((v) => v.externalVoiceId === chosen.id);
