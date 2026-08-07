@@ -2674,6 +2674,7 @@ export type Database = {
           restored_by: string | null
           scene_description: string | null
           selected_scene_id: string | null
+          single_speaker_person_id: string | null
           speech_mode: string
           status: string
           sync_mode: string
@@ -2710,6 +2711,7 @@ export type Database = {
           restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
+          single_speaker_person_id?: string | null
           speech_mode?: string
           status?: string
           sync_mode?: string
@@ -2746,6 +2748,7 @@ export type Database = {
           restored_by?: string | null
           scene_description?: string | null
           selected_scene_id?: string | null
+          single_speaker_person_id?: string | null
           speech_mode?: string
           status?: string
           sync_mode?: string
@@ -2757,7 +2760,15 @@ export type Database = {
           volume_settings?: Json
           workflow_step?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pvg_projects_single_speaker_person_id_fkey"
+            columns: ["single_speaker_person_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pvg_scenes: {
         Row: {

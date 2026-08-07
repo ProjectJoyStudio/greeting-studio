@@ -1,0 +1,1 @@
+ALTER TABLE public.pvg_projects ADD COLUMN IF NOT EXISTS single_speaker_person_id uuid REFERENCES public.pvg_people(id) ON DELETE SET NULL;
