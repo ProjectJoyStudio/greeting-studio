@@ -199,6 +199,9 @@ export function VoicePanel({
     index: number;
     voiceId: string;
     voiceName: string;
+    /** Natural length of that voice and the length the others agreed on. */
+    spokenSeconds?: number;
+    targetSeconds?: number;
   } | null>(null);
   const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
