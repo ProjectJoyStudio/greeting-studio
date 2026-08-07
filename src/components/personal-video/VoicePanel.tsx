@@ -46,7 +46,12 @@ import {
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
 import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
-import { compatibilityKey, compatibleReplacements } from "@/lib/personal-video/voice/compatibility";
+import { compatibilityKey } from "@/lib/personal-video/voice/compatibility";
+import {
+  comboKey,
+  solveGroup,
+  type GroupMember,
+} from "@/lib/personal-video/voice/group-solver";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
