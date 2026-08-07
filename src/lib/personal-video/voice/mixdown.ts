@@ -418,7 +418,7 @@ function speechSegments(samples: Float32Array): SpeechPart[] {
     peak = Math.max(peak, rms);
   }
   const threshold = Math.max(0.008, peak * 0.15);
-  const gap = Math.round(0.12 * SAMPLE_RATE);
+  const gap = Math.round(0.07 * SAMPLE_RATE);
   const shortest = Math.round(0.05 * SAMPLE_RATE);
   const parts: SpeechPart[] = [];
   let open: SpeechPart | null = null;
@@ -580,13 +580,4 @@ export async function audioDuration(source: MixSource): Promise<number> {
   } catch {
     return 0;
   }
-}
-
-/** Development helper: how each recording is heard as spoken pieces. */
-export async function debugShapes(sources: MixSource[]) {
-  const tracks = await Promise.all(sources.map(prepare));
-  return tracks.map((t) => ({
-    seconds: t.length / SAMPLE_RATE,
-    parts: speechSegments(t).map((p) => Math.round(((p.end - p.start) / SAMPLE_RATE) * 1000)),
-  }));
 }
