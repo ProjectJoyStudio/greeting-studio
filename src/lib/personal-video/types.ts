@@ -86,6 +86,8 @@ export interface PvgProject {
   speechMode: PvgSpeechMode;
   syncMode: PvgSyncMode;
   chorusVoiceIds: string[];
+  /** The one participant who speaks the whole greeting in "one voice" mode. */
+  speakerPersonId: string | null;
   people: PvgPerson[];
   scenes: PvgScene[];
 }
