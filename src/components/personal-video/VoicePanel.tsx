@@ -928,9 +928,7 @@ export function VoicePanel({
               voiceName: member.voice.name,
             });
           }
-          toast.error(
-            `${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`,
-          );
+          toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
           return;
         }
         if (merged.overflow) {
@@ -1180,11 +1178,7 @@ export function VoicePanel({
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <ParticipantAvatar
-                        photoUrl={person.photoUrl}
-                        label={label}
-                        size="sm"
-                      />
+                      <ParticipantAvatar photoUrl={person.photoUrl} label={label} size="sm" />
                       <span className="min-w-0 flex-1">
                         <span className="block text-[11px] text-muted-foreground">{label}</span>
                         <span
@@ -1233,9 +1227,7 @@ export function VoicePanel({
             <div className="mt-3 rounded-2xl border border-destructive/60 bg-destructive/5 p-4">
               <div className="flex items-start gap-3">
                 <ParticipantAvatar
-                  photoUrl={
-                    participants.find((p) => p.id === syncIssue.personId)?.photoUrl ?? null
-                  }
+                  photoUrl={participants.find((p) => p.id === syncIssue.personId)?.photoUrl ?? null}
                   label={chorusLabel(syncIssue.index)}
                   size="md"
                 />
