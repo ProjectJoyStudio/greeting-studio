@@ -785,6 +785,12 @@ export function VoicePanel({
       }
       setReplaceFor(null);
     }
+    // One voice reads everything: the voice always belongs to the speaker.
+    if (speechMode === "single") {
+      if (speaker) void give(speaker, voice);
+      else toast.error(t("pvv_err_no_speaker"));
+      return;
+    }
     const only = participants[0];
     if (participants.length === 1 && only) {
       void give(only, voice);
