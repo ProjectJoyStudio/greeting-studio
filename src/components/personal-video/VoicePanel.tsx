@@ -1255,6 +1255,12 @@ export function VoicePanel({
                   <p className="mt-2 text-xs text-foreground">
                     {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
                   </p>
+                  {syncIssue.spokenSeconds !== undefined && syncIssue.targetSeconds !== undefined && (
+                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                      {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}s
+                      {videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
