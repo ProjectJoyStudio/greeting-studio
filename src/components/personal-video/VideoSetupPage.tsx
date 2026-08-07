@@ -354,6 +354,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 speechMode={project.speechMode}
                 syncMode={project.syncMode}
                 chorusVoiceIds={project.chorusVoiceIds}
+                speakerPersonId={project.speakerPersonId}
                 onAssigned={() => void query.refetch()}
               />
 

@@ -2,6 +2,11 @@ import type { Dict, Lang } from "../types";
 
 export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
   en: {
+    pvv_single_title: "Who speaks the entire greeting?",
+    pvv_single_hint: "One participant reads the whole greeting. Everyone else stays in the video and needs no voice.",
+    pvv_single_pick: "Select as speaker",
+    pvv_single_speaks: "Speaks the entire greeting",
+    pvv_err_no_speaker: "Choose the participant who speaks the greeting.",
     pvv_option_library: "Project Joy Voices",
     pvv_option_library_note: "Ready-to-use professional voices for your greetings.",
     pvv_card_add: "Add Your Voice",
@@ -174,6 +179,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_permission_for: "Please confirm permission to use the voice of {name}.",
   },
   ru: {
+    pvv_single_title: "Кто произносит всё поздравление?",
+    pvv_single_hint: "Один участник читает всё поздравление. Остальные остаются в видео, и голос им не нужен.",
+    pvv_single_pick: "Выбрать говорящим",
+    pvv_single_speaks: "Произносит всё поздравление",
+    pvv_err_no_speaker: "Выберите участника, который произносит поздравление.",
     pvv_option_library: "Голоса Project Joy",
     pvv_option_library_note: "Готовые профессиональные голоса для ваших поздравлений.",
     pvv_card_add: "Добавить свой голос",
@@ -349,6 +359,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_permission_for: "Подтвердите разрешение на использование голоса участника {name}.",
   },
   de: {
+    pvv_single_title: "Wer spricht den ganzen Gruß?",
+    pvv_single_hint: "Eine Person spricht den ganzen Gruß. Alle anderen bleiben im Video und brauchen keine Stimme.",
+    pvv_single_pick: "Als Sprecher wählen",
+    pvv_single_speaks: "Spricht den ganzen Gruß",
+    pvv_err_no_speaker: "Wählen Sie die Person, die den Gruß spricht.",
     pvv_option_library: "Project-Joy-Stimmen",
     pvv_option_library_note: "Fertige professionelle Stimmen für Ihre Grüße.",
     pvv_card_add: "Eigene Stimme hinzufügen",
@@ -525,6 +540,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_permission_for: "Bitte bestätigen Sie die Erlaubnis für die Stimme von {name}.",
   },
   uk: {
+    pvv_single_title: "Хто промовляє все привітання?",
+    pvv_single_hint: "Один учасник читає все привітання. Інші залишаються у відео, і голос їм не потрібен.",
+    pvv_single_pick: "Обрати як мовця",
+    pvv_single_speaks: "Промовляє все привітання",
+    pvv_err_no_speaker: "Оберіть учасника, який промовляє привітання.",
     pvv_option_library: "Голоси Project Joy",
     pvv_option_library_note: "Готові професійні голоси для ваших привітань.",
     pvv_card_add: "Додати свій голос",
@@ -699,6 +719,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_permission_for: "Підтвердьте дозвіл на використання голосу учасника {name}.",
   },
   fr: {
+    pvv_single_title: "Qui prononce tout le message ?",
+    pvv_single_hint: "Un participant lit tout le message. Les autres restent dans la vidéo et n’ont besoin d’aucune voix.",
+    pvv_single_pick: "Choisir comme narrateur",
+    pvv_single_speaks: "Prononce tout le message",
+    pvv_err_no_speaker: "Choisissez le participant qui prononce le message.",
     pvv_option_library: "Voix Project Joy",
     pvv_option_library_note: "Des voix professionnelles prêtes à l'emploi pour vos messages.",
     pvv_card_add: "Ajouter votre voix",
@@ -878,6 +903,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_err_permission_for: "Veuillez confirmer l’autorisation d’utiliser la voix de {name}.",
   },
   pl: {
+    pvv_single_title: "Kto wypowiada całe życzenie?",
+    pvv_single_hint: "Jedna osoba czyta całe życzenie. Pozostałe zostają w filmie i nie potrzebują głosu.",
+    pvv_single_pick: "Wybierz jako mówcę",
+    pvv_single_speaks: "Wypowiada całe życzenie",
+    pvv_err_no_speaker: "Wybierz osobę, która wypowiada życzenie.",
     pvv_option_library: "Głosy Project Joy",
     pvv_option_library_note: "Gotowe, profesjonalne głosy do Twoich życzeń.",
     pvv_card_add: "Dodaj swój głos",

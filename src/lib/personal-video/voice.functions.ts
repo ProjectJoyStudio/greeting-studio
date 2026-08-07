@@ -138,6 +138,8 @@ export const savePvgSpeechSettings = createServerFn({ method: "POST" })
       speechMode: "single" | "parts" | "chorus";
       syncMode: "simultaneous" | "delayed";
       chorusVoiceIds: string[];
+      /** In "one voice" mode: the single participant who speaks. */
+      speakerPersonId?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
@@ -148,6 +150,9 @@ export const savePvgSpeechSettings = createServerFn({ method: "POST" })
         speech_mode: data.speechMode,
         sync_mode: data.syncMode,
         chorus_voice_ids: data.chorusVoiceIds.slice(0, 5),
+        ...(data.speakerPersonId !== undefined
+          ? { single_speaker_person_id: data.speakerPersonId }
+          : {}),
       })
       .eq("id", data.projectId);
     if (error) throw new Error(error.message);

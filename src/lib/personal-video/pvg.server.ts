@@ -5,7 +5,7 @@ import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } 
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id";
 export const PERSON_COLUMNS =
   "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
@@ -37,6 +37,7 @@ export interface ProjectRow {
   speech_mode?: string | null;
   sync_mode?: string | null;
   chorus_voice_ids?: unknown;
+  single_speaker_person_id?: string | null;
 }
 
 export interface PersonRow {
@@ -167,6 +168,7 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     chorusVoiceIds: Array.isArray(row.chorus_voice_ids)
       ? (row.chorus_voice_ids as unknown[]).filter((v): v is string => typeof v === "string")
       : [],
+    speakerPersonId: row.single_speaker_person_id ?? null,
   };
 }
 

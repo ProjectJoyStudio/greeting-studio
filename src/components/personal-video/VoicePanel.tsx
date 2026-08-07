@@ -114,6 +114,7 @@ export function VoicePanel({
   disabled,
   speechMode: savedSpeechMode,
   chorusVoiceIds: savedChorus,
+  speakerPersonId: savedSpeakerId,
   onAssigned,
 }: {
   projectId: string;
@@ -125,6 +126,8 @@ export function VoicePanel({
   speechMode?: PvgSpeechMode;
   syncMode?: PvgSyncMode;
   chorusVoiceIds?: string[];
+  /** The saved participant who speaks the whole greeting in "one voice" mode. */
+  speakerPersonId?: string | null;
   onAssigned?: () => void;
 }) {
   const { t } = useI18n();
@@ -155,6 +158,11 @@ export function VoicePanel({
 
   const [mode, setMode] = useState<VoiceMode | null>(null);
   const [speechMode, setSpeechMode] = useState<PvgSpeechMode>(savedSpeechMode ?? "single");
+  /**
+   * "One voice reads the entire greeting": the single participant who speaks.
+   * This is the only place the speaker is kept, and it is saved with the draft.
+   */
+  const [speakerId, setSpeakerId] = useState<string | null>(savedSpeakerId ?? null);
   // Voices speaking together always begin, speak and end as one.
   const syncMode: PvgSyncMode = "simultaneous";
   const [category, setCategory] = useState<VoiceCategory | null>(null);
@@ -268,7 +276,13 @@ export function VoicePanel({
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
-  const primary = participants[0] ? assignments[participants[0].id] : undefined;
+  /**
+   * "One voice reads the entire greeting" has exactly one speaker: the
+   * participant the person picked. With a single participant that is them.
+   */
+  const speaker =
+    participants.find((p) => p.id === speakerId) ??
+    (participants.length === 1 ? (participants[0] ?? null) : null);
 
   const saved = useQuery({
     queryKey: ["pvg", "voice", projectId],
@@ -279,12 +293,6 @@ export function VoicePanel({
     const found = saved.data?.voiceover ?? null;
     if (found) setVoiceover(found);
   }, [saved.data]);
-
-  const voiceChanged = Boolean(
-    voiceover && speechMode === "single" && primary && voiceover.voiceId !== primary.id,
-  );
-  const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
-  const outdated = voiceChanged || textChanged;
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -299,17 +307,22 @@ export function VoicePanel({
   }, [voiceover?.audioUrl]);
 
   const persistSpeech = useCallback(
-    (next: { speechMode?: PvgSpeechMode; chorusVoiceIds?: string[] }) => {
+    (next: {
+      speechMode?: PvgSpeechMode;
+      chorusVoiceIds?: string[];
+      speakerPersonId?: string | null;
+    }) => {
       void saveSpeech({
         data: {
           projectId,
           speechMode: next.speechMode ?? speechMode,
           syncMode,
           chorusVoiceIds: next.chorusVoiceIds ?? [],
+          speakerPersonId: next.speakerPersonId !== undefined ? next.speakerPersonId : speakerId,
         },
       }).catch(() => undefined);
     },
-    [saveSpeech, projectId, speechMode, syncMode],
+    [saveSpeech, projectId, speechMode, syncMode, speakerId],
   );
 
   function participantLabel(person: PvgPerson, index: number): string {
@@ -383,9 +396,16 @@ export function VoicePanel({
 
   /** Participants speaking in this mode whose voice still needs a decision. */
   const speakingParticipants = useMemo(
-    () => (speechMode === "single" ? participants.slice(0, 1) : participants),
-    [speechMode, participants],
+    () => (speechMode === "single" ? (speaker ? [speaker] : []) : participants),
+    [speechMode, participants, speaker],
   );
+
+  /** The one participant chosen to speak everything keeps their choice. */
+  function selectSpeaker(person: PvgPerson) {
+    if (disabled) return;
+    setSpeakerId(person.id);
+    persistSpeech({ speakerPersonId: person.id });
+  }
 
   /**
    * The one voice a participant speaks with, wherever it comes from. A voice
@@ -436,10 +456,21 @@ export function VoicePanel({
       speechMode === "chorus"
         ? []
         : speakingParticipants.filter(
-            (person) => Boolean(assignments[person.id]) && !confirmed[person.id],
+            (person) =>
+              Boolean(assignments[person.id] ?? personalAssigned[person.id]) &&
+              !confirmed[person.id],
           ),
-    [speechMode, speakingParticipants, assignments, confirmed],
+    [speechMode, speakingParticipants, assignments, personalAssigned, confirmed],
   );
+
+  /** The voice the single speaker uses, wherever it comes from. */
+  const speakerVoice = speaker ? chosenFor(speaker) : null;
+
+  const voiceChanged = Boolean(
+    voiceover && speechMode === "single" && speakerVoice && voiceover.voiceId !== speakerVoice.id,
+  );
+  const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
+  const outdated = voiceChanged || textChanged;
 
   /**
    * A suitable voice for every participant that still needs one, always from
@@ -754,6 +785,12 @@ export function VoicePanel({
       }
       setReplaceFor(null);
     }
+    // One voice reads everything: the voice always belongs to the speaker.
+    if (speechMode === "single") {
+      if (speaker) void give(speaker, voice);
+      else toast.error(t("pvv_err_no_speaker"));
+      return;
+    }
     const only = participants[0];
     if (participants.length === 1 && only) {
       void give(only, voice);
@@ -788,7 +825,12 @@ export function VoicePanel({
         return next;
       });
       setPersonalAssigned((prev) => ({ ...prev, [person.id]: voice }));
-      setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+      // A personal voice is kept exactly like a Project Joy voice: it is
+      // listened to first and only then confirmed.
+      setConfirmed((prev) => ({ ...prev, [person.id]: false }));
+      void saveChoice({ data: { projectId, personId: person.id, confirmed: false } }).catch(
+        () => undefined,
+      );
       if (syncIssue?.personId === person.id) {
         setSyncIssue(null);
         setShowRecommended(false);
@@ -879,6 +921,7 @@ export function VoicePanel({
       greeting,
       videoSeconds: videoSeconds ?? 0,
       chorusVoiceCount: chorusList.length,
+      speakerId: speaker?.id ?? null,
       participants: participants.map((person, index) => ({
         id: person.id,
         label: participantLabel(person, index),
@@ -897,9 +940,9 @@ export function VoicePanel({
     setBusy(true);
     try {
       if (speechMode === "single") {
-        if (primary) {
+        if (speaker && speakerVoice) {
           const res = await create({
-            data: { projectId, text: greeting, voiceId: primary.id, language },
+            data: { projectId, text: greeting, voiceId: speakerVoice.speakId, language },
           });
           audioRef.current?.pause();
           setPlaying(false);
@@ -1150,6 +1193,12 @@ export function VoicePanel({
       }
       setReplaceFor(null);
     }
+    // One voice reads everything: the voice always belongs to the speaker.
+    if (speechMode === "single") {
+      if (speaker) void givePersonal(speaker, voice);
+      else toast.error(t("pvv_err_no_speaker"));
+      return;
+    }
     const only = participants[0];
     if (participants.length === 1 && only) {
       void givePersonal(only, voice);
@@ -1236,6 +1285,58 @@ export function VoicePanel({
           </button>
         ))}
       </div>
+
+      {/* One voice reads the entire greeting ----------------------------- */}
+      {speechMode === "single" && (
+        <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("pvv_single_title")}
+          </p>
+          <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_single_hint")}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {participants.map((person, index) => {
+              const isSpeaker = speaker?.id === person.id;
+              return (
+                <button
+                  key={person.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => selectSpeaker(person)}
+                  className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
+                    isSpeaker
+                      ? "border-primary bg-primary/10"
+                      : "border-border/60 hover:border-primary/40"
+                  }`}
+                >
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">
+                      {participantLabel(person, index)}
+                    </span>
+                    <span
+                      className={`block text-[11px] ${
+                        isSpeaker ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {isSpeaker ? t("pvv_single_speaks") : t("pvv_single_pick")}
+                    </span>
+                  </span>
+                  {isSpeaker && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+          {!speaker && (
+            <p className="mt-3 flex items-center gap-2 text-[11px] text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t("pvv_err_no_speaker")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Each participant speaks their own part -------------------------- */}
       {speechMode === "parts" && (
@@ -1935,7 +2036,13 @@ export function VoicePanel({
           </p>
           <button
             type="button"
-            disabled={disabled || participants.length === 0 || voices.length === 0}
+            hidden={speechMode === "single"}
+            disabled={
+              disabled ||
+              speechMode === "single" ||
+              participants.length === 0 ||
+              voices.length === 0
+            }
             onClick={startAutoAssign}
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
           >
@@ -1943,7 +2050,9 @@ export function VoicePanel({
             {t("pvv_auto_assign")}
           </button>
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">{t("pvv_auto_assign_note")}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {speechMode === "single" ? t("pvv_single_hint") : t("pvv_auto_assign_note")}
+        </p>
 
         {askReplaceConfirmed && (
           <div className="mt-3 rounded-2xl border border-primary/40 bg-primary/5 p-4">
@@ -1998,7 +2107,9 @@ export function VoicePanel({
           </div>
         )}
         <ul className="mt-3 space-y-2">
-          {participants.map((person, index) => {
+          {/* One voice reads everything: only the speaker needs a voice. */}
+          {(speechMode === "single" ? (speaker ? [speaker] : []) : participants).map((person) => {
+            const index = participants.findIndex((p) => p.id === person.id);
             const chosen = chosenFor(person);
             const group = categoryOf(person);
             const waiting = Boolean(chosen) && !confirmed[person.id];
