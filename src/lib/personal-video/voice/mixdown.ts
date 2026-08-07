@@ -4,13 +4,7 @@
 // volume, timing or synchronisation themselves.
 
 import { PVG_MIN_PART_GAP_SECONDS, PVG_PART_GAP_SECONDS, PVG_MAX_SPEECH_SPEED } from "./speech";
-import {
-  groupSyncCheck,
-  naturalTarget,
-  PVG_SYNC_MAX_SPEEDUP,
-  PVG_SYNC_MAX_STRETCH,
-  PVG_SYNC_TOLERANCE,
-} from "./sync-limits";
+import { PVG_SYNC_MAX_SPEEDUP, PVG_SYNC_MAX_STRETCH } from "./sync-limits";
 
 const SAMPLE_RATE = 44100;
 /** Comfortable loudness of the finished recording. */
@@ -196,7 +190,6 @@ export async function mergeInOrder(
 
 /** The most a voice may be quickened or calmed and still sound like itself. */
 const SYNC_MAX_SPEED = PVG_MAX_SPEECH_SPEED;
-const SYNC_MIN_SPEED = 1 / PVG_MAX_SPEECH_SPEED;
 
 /**
  * Aligns one real recording to one shared length, keeping the voice itself
@@ -323,46 +316,7 @@ const MAX_INNER_PAUSE = 0.35;
 /** The shortest pause left between words, so speech never runs together. */
 const MIN_INNER_PAUSE = 0.06;
 
-/** Several recordings sounding at once, each clearly audible, none clipping. */
-function overlay(tracks: Float32Array[]): Float32Array {
-  const total = Math.max(...tracks.map((t) => t.length), 1);
-  const mix = new Float32Array(total);
-  const share = 1 / Math.sqrt(tracks.length);
-  for (const track of tracks) {
-    for (let i = 0; i < track.length; i += 1) mix[i] = mix[i]! + track[i]! * share;
-  }
-  return mix;
-}
 
-/** The middle value of a set of lengths — never the slowest, never the fastest. */
-function middleOf(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2
-    ? sorted[middle]!
-    : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
-}
-
-function speechShape(samples: Float32Array): { parts: SpeechPart[] } {
-  const parts = speechSegments(samples);
-  return { parts: parts.length ? parts : [{ start: 0, end: samples.length }] };
-}
-
-/**
- * Describes one recording with a chosen number of spoken pieces: neighbouring
- * words are joined until every voice can be compared piece by piece.
- */
-function regroup(parts: SpeechPart[], count: number): SpeechPart[] {
-  if (parts.length <= count) return parts.slice(0, count);
-  const out: SpeechPart[] = [];
-  const per = parts.length / count;
-  for (let i = 0; i < count; i += 1) {
-    const from = parts[Math.floor(i * per)]!;
-    const last = parts[Math.min(parts.length - 1, Math.floor((i + 1) * per) - 1)]!;
-    out.push({ start: from.start, end: Math.max(from.end, last.end) });
-  }
-  return out;
-}
 
 /**
  * The blended greeting is quickened, never cut, if the video leaves less time
