@@ -46,10 +46,7 @@ import {
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
 import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
-import {
-  compatibilityKey,
-  compatibleReplacements,
-} from "@/lib/personal-video/voice/compatibility";
+import { compatibilityKey, compatibleReplacements } from "@/lib/personal-video/voice/compatibility";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
@@ -1330,12 +1327,13 @@ export function VoicePanel({
                   <p className="mt-2 text-xs text-foreground">
                     {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
                   </p>
-                  {syncIssue.spokenSeconds !== undefined && syncIssue.targetSeconds !== undefined && (
-                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                      {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}s
-                      {videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
-                    </p>
-                  )}
+                  {syncIssue.spokenSeconds !== undefined &&
+                    syncIssue.targetSeconds !== undefined && (
+                      <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                        {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}
+                        s{videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
+                      </p>
+                    )}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">

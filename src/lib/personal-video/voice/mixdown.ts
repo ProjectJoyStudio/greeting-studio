@@ -3,11 +3,7 @@
 // and the result is written as a single audio file. A person never adjusts
 // volume, timing or synchronisation themselves.
 
-import {
-  PVG_MIN_PART_GAP_SECONDS,
-  PVG_PART_GAP_SECONDS,
-  PVG_MAX_SPEECH_SPEED,
-} from "./speech";
+import { PVG_MIN_PART_GAP_SECONDS, PVG_PART_GAP_SECONDS, PVG_MAX_SPEECH_SPEED } from "./speech";
 import {
   groupSyncCheck,
   naturalTarget,
@@ -268,8 +264,7 @@ export async function blendTogether(
     gapLengths.push(Math.min(shortest, Math.round(MAX_INNER_PAUSE * SAMPLE_RATE)));
   }
 
-  let natural =
-    pieceLengths.reduce((a, b) => a + b, 0) + gapLengths.reduce((a, b) => a + b, 0);
+  let natural = pieceLengths.reduce((a, b) => a + b, 0) + gapLengths.reduce((a, b) => a + b, 0);
   natural = Math.max(1, natural);
 
   // A greeting is never stretched to fill the video: the time available is a
@@ -319,7 +314,8 @@ export async function blendTogether(
       hurried > PVG_SYNC_MAX_SPEEDUP * PVG_SYNC_TOLERANCE ||
       heldBack < 1 / (PVG_SYNC_MAX_STRETCH * PVG_SYNC_TOLERANCE)
     ) {
-      const reported = Math.abs(Math.log(hurried)) > Math.abs(Math.log(heldBack)) ? hurried : heldBack;
+      const reported =
+        Math.abs(Math.log(hurried)) > Math.abs(Math.log(heldBack)) ? hurried : heldBack;
       return {
         ...finish(new Float32Array(1)),
         unsyncable: index,

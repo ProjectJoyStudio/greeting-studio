@@ -6,7 +6,12 @@
 // voices already chosen. Only a voice that would truly speak together with the
 // others, naturally, ever carries the word "recommended".
 
-import { previewFor, voiceCategory, type LibraryVoice, type VoiceCategory } from "@/lib/voice-library/types";
+import {
+  previewFor,
+  voiceCategory,
+  type LibraryVoice,
+  type VoiceCategory,
+} from "@/lib/voice-library/types";
 import { groupSyncCheck, naturalTarget } from "./sync-limits";
 
 export interface SyncContext {

@@ -63,7 +63,12 @@ describe("recommended replacements", () => {
 
   it("shows only compatible voices, best first", () => {
     const list = compatibleReplacements(
-      [voice("slow", "male", 1), voice("good", "male", 2), voice("ok", "male", 3), voice("fast", "male", 4)],
+      [
+        voice("slow", "male", 1),
+        voice("good", "male", 2),
+        voice("ok", "male", 3),
+        voice("fast", "male", 4),
+      ],
       "male",
       "en",
       context,
