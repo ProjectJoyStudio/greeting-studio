@@ -45,6 +45,11 @@ export interface PvgVoiceCheckInput {
   greeting: string;
   videoSeconds: number;
   chorusVoiceCount: number;
+  /**
+   * "One voice reads the entire greeting": the participant chosen to speak.
+   * Nobody else needs a voice in that mode.
+   */
+  speakerId?: string | null;
   participants: {
     id: string;
     label: string;
@@ -80,12 +85,18 @@ export function validateVoiceSetup(input: PvgVoiceCheckInput): PvgVoiceIssue[] {
     if (input.chorusVoiceCount > 5) issues.push({ key: "pvv_err_chorus_max" });
   }
 
-  const speakers =
-    mode === "single"
-      ? input.participants.slice(0, 1)
-      : mode === "chorus"
-        ? []
-        : input.participants;
+  let speakers = input.participants;
+  if (mode === "chorus") {
+    speakers = [];
+  } else if (mode === "single") {
+    const only = input.participants.length === 1 ? input.participants : [];
+    const chosen = input.participants.filter((p) => p.id === input.speakerId);
+    speakers = chosen.length > 0 ? chosen : only;
+    if (speakers.length === 0) {
+      issues.push({ key: "pvv_err_no_speaker" });
+      return issues;
+    }
+  }
 
   for (const person of speakers) {
     if (!person.voiceId && !person.personalVoiceId) {
