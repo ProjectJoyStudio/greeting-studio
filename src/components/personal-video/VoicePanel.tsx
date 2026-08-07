@@ -2036,7 +2036,13 @@ export function VoicePanel({
           </p>
           <button
             type="button"
-            disabled={disabled || participants.length === 0 || voices.length === 0}
+            hidden={speechMode === "single"}
+            disabled={
+              disabled ||
+              speechMode === "single" ||
+              participants.length === 0 ||
+              voices.length === 0
+            }
             onClick={startAutoAssign}
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
           >
@@ -2044,7 +2050,9 @@ export function VoicePanel({
             {t("pvv_auto_assign")}
           </button>
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">{t("pvv_auto_assign_note")}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {speechMode === "single" ? t("pvv_single_hint") : t("pvv_auto_assign_note")}
+        </p>
 
         {askReplaceConfirmed && (
           <div className="mt-3 rounded-2xl border border-primary/40 bg-primary/5 p-4">
