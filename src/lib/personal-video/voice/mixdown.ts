@@ -312,7 +312,8 @@ export async function blendTogether(
     // Only a voice that would have to be hurried or held back beyond what still
     // sounds like a person is reported — and only after every gentler step above
     // has already been taken.
-    if (worst > SYNC_MAX_SPEED || worst < SYNC_MIN_SPEED) {
+    // A hair of tolerance, so rounding alone never fails a voice.
+    if (worst > SYNC_MAX_SPEED * 1.03 || worst < SYNC_MIN_SPEED / 1.03) {
       return {
         ...finish(new Float32Array(1)),
         unsyncable: index,
