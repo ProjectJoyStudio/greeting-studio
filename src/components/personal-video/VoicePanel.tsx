@@ -114,6 +114,7 @@ export function VoicePanel({
   disabled,
   speechMode: savedSpeechMode,
   chorusVoiceIds: savedChorus,
+  speakerPersonId: savedSpeakerId,
   onAssigned,
 }: {
   projectId: string;
@@ -125,6 +126,8 @@ export function VoicePanel({
   speechMode?: PvgSpeechMode;
   syncMode?: PvgSyncMode;
   chorusVoiceIds?: string[];
+  /** The saved participant who speaks the whole greeting in "one voice" mode. */
+  speakerPersonId?: string | null;
   onAssigned?: () => void;
 }) {
   const { t } = useI18n();
@@ -155,6 +158,11 @@ export function VoicePanel({
 
   const [mode, setMode] = useState<VoiceMode | null>(null);
   const [speechMode, setSpeechMode] = useState<PvgSpeechMode>(savedSpeechMode ?? "single");
+  /**
+   * "One voice reads the entire greeting": the single participant who speaks.
+   * This is the only place the speaker is kept, and it is saved with the draft.
+   */
+  const [speakerId, setSpeakerId] = useState<string | null>(savedSpeakerId ?? null);
   // Voices speaking together always begin, speak and end as one.
   const syncMode: PvgSyncMode = "simultaneous";
   const [category, setCategory] = useState<VoiceCategory | null>(null);
