@@ -581,3 +581,12 @@ export async function audioDuration(source: MixSource): Promise<number> {
     return 0;
   }
 }
+
+/** Development helper: how each recording is heard as spoken pieces. */
+export async function debugShapes(sources: MixSource[]) {
+  const tracks = await Promise.all(sources.map(prepare));
+  return tracks.map((t) => ({
+    seconds: t.length / SAMPLE_RATE,
+    parts: speechSegments(t).map((p) => Math.round(((p.end - p.start) / SAMPLE_RATE) * 1000)),
+  }));
+}
