@@ -466,8 +466,24 @@ export function VoicePanel({
   /** The voice the single speaker uses, wherever it comes from. */
   const speakerVoice = speaker ? chosenFor(speaker) : null;
 
+  /**
+   * The voice id the saved recording carries. A personal voice is stored under
+   * the id it has at the studio, so it is compared against that id and never
+   * against the profile id shown on screen.
+   */
+  const speakerStoredVoiceId = speakerVoice
+    ? speakerVoice.personal
+      ? ((personalVoices.data?.voices ?? []).find((v) => v.id === speakerVoice.id)
+          ?.providerVoiceId ?? null)
+      : speakerVoice.id
+    : null;
+
   const voiceChanged = Boolean(
-    voiceover && speechMode === "single" && speakerVoice && voiceover.voiceId !== speakerVoice.id,
+    voiceover &&
+      speechMode === "single" &&
+      speakerVoice &&
+      speakerStoredVoiceId &&
+      voiceover.voiceId !== speakerStoredVoiceId,
   );
   const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
   const outdated = voiceChanged || textChanged;
@@ -941,12 +957,23 @@ export function VoicePanel({
     try {
       if (speechMode === "single") {
         if (speaker && speakerVoice) {
+          const text = greeting.trim();
+          if (!text) {
+            toast.error(t("pvv_err_no_greeting"));
+            return;
+          }
           const res = await create({
-            data: { projectId, text: greeting, voiceId: speakerVoice.speakId, language },
+            data: { projectId, text, voiceId: speakerVoice.speakId, language },
           });
+          // A greeting counts as spoken only when a real, playable recording
+          // came back. Anything else is a failure, never a success.
+          const made = res.voiceover;
+          if (!made?.audioUrl || !(made.durationSeconds > 0)) {
+            throw new Error("voice_empty_response");
+          }
           audioRef.current?.pause();
           setPlaying(false);
-          setVoiceover(res.voiceover);
+          setVoiceover(made);
         } else {
           toast.error(t("pvv_need_voice"));
           return;
