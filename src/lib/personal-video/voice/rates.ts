@@ -29,6 +29,13 @@ export function secondsPerWord(voiceId: string | null, language: string): number
   return found && found > 0 ? found : PVG_DEFAULT_SECONDS_PER_WORD;
 }
 
+/** True when Project Joy has really heard this voice speak in this language. */
+export function hasMeasuredPace(voiceId: string | null, language: string): boolean {
+  if (!voiceId) return false;
+  const found = read()[keyOf(voiceId, language)];
+  return Boolean(found && found > 0);
+}
+
 /** Remembers the pace of a voice from a recording Project Joy just made. */
 export function rememberPace(
   voiceId: string,
