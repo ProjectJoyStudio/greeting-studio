@@ -910,6 +910,7 @@ export function VoicePanel({
       greeting,
       videoSeconds: videoSeconds ?? 0,
       chorusVoiceCount: chorusList.length,
+      speakerId: speaker?.id ?? null,
       participants: participants.map((person, index) => ({
         id: person.id,
         label: participantLabel(person, index),
@@ -928,9 +929,9 @@ export function VoicePanel({
     setBusy(true);
     try {
       if (speechMode === "single") {
-        if (primary) {
+        if (speaker && speakerVoice) {
           const res = await create({
-            data: { projectId, text: greeting, voiceId: primary.id, language },
+            data: { projectId, text: greeting, voiceId: speakerVoice.speakId, language },
           });
           audioRef.current?.pause();
           setPlaying(false);
