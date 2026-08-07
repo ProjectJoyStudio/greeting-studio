@@ -1256,9 +1256,14 @@ export function VoicePanel({
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_parts_hint")}</p>
           <div className="mt-3 space-y-3">
-            {participants.map((person, index) => (
+            {participants.map((person, index) => {
+              // One single assignment per participant, wherever the voice came
+              // from: Project Joy voices, My Voices or a newly added voice.
+              const chosen = chosenFor(person);
+              const needsVoice = !chosen && partOf(person, index).trim().length > 0;
+              return (
               <div key={person.id}>
-                <div className="mb-1 flex items-center gap-2">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
                   <ParticipantAvatar
                     photoUrl={person.photoUrl}
                     label={participantLabel(person, index)}
@@ -1266,20 +1271,52 @@ export function VoicePanel({
                   />
                   <p className="text-xs font-medium">
                     {participantLabel(person, index)}
-                    <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                      {assignments[person.id]?.name ?? t("pvv_no_voice")}
+                    <span
+                      className={`ml-2 text-[11px] font-normal ${
+                        chosen
+                          ? "font-medium text-primary"
+                          : needsVoice
+                            ? "font-medium text-destructive"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {chosen ? chosen.name : t("pvv_no_voice")}
                     </span>
                   </p>
+                  <button
+                    type="button"
+                    disabled={disabled || openingFor !== null}
+                    onClick={() => openReplace(person)}
+                    className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] transition hover:border-primary/50 disabled:opacity-60"
+                  >
+                    {openingFor === person.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    {chosen ? t("pvv_replace") : t("pvv_select")}
+                  </button>
                 </div>
                 <textarea
                   value={partOf(person, index)}
                   disabled={disabled}
                   rows={2}
                   onChange={(event) => editPart(person, event.target.value)}
-                  className="w-full rounded-2xl border border-border/60 bg-background/70 p-3 text-sm outline-none transition focus:border-primary/60"
+                  className={`w-full rounded-2xl border bg-background/70 p-3 text-sm outline-none transition focus:border-primary/60 ${
+                    needsVoice ? "border-destructive/60" : "border-border/60"
+                  }`}
                 />
+                {needsVoice && (
+                  <p className="mt-1 text-[11px] font-medium text-destructive">
+                    {t("pvv_err_no_voice_for").replace(
+                      "{name}",
+                      participantLabel(person, index),
+                    )}
+                  </p>
+                )}
               </div>
-            ))}
+              );
+            })}
             {participants.length === 0 && (
               <p className="text-xs text-muted-foreground">{t("pvv_no_participants")}</p>
             )}
