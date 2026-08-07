@@ -338,6 +338,17 @@ interface SpeechPart {
   end: number;
 }
 
+/** Several recordings sounding at once, each clearly audible, none clipping. */
+function overlay(tracks: Float32Array[]): Float32Array {
+  const total = Math.max(...tracks.map((t) => t.length), 1);
+  const mix = new Float32Array(total);
+  const share = 1 / Math.sqrt(tracks.length);
+  for (const track of tracks) {
+    for (let i = 0; i < track.length; i += 1) mix[i] = mix[i]! + track[i]! * share;
+  }
+  return mix;
+}
+
 /**
  * The spoken pieces of one recording: the words, separated by the little
  * silences a person naturally leaves between them.
