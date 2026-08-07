@@ -1048,6 +1048,25 @@ export function VoicePanel({
                 ? { key, ids: [...new Set([...prev.ids, member.voice.speakId])] }
                 : { key, ids: [member.voice.speakId] },
             );
+            // The complete combination is remembered as well, so Project Joy
+            // never proposes a set of voices it has already seen fail.
+            const whole = comboKey(chorusMembers.map((m) => m.voice.speakId));
+            const groupKey = compatibilityKey({
+              projectId,
+              greeting,
+              language,
+              videoSeconds: videoSeconds ?? 0,
+              speechMode,
+              otherVoiceIds: chorusMembers.map((m) => m.voice.speakId),
+            });
+            setFailedCombos((prev) =>
+              prev.key === groupKey
+                ? { key: groupKey, combos: [...new Set([...prev.combos, whole])] }
+                : { key: groupKey, combos: [whole] },
+            );
+            // Project Joy looks for a whole working combination right away,
+            // instead of sending the person from one voice to the next.
+            setShowRecommended(true);
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
           return;
