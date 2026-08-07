@@ -230,8 +230,8 @@ export async function blendTogether(
   const highest: number[] = [];
   for (let p = 0; p < commonParts; p += 1) {
     const spoken = grouped.map((g) => Math.max(1, g[p]!.end - g[p]!.start));
-    lowest.push(Math.max(...spoken) / SYNC_MAX_SPEED);
-    highest.push(Math.min(...spoken) / SYNC_MIN_SPEED);
+    lowest.push(Math.max(...spoken) / PIECE_MAX_SPEED);
+    highest.push(Math.min(...spoken) * PIECE_MAX_SPEED);
     pieceLengths.push(middleOf(spoken));
   }
   // A voice so much slower or quicker than the others that no shared length
@@ -313,7 +313,7 @@ export async function blendTogether(
     // sounds like a person is reported — and only after every gentler step above
     // has already been taken.
     // A hair of tolerance, so rounding alone never fails a voice.
-    if (worst > SYNC_MAX_SPEED * 1.03 || worst < SYNC_MIN_SPEED / 1.03) {
+    if (worst > PIECE_MAX_SPEED * 1.03 || worst < 1 / (PIECE_MAX_SPEED * 1.03)) {
       return {
         ...finish(new Float32Array(1)),
         unsyncable: index,
@@ -329,6 +329,13 @@ export async function blendTogether(
 
   return withinLimit(overlay(aligned), options);
 }
+
+/**
+ * Inside a greeting spoken together a single word may be hurried or held back a
+ * little more than a whole greeting ever is: the ear hears the group, not the
+ * one word, and this is what lets very different voices still speak as one.
+ */
+const PIECE_MAX_SPEED = 1.35;
 
 /** The longest pause Project Joy keeps inside a greeting spoken together. */
 const MAX_INNER_PAUSE = 0.35;
