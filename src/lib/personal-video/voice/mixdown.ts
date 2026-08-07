@@ -316,8 +316,6 @@ const MAX_INNER_PAUSE = 0.35;
 /** The shortest pause left between words, so speech never runs together. */
 const MIN_INNER_PAUSE = 0.06;
 
-
-
 /**
  * The blended greeting is quickened, never cut, if the video leaves less time
  * than the voices need. Beyond the natural limit the greeting simply does not
