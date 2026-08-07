@@ -1395,15 +1395,101 @@ export function VoicePanel({
               {showRecommended && (
                 <div className="mt-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {t("pvv_sync_recommended_title")}
+                    {plan && plan.changes.length > 0
+                      ? t(
+                          plan.changes.length > 1
+                            ? "pvv_sync_plan_title_many"
+                            : "pvv_sync_plan_title_one",
+                        )
+                      : t("pvv_sync_recommended_title")}
                   </p>
-                  {recommended.length === 0 ? (
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      {t("pvv_sync_no_recommendations")}
-                    </p>
+                  {!plan || plan.impossible || plan.changes.length === 0 ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("pvv_sync_no_combination")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("pvv_sync_no_combination_hint")}
+                      </p>
+                    </div>
                   ) : (
-                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {recommended.map((voice) => (
+                    <>
+                      {/* The whole group at once: what is kept and what changes */}
+                      <ul className="mt-2 grid gap-1.5">
+                        {chorusMembers.map(({ person, index, voice }) => {
+                          const change = plan.changes.find((c) => c.personId === person.id);
+                          return (
+                            <li
+                              key={person.id}
+                              className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-[11px]"
+                            >
+                              <ParticipantAvatar
+                                photoUrl={person.photoUrl}
+                                label={participantLabel(person, index)}
+                                size="sm"
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-muted-foreground">
+                                  {participantLabel(person, index)}
+                                </span>
+                                <span className="block truncate font-medium">
+                                  {change
+                                    ? `${voice.name} → ${change.to.displayName || change.to.name}`
+                                    : voice.name}
+                                </span>
+                              </span>
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                                  change
+                                    ? "bg-primary/15 text-primary"
+                                    : "bg-secondary text-muted-foreground"
+                                }`}
+                              >
+                                {t(change ? "pvv_sync_plan_replace" : "pvv_sync_plan_keep")}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {plan.changes.map((change) => (
+                          <button
+                            key={change.to.id}
+                            type="button"
+                            onClick={() => void playSample(sampleOf(change.to))}
+                            disabled={samplingId !== null}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-[11px] font-medium transition hover:border-primary/50 disabled:opacity-60"
+                          >
+                            {samplingId === change.to.externalVoiceId ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Headphones className="h-3 w-3" />
+                            )}
+                            {change.to.displayName || change.to.name}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          disabled={disabled || applyingPlan}
+                          onClick={() => void applyPlan()}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+                        >
+                          {applyingPlan ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3" />
+                          )}
+                          {t("pvv_sync_plan_confirm")}
+                        </button>
+                      </div>
+
+                      {plan.alternatives.length > 0 && (
+                        <>
+                          <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {t("pvv_sync_recommended_title")}
+                          </p>
+                          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {plan.alternatives.map((voice) => (
                         <li
                           key={voice.id}
                           className="rounded-2xl border border-border/60 bg-background/60 p-3"
@@ -1437,8 +1523,11 @@ export function VoicePanel({
                             </button>
                           </div>
                         </li>
-                      ))}
-                    </ul>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               )}
