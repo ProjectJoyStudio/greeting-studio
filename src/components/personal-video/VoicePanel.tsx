@@ -2099,7 +2099,9 @@ export function VoicePanel({
           </div>
         )}
         <ul className="mt-3 space-y-2">
-          {participants.map((person, index) => {
+          {/* One voice reads everything: only the speaker needs a voice. */}
+          {(speechMode === "single" ? (speaker ? [speaker] : []) : participants).map((person) => {
+            const index = participants.findIndex((p) => p.id === person.id);
             const chosen = chosenFor(person);
             const group = categoryOf(person);
             const waiting = Boolean(chosen) && !confirmed[person.id];
