@@ -553,11 +553,54 @@ export function VoicePanel({
     const chosenGroup = person ? categories[person.id] : undefined;
     const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
-    return recommendVoices(voices, wanted, language, {
-      exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
-      limit: 5,
+    // A voice is only ever called "recommended" once Project Joy has checked
+    // it against this greeting, this video length and the very voices the
+    // other participants keep right now.
+    const words = wordCount(greeting);
+    const others = chorusMembers
+      .filter((m) => m.person.id !== syncIssue.personId)
+      .map((m) => words * secondsPerWord(m.voice.speakId, language));
+    const key = compatibilityKey({
+      projectId,
+      greeting,
+      language,
+      videoSeconds: videoSeconds ?? 0,
+      speechMode,
+      otherVoiceIds: chorusMembers
+        .filter((m) => m.person.id !== syncIssue.personId)
+        .map((m) => m.voice.speakId),
     });
-  }, [syncIssue, voices, chorusMembers, language, participants, categories]);
+    const blocked = new Set(incompatible.key === key ? incompatible.ids : []);
+    return compatibleReplacements(
+      voices,
+      wanted,
+      language,
+      {
+        others,
+        words,
+        budgetSeconds: speechBudgetSeconds(videoSeconds ?? 0),
+        secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
+        measured: (voiceId) => hasMeasuredPace(voiceId, language),
+        blocked,
+      },
+      {
+        exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
+        limit: 3,
+      },
+    );
+  }, [
+    syncIssue,
+    voices,
+    chorusMembers,
+    language,
+    participants,
+    categories,
+    greeting,
+    videoSeconds,
+    speechMode,
+    projectId,
+    incompatible,
+  ]);
 
   /**
    * Only the highlighted place in the chorus receives the new voice. Everyone
