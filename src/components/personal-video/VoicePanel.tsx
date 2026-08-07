@@ -556,49 +556,50 @@ export function VoicePanel({
    * male voice instead of a female one, and only voices with a ready sample
    * that are not already singing along.
    */
-  const recommended = useMemo(() => {
-    if (!syncIssue) return [] as LibraryVoice[];
-    const current = voices.find((v) => v.externalVoiceId === syncIssue.voiceId);
-    // The group of the participant standing in this place always wins, so a
-    // male participant is never offered a female voice.
-    const person = participants.find((p) => p.id === syncIssue.personId);
-    const chosenGroup = person ? categories[person.id] : undefined;
-    const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
-    if (!wanted) return [] as LibraryVoice[];
-    // A voice is only ever called "recommended" once Project Joy has checked
-    // it against this greeting, this video length and the very voices the
-    // other participants keep right now.
+  /**
+   * The whole answer, not a single voice: Project Joy searches complete
+   * combinations, keeps every voice it can — personal voices first of all —
+   * and proposes the smallest change that lets everyone speak together. Only a
+   * combination checked as a whole is ever shown to the person.
+   */
+  const plan = useMemo(() => {
+    if (!syncIssue) return null;
     const words = wordCount(greeting);
-    const others = chorusMembers
-      .filter((m) => m.person.id !== syncIssue.personId)
-      .map((m) => words * secondsPerWord(m.voice.speakId, language));
     const key = compatibilityKey({
       projectId,
       greeting,
       language,
       videoSeconds: videoSeconds ?? 0,
       speechMode,
-      otherVoiceIds: chorusMembers
-        .filter((m) => m.person.id !== syncIssue.personId)
-        .map((m) => m.voice.speakId),
+      otherVoiceIds: chorusMembers.map((m) => m.voice.speakId),
     });
-    const blocked = new Set(incompatible.key === key ? incompatible.ids : []);
-    return compatibleReplacements(
+    const members: GroupMember[] = chorusMembers.map(({ person, index, voice }) => {
+      const library = voices.find((v) => v.externalVoiceId === voice.speakId);
+      return {
+        personId: person.id,
+        label: participantLabel(person, index),
+        voiceId: voice.speakId,
+        voiceName: voice.name,
+        category:
+          categories[person.id] ?? (library ? voiceCategory(library) : null) ?? null,
+        // A voice from "My voices" is the person's own: it is held on to
+        // longest and only ever exchanged when nothing else can help.
+        preservation: voice.personal ? "personal" : "manual",
+      };
+    });
+    return solveGroup(
+      members,
       voices,
-      wanted,
       language,
       {
-        others,
         words,
         budgetSeconds: speechBudgetSeconds(videoSeconds ?? 0),
         secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
         measured: (voiceId) => hasMeasuredPace(voiceId, language),
-        blocked,
+        blocked: new Set(incompatible.key === key ? incompatible.ids : []),
+        failedCombos: new Set(failedCombos.key === key ? failedCombos.combos : []),
       },
-      {
-        exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
-        limit: 3,
-      },
+      { failingPersonId: syncIssue.personId, maxChanges: 2, alternatives: 3 },
     );
   }, [
     syncIssue,
@@ -612,6 +613,7 @@ export function VoicePanel({
     speechMode,
     projectId,
     incompatible,
+    failedCombos,
   ]);
 
   /**
@@ -626,6 +628,25 @@ export function VoicePanel({
     setSyncIssue(null);
     setShowRecommended(false);
     void give(person, voice, true);
+  }
+
+  /**
+   * The proposed combination as a whole. Nothing is ever changed silently: the
+   * person sees every keep and every replacement first, and only then confirms.
+   */
+  async function applyPlan() {
+    if (!plan || plan.changes.length === 0) return;
+    setApplyingPlan(true);
+    try {
+      for (const change of plan.changes) {
+        const person = participants.find((p) => p.id === change.personId);
+        if (person) await give(person, change.to, true);
+      }
+      setSyncIssue(null);
+      setShowRecommended(false);
+    } finally {
+      setApplyingPlan(false);
+    }
   }
 
   async function give(person: PvgPerson, voice: LibraryVoice, viaReplace = false) {
