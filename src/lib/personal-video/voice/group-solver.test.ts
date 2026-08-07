@@ -113,8 +113,12 @@ describe("whole-group voice solving", () => {
     const plan = solveGroup(members, library, "en", { ...context, failedCombos: failed }, {
       failingPersonId: "c",
     });
-    expect(plan.changes.map((c) => c.to.externalVoiceId)).not.toContain("emma");
-    expect(plan.changes.map((c) => c.to.externalVoiceId)).not.toContain("nora");
+    // Whatever it proposes, the resulting complete set is never one that has
+    // already been proven not to work.
+    const resulting = members.map(
+      (m) => plan.changes.find((c) => c.personId === m.personId)?.to.externalVoiceId ?? m.voiceId,
+    );
+    expect(failed.has(comboKey(resulting))).toBe(false);
   });
 
   it("stops instead of looping when nothing can work", () => {
