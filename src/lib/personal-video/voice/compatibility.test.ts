@@ -36,7 +36,7 @@ describe("natural synchronisation limits", () => {
   });
 
   it("keeps the group inside the video length", () => {
-    expect(groupSyncCheck([4, 4.2], 3).ok).toBe(true);
+    expect(groupSyncCheck([4, 4.2], 4).ok).toBe(true);
     expect(groupSyncCheck([8, 8.2], 3).ok).toBe(false);
   });
 });
