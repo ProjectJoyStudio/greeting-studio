@@ -959,7 +959,7 @@ export function VoicePanel({
         if (speaker && speakerVoice) {
           const text = greeting.trim();
           if (!text) {
-            toast.error(t("pvv_err_no_text"));
+            toast.error(t("pvv_err_no_greeting"));
             return;
           }
           const res = await create({
