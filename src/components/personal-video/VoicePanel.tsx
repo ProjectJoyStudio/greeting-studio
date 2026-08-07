@@ -45,7 +45,8 @@ import {
   type PvgSpeechMode,
   type PvgSyncMode,
 } from "@/lib/personal-video/voice/speech";
-import { rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
+import { hasMeasuredPace, rememberPace, secondsPerWord } from "@/lib/personal-video/voice/rates";
+import { compatibilityKey, compatibleReplacements } from "@/lib/personal-video/voice/compatibility";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { blendTogether, mergeInOrder, type MixSource } from "@/lib/personal-video/voice/mixdown";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
@@ -204,6 +205,15 @@ export function VoicePanel({
     targetSeconds?: number;
   } | null>(null);
   const [showRecommended, setShowRecommended] = useState(false);
+  /**
+   * Voices that were recommended, chosen, and still could not keep step with
+   * this exact greeting. They are set aside only for this greeting and this
+   * video length — with other words or another duration they may be perfect.
+   */
+  const [incompatible, setIncompatible] = useState<{ key: string; ids: string[] }>({
+    key: "",
+    ids: [],
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const libraryRef = useRef<HTMLDivElement | null>(null);
@@ -540,11 +550,54 @@ export function VoicePanel({
     const chosenGroup = person ? categories[person.id] : undefined;
     const wanted = chosenGroup ?? (current ? voiceCategory(current) : null);
     if (!wanted) return [] as LibraryVoice[];
-    return recommendVoices(voices, wanted, language, {
-      exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
-      limit: 5,
+    // A voice is only ever called "recommended" once Project Joy has checked
+    // it against this greeting, this video length and the very voices the
+    // other participants keep right now.
+    const words = wordCount(greeting);
+    const others = chorusMembers
+      .filter((m) => m.person.id !== syncIssue.personId)
+      .map((m) => words * secondsPerWord(m.voice.speakId, language));
+    const key = compatibilityKey({
+      projectId,
+      greeting,
+      language,
+      videoSeconds: videoSeconds ?? 0,
+      speechMode,
+      otherVoiceIds: chorusMembers
+        .filter((m) => m.person.id !== syncIssue.personId)
+        .map((m) => m.voice.speakId),
     });
-  }, [syncIssue, voices, chorusMembers, language, participants, categories]);
+    const blocked = new Set(incompatible.key === key ? incompatible.ids : []);
+    return compatibleReplacements(
+      voices,
+      wanted,
+      language,
+      {
+        others,
+        words,
+        budgetSeconds: speechBudgetSeconds(videoSeconds ?? 0),
+        secondsPerWord: (voiceId) => secondsPerWord(voiceId, language),
+        measured: (voiceId) => hasMeasuredPace(voiceId, language),
+        blocked,
+      },
+      {
+        exclude: [syncIssue.voiceId, ...chorusMembers.map((m) => m.voice.id)],
+        limit: 3,
+      },
+    );
+  }, [
+    syncIssue,
+    voices,
+    chorusMembers,
+    language,
+    participants,
+    categories,
+    greeting,
+    videoSeconds,
+    speechMode,
+    projectId,
+    incompatible,
+  ]);
 
   /**
    * Only the highlighted place in the chorus receives the new voice. Everyone
@@ -919,6 +972,7 @@ export function VoicePanel({
           let track = spoken.get(entry.id);
           if (!track) {
             track = await speak(greeting, entry.id);
+            rememberPace(entry.id, language, wordCount(greeting), track.seconds);
             spoken.set(entry.id, track);
           }
           sources.push(track);
@@ -940,6 +994,24 @@ export function VoicePanel({
               spokenSeconds: merged.unsyncableDetail?.spokenSeconds,
               targetSeconds: merged.unsyncableDetail?.targetSeconds,
             });
+            // A voice that truly failed for this greeting is never offered
+            // again as a recommendation for these exact words and this exact
+            // video length — but it stays perfectly good for another greeting.
+            const key = compatibilityKey({
+              projectId,
+              greeting,
+              language,
+              videoSeconds: videoSeconds ?? 0,
+              speechMode,
+              otherVoiceIds: chorusMembers
+                .filter((m) => m.person.id !== member.person.id)
+                .map((m) => m.voice.speakId),
+            });
+            setIncompatible((prev) =>
+              prev.key === key
+                ? { key, ids: [...new Set([...prev.ids, member.voice.speakId])] }
+                : { key, ids: [member.voice.speakId] },
+            );
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
           return;
@@ -1255,12 +1327,13 @@ export function VoicePanel({
                   <p className="mt-2 text-xs text-foreground">
                     {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
                   </p>
-                  {syncIssue.spokenSeconds !== undefined && syncIssue.targetSeconds !== undefined && (
-                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                      {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}s
-                      {videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
-                    </p>
-                  )}
+                  {syncIssue.spokenSeconds !== undefined &&
+                    syncIssue.targetSeconds !== undefined && (
+                      <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                        {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}
+                        s{videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
+                      </p>
+                    )}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
