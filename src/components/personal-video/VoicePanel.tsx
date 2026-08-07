@@ -276,7 +276,13 @@ export function VoicePanel({
     setParts((old) => ({ ...nextParts, ...old }));
   }, [participants]);
 
-  const primary = participants[0] ? assignments[participants[0].id] : undefined;
+  /**
+   * "One voice reads the entire greeting" has exactly one speaker: the
+   * participant the person picked. With a single participant that is them.
+   */
+  const speaker =
+    participants.find((p) => p.id === speakerId) ??
+    (participants.length === 1 ? (participants[0] ?? null) : null);
 
   const saved = useQuery({
     queryKey: ["pvg", "voice", projectId],
@@ -287,12 +293,6 @@ export function VoicePanel({
     const found = saved.data?.voiceover ?? null;
     if (found) setVoiceover(found);
   }, [saved.data]);
-
-  const voiceChanged = Boolean(
-    voiceover && speechMode === "single" && primary && voiceover.voiceId !== primary.id,
-  );
-  const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
-  const outdated = voiceChanged || textChanged;
 
   useEffect(() => {
     const audio = audioRef.current;
