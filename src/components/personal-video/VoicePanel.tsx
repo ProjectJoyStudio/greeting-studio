@@ -957,12 +957,23 @@ export function VoicePanel({
     try {
       if (speechMode === "single") {
         if (speaker && speakerVoice) {
+          const text = greeting.trim();
+          if (!text) {
+            toast.error(t("pvv_err_no_text"));
+            return;
+          }
           const res = await create({
-            data: { projectId, text: greeting, voiceId: speakerVoice.speakId, language },
+            data: { projectId, text, voiceId: speakerVoice.speakId, language },
           });
+          // A greeting counts as spoken only when a real, playable recording
+          // came back. Anything else is a failure, never a success.
+          const made = res.voiceover;
+          if (!made?.audioUrl || !(made.durationSeconds > 0)) {
+            throw new Error("voice_empty_response");
+          }
           audioRef.current?.pause();
           setPlaying(false);
-          setVoiceover(res.voiceover);
+          setVoiceover(made);
         } else {
           toast.error(t("pvv_need_voice"));
           return;
