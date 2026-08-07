@@ -900,6 +900,10 @@ export function VoicePanel({
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
+        // The same voice chosen for several participants is spoken once and
+        // that single recording is used for each of them, so identical voices
+        // are always perfectly in step with one another.
+        const spoken = new Map<string, MixSource & { seconds: number }>();
         for (const entry of chorusList) {
           if (entry.kind === "audio") {
             // A recording or a personal voice already carries the whole
@@ -912,7 +916,11 @@ export function VoicePanel({
             });
             continue;
           }
-          const track = await speak(greeting, entry.id);
+          let track = spoken.get(entry.id);
+          if (!track) {
+            track = await speak(greeting, entry.id);
+            spoken.set(entry.id, track);
+          }
           sources.push(track);
           summary.push({ label: entry.name, durationSeconds: track.seconds, source: "voice" });
         }
@@ -929,6 +937,8 @@ export function VoicePanel({
               index: merged.unsyncable,
               voiceId: member.voice.personal ? "" : member.voice.id,
               voiceName: member.voice.name,
+              spokenSeconds: merged.unsyncableDetail?.spokenSeconds,
+              targetSeconds: merged.unsyncableDetail?.targetSeconds,
             });
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
