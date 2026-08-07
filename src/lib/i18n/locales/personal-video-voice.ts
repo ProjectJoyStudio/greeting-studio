@@ -101,6 +101,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Parts of the participants",
     pvv_parts_auto: "Share the greeting",
     pvv_parts_hint: "Every part can be edited freely.",
+    pvv_no_text: "No text yet.",
     pvv_parts_estimate: "Estimated length",
     pvv_parts_too_long:
       "The complete greeting does not fit within the selected video duration. Please increase the video duration or edit the participant lines.",
@@ -257,6 +258,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Части участников",
     pvv_parts_auto: "Разделить поздравление",
     pvv_parts_hint: "Любую часть можно свободно изменить.",
+    pvv_no_text: "Текста пока нет.",
     pvv_parts_estimate: "Расчётная длительность",
     pvv_parts_too_long:
       "Полное поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или отредактируйте реплики участников.",
@@ -421,6 +423,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Teile der Teilnehmenden",
     pvv_parts_auto: "Gruß aufteilen",
     pvv_parts_hint: "Jeder Teil lässt sich frei bearbeiten.",
+    pvv_no_text: "Noch kein Text.",
     pvv_parts_estimate: "Geschätzte Länge",
     pvv_parts_too_long:
       "Der vollständige Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder bearbeiten Sie die Zeilen der Teilnehmenden.",
@@ -580,6 +583,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Частини учасників",
     pvv_parts_auto: "Поділити привітання",
     pvv_parts_hint: "Будь-яку частину можна вільно змінити.",
+    pvv_no_text: "Тексту ще немає.",
     pvv_parts_estimate: "Орієнтовна тривалість",
     pvv_parts_too_long:
       "Повне привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або відредагуйте репліки учасників.",
@@ -743,6 +747,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Parties des participants",
     pvv_parts_auto: "Partager le message",
     pvv_parts_hint: "Chaque partie peut être modifiée librement.",
+    pvv_no_text: "Pas encore de texte.",
     pvv_parts_estimate: "Durée estimée",
     pvv_parts_too_long:
       "Le message complet ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou modifier les répliques des participants.",
@@ -906,6 +911,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Części uczestników",
     pvv_parts_auto: "Podziel życzenia",
     pvv_parts_hint: "Każdą część można dowolnie zmienić.",
+    pvv_no_text: "Jeszcze bez tekstu.",
     pvv_parts_estimate: "Szacowana długość",
     pvv_parts_too_long:
       "Całe życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub edytuj kwestie uczestników.",
