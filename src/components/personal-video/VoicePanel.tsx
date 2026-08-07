@@ -219,6 +219,16 @@ export function VoicePanel({
     key: "",
     ids: [],
   });
+  /**
+   * Complete voice combinations that already failed for exactly this greeting
+   * and this video length. Project Joy never walks the same circle twice.
+   */
+  const [failedCombos, setFailedCombos] = useState<{ key: string; combos: string[] }>({
+    key: "",
+    combos: [],
+  });
+  /** True while Project Joy is looking for a whole combination that works. */
+  const [applyingPlan, setApplyingPlan] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sampleRef = useRef<HTMLAudioElement | null>(null);
   const libraryRef = useRef<HTMLDivElement | null>(null);
