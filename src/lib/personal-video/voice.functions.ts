@@ -85,6 +85,9 @@ export const assignPvgPersonVoice = createServerFn({ method: "POST" })
       .from("pvg_people")
       .update({
         voice_id: data.voiceId,
+        // A Project Joy voice always replaces a personal one, so a participant
+        // never carries two voices at the same time.
+        personal_voice_id: null,
         voice_name: data.voiceId ? (data.voiceName ?? null) : null,
         voice_provider: data.voiceId ? (data.provider ?? null) : null,
         voice_source: data.voiceId ? "library" : null,

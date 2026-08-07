@@ -5,9 +5,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Project Joy Voices",
     pvv_option_library_note: "Ready-to-use professional voices for your greetings.",
     pvv_card_add: "Add Your Voice",
-    pvv_card_add_note: "Create and save your personal voice profile for use in any of your future greetings.",
+    pvv_card_add_note:
+      "Create and save your personal voice profile for use in any of your future greetings.",
     pvv_card_mine: "My Voices",
-    pvv_card_mine_note: "All of your voice profiles are automatically saved in your Personal Account, under the \"My Voices\" section, and can be used in any of your future greetings.",
+    pvv_card_mine_note:
+      'All of your voice profiles are automatically saved in your Personal Account, under the "My Voices" section, and can be used in any of your future greetings.',
     pvv_soon: "Soon",
     pvv_choose_category: "Choose a category",
     pvv_cat_female: "Female",
@@ -20,7 +22,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Participant",
     pvv_no_voice: "No voice selected",
     pvv_auto_assign: "Auto assign voices",
-    pvv_auto_assign_note: "Project Joy suggests a voice for every participant, always from their own group.",
+    pvv_auto_assign_note:
+      "Project Joy suggests a voice for every participant, always from their own group.",
     pvv_auto_done: "Voices suggested — listen to each one and confirm it.",
     pvv_auto_nothing: "No suitable voices are available yet.",
     pvv_auto_replace_question: "Replace already confirmed voices with a new automatic assignment?",
@@ -35,7 +38,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Choose a new voice for {name}",
     pvv_opening_library: "Opening voice library…",
     pvv_cancel_replacement: "Cancel replacement",
-    pvv_replaced_notice: "The voice for {name} has been replaced with {voice}. Please preview and confirm the new voice.",
+    pvv_replaced_notice:
+      "The voice for {name} has been replaced with {voice}. Please preview and confirm the new voice.",
     pvv_replace_failed: "The voice could not be replaced: {reason}",
     pvv_participant_n: "Participant {n}",
     pvv_remove: "Remove",
@@ -101,6 +105,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Parts of the participants",
     pvv_parts_auto: "Share the greeting",
     pvv_parts_hint: "Every part can be edited freely.",
+    pvv_no_text: "No text yet.",
     pvv_parts_estimate: "Estimated length",
     pvv_parts_too_long:
       "The complete greeting does not fit within the selected video duration. Please increase the video duration or edit the participant lines.",
@@ -163,9 +168,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Голоса Project Joy",
     pvv_option_library_note: "Готовые профессиональные голоса для ваших поздравлений.",
     pvv_card_add: "Добавить свой голос",
-    pvv_card_add_note: "Создайте и сохраните свой личный голосовой профиль для любых будущих поздравлений.",
+    pvv_card_add_note:
+      "Создайте и сохраните свой личный голосовой профиль для любых будущих поздравлений.",
     pvv_card_mine: "Мои голоса",
-    pvv_card_mine_note: "Все ваши голосовые профили автоматически сохраняются в Личном кабинете в разделе «Мои голоса» и могут использоваться в любых будущих поздравлениях.",
+    pvv_card_mine_note:
+      "Все ваши голосовые профили автоматически сохраняются в Личном кабинете в разделе «Мои голоса» и могут использоваться в любых будущих поздравлениях.",
     pvv_soon: "Скоро",
     pvv_choose_category: "Выберите категорию",
     pvv_cat_female: "Женские",
@@ -178,7 +185,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Участник",
     pvv_no_voice: "Голос не выбран",
     pvv_auto_assign: "Подобрать голоса автоматически",
-    pvv_auto_assign_note: "Project Joy предложит голос каждому участнику — всегда из его собственной группы.",
+    pvv_auto_assign_note:
+      "Project Joy предложит голос каждому участнику — всегда из его собственной группы.",
     pvv_auto_done: "Голоса предложены — послушайте каждый и подтвердите.",
     pvv_auto_nothing: "Подходящих голосов пока нет.",
     pvv_auto_replace_question: "Заменить уже подтверждённые голоса новым автоматическим подбором?",
@@ -193,7 +201,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Выберите новый голос для {name}",
     pvv_opening_library: "Открываем библиотеку голосов…",
     pvv_cancel_replacement: "Отменить замену",
-    pvv_replaced_notice: "Голос участника {name} заменён на {voice}. Послушайте и подтвердите новый голос.",
+    pvv_replaced_notice:
+      "Голос участника {name} заменён на {voice}. Послушайте и подтвердите новый голос.",
     pvv_replace_failed: "Не удалось заменить голос: {reason}",
     pvv_participant_n: "Участник {n}",
     pvv_remove: "Удалить",
@@ -257,6 +266,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Части участников",
     pvv_parts_auto: "Разделить поздравление",
     pvv_parts_hint: "Любую часть можно свободно изменить.",
+    pvv_no_text: "Текста пока нет.",
     pvv_parts_estimate: "Расчётная длительность",
     pvv_parts_too_long:
       "Полное поздравление не помещается в выбранную длительность видео. Увеличьте длительность видео или отредактируйте реплики участников.",
@@ -324,9 +334,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Project-Joy-Stimmen",
     pvv_option_library_note: "Fertige professionelle Stimmen für Ihre Grüße.",
     pvv_card_add: "Eigene Stimme hinzufügen",
-    pvv_card_add_note: "Erstellen und speichern Sie Ihr persönliches Stimmprofil für alle Ihre künftigen Grüße.",
+    pvv_card_add_note:
+      "Erstellen und speichern Sie Ihr persönliches Stimmprofil für alle Ihre künftigen Grüße.",
     pvv_card_mine: "Meine Stimmen",
-    pvv_card_mine_note: "Alle Ihre Stimmprofile werden automatisch in Ihrem Konto im Bereich „Meine Stimmen“ gespeichert und können für alle künftigen Grüße verwendet werden.",
+    pvv_card_mine_note:
+      "Alle Ihre Stimmprofile werden automatisch in Ihrem Konto im Bereich „Meine Stimmen“ gespeichert und können für alle künftigen Grüße verwendet werden.",
     pvv_soon: "Bald",
     pvv_choose_category: "Kategorie wählen",
     pvv_cat_female: "Weiblich",
@@ -339,10 +351,12 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Teilnehmer",
     pvv_no_voice: "Keine Stimme gewählt",
     pvv_auto_assign: "Stimmen automatisch zuweisen",
-    pvv_auto_assign_note: "Project Joy schlägt jeder teilnehmenden Person eine Stimme aus ihrer eigenen Gruppe vor.",
+    pvv_auto_assign_note:
+      "Project Joy schlägt jeder teilnehmenden Person eine Stimme aus ihrer eigenen Gruppe vor.",
     pvv_auto_done: "Stimmen vorgeschlagen — hören Sie jede an und bestätigen Sie sie.",
     pvv_auto_nothing: "Es sind noch keine passenden Stimmen verfügbar.",
-    pvv_auto_replace_question: "Bereits bestätigte Stimmen durch eine neue automatische Zuweisung ersetzen?",
+    pvv_auto_replace_question:
+      "Bereits bestätigte Stimmen durch eine neue automatische Zuweisung ersetzen?",
     pvv_auto_only_missing: "Nur Personen ohne bestätigte Stimme",
     pvv_auto_replace_all: "Alle Stimmen ersetzen",
     pvv_confirm: "Bestätigen",
@@ -354,7 +368,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Wählen Sie eine neue Stimme für {name}",
     pvv_opening_library: "Stimmbibliothek wird geöffnet…",
     pvv_cancel_replacement: "Ersetzen abbrechen",
-    pvv_replaced_notice: "Die Stimme von {name} wurde durch {voice} ersetzt. Bitte hören Sie sie an und bestätigen Sie sie.",
+    pvv_replaced_notice:
+      "Die Stimme von {name} wurde durch {voice} ersetzt. Bitte hören Sie sie an und bestätigen Sie sie.",
     pvv_replace_failed: "Die Stimme konnte nicht ersetzt werden: {reason}",
     pvv_participant_n: "Teilnehmer {n}",
     pvv_remove: "Entfernen",
@@ -421,6 +436,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Teile der Teilnehmenden",
     pvv_parts_auto: "Gruß aufteilen",
     pvv_parts_hint: "Jeder Teil lässt sich frei bearbeiten.",
+    pvv_no_text: "Noch kein Text.",
     pvv_parts_estimate: "Geschätzte Länge",
     pvv_parts_too_long:
       "Der vollständige Gruß passt nicht in die gewählte Videodauer. Bitte erhöhen Sie die Videodauer oder bearbeiten Sie die Zeilen der Teilnehmenden.",
@@ -486,9 +502,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Голоси Project Joy",
     pvv_option_library_note: "Готові професійні голоси для ваших привітань.",
     pvv_card_add: "Додати свій голос",
-    pvv_card_add_note: "Створіть і збережіть свій особистий голосовий профіль для будь-яких майбутніх привітань.",
+    pvv_card_add_note:
+      "Створіть і збережіть свій особистий голосовий профіль для будь-яких майбутніх привітань.",
     pvv_card_mine: "Мої голоси",
-    pvv_card_mine_note: "Усі ваші голосові профілі автоматично зберігаються в Особистому кабінеті в розділі «Мої голоси» та можуть використовуватися в будь-яких майбутніх привітаннях.",
+    pvv_card_mine_note:
+      "Усі ваші голосові профілі автоматично зберігаються в Особистому кабінеті в розділі «Мої голоси» та можуть використовуватися в будь-яких майбутніх привітаннях.",
     pvv_soon: "Незабаром",
     pvv_choose_category: "Оберіть категорію",
     pvv_cat_female: "Жіночі",
@@ -501,7 +519,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Учасник",
     pvv_no_voice: "Голос не обрано",
     pvv_auto_assign: "Підібрати голоси автоматично",
-    pvv_auto_assign_note: "Project Joy запропонує голос кожному учаснику — завжди з його власної групи.",
+    pvv_auto_assign_note:
+      "Project Joy запропонує голос кожному учаснику — завжди з його власної групи.",
     pvv_auto_done: "Голоси запропоновано — послухайте кожен і підтвердьте.",
     pvv_auto_nothing: "Відповідних голосів поки немає.",
     pvv_auto_replace_question: "Замінити вже підтверджені голоси новим автоматичним підбором?",
@@ -516,7 +535,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Оберіть новий голос для {name}",
     pvv_opening_library: "Відкриваємо бібліотеку голосів…",
     pvv_cancel_replacement: "Скасувати заміну",
-    pvv_replaced_notice: "Голос учасника {name} замінено на {voice}. Послухайте та підтвердьте новий голос.",
+    pvv_replaced_notice:
+      "Голос учасника {name} замінено на {voice}. Послухайте та підтвердьте новий голос.",
     pvv_replace_failed: "Не вдалося замінити голос: {reason}",
     pvv_participant_n: "Учасник {n}",
     pvv_remove: "Видалити",
@@ -580,6 +600,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Частини учасників",
     pvv_parts_auto: "Поділити привітання",
     pvv_parts_hint: "Будь-яку частину можна вільно змінити.",
+    pvv_no_text: "Тексту ще немає.",
     pvv_parts_estimate: "Орієнтовна тривалість",
     pvv_parts_too_long:
       "Повне привітання не вміщується у вибрану тривалість відео. Збільште тривалість відео або відредагуйте репліки учасників.",
@@ -646,9 +667,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Voix Project Joy",
     pvv_option_library_note: "Des voix professionnelles prêtes à l'emploi pour vos messages.",
     pvv_card_add: "Ajouter votre voix",
-    pvv_card_add_note: "Créez et enregistrez votre profil vocal personnel pour tous vos futurs messages.",
+    pvv_card_add_note:
+      "Créez et enregistrez votre profil vocal personnel pour tous vos futurs messages.",
     pvv_card_mine: "Mes voix",
-    pvv_card_mine_note: "Tous vos profils vocaux sont automatiquement enregistrés dans votre Compte personnel, dans la section « Mes voix », et peuvent servir à tous vos futurs messages.",
+    pvv_card_mine_note:
+      "Tous vos profils vocaux sont automatiquement enregistrés dans votre Compte personnel, dans la section « Mes voix », et peuvent servir à tous vos futurs messages.",
     pvv_soon: "Bientôt",
     pvv_choose_category: "Choisir une catégorie",
     pvv_cat_female: "Féminines",
@@ -661,10 +684,12 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Participant",
     pvv_no_voice: "Aucune voix sélectionnée",
     pvv_auto_assign: "Attribuer les voix automatiquement",
-    pvv_auto_assign_note: "Project Joy propose une voix à chaque participant, toujours dans son propre groupe.",
+    pvv_auto_assign_note:
+      "Project Joy propose une voix à chaque participant, toujours dans son propre groupe.",
     pvv_auto_done: "Voix proposées — écoutez chacune et confirmez-la.",
     pvv_auto_nothing: "Aucune voix adaptée n'est encore disponible.",
-    pvv_auto_replace_question: "Remplacer les voix déjà confirmées par une nouvelle attribution automatique ?",
+    pvv_auto_replace_question:
+      "Remplacer les voix déjà confirmées par une nouvelle attribution automatique ?",
     pvv_auto_only_missing: "Seulement les participants sans voix confirmée",
     pvv_auto_replace_all: "Remplacer toutes les voix",
     pvv_confirm: "Confirmer",
@@ -676,7 +701,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Choisissez une nouvelle voix pour {name}",
     pvv_opening_library: "Ouverture de la bibliothèque de voix…",
     pvv_cancel_replacement: "Annuler le remplacement",
-    pvv_replaced_notice: "La voix de {name} a été remplacée par {voice}. Écoutez-la et confirmez-la.",
+    pvv_replaced_notice:
+      "La voix de {name} a été remplacée par {voice}. Écoutez-la et confirmez-la.",
     pvv_replace_failed: "La voix n’a pas pu être remplacée : {reason}",
     pvv_participant_n: "Participant {n}",
     pvv_remove: "Retirer",
@@ -743,6 +769,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Parties des participants",
     pvv_parts_auto: "Partager le message",
     pvv_parts_hint: "Chaque partie peut être modifiée librement.",
+    pvv_no_text: "Pas encore de texte.",
     pvv_parts_estimate: "Durée estimée",
     pvv_parts_too_long:
       "Le message complet ne tient pas dans la durée de vidéo sélectionnée. Veuillez augmenter la durée de la vidéo ou modifier les répliques des participants.",
@@ -810,9 +837,11 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_option_library: "Głosy Project Joy",
     pvv_option_library_note: "Gotowe, profesjonalne głosy do Twoich życzeń.",
     pvv_card_add: "Dodaj swój głos",
-    pvv_card_add_note: "Utwórz i zapisz swój osobisty profil głosu, aby używać go we wszystkich przyszłych życzeniach.",
+    pvv_card_add_note:
+      "Utwórz i zapisz swój osobisty profil głosu, aby używać go we wszystkich przyszłych życzeniach.",
     pvv_card_mine: "Moje głosy",
-    pvv_card_mine_note: "Wszystkie Twoje profile głosu są automatycznie zapisywane na Koncie osobistym w sekcji „Moje głosy” i mogą być używane we wszystkich przyszłych życzeniach.",
+    pvv_card_mine_note:
+      "Wszystkie Twoje profile głosu są automatycznie zapisywane na Koncie osobistym w sekcji „Moje głosy” i mogą być używane we wszystkich przyszłych życzeniach.",
     pvv_soon: "Wkrótce",
     pvv_choose_category: "Wybierz kategorię",
     pvv_cat_female: "Żeńskie",
@@ -825,7 +854,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_participant: "Uczestnik",
     pvv_no_voice: "Nie wybrano głosu",
     pvv_auto_assign: "Dobierz głosy automatycznie",
-    pvv_auto_assign_note: "Project Joy zaproponuje głos każdemu uczestnikowi — zawsze z jego własnej grupy.",
+    pvv_auto_assign_note:
+      "Project Joy zaproponuje głos każdemu uczestnikowi — zawsze z jego własnej grupy.",
     pvv_auto_done: "Głosy zaproponowane — odsłuchaj każdy i potwierdź.",
     pvv_auto_nothing: "Nie ma jeszcze pasujących głosów.",
     pvv_auto_replace_question: "Zastąpić już potwierdzone głosy nowym doborem automatycznym?",
@@ -840,7 +870,8 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_replacing_for: "Wybierz nowy głos dla {name}",
     pvv_opening_library: "Otwieranie biblioteki głosów…",
     pvv_cancel_replacement: "Anuluj zamianę",
-    pvv_replaced_notice: "Głos uczestnika {name} został zamieniony na {voice}. Odsłuchaj i potwierdź nowy głos.",
+    pvv_replaced_notice:
+      "Głos uczestnika {name} został zamieniony na {voice}. Odsłuchaj i potwierdź nowy głos.",
     pvv_replace_failed: "Nie udało się zamienić głosu: {reason}",
     pvv_participant_n: "Uczestnik {n}",
     pvv_remove: "Usuń",
@@ -906,6 +937,7 @@ export const PERSONAL_VIDEO_VOICE_I18N: Record<Lang, Dict> = {
     pvv_parts_title: "Części uczestników",
     pvv_parts_auto: "Podziel życzenia",
     pvv_parts_hint: "Każdą część można dowolnie zmienić.",
+    pvv_no_text: "Jeszcze bez tekstu.",
     pvv_parts_estimate: "Szacowana długość",
     pvv_parts_too_long:
       "Całe życzenie nie mieści się w wybranym czasie trwania wideo. Zwiększ czas trwania wideo lub edytuj kwestie uczestników.",
