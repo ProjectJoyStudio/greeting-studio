@@ -32,6 +32,15 @@ export interface MixResult {
    * it still sounds natural. The number is the place of that voice in the list.
    */
   unsyncable?: number;
+  /** Plain numbers describing why that one voice could not be brought in step. */
+  unsyncableDetail?: {
+    /** Natural length of that voice, in seconds. */
+    spokenSeconds: number;
+    /** Length all the other voices agreed on, in seconds. */
+    targetSeconds: number;
+    /** How much that voice would have to be hurried or held back. */
+    factor: number;
+  };
 }
 
 function base64ToBytes(value: string): Uint8Array {
