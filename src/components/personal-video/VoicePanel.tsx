@@ -975,6 +975,7 @@ export function VoicePanel({
           let track = spoken.get(entry.id);
           if (!track) {
             track = await speak(greeting, entry.id);
+            rememberPace(entry.id, language, wordCount(greeting), track.seconds);
             spoken.set(entry.id, track);
           }
           sources.push(track);
@@ -996,6 +997,24 @@ export function VoicePanel({
               spokenSeconds: merged.unsyncableDetail?.spokenSeconds,
               targetSeconds: merged.unsyncableDetail?.targetSeconds,
             });
+            // A voice that truly failed for this greeting is never offered
+            // again as a recommendation for these exact words and this exact
+            // video length — but it stays perfectly good for another greeting.
+            const key = compatibilityKey({
+              projectId,
+              greeting,
+              language,
+              videoSeconds: videoSeconds ?? 0,
+              speechMode,
+              otherVoiceIds: chorusMembers
+                .filter((m) => m.person.id !== member.person.id)
+                .map((m) => m.voice.speakId),
+            });
+            setIncompatible((prev) =>
+              prev.key === key
+                ? { key, ids: [...new Set([...prev.ids, member.voice.speakId])] }
+                : { key, ids: [member.voice.speakId] },
+            );
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
           return;
