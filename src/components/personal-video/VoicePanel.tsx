@@ -466,8 +466,24 @@ export function VoicePanel({
   /** The voice the single speaker uses, wherever it comes from. */
   const speakerVoice = speaker ? chosenFor(speaker) : null;
 
+  /**
+   * The voice id the saved recording carries. A personal voice is stored under
+   * the id it has at the studio, so it is compared against that id and never
+   * against the profile id shown on screen.
+   */
+  const speakerStoredVoiceId = speakerVoice
+    ? speakerVoice.personal
+      ? ((personalVoices.data?.voices ?? []).find((v) => v.id === speakerVoice.id)
+          ?.providerVoiceId ?? null)
+      : speakerVoice.id
+    : null;
+
   const voiceChanged = Boolean(
-    voiceover && speechMode === "single" && speakerVoice && voiceover.voiceId !== speakerVoice.id,
+    voiceover &&
+      speechMode === "single" &&
+      speakerVoice &&
+      speakerStoredVoiceId &&
+      voiceover.voiceId !== speakerStoredVoiceId,
   );
   const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
   const outdated = voiceChanged || textChanged;
