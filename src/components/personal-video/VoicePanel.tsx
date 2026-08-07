@@ -825,7 +825,12 @@ export function VoicePanel({
         return next;
       });
       setPersonalAssigned((prev) => ({ ...prev, [person.id]: voice }));
-      setConfirmed((prev) => ({ ...prev, [person.id]: true }));
+      // A personal voice is kept exactly like a Project Joy voice: it is
+      // listened to first and only then confirmed.
+      setConfirmed((prev) => ({ ...prev, [person.id]: false }));
+      void saveChoice({ data: { projectId, personId: person.id, confirmed: false } }).catch(
+        () => undefined,
+      );
       if (syncIssue?.personId === person.id) {
         setSyncIssue(null);
         setShowRecommended(false);
