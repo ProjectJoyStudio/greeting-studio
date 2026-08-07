@@ -168,6 +168,7 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     chorusVoiceIds: Array.isArray(row.chorus_voice_ids)
       ? (row.chorus_voice_ids as unknown[]).filter((v): v is string => typeof v === "string")
       : [],
+    speakerPersonId: row.single_speaker_person_id ?? null,
   };
 }
 
