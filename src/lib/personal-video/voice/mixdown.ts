@@ -224,8 +224,42 @@ export async function blendTogether(
   // naturally agree on, so a slow voice is hurried a little and a quick voice
   // is held back a little, instead of one voice deciding for everybody.
   const pieceLengths: number[] = [];
+  // Where a piece may land so that no single voice has to be hurried or held
+  // back beyond what still sounds natural.
+  const lowest: number[] = [];
+  const highest: number[] = [];
   for (let p = 0; p < commonParts; p += 1) {
-    pieceLengths.push(middleOf(grouped.map((g) => g[p]!.end - g[p]!.start)));
+    const spoken = grouped.map((g) => Math.max(1, g[p]!.end - g[p]!.start));
+    lowest.push(Math.max(...spoken) / SYNC_MAX_SPEED);
+    highest.push(Math.min(...spoken) / SYNC_MIN_SPEED);
+    pieceLengths.push(middleOf(spoken));
+  }
+  // A voice so much slower or quicker than the others that no shared length
+  // exists for a piece of the greeting is the only true failure.
+  for (let p = 0; p < commonParts; p += 1) {
+    if (lowest[p]! > highest[p]!) {
+      const spoken = grouped.map((g) => Math.max(1, g[p]!.end - g[p]!.start));
+      const middle = middleOf(spoken);
+      let index = 0;
+      let worst = 1;
+      spoken.forEach((length, i) => {
+        const factor = length / middle;
+        if (Math.abs(Math.log(factor)) > Math.abs(Math.log(worst))) {
+          worst = factor;
+          index = i;
+        }
+      });
+      return {
+        ...finish(new Float32Array(1)),
+        unsyncable: index,
+        unsyncableDetail: {
+          spokenSeconds: Math.round((tracks[index]!.length / SAMPLE_RATE) * 100) / 100,
+          targetSeconds: Math.round((middleOf(tracks.map((t) => t.length)) / SAMPLE_RATE) * 100) / 100,
+          factor: Math.round(worst * 100) / 100,
+        },
+      };
+    }
+    pieceLengths[p] = Math.min(Math.max(pieceLengths[p]!, lowest[p]!), highest[p]!);
   }
   // Pauses are the first thing that gives way: the shortest natural pause any
   // voice leaves is the one everybody keeps.
@@ -248,7 +282,10 @@ export async function blendTogether(
   const targets: SpeechPart[] = [];
   let cursor = 0;
   for (let p = 0; p < commonParts; p += 1) {
-    const length = Math.max(1, Math.round(pieceLengths[p]! * squeeze));
+    // Even when time is short, no piece is squeezed past what the voices can
+    // still speak naturally; the pauses give way first.
+    const wanted = Math.max(1, Math.round(pieceLengths[p]! * squeeze));
+    const length = Math.max(Math.round(lowest[p]!), wanted);
     targets.push({ start: cursor, end: cursor + length });
     cursor += length + Math.round((gapLengths[p] ?? 0) * squeeze);
   }
