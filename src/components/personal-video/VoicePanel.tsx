@@ -199,6 +199,9 @@ export function VoicePanel({
     index: number;
     voiceId: string;
     voiceName: string;
+    /** Natural length of that voice and the length the others agreed on. */
+    spokenSeconds?: number;
+    targetSeconds?: number;
   } | null>(null);
   const [showRecommended, setShowRecommended] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -897,6 +900,10 @@ export function VoicePanel({
         }
         const sources: MixSource[] = [];
         const summary: { label: string; durationSeconds: number; source: string }[] = [];
+        // The same voice chosen for several participants is spoken once and
+        // that single recording is used for each of them, so identical voices
+        // are always perfectly in step with one another.
+        const spoken = new Map<string, MixSource & { seconds: number }>();
         for (const entry of chorusList) {
           if (entry.kind === "audio") {
             // A recording or a personal voice already carries the whole
@@ -909,7 +916,11 @@ export function VoicePanel({
             });
             continue;
           }
-          const track = await speak(greeting, entry.id);
+          let track = spoken.get(entry.id);
+          if (!track) {
+            track = await speak(greeting, entry.id);
+            spoken.set(entry.id, track);
+          }
           sources.push(track);
           summary.push({ label: entry.name, durationSeconds: track.seconds, source: "voice" });
         }
@@ -926,6 +937,8 @@ export function VoicePanel({
               index: merged.unsyncable,
               voiceId: member.voice.personal ? "" : member.voice.id,
               voiceName: member.voice.name,
+              spokenSeconds: merged.unsyncableDetail?.spokenSeconds,
+              targetSeconds: merged.unsyncableDetail?.targetSeconds,
             });
           }
           toast.error(`${t("pvv_chorus_unsyncable")}${member ? ` (${member.voice.name})` : ""}`);
@@ -1242,6 +1255,12 @@ export function VoicePanel({
                   <p className="mt-2 text-xs text-foreground">
                     {t("pvv_sync_dialog_body").replace("{name}", chorusLabel(syncIssue.index))}
                   </p>
+                  {syncIssue.spokenSeconds !== undefined && syncIssue.targetSeconds !== undefined && (
+                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                      {syncIssue.spokenSeconds.toFixed(1)}s → {syncIssue.targetSeconds.toFixed(1)}s
+                      {videoSeconds ? ` · ${speechBudgetSeconds(videoSeconds).toFixed(1)}s` : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
