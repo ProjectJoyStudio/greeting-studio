@@ -45,9 +45,20 @@ export const generateCardImage = createServerFn({ method: "POST" })
     let imageSource: string | null = null;
     let lastError = { code: "generation_failed", message: "Image generation failed." };
 
-    for (const model of [PRIMARY_MODEL, FALLBACK_MODEL]) {
+    // The administrator decides in the Admin Panel which engine leads and
+    // whether a backup may take over after a genuine technical failure.
+    const { generatorOrder, withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
+    const MODEL_BY_KEY: Record<string, string> = {
+      flux_schnell: PRIMARY_MODEL,
+      flux_dev: FALLBACK_MODEL,
+      flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
+    };
+    const order = await generatorOrder("greeting_cards.image", Object.keys(MODEL_BY_KEY));
+    const models = order.map((key) => MODEL_BY_KEY[key]!).filter(Boolean);
+
+    for (const model of models.length ? models : [PRIMARY_MODEL]) {
       try {
-        const { imageUrl } = await runModel(model, enginePrompt);
+        const { imageUrl } = await withGeneratorSlot(model, () => runModel(model, enginePrompt));
         imageSource = imageUrl;
         break;
       } catch (err) {
