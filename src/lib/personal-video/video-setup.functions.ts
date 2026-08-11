@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { clampDuration } from "./video-setup";
+import { clampDuration, sceneSoundCredits, videoCredits } from "./video-setup";
 import type { PvsVideoSetup } from "./video-setup";
 import { normalizeMusicSettings, type PvgMusicSettings } from "@/lib/music/types";
 import { writeGreeting, type GreetingTask } from "./video-setup.server";
@@ -11,22 +11,30 @@ import { writeGreeting, type GreetingTask } from "./video-setup.server";
 export const savePvgVideoSetup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { projectId: string; music?: PvgMusicSettings | undefined } & Partial<PvsVideoSetup>) =>
-      input,
+    (
+      input: {
+        projectId: string;
+        music?: PvgMusicSettings | undefined;
+        sceneSounds?: boolean | undefined;
+      } & Partial<PvsVideoSetup>,
+    ) => input,
   )
   .handler(async ({ data, context }) => {
     // Music belongs to the whole video and never changes the credit cost.
     const music = normalizeMusicSettings(data.music);
+    const seconds = clampDuration(data.durationSeconds);
+    const sceneSounds = data.sceneSounds === true;
     const { error } = await context.supabase
       .from("pvg_projects")
       .update({
-        video_duration_seconds: clampDuration(data.durationSeconds),
+        video_duration_seconds: seconds,
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
+        scene_sounds: sceneSounds,
         ...(data.music ? { music_settings: music as unknown as Record<string, never> } : {}),
         workflow_step: "video",
-        order_cost: clampDuration(data.durationSeconds),
+        order_cost: videoCredits(seconds) + (sceneSounds ? sceneSoundCredits(seconds) : 0),
       })
       .eq("id", data.projectId)
       .is("deleted_at", null);

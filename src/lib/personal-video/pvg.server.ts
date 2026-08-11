@@ -6,7 +6,7 @@ import { normalizeMusicSettings } from "@/lib/music/types";
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id, music_settings";
+  "id, recipient_name, occasion, scene_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id, music_settings, scene_sounds";
 export const PERSON_COLUMNS =
   "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
@@ -40,6 +40,7 @@ export interface ProjectRow {
   chorus_voice_ids?: unknown;
   single_speaker_person_id?: string | null;
   music_settings?: unknown;
+  scene_sounds?: boolean | null;
 }
 
 export interface PersonRow {
@@ -172,6 +173,7 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
       : [],
     speakerPersonId: row.single_speaker_person_id ?? null,
     music: normalizeMusicSettings(row.music_settings),
+    sceneSounds: Boolean(row.scene_sounds),
   };
 }
 

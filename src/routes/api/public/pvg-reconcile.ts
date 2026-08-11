@@ -16,8 +16,12 @@ export const Route = createFileRoute("/api/public/pvg-reconcile")({
           });
         }
         const { reconcilePendingScenes } = await import("@/lib/personal-video/pvg.server");
+        const { reconcilePendingVideos } = await import(
+          "@/lib/personal-video/video-render.server"
+        );
         const result = await reconcilePendingScenes(40);
-        return new Response(JSON.stringify({ ok: true, ...result }), {
+        const videos = await reconcilePendingVideos(20);
+        return new Response(JSON.stringify({ ok: true, ...result, ...videos }), {
           headers: { "Content-Type": "application/json" },
         });
       },

@@ -2,12 +2,23 @@
 // how long a video may be, what it costs and how well a greeting fits.
 
 export const PVS_MIN_SECONDS = 5;
-export const PVS_MAX_SECONDS = 60;
+export const PVS_MAX_SECONDS = 15;
 export const PVS_STEP_SECONDS = 1;
-export const PVS_DEFAULT_SECONDS = 15;
+export const PVS_DEFAULT_SECONDS = 10;
 
 /** One second of finished video costs one credit. */
 export const PVS_CREDITS_PER_SECOND = 1;
+
+/**
+ * Scene sounds are the quiet life of the picture — wind, waves, a room, a
+ * street. They are optional and priced in three simple steps.
+ */
+export function sceneSoundCredits(seconds: number): number {
+  const duration = clampDuration(seconds);
+  if (duration <= 5) return 2;
+  if (duration <= 10) return 4;
+  return 6;
+}
 
 /** Silence reserved at the very start and the very end of every video. */
 export const PVS_LEAD_IN_SECONDS = 0.5;
@@ -98,6 +109,7 @@ export interface PvsCostSummary {
   alreadySpent: number;
   video: number;
   voice: number;
+  sceneSounds: number;
   total: number;
   remaining: number;
 }
@@ -107,9 +119,18 @@ export function costSummary(
   alreadySpent: number,
   seconds: number,
   balance: number,
+  sceneSoundsEnabled = false,
 ): PvsCostSummary {
   const video = videoCredits(seconds);
   const voice = 0;
-  const total = video + voice;
-  return { alreadySpent, video, voice, total, remaining: Math.max(0, balance - total) };
+  const sceneSounds = sceneSoundsEnabled ? sceneSoundCredits(seconds) : 0;
+  const total = video + voice + sceneSounds;
+  return {
+    alreadySpent,
+    video,
+    voice,
+    sceneSounds,
+    total,
+    remaining: Math.max(0, balance - total),
+  };
 }
