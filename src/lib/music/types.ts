@@ -62,6 +62,9 @@ export interface PvgMusicSettings {
   uploadName: string;
   uploadDurationSeconds: number;
   volume: MusicVolume;
+  /** Playback balance the person approved, kept for the final mixing. 0…1 */
+  voiceVolume: number;
+  musicVolume: number;
   /** Prepared for the final mixing: the voice always stays the main sound. */
   ducking: { enabled: boolean; duckedGain: number; releaseSeconds: number };
   fadeInSeconds: number;
@@ -82,6 +85,8 @@ export const DEFAULT_MUSIC_SETTINGS: PvgMusicSettings = {
   uploadName: "",
   uploadDurationSeconds: 0,
   volume: "quiet",
+  voiceVolume: 0.9,
+  musicVolume: 0.22,
   ducking: { enabled: true, duckedGain: 0.35, releaseSeconds: 0.6 },
   fadeInSeconds: MUSIC_FADE_IN_SECONDS,
   fadeOutSeconds: MUSIC_FADE_OUT_SECONDS,
@@ -90,6 +95,12 @@ export const DEFAULT_MUSIC_SETTINGS: PvgMusicSettings = {
 
 function volume(value: unknown): MusicVolume {
   return value === "medium" || value === "louder" ? value : "quiet";
+}
+
+function gain(value: unknown, fallback: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(1, Math.max(0, n));
 }
 
 /** Reads whatever is stored with a project back into complete settings. */
@@ -109,6 +120,11 @@ export function normalizeMusicSettings(value: unknown): PvgMusicSettings {
     uploadName: typeof raw.uploadName === "string" ? raw.uploadName : "",
     uploadDurationSeconds: Number(raw.uploadDurationSeconds ?? 0) || 0,
     volume: volume(raw.volume),
+    voiceVolume: gain(raw.voiceVolume, DEFAULT_MUSIC_SETTINGS.voiceVolume),
+    musicVolume: gain(
+      raw.musicVolume,
+      MUSIC_VOLUME_GAIN[volume(raw.volume)] ?? DEFAULT_MUSIC_SETTINGS.musicVolume,
+    ),
     ducking: {
       enabled: duck.enabled !== false,
       duckedGain: Number(duck.duckedGain ?? DEFAULT_MUSIC_SETTINGS.ducking.duckedGain) || 0.35,
@@ -152,6 +168,6 @@ export function musicPlan(
     trimmed: source * loops > needed,
     fadeInSeconds: Math.min(settings.fadeInSeconds, needed / 4),
     fadeOutSeconds: Math.min(settings.fadeOutSeconds, needed / 3),
-    gain: MUSIC_VOLUME_GAIN[settings.volume],
+    gain: settings.musicVolume,
   };
 }
