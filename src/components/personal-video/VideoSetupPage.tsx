@@ -371,29 +371,13 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 onChange={setMusic}
               />
 
-              {/* Reserved: audio levels */}
-              <Panel
-                icon={<Sliders className="h-4 w-4" />}
-                title={t("pvs_audio")}
-                soon={t("pvs_soon")}
-              >
-                <div className="space-y-4 opacity-60">
-                  {[t("pvs_voice_volume"), t("pvs_music_volume")].map((label) => (
-                    <div key={label}>
-                      <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        defaultValue={70}
-                        disabled
-                        aria-label={label}
-                        className="w-full accent-primary"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </Panel>
+              {/* The balance between the voice and the music */}
+              <SoundPanel
+                projectId={project.id}
+                settings={music}
+                disabled={readOnly}
+                onChange={setMusic}
+              />
             </div>
 
             {/* RIGHT — the approved picture and the live cost -------------- */}
