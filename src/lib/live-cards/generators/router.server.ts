@@ -65,14 +65,14 @@ export type RoutedAnimation = {
 
 /** Hands the animation to the best available engine, with silent fallback. */
 export async function startVideoRequest(request: VideoRequest): Promise<RoutedAnimation> {
-  const engines = resolveVideoGenerators();
+  const engines = await orderByAdmin("live_cards.animation", resolveVideoGenerators());
   if (!engines.length) {
     throw new GeneratorError("no_generator", "No animation engine is available right now.", "-");
   }
   let lastError: GeneratorError | null = null;
   for (const engine of engines) {
     try {
-      const job = await engine.start(request);
+      const job = await withSlot(engine.key, () => engine.start(request));
       return { jobId: job.jobId, generatorKey: engine.key, generatorModel: engine.model };
     } catch (err) {
       lastError =
@@ -127,7 +127,7 @@ export type RoutedImage = {
 
 /** Runs the request through the best available engine, with silent fallback. */
 export async function routeImageRequest(request: ImageRequest): Promise<RoutedImage> {
-  const engines = resolveImageGenerators();
+  const engines = await orderByAdmin("live_cards.start_image", resolveImageGenerators());
   if (!engines.length) {
     throw new GeneratorError("no_generator", "No image engine is available right now.", "-");
   }
@@ -135,7 +135,7 @@ export async function routeImageRequest(request: ImageRequest): Promise<RoutedIm
   let lastError: GeneratorError | null = null;
   for (const engine of engines) {
     try {
-      const output = await engine.generate(request);
+      const output = await withSlot(engine.key, () => engine.generate(request));
       return { ...output, generatorKey: engine.key, generatorModel: engine.model };
     } catch (err) {
       lastError =
