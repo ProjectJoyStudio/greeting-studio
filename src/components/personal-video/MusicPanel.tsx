@@ -401,31 +401,10 @@ export function MusicPanel({
         </div>
       )}
 
-      {/* Volume, always available ---------------------------------------- */}
       {settings.mode !== "none" && (
-        <div className="mt-6 border-t border-border/60 pt-5">
-          <p className="text-xs font-medium text-muted-foreground">{t("mus_volume")}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {VOLUMES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                disabled={disabled}
-                onClick={() => onChange({ ...settings, volume: level })}
-                className={`rounded-full border px-4 py-2 text-xs font-medium transition disabled:opacity-60 ${
-                  settings.volume === level
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/60 hover:border-primary/40"
-                }`}
-              >
-                {t(`mus_vol_${level}`)}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            {t("mus_volume_hint")} {t("mus_ducking")}
-          </p>
-        </div>
+        <p className="mt-6 border-t border-border/60 pt-5 text-[11px] leading-relaxed text-muted-foreground">
+          {t("mus_volume_hint")} {t("mus_ducking")}
+        </p>
       )}
     </div>
   );
