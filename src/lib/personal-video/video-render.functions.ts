@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { PvgVideoJob } from "./video-render";
+import { PVR_REGENERATION_CREDITS } from "./video-render";
 import { clampDuration, sceneSoundCredits, videoCredits } from "./video-setup";
 
 interface ProjectRowLite {
@@ -11,39 +12,85 @@ interface ProjectRowLite {
   recipient_name: string | null;
   occasion: string | null;
   scene_description: string | null;
+  action_description: string | null;
   video_duration_seconds: number | null;
   scene_sounds: boolean | null;
   selected_scene_id: string | null;
   credits_charged: number;
+  speech_mode: string | null;
+  single_speaker_person_id: string | null;
 }
 
-/** The newest film of one order, finished in the background when needed. */
+interface PersonLite {
+  id: string;
+  name: string | null;
+  position: number;
+  part_text: string | null;
+  voice_id: string | null;
+}
+
+export interface PvgVideoState {
+  /** Every film of this order, newest first. */
+  variants: PvgVideoJob[];
+  /** The newest film — the one whose progress is followed. */
+  video: PvgVideoJob | null;
+  selectedId: string | null;
+  balance: number;
+  /** What the next film costs: full price at first, then the fixed price. */
+  nextPrice: number;
+  hasReady: boolean;
+}
+
+/** Every film of one order, finished in the background when needed. */
 export const getPvgVideo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
-  .handler(async ({ data, context }): Promise<{ video: PvgVideoJob | null; balance: number }> => {
+  .handler(async ({ data, context }): Promise<PvgVideoState> => {
     const { supabase, userId } = context;
     const { VIDEO_COLUMNS, reconcileVideo, toVideoJob } = await import("./video-render.server");
-    const { data: row } = await supabase
-      .from("pvg_videos")
-      .select(VIDEO_COLUMNS)
-      .eq("project_id", data.projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    let current = row as Awaited<ReturnType<typeof loadRow>>;
-    if (current && ["pending", "processing", "assets"].includes(current.status)) {
-      await reconcileVideo(current.id);
-      current = await loadRow(supabase, current.id);
+    type Row = import("./video-render.server").VideoRow;
+
+    const read = async (): Promise<Row[]> => {
+      const { data: rows } = await supabase
+        .from("pvg_videos")
+        .select(VIDEO_COLUMNS)
+        .eq("project_id", data.projectId)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      return (rows ?? []) as Row[];
+    };
+
+    let rows = await read();
+    const running = rows.filter((r) => ["pending", "processing", "assets"].includes(r.status));
+    if (running.length > 0) {
+      for (const row of running) await reconcileVideo(row.id);
+      rows = await read();
     }
+
     const { data: wallet } = await supabase
       .from("credit_wallets")
       .select("balance")
       .eq("user_id", userId)
       .maybeSingle();
+
+    const variants = await Promise.all(rows.map((row) => toVideoJob(row)));
+    const ready = variants.filter((v) => v.status === "ready");
+    const project = await supabase
+      .from("pvg_projects")
+      .select("video_duration_seconds")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    const seconds = clampDuration(
+      (project.data as { video_duration_seconds: number | null } | null)?.video_duration_seconds ??
+        10,
+    );
     return {
-      video: current ? await toVideoJob(current) : null,
+      variants,
+      video: variants[0] ?? null,
+      selectedId: (ready.find((v) => v.isSelected) ?? ready[0])?.id ?? null,
       balance: (wallet as { balance: number } | null)?.balance ?? 0,
+      nextPrice: ready.length > 0 ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
+      hasReady: ready.length > 0,
     };
   });
 
@@ -52,10 +99,7 @@ async function loadRow(supabase: unknown, id: string) {
   const client = supabase as {
     from: (t: string) => {
       select: (c: string) => {
-        eq: (
-          c: string,
-          v: string,
-        ) => { maybeSingle: () => Promise<{ data: unknown }> };
+        eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> };
       };
     };
   };
@@ -64,12 +108,13 @@ async function loadRow(supabase: unknown, id: string) {
 }
 
 /**
- * Confirms the order and starts the film. The credits of this page are taken
- * exactly once, here, and returned in full whenever the film cannot be made.
+ * Confirms the order and starts one film. The first film costs one credit per
+ * second; every further variant of the same order costs a fixed five credits.
+ * Credits are taken exactly once, here, and returned whenever a film fails.
  */
 export const startPvgVideo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string }) => input)
+  .inputValidator((input: { projectId: string; again?: boolean | undefined }) => input)
   .handler(
     async ({
       data,
@@ -86,7 +131,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const { data: projectRow } = await supabase
         .from("pvg_projects")
         .select(
-          "id, user_id, recipient_name, occasion, scene_description, video_duration_seconds, scene_sounds, selected_scene_id, credits_charged",
+          "id, user_id, recipient_name, occasion, scene_description, action_description, video_duration_seconds, scene_sounds, selected_scene_id, credits_charged, speech_mode, single_speaker_person_id",
         )
         .eq("id", data.projectId)
         .maybeSingle();
@@ -102,18 +147,32 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         return (wallet as { balance: number } | null)?.balance ?? 0;
       };
 
+      type Row = import("./video-render.server").VideoRow;
+
       // One film at a time: a second click never starts a second paid render.
-      const { data: existingRow } = await supabase
+      const { data: runningRow } = await supabase
         .from("pvg_videos")
         .select(VIDEO_COLUMNS)
         .eq("project_id", project.id)
-        .in("status", ["pending", "processing", "assets", "ready"])
+        .in("status", ["pending", "processing", "assets"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const existing = existingRow as import("./video-render.server").VideoRow | null;
-      if (existing) {
-        return { ok: true, video: await toVideoJob(existing), balance: await balanceOf() };
+      const running = runningRow as Row | null;
+      if (running) {
+        return { ok: true, video: await toVideoJob(running), balance: await balanceOf() };
+      }
+
+      const { data: readyRows } = await supabase
+        .from("pvg_videos")
+        .select(VIDEO_COLUMNS)
+        .eq("project_id", project.id)
+        .eq("status", "ready")
+        .order("created_at", { ascending: false });
+      const ready = (readyRows ?? []) as Row[];
+      // Without an explicit wish for another film, the finished one is shown.
+      if (ready.length > 0 && !data.again) {
+        return { ok: true, video: await toVideoJob(ready[0]!), balance: await balanceOf() };
       }
 
       // The approved starting scene is the first frame of the film.
@@ -129,8 +188,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         storage_bucket: string | null;
         storage_path: string | null;
       }[];
-      const chosen =
-        scenes.find((s) => s.id === project.selected_scene_id) ?? scenes[0] ?? null;
+      const chosen = scenes.find((s) => s.id === project.selected_scene_id) ?? scenes[0] ?? null;
       if (!chosen?.storage_bucket || !chosen.storage_path) {
         return { ok: false, error: "pvr_err_no_scene", video: null, balance: await balanceOf() };
       }
@@ -142,9 +200,13 @@ export const startPvgVideo = createServerFn({ method: "POST" })
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       const sceneSounds = Boolean(project.scene_sounds);
-      const price = videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
+      const isAgain = ready.length > 0;
+      const price = isAgain
+        ? PVR_REGENERATION_CREDITS
+        : videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
 
       // The greeting voice already prepared on page two drives the speaking.
+      // It is never added a second time afterwards.
       const { readVoiceover } = await import("./voice/voice.server");
       const voiceover = await readVoiceover(project.id);
       const audioUrl = voiceover?.audioUrl ?? null;
@@ -179,11 +241,14 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         txn_type: "order_charge",
         amount: -price,
         balance_after: w.balance - price,
-        description: "Personal video greeting — the film",
+        description: isAgain
+          ? "Personal video greeting — another film of the same order"
+          : "Personal video greeting — the film",
         metadata: {
           project_id: project.id,
           seconds: duration,
           scene_sounds: sceneSounds,
+          regeneration: isAgain,
         },
       });
       await supabaseAdmin
@@ -193,6 +258,48 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           status: "video_generating",
         } as never)
         .eq("id", project.id);
+
+      // Who speaks, and who only smiles, comes from this order's own people.
+      const { data: peopleRows } = await supabase
+        .from("pvg_people")
+        .select("id, name, position, part_text, voice_id")
+        .eq("project_id", project.id)
+        .order("position", { ascending: true });
+      const people = (peopleRows ?? []) as PersonLite[];
+      const speechMode =
+        project.speech_mode === "parts" || project.speech_mode === "chorus"
+          ? project.speech_mode
+          : "single";
+      const named = (p: PersonLite, i: number) => (p.name?.trim() ? p.name.trim() : `Person ${i + 1}`);
+      let speakers: PersonLite[];
+      if (speechMode === "single") {
+        const one =
+          people.find((p) => p.id === project.single_speaker_person_id) ?? people[0] ?? null;
+        speakers = one ? [one] : [];
+      } else if (speechMode === "parts") {
+        speakers = people.filter((p) => (p.part_text ?? "").trim().length > 0);
+        if (speakers.length === 0) speakers = people;
+      } else {
+        speakers = people.filter((p) => Boolean(p.voice_id));
+        if (speakers.length === 0) speakers = people;
+      }
+      const speakerIds = new Set(speakers.map((p) => p.id));
+
+      const { buildVideoPrompt } = await import("./generator/video-prompt");
+      const prompt = buildVideoPrompt({
+        actionDescription: project.action_description ?? "",
+        occasion: project.occasion ?? "",
+        speechMode,
+        speakerNames: speakers.map((p) => named(p, people.indexOf(p))),
+        silentNames: people.filter((p) => !speakerIds.has(p.id)).map((p, i) => named(p, i)),
+      });
+
+      const variantIndex =
+        ready.length > 0
+          ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1
+          : 1;
+      // A fresh seed makes every further film a genuinely new variation.
+      const seed = Math.floor(Math.random() * 2_147_483_647);
 
       const { data: created, error: createError } = await supabaseAdmin
         .from("pvg_videos")
@@ -204,19 +311,14 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           duration_seconds: duration,
           scene_sounds: sceneSounds,
           credits_charged: price,
+          variant_index: variantIndex,
+          action_description: project.action_description ?? "",
+          seed,
         } as never)
         .select(VIDEO_COLUMNS)
         .single();
       if (createError) throw new Error(createError.message);
-      const videoRow = created as import("./video-render.server").VideoRow;
-
-      const prompt = [
-        (project.scene_description ?? "").trim(),
-        `A warm, premium celebration film for ${(project.occasion ?? "").trim()}.`,
-        "The people stay exactly as they are in the picture and speak the given greeting audio with natural, accurate lip movement. Gentle natural motion, cinematic lighting, no text on screen, no invented speech.",
-      ]
-        .filter(Boolean)
-        .join(" ");
+      const videoRow = created as Row;
 
       try {
         const { startVideoRender } = await import("./generator/video-engine.server");
@@ -226,6 +328,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           audioUrl,
           durationSeconds: duration,
           sceneSounds,
+          seed,
         });
         await supabaseAdmin
           .from("pvg_videos")
@@ -265,6 +368,31 @@ export const startPvgVideo = createServerFn({ method: "POST" })
     },
   );
 
+/** Choosing between films that already exist never costs a credit. */
+export const selectPvgVideoVariant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; videoId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("pvg_videos")
+      .select("id, project_id, user_id, status")
+      .eq("id", data.videoId)
+      .maybeSingle();
+    const video = row as {
+      id: string;
+      project_id: string;
+      user_id: string;
+      status: string;
+    } | null;
+    if (!video || video.user_id !== userId || video.project_id !== data.projectId) {
+      throw new Error("video_not_found");
+    }
+    const { markSelectedVariant } = await import("./video-render.server");
+    await markSelectedVariant(data.projectId, data.videoId);
+    return { selected: true as const };
+  });
+
 /** After a failure the customer may try again; the failed film was refunded. */
 export const retryPvgVideo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -279,10 +407,6 @@ export const retryPvgVideo = createServerFn({ method: "POST" })
     const p = project as { id: string; user_id: string } | null;
     if (!p || p.user_id !== userId) throw new Error("project_not_found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("pvg_videos")
-      .delete()
-      .eq("project_id", p.id)
-      .eq("status", "failed");
+    await supabaseAdmin.from("pvg_videos").delete().eq("project_id", p.id).eq("status", "failed");
     return { cleared: true as const };
   });
