@@ -25,6 +25,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Download",
     pvr_err_credits: "There are not enough credits for this video.",
     pvr_err_no_scene: "Choose and approve a starting scene first.",
+    pvr_err_no_voice: "Your greeting voice is not ready yet. Create the greeting voice first.",
     pvr_err_generic: "The film could not be started. Please try again.",
   },
   ru: {
@@ -51,6 +52,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Скачать",
     pvr_err_credits: "Кредитов для этого видео недостаточно.",
     pvr_err_no_scene: "Сначала выберите и подтвердите начальную сцену.",
+    pvr_err_no_voice: "Голос поздравления ещё не готов. Сначала создайте голос поздравления.",
     pvr_err_generic: "Не удалось начать создание видео. Попробуйте ещё раз.",
   },
   de: {
@@ -78,6 +80,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Herunterladen",
     pvr_err_credits: "Für dieses Video reichen die Credits nicht.",
     pvr_err_no_scene: "Wählen und bestätigen Sie zuerst eine Startszene.",
+    pvr_err_no_voice: "Ihre Grußstimme ist noch nicht fertig. Erstellen Sie zuerst die Stimme.",
     pvr_err_generic: "Der Film konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
   },
   uk: {
@@ -104,6 +107,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Завантажити",
     pvr_err_credits: "Кредитів для цього відео недостатньо.",
     pvr_err_no_scene: "Спершу оберіть і підтвердьте початкову сцену.",
+    pvr_err_no_voice: "Голос привітання ще не готовий. Спершу створіть голос привітання.",
     pvr_err_generic: "Не вдалося розпочати створення відео. Спробуйте ще раз.",
   },
   fr: {
@@ -131,6 +135,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Télécharger",
     pvr_err_credits: "Les crédits sont insuffisants pour cette vidéo.",
     pvr_err_no_scene: "Choisissez et validez d'abord une scène de départ.",
+    pvr_err_no_voice: "Votre voix de vœux n'est pas encore prête. Créez-la d'abord.",
     pvr_err_generic: "Le film n'a pas pu démarrer. Veuillez réessayer.",
   },
   pl: {
@@ -157,6 +162,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download: "Pobierz",
     pvr_err_credits: "Za mało kredytów na to wideo.",
     pvr_err_no_scene: "Najpierw wybierz i zatwierdź scenę początkową.",
+    pvr_err_no_voice: "Głos życzeń nie jest jeszcze gotowy. Najpierw utwórz głos życzeń.",
     pvr_err_generic: "Nie udało się rozpocząć tworzenia filmu. Spróbuj ponownie.",
   },
 };
