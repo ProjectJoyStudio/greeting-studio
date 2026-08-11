@@ -41,12 +41,11 @@ async function orderByAdmin<T extends { key: string }>(functionId: string, engin
 
 /** Honours the engine's parallel-job limit; "Auto" holds nothing back. */
 async function withSlot<T>(key: string, run: () => Promise<T>): Promise<T> {
-  try {
-    const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
-    return await withGeneratorSlot(key, run);
-  } catch {
-    return run();
-  }
+  // The generation itself is never retried here: only the limiter is optional.
+  const limiter = await import("@/lib/admin/generators/runtime.server")
+    .then((m) => m.withGeneratorSlot)
+    .catch(() => null);
+  return limiter ? limiter(key, run) : run();
 }
 
 /** Registered image engines. Add, remove or replace entries here only. */
