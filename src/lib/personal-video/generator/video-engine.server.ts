@@ -16,10 +16,6 @@ const API_BASE = "https://api.replicate.com/v1";
 
 export const PVG_DEFAULT_VIDEO_ENGINE = "OMNIHUMAN_15";
 
-/** The engine adds no sound of its own beyond the greeting audio we send. */
-const NEGATIVE =
-  "extra speech, invented dialogue, narration, singing, song, lyrics, music, soundtrack, subtitles, text overlay, watermark, distorted faces";
-
 interface VideoEngineDefinition {
   key: string;
   model: string;
@@ -29,6 +25,7 @@ interface VideoEngineDefinition {
     audioUrl: string;
     durationSeconds: number;
     sceneSounds: boolean;
+    seed?: number | undefined;
   }) => Record<string, unknown>;
 }
 
@@ -36,13 +33,12 @@ const ENGINES: Record<string, VideoEngineDefinition> = {
   OMNIHUMAN_15: {
     key: "omni_human_15",
     model: "bytedance/omni-human-1.5",
-    buildInput: ({ prompt, imageUrl, audioUrl }) => ({
+    // The engine accepts exactly these inputs: picture, speech, words, seed.
+    buildInput: ({ prompt, imageUrl, audioUrl, seed }) => ({
       prompt,
       image: imageUrl,
-      image_input: imageUrl,
       audio: audioUrl,
-      audio_input: audioUrl,
-      negative_prompt: NEGATIVE,
+      ...(typeof seed === "number" ? { seed } : {}),
     }),
   },
 };
@@ -122,6 +118,7 @@ export async function startVideoRender(input: {
   audioUrl: string;
   durationSeconds: number;
   sceneSounds: boolean;
+  seed?: number | undefined;
 }): Promise<PvgVideoStartResult> {
   const active = await activeEngine();
   const res = await fetch(`${API_BASE}/models/${active.model}/predictions`, {
