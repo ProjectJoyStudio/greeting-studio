@@ -144,6 +144,14 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const sceneSounds = Boolean(project.scene_sounds);
       const price = videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
 
+      // The greeting voice already prepared on page two drives the speaking.
+      const { readVoiceover } = await import("./voice/voice.server");
+      const voiceover = await readVoiceover(project.id);
+      const audioUrl = voiceover?.audioUrl ?? null;
+      if (!audioUrl) {
+        return { ok: false, error: "pvr_err_no_voice", video: null, balance: await balanceOf() };
+      }
+
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: walletRow } = await supabaseAdmin
         .from("credit_wallets")
@@ -215,6 +223,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         const started = await startVideoRender({
           prompt,
           imageUrl,
+          audioUrl,
           durationSeconds: duration,
           sceneSounds,
         });
