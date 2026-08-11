@@ -9,7 +9,6 @@ import {
   Film,
   Loader2,
   PenLine,
-  Sliders,
   Sparkles,
   Wand2,
 } from "lucide-react";
