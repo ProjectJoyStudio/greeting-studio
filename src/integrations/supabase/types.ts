@@ -2692,6 +2692,7 @@ export type Database = {
       }
       pvg_projects: {
         Row: {
+          action_description: string | null
           chorus_voice_ids: Json
           created_at: string
           credit_history: Json
@@ -2730,6 +2731,7 @@ export type Database = {
           workflow_step: string
         }
         Insert: {
+          action_description?: string | null
           chorus_voice_ids?: Json
           created_at?: string
           credit_history?: Json
@@ -2768,6 +2770,7 @@ export type Database = {
           workflow_step?: string
         }
         Update: {
+          action_description?: string | null
           chorus_voice_ids?: Json
           created_at?: string
           credit_history?: Json
@@ -2885,6 +2888,7 @@ export type Database = {
       }
       pvg_videos: {
         Row: {
+          action_description: string | null
           completed_at: string | null
           created_at: string
           credits_charged: number
@@ -2894,17 +2898,21 @@ export type Database = {
           generator_key: string | null
           generator_model: string | null
           id: string
+          is_selected: boolean
           job_id: string
           prediction_id: string | null
           project_id: string
           scene_sounds: boolean
+          seed: number | null
           status: string
           storage_bucket: string | null
           storage_path: string | null
           updated_at: string
           user_id: string
+          variant_index: number
         }
         Insert: {
+          action_description?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -2914,17 +2922,21 @@ export type Database = {
           generator_key?: string | null
           generator_model?: string | null
           id?: string
+          is_selected?: boolean
           job_id: string
           prediction_id?: string | null
           project_id: string
           scene_sounds?: boolean
+          seed?: number | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
           updated_at?: string
           user_id: string
+          variant_index?: number
         }
         Update: {
+          action_description?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -2934,15 +2946,18 @@ export type Database = {
           generator_key?: string | null
           generator_model?: string | null
           id?: string
+          is_selected?: boolean
           job_id?: string
           prediction_id?: string | null
           project_id?: string
           scene_sounds?: boolean
+          seed?: number | null
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
           updated_at?: string
           user_id?: string
+          variant_index?: number
         }
         Relationships: [
           {
