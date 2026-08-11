@@ -2,6 +2,7 @@
 
 import type { PvsVideoSetup } from "./video-setup";
 import type { PvgSpeechMode, PvgSyncMode, PvgVoiceSource } from "./voice/speech";
+import type { PvgMusicSettings } from "@/lib/music/types";
 
 /** Standard projects hold up to five people. Premium raises this later. */
 export const PVG_MAX_PEOPLE = 5;
@@ -88,6 +89,8 @@ export interface PvgProject {
   chorusVoiceIds: string[];
   /** The one participant who speaks the whole greeting in "one voice" mode. */
   speakerPersonId: string | null;
+  /** Background music of the whole video. It never costs a credit. */
+  music: PvgMusicSettings;
   people: PvgPerson[];
   scenes: PvgScene[];
 }

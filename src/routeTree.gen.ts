@@ -60,6 +60,7 @@ import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
 import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminMusicRouteImport } from './routes/admin.music'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
@@ -348,6 +349,11 @@ const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMusicRoute = AdminMusicRouteImport.update({
+  id: '/music',
+  path: '/music',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   id: '/languages',
   path: '/languages',
@@ -557,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
@@ -639,6 +646,7 @@ export interface FileRoutesByTo {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/platform-settings': typeof AdminPlatformSettingsRoute
@@ -812,6 +821,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/platform-settings'
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/platform-settings'
@@ -979,6 +990,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/platform-settings'
@@ -1422,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/music': {
+      id: '/admin/music'
+      path: '/music'
+      fullPath: '/admin/music'
+      preLoaderRoute: typeof AdminMusicRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/languages': {
       id: '/admin/languages'
       path: '/languages'
@@ -1710,6 +1729,7 @@ interface AdminRouteChildren {
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
+  AdminMusicRoute: typeof AdminMusicRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPlatformSettingsRoute: typeof AdminPlatformSettingsRoute
@@ -1738,6 +1758,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
+  AdminMusicRoute: AdminMusicRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPlatformSettingsRoute: AdminPlatformSettingsRoute,
@@ -1826,13 +1847,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
