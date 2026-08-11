@@ -15,12 +15,10 @@ import {
   MUSIC_CATEGORIES,
   musicPlan,
   type MusicMode,
-  type MusicVolume,
   type PvgMusicSettings,
 } from "@/lib/music/types";
 
 const MODES: MusicMode[] = ["none", "library", "upload"];
-const VOLUMES: MusicVolume[] = ["quiet", "medium", "louder"];
 
 /**
  * Background music of the whole video: the Project Joy library, music the
@@ -110,7 +108,13 @@ export function MusicPanel({
     stop();
     if (mode === settings.mode) return;
     if (mode === "none") {
-      onChange({ ...DEFAULT_MUSIC_SETTINGS, volume: settings.volume, mode: "none" });
+      onChange({
+        ...DEFAULT_MUSIC_SETTINGS,
+        volume: settings.volume,
+        voiceVolume: settings.voiceVolume,
+        musicVolume: settings.musicVolume,
+        mode: "none",
+      });
       return;
     }
     if (mode === "library") {
@@ -256,6 +260,8 @@ export function MusicPanel({
                 onChange({
                   ...DEFAULT_MUSIC_SETTINGS,
                   volume: settings.volume,
+                  voiceVolume: settings.voiceVolume,
+                  musicVolume: settings.musicVolume,
                   mode: settings.mode,
                 });
               }}
