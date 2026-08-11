@@ -4,7 +4,7 @@
 import type { PvgVideoJob, PvgVideoStatus } from "./video-render";
 
 export const VIDEO_COLUMNS =
-  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, storage_bucket, storage_path, error_code, error_message, created_at";
+  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected";
 
 export interface VideoRow {
   id: string;
@@ -21,6 +21,9 @@ export interface VideoRow {
   error_code: string | null;
   error_message: string | null;
   created_at: string;
+  variant_index?: number | null;
+  action_description?: string | null;
+  is_selected?: boolean | null;
 }
 
 export function pvgVideoBucket(): string {
@@ -54,7 +57,26 @@ export async function toVideoJob(row: VideoRow): Promise<PvgVideoJob> {
     errorCode: row.error_code,
     errorMessage: row.error_message,
     createdAt: row.created_at,
+    variantIndex: row.variant_index ?? 1,
+    isSelected: Boolean(row.is_selected),
+    actionDescription: row.action_description ?? "",
   };
+}
+
+/**
+ * Marks one finished film as the one the customer prefers. Choosing between
+ * films that already exist never costs a credit.
+ */
+export async function markSelectedVariant(projectId: string, videoId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin
+    .from("pvg_videos")
+    .update({ is_selected: false } as never)
+    .eq("project_id", projectId);
+  await supabaseAdmin
+    .from("pvg_videos")
+    .update({ is_selected: true } as never)
+    .eq("id", videoId);
 }
 
 /** Gives back exactly what one failed film took, and never more. */
