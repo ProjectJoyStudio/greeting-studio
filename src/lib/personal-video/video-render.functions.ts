@@ -213,7 +213,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const prompt = [
         (project.scene_description ?? "").trim(),
         `A warm, premium celebration film for ${(project.occasion ?? "").trim()}.`,
-        "Gentle natural motion, the people stay exactly as they are in the picture, cinematic lighting, no text on screen.",
+        "The people stay exactly as they are in the picture and speak the given greeting audio with natural, accurate lip movement. Gentle natural motion, cinematic lighting, no text on screen, no invented speech.",
       ]
         .filter(Boolean)
         .join(" ");
