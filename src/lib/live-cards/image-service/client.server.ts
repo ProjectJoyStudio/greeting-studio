@@ -67,6 +67,28 @@ export type LiveImageRender = {
   model: string;
 };
 
+/** Engines the administrator may pick for the Live Cards starting picture. */
+const MODEL_BY_KEY: Record<string, string> = {
+  flux_schnell: "black-forest-labs/flux-schnell",
+  flux_ultra: "black-forest-labs/flux-1.1-pro-ultra",
+  flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
+};
+
+/**
+ * The model of this section: the environment default unless the administrator
+ * selected another primary engine in the Generator Control Centre.
+ */
+async function adminPrimaryModel(): Promise<string> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const key = await primaryGenerator("live_cards.start_image", Object.keys(MODEL_BY_KEY));
+    if (key && MODEL_BY_KEY[key]) return MODEL_BY_KEY[key]!;
+  } catch {
+    // fall back to the environment configuration
+  }
+  return primaryModel();
+}
+
 /** Renders one picture with the low-cost primary engine of this section. */
 export async function renderPrimaryImage(prompt: string, aspectRatio: string): Promise<LiveImageRender> {
   const token = process.env.LIVE_CARDS_IMAGE_API_TOKEN || process.env.REPLICATE_API_TOKEN;
