@@ -20,6 +20,35 @@ import {
 import { fluxProGenerator, fluxUltraGenerator } from "./replicate-image.server";
 import { wanImageToVideoGenerator } from "./replicate-video.server";
 
+/**
+ * Applies the administrator's Generator Control Centre settings to one new
+ * request: engines switched off are skipped, the chosen primary leads and a
+ * backup only follows when automatic failover is on.
+ */
+async function orderByAdmin<T extends { key: string }>(functionId: string, engines: T[]): Promise<T[]> {
+  try {
+    const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
+    const order = await generatorOrder(
+      functionId,
+      engines.map((e) => e.key),
+    );
+    const ordered = order.map((key) => engines.find((e) => e.key === key)).filter((e): e is T => Boolean(e));
+    return ordered.length ? ordered : [];
+  } catch {
+    return engines;
+  }
+}
+
+/** Honours the engine's parallel-job limit; "Auto" holds nothing back. */
+async function withSlot<T>(key: string, run: () => Promise<T>): Promise<T> {
+  try {
+    const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
+    return await withGeneratorSlot(key, run);
+  } catch {
+    return run();
+  }
+}
+
 /** Registered image engines. Add, remove or replace entries here only. */
 const IMAGE_GENERATORS: ImageGenerator[] = [fluxUltraGenerator, fluxProGenerator];
 
