@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { speechBudgetSeconds, splitGreeting, PVG_MIN_PART_GAP_SECONDS } from "@/lib/personal-video/voice/speech";
+import {
+  speechBudgetSeconds,
+  splitGreeting,
+  PVG_MIN_PART_GAP_SECONDS,
+} from "@/lib/personal-video/voice/speech";
 
 describe("parts mode budget", () => {
   it("reserves half a second at both ends", () => {
@@ -10,7 +14,8 @@ describe("parts mode budget", () => {
     expect(speechBudgetSeconds(0)).toBe(0);
   });
   it("gives every participant words for 1-5 people", () => {
-    const text = "Happy birthday, dear Anna. We wish you joy. May your year shine. Big hugs from all of us. See you soon!";
+    const text =
+      "Happy birthday, dear Anna. We wish you joy. May your year shine. Big hugs from all of us. See you soon!";
     for (let n = 1; n <= 5; n += 1) {
       const parts = splitGreeting(text, n);
       expect(parts).toHaveLength(n);

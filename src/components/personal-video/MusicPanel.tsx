@@ -69,7 +69,13 @@ export function MusicPanel({
     return () => {
       alive = false;
     };
-  }, [settings.mode, settings.trackBucket, settings.trackPath, settings.uploadBucket, settings.uploadPath]);
+  }, [
+    settings.mode,
+    settings.trackBucket,
+    settings.trackPath,
+    settings.uploadBucket,
+    settings.uploadPath,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -165,8 +171,7 @@ export function MusicPanel({
     return MUSIC_CATEGORIES.filter((c) => used.has(c));
   }, [tracks.data]);
 
-  const selectedTitle =
-    settings.mode === "upload" ? settings.uploadName : settings.trackTitle;
+  const selectedTitle = settings.mode === "upload" ? settings.uploadName : settings.trackTitle;
   const selectedSeconds =
     settings.mode === "upload"
       ? settings.uploadDurationSeconds
@@ -248,7 +253,11 @@ export function MusicPanel({
                     () => undefined,
                   );
                 }
-                onChange({ ...DEFAULT_MUSIC_SETTINGS, volume: settings.volume, mode: settings.mode });
+                onChange({
+                  ...DEFAULT_MUSIC_SETTINGS,
+                  volume: settings.volume,
+                  mode: settings.mode,
+                });
               }}
               className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
             >
@@ -307,9 +316,7 @@ export function MusicPanel({
                       <p className="truncate text-sm font-medium">{track.title}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {t(`mus_cat_${track.category}`)}
-                        {track.durationSeconds
-                          ? ` · ${Math.round(track.durationSeconds)}s`
-                          : ""}
+                        {track.durationSeconds ? ` · ${Math.round(track.durationSeconds)}s` : ""}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">

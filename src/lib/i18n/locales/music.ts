@@ -38,7 +38,8 @@ export const MUSIC_I18N: Record<Lang, Dict> = {
     mus_cat_ceremonial: "Ceremonial",
     mus_cat_background: "Background",
     mus_admin_title: "Music",
-    mus_admin_sub: "The Project Joy background music library. Only active tracks are shown to customers.",
+    mus_admin_sub:
+      "The Project Joy background music library. Only active tracks are shown to customers.",
     mus_admin_add: "Add a track",
     mus_admin_track_title: "Title",
     mus_admin_category: "Category",
@@ -142,7 +143,8 @@ export const MUSIC_I18N: Record<Lang, Dict> = {
     mus_cat_ceremonial: "Feierlich",
     mus_cat_background: "Hintergrund",
     mus_admin_title: "Musik",
-    mus_admin_sub: "Die Hintergrundmusik-Bibliothek von Project Joy. Kunden sehen nur aktive Stücke.",
+    mus_admin_sub:
+      "Die Hintergrundmusik-Bibliothek von Project Joy. Kunden sehen nur aktive Stücke.",
     mus_admin_add: "Stück hinzufügen",
     mus_admin_track_title: "Titel",
     mus_admin_category: "Kategorie",
@@ -246,7 +248,8 @@ export const MUSIC_I18N: Record<Lang, Dict> = {
     mus_cat_ceremonial: "Cérémonielle",
     mus_cat_background: "Fond sonore",
     mus_admin_title: "Musique",
-    mus_admin_sub: "La bibliothèque musicale de Project Joy. Seuls les morceaux actifs sont proposés.",
+    mus_admin_sub:
+      "La bibliothèque musicale de Project Joy. Seuls les morceaux actifs sont proposés.",
     mus_admin_add: "Ajouter un morceau",
     mus_admin_track_title: "Titre",
     mus_admin_category: "Catégorie",
@@ -256,7 +259,8 @@ export const MUSIC_I18N: Record<Lang, Dict> = {
     mus_admin_inactive: "Inactif",
     mus_admin_order: "Ordre",
     mus_admin_delete: "Supprimer",
-    mus_admin_delete_confirm: "Supprimer ce morceau ? Les projets qui l'utilisent gardent leur musique.",
+    mus_admin_delete_confirm:
+      "Supprimer ce morceau ? Les projets qui l'utilisent gardent leur musique.",
     mus_admin_empty: "La bibliothèque est vide. Importez le premier morceau.",
     mus_admin_saved: "Enregistré",
     mus_admin_rights: "N'importez que des musiques dont Project Joy détient les droits.",

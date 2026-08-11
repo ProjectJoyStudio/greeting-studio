@@ -56,10 +56,7 @@ export function enrollmentTexts(language: string): EnrollmentText[] {
 }
 
 /** One specific enrollment sentence, falling back to English. */
-export function enrollmentText(
-  language: string,
-  id: "sample1" | "sample2",
-): EnrollmentText {
+export function enrollmentText(language: string, id: "sample1" | "sample2"): EnrollmentText {
   const found = enrollmentTexts(language).find((entry) => entry.id === id);
   return found ?? enrollmentTexts("en").find((entry) => entry.id === id)!;
 }

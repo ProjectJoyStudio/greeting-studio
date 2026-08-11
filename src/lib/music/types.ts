@@ -95,8 +95,7 @@ function volume(value: unknown): MusicVolume {
 /** Reads whatever is stored with a project back into complete settings. */
 export function normalizeMusicSettings(value: unknown): PvgMusicSettings {
   const raw = (value ?? {}) as Partial<PvgMusicSettings> & Record<string, unknown>;
-  const mode: MusicMode =
-    raw.mode === "library" || raw.mode === "upload" ? raw.mode : "none";
+  const mode: MusicMode = raw.mode === "library" || raw.mode === "upload" ? raw.mode : "none";
   const duck = (raw.ducking ?? {}) as Partial<PvgMusicSettings["ducking"]>;
   return {
     mode,
@@ -144,8 +143,7 @@ export function musicPlan(
   if (settings.mode === "none") return null;
   const needed = Math.max(1, Math.round(videoSeconds));
   const source = trackSeconds > 0 ? trackSeconds : needed;
-  const loops =
-    source >= needed || !settings.loopWhenShorter ? 1 : Math.ceil(needed / source);
+  const loops = source >= needed || !settings.loopWhenShorter ? 1 : Math.ceil(needed / source);
   const used = Math.min(needed, source * loops);
   return {
     neededSeconds: needed,

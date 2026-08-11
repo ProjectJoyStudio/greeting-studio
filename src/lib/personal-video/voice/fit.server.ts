@@ -11,7 +11,10 @@ function wordBudget(budgetSeconds: number): number {
 function trimWords(text: string, words: number): string {
   const parts = text.trim().split(/\s+/).filter(Boolean);
   if (parts.length <= words) return text.trim();
-  return `${parts.slice(0, words).join(" ").replace(/[,;:—-]$/, "")}.`;
+  return `${parts
+    .slice(0, words)
+    .join(" ")
+    .replace(/[,;:—-]$/, "")}.`;
 }
 
 export async function shortenToBudget(

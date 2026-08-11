@@ -4,12 +4,7 @@ import { Loader2, Music, Pause, Play, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import {
-  deleteTrack,
-  fetchAllTracks,
-  updateTrack,
-  uploadLibraryTrack,
-} from "@/lib/music/library";
+import { deleteTrack, fetchAllTracks, updateTrack, uploadLibraryTrack } from "@/lib/music/library";
 import { MUSIC_CATEGORIES, type MusicTrack } from "@/lib/music/types";
 
 export function MusicPage() {
@@ -147,7 +142,11 @@ export function MusicPage() {
                 onClick={() => play(track)}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-xs transition hover:border-primary/50"
               >
-                {playing === track.id ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                {playing === track.id ? (
+                  <Pause className="h-3 w-3" />
+                ) : (
+                  <Play className="h-3 w-3" />
+                )}
               </button>
               <input
                 defaultValue={track.title}
@@ -160,7 +159,9 @@ export function MusicPage() {
               />
               <select
                 value={track.category}
-                onChange={(e) => patch.mutate({ id: track.id, patch: { category: e.target.value } })}
+                onChange={(e) =>
+                  patch.mutate({ id: track.id, patch: { category: e.target.value } })
+                }
                 aria-label={t("mus_admin_category")}
                 className="rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
               >
@@ -193,7 +194,9 @@ export function MusicPage() {
               </label>
               <button
                 type="button"
-                onClick={() => patch.mutate({ id: track.id, patch: { is_active: !track.isActive } })}
+                onClick={() =>
+                  patch.mutate({ id: track.id, patch: { is_active: !track.isActive } })
+                }
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                   track.isActive
                     ? "border-primary/50 bg-primary/10 text-primary"

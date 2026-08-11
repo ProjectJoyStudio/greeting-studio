@@ -3,11 +3,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-import {
-  MUSIC_LIBRARY_BUCKET,
-  MUSIC_UPLOAD_BUCKET,
-  type MusicTrack,
-} from "./types";
+import { MUSIC_LIBRARY_BUCKET, MUSIC_UPLOAD_BUCKET, type MusicTrack } from "./types";
 
 const SIGNED_TTL = 60 * 60 * 12;
 
@@ -38,10 +34,7 @@ function mapRow(r: Row): MusicTrack {
 }
 
 /** A playable link for one stored file. */
-export async function musicUrl(
-  bucket: string | null,
-  path: string | null,
-): Promise<string | null> {
+export async function musicUrl(bucket: string | null, path: string | null): Promise<string | null> {
   if (!bucket || !path) return null;
   const { data } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_TTL);
   return data?.signedUrl ?? null;
@@ -143,7 +136,10 @@ export async function updateTrack(
     sort_order: number;
   }>,
 ): Promise<void> {
-  const { error } = await supabase.from("music_tracks").update(patch as never).eq("id", id);
+  const { error } = await supabase
+    .from("music_tracks")
+    .update(patch as never)
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -154,7 +150,10 @@ export async function updateTrack(
 export async function deleteTrack(track: MusicTrack): Promise<void> {
   const { error } = await supabase.from("music_tracks").delete().eq("id", track.id);
   if (error) throw error;
-  await supabase.storage.from(track.storageBucket).remove([track.storagePath]).catch(() => undefined);
+  await supabase.storage
+    .from(track.storageBucket)
+    .remove([track.storagePath])
+    .catch(() => undefined);
 }
 
 /** Music a customer brings, stored for this one project only. */

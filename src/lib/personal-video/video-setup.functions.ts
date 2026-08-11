@@ -11,9 +11,8 @@ import { writeGreeting, type GreetingTask } from "./video-setup.server";
 export const savePvgVideoSetup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (
-      input: { projectId: string; music?: PvgMusicSettings | undefined } & Partial<PvsVideoSetup>,
-    ) => input,
+    (input: { projectId: string; music?: PvgMusicSettings | undefined } & Partial<PvsVideoSetup>) =>
+      input,
   )
   .handler(async ({ data, context }) => {
     // Music belongs to the whole video and never changes the credit cost.
@@ -25,9 +24,7 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
-        ...(data.music
-          ? { music_settings: music as unknown as Record<string, never> }
-          : {}),
+        ...(data.music ? { music_settings: music as unknown as Record<string, never> } : {}),
         workflow_step: "video",
         order_cost: clampDuration(data.durationSeconds),
       })

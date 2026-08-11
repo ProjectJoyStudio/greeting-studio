@@ -19,7 +19,13 @@ function voice(id: string, gender: string): LibraryVoice {
     sortOrder: 0,
     importedAt: "",
     previews: [
-      { language: "en", audioUrl: `https://x/${id}.mp3`, durationSeconds: 3, characterCount: 40, generatedAt: "" },
+      {
+        language: "en",
+        audioUrl: `https://x/${id}.mp3`,
+        durationSeconds: 3,
+        characterCount: 40,
+        generatedAt: "",
+      },
     ],
   };
 }
@@ -50,8 +56,7 @@ function run(cats: ("female" | "male" | "children")[], confirmedIds: string[] = 
   });
 }
 
-const groupOf = (id: string) =>
-  voiceCategory(VOICES.find((v) => v.externalVoiceId === id)!);
+const groupOf = (id: string) => voiceCategory(VOICES.find((v) => v.externalVoiceId === id)!);
 
 describe("automatic voice assignment", () => {
   it("two male participants get only male voices", () => {

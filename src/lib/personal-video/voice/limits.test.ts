@@ -17,7 +17,12 @@ describe("one safe word limit everywhere", () => {
   });
 
   it("never calls a greeting within the limit too short", () => {
-    for (const [seconds, words] of [[5, 7], [6, 8], [7, 9], [10, 12]] as const) {
+    for (const [seconds, words] of [
+      [5, 7],
+      [6, 8],
+      [7, 9],
+      [10, 12],
+    ] as const) {
       const text = Array.from({ length: words }, () => "word").join(" ");
       expect(greetingFit(text, seconds).state).toBe("ok");
       expect(greetingFit(`${text} word`, seconds).state).toBe("long");
@@ -25,7 +30,12 @@ describe("one safe word limit everywhere", () => {
   });
 
   it("estimates a greeting at the limit inside the video length", () => {
-    for (const [seconds, words] of [[5, 7], [6, 8], [7, 9], [10, 12]] as const) {
+    for (const [seconds, words] of [
+      [5, 7],
+      [6, 8],
+      [7, 9],
+      [10, 12],
+    ] as const) {
       const parts = [{ words, secondsPerWord: PVG_DEFAULT_SECONDS_PER_WORD }];
       expect(estimateVideoSeconds(parts)).toBeLessThanOrEqual(seconds);
     }
