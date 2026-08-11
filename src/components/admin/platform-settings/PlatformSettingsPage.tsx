@@ -26,6 +26,7 @@ import {
   type BalancerEvent, type BalancerEventSeverity,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
+import { GeneratorsPanel } from "./GeneratorsPanel";
 import {
   DEFAULT_INFRASTRUCTURE, type InfrastructureState,
 } from "@/lib/admin/platform-infrastructure";
@@ -734,79 +735,7 @@ export function PlatformSettingsPage() {
         </div>
       )}
 
-      {tab === "generators" && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button className={btnPrimary} onClick={() => showToast("saved_toast")}>
-              <Plus className="h-3.5 w-3.5" />{t("gen_add")}
-            </button>
-          </div>
-          <div className={cardCls}>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-xs">
-                <thead className="text-muted-foreground">
-                  <tr className="border-b border-border/60">
-                    <th className="px-2 py-2 text-left">{t("gen_name")}</th>
-                    <th className="px-2 py-2 text-left">{t("gen_type")}</th>
-                    <th className="px-2 py-2 text-left">{t("gen_status")}</th>
-                    <th className="px-2 py-2 text-right">{t("gen_priority")}</th>
-                    <th className="px-2 py-2 text-left">{t("gen_load")}</th>
-                    <th className="px-2 py-2 text-right">{t("gen_queue")}</th>
-                    <th className="px-2 py-2 text-right">{t("gen_avg")}</th>
-                    <th className="px-2 py-2 text-right">{t("gen_daily")}</th>
-                    <th className="px-2 py-2 text-right">{t("gen_errors")}</th>
-                    <th className="px-2 py-2 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adv.generators.map((g) => (
-                    <tr key={g.id} className="border-b border-border/40">
-                      <td className="px-2 py-2 font-medium text-foreground">{g.name}</td>
-                      <td className="px-2 py-2">{t(`gen_type_${g.type}`)}</td>
-                      <td className="px-2 py-2">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(
-                          g.status === "online" ? "online" : g.status === "busy" || g.status === "maintenance" ? "warning" : "error",
-                        )}`}>
-                          {t(`gen_status_${g.status}`)}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 text-right">{g.priority}</td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                            <div className={`h-full ${progressTone(g.loadPercent)}`} style={{ width: `${g.loadPercent}%` }} />
-                          </div>
-                          <span className="tabular-nums">{g.loadPercent}%</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-right tabular-nums">{g.queue}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{g.avgSeconds}s</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{g.dailyRequests.toLocaleString()}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{g.errorRatePercent.toFixed(1)}%</td>
-                      <td className="px-2 py-2 text-right">
-                        <div className="inline-flex gap-1">
-                          <button className={btnBase} onClick={() =>
-                            updateAdv("generators", (list) => list.map((x) =>
-                              x.id === g.id ? { ...x, enabled: !x.enabled, status: !x.enabled ? "online" : "offline" } : x,
-                            ))}>
-                            <Power className="h-3 w-3" />{g.enabled ? t("btn_disable") : t("btn_enable")}
-                          </button>
-                          <button className={btnBase} onClick={() => showToast("check_toast")}>
-                            <Activity className="h-3 w-3" />{t("gen_test")}
-                          </button>
-                          <button className={btnBase} onClick={() => showToast("saved_toast")}>
-                            <Info className="h-3 w-3" />{t("gen_stats")}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {tab === "generators" && <GeneratorsPanel />}
 
       {tab === "balancer" && (() => {
         const stats = computeBalancerStats(adv.generators, balDash);
