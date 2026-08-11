@@ -8,7 +8,6 @@ import {
   Coins,
   Film,
   Loader2,
-  Music,
   PenLine,
   Sliders,
   Sparkles,
@@ -493,35 +492,6 @@ function Panel({
       </p>
       {children}
     </div>
-  );
-}
-
-function ReservedPanel({
-  icon,
-  title,
-  soon,
-  options,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  soon: string;
-  options: string[];
-}) {
-  return (
-    <Panel icon={icon} title={title} soon={soon}>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-2xl border border-dashed border-border/60 px-4 py-3 text-left text-xs font-medium text-muted-foreground opacity-70"
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </Panel>
   );
 }
 
