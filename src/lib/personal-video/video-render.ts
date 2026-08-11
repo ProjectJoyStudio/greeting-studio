@@ -2,6 +2,9 @@
 
 export type PvgVideoStatus = "pending" | "processing" | "assets" | "ready" | "failed";
 
+/** Every further film of the same order costs this fixed number of credits. */
+export const PVR_REGENERATION_CREDITS = 5;
+
 export interface PvgVideoJob {
   id: string;
   status: PvgVideoStatus;
@@ -12,6 +15,12 @@ export interface PvgVideoJob {
   errorCode: string | null;
   errorMessage: string | null;
   createdAt: string;
+  /** Variant 1, 2, 3 … of the very same personal video greeting. */
+  variantIndex: number;
+  /** True for the variant the customer currently prefers. */
+  isSelected: boolean;
+  /** The "what happens in the video?" words this variant was made from. */
+  actionDescription: string;
 }
 
 /** True while the film is still being made somewhere in the background. */

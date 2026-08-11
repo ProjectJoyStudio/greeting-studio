@@ -67,6 +67,8 @@ export interface PvgProject {
   recipientName: string;
   occasion: string;
   sceneDescription: string;
+  /** "What happens in the video?" — the actions during the finished film. */
+  actionDescription: string;
   status: string;
   generationsUsed: number;
   generationsLimit: number;

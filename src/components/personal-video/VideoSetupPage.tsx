@@ -9,6 +9,7 @@ import {
   Film,
   Loader2,
   PenLine,
+  Clapperboard,
   Sparkles,
   Waves,
   Wand2,
@@ -72,6 +73,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [keywords, setKeywords] = useState("");
   const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
   const [sceneSounds, setSceneSounds] = useState(false);
+  const [action, setAction] = useState("");
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
@@ -109,6 +111,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     setKeywords(project.videoSetup.greetingKeywords);
     setMusic(project.music);
     setSceneSounds(project.sceneSounds);
+    setAction(project.actionDescription);
   }, [project]);
 
   // Everything the person changes is stored quietly in their draft.
@@ -124,11 +127,12 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingKeywords: keywords,
         music,
         sceneSounds,
+        actionDescription: action,
       },
     })
       .then(() => setSaveState("saved"))
       .catch(() => setSaveState("failed"));
-  }, [project, readOnly, duration, mode, greeting, keywords, music, sceneSounds, saveSetup]);
+  }, [project, readOnly, duration, mode, greeting, keywords, music, sceneSounds, action, saveSetup]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
@@ -351,6 +355,21 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                     {t("pvs_expand")}
                   </button>
                 </div>
+              </Panel>
+
+              {/* What happens in the video */}
+              <Panel icon={<Clapperboard className="h-4 w-4" />} title={t("pvr_action_title")}>
+                <textarea
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  disabled={readOnly}
+                  placeholder={t("pvr_action_ph")}
+                  rows={4}
+                  className="w-full rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed outline-none transition focus:border-primary/60 disabled:opacity-60"
+                />
+                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("pvr_action_hint")}
+                </p>
               </Panel>
 
               {/* Voice of the greeting */}

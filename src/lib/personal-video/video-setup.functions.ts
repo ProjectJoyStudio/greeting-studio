@@ -16,6 +16,7 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         projectId: string;
         music?: PvgMusicSettings | undefined;
         sceneSounds?: boolean | undefined;
+        actionDescription?: string | undefined;
       } & Partial<PvsVideoSetup>,
     ) => input,
   )
@@ -32,6 +33,9 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
         scene_sounds: sceneSounds,
+        ...(data.actionDescription === undefined
+          ? {}
+          : { action_description: data.actionDescription.slice(0, 2000) }),
         ...(data.music ? { music_settings: music as unknown as Record<string, never> } : {}),
         workflow_step: "video",
         order_cost: videoCredits(seconds) + (sceneSounds ? sceneSoundCredits(seconds) : 0),
