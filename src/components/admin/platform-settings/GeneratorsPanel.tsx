@@ -35,55 +35,356 @@ const labelCls = "text-[11px] font-medium uppercase tracking-wide text-muted-for
 type Dict = Record<string, Record<Lang, string>>;
 
 const T: Dict = {
-  gc_title:        { en: "Generator control centre", ru: "Центр управления генераторами", de: "Generator-Kontrollzentrum", uk: "Центр керування генераторами", fr: "Centre de contrôle des générateurs", pl: "Centrum sterowania generatorami" },
-  gc_intro:        { en: "Real providers and models currently used by Project Joy. Changes apply to new jobs only — running jobs are never interrupted.", ru: "Реальные провайдеры и модели, которые сейчас использует Project Joy. Изменения действуют только для новых задач — текущие не прерываются.", de: "Reale Anbieter und Modelle, die Project Joy derzeit nutzt. Änderungen gelten nur für neue Aufträge — laufende werden nie unterbrochen.", uk: "Реальні провайдери та моделі, які зараз використовує Project Joy. Зміни діють лише для нових завдань — поточні не перериваються.", fr: "Fournisseurs et modèles réellement utilisés par Project Joy. Les changements ne s'appliquent qu'aux nouvelles tâches.", pl: "Rzeczywiści dostawcy i modele używane przez Project Joy. Zmiany dotyczą tylko nowych zadań." },
-  gc_save:         { en: "Save", ru: "Сохранить", de: "Speichern", uk: "Зберегти", fr: "Enregistrer", pl: "Zapisz" },
-  gc_saved:        { en: "Saved", ru: "Сохранено", de: "Gespeichert", uk: "Збережено", fr: "Enregistré", pl: "Zapisano" },
-  gc_reload:       { en: "Reload", ru: "Обновить", de: "Neu laden", uk: "Оновити", fr: "Recharger", pl: "Odśwież" },
-  gc_primary:      { en: "Primary generator", ru: "Основной генератор", de: "Primärer Generator", uk: "Основний генератор", fr: "Générateur principal", pl: "Generator główny" },
-  gc_backup:       { en: "Backup generator", ru: "Резервный генератор", de: "Ersatzgenerator", uk: "Резервний генератор", fr: "Générateur de secours", pl: "Generator zapasowy" },
-  gc_not_selected: { en: "Not selected", ru: "Не выбран", de: "Nicht ausgewählt", uk: "Не вибрано", fr: "Non sélectionné", pl: "Nie wybrano" },
-  gc_not_conn:     { en: "Not connected", ru: "Не подключено", de: "Nicht verbunden", uk: "Не підключено", fr: "Non connecté", pl: "Niepodłączone" },
-  gc_autofail:     { en: "Automatically use backup generator", ru: "Автоматически использовать резервный генератор", de: "Ersatzgenerator automatisch verwenden", uk: "Автоматично використовувати резервний генератор", fr: "Utiliser automatiquement le générateur de secours", pl: "Automatycznie użyj generatora zapasowego" },
-  gc_autofail_h:   { en: "Only on a genuine technical failure or unavailable provider — never because a result is creatively unsatisfying.", ru: "Только при реальном техническом сбое или недоступности провайдера — никогда из-за неудачного по качеству результата.", de: "Nur bei echtem technischem Fehler oder nicht erreichbarem Anbieter — nie wegen eines kreativ unbefriedigenden Ergebnisses.", uk: "Лише за реального технічного збою або недоступності провайдера — ніколи через незадовільний результат.", fr: "Uniquement en cas de panne technique réelle ou de fournisseur indisponible.", pl: "Tylko przy rzeczywistej awarii technicznej lub niedostępności dostawcy." },
-  gc_load:         { en: "Load distribution", ru: "Распределение нагрузки", de: "Lastverteilung", uk: "Розподіл навантаження", fr: "Répartition de charge", pl: "Rozkład obciążenia" },
-  gc_load_h:       { en: "Different customer jobs are spread across the enabled generators. One job is always processed by one generator only.", ru: "Разные заказы клиентов распределяются между включёнными генераторами. Одна задача всегда обрабатывается только одним генератором.", de: "Verschiedene Kundenaufträge werden auf die aktiven Generatoren verteilt. Ein Auftrag läuft immer nur auf einem Generator.", uk: "Різні замовлення клієнтів розподіляються між увімкненими генераторами. Одне завдання завжди обробляє лише один генератор.", fr: "Les tâches de clients différents sont réparties entre les générateurs actifs. Une tâche n'est traitée que par un seul générateur.", pl: "Zadania różnych klientów są rozdzielane między aktywne generatory. Jedno zadanie obsługuje tylko jeden generator." },
-  gc_used_in:      { en: "Also used in", ru: "Также используется в", de: "Auch verwendet in", uk: "Також використовується в", fr: "Également utilisé dans", pl: "Używany także w" },
-  gc_engines:      { en: "Connected generators", ru: "Подключённые генераторы", de: "Verbundene Generatoren", uk: "Підключені генератори", fr: "Générateurs connectés", pl: "Podłączone generatory" },
-  gc_enabled:      { en: "Enabled", ru: "Включён", de: "Aktiv", uk: "Увімкнено", fr: "Activé", pl: "Włączony" },
-  gc_disabled:     { en: "Disabled", ru: "Выключен", de: "Deaktiviert", uk: "Вимкнено", fr: "Désactivé", pl: "Wyłączony" },
-  gc_enable:       { en: "Enable", ru: "Включить", de: "Aktivieren", uk: "Увімкнути", fr: "Activer", pl: "Włącz" },
-  gc_disable:      { en: "Disable", ru: "Выключить", de: "Deaktivieren", uk: "Вимкнути", fr: "Désactiver", pl: "Wyłącz" },
-  gc_parallel:     { en: "Parallel jobs", ru: "Параллельные задачи", de: "Parallele Aufträge", uk: "Паралельні завдання", fr: "Tâches parallèles", pl: "Zadania równoległe" },
-  gc_auto:         { en: "Auto", ru: "Авто", de: "Auto", uk: "Авто", fr: "Auto", pl: "Auto" },
-  gc_manual:       { en: "Manual limit", ru: "Ручной лимит", de: "Manuelles Limit", uk: "Ручний ліміт", fr: "Limite manuelle", pl: "Limit ręczny" },
-  gc_check:        { en: "Check connection", ru: "Проверить соединение", de: "Verbindung prüfen", uk: "Перевірити зʼєднання", fr: "Vérifier la connexion", pl: "Sprawdź połączenie" },
-  gc_working:      { en: "Working", ru: "Работает", de: "Funktioniert", uk: "Працює", fr: "Fonctionne", pl: "Działa" },
-  gc_error:        { en: "Error", ru: "Ошибка", de: "Fehler", uk: "Помилка", fr: "Erreur", pl: "Błąd" },
-  gc_unknown:      { en: "Not checked", ru: "Не проверено", de: "Nicht geprüft", uk: "Не перевірено", fr: "Non vérifié", pl: "Niesprawdzone" },
-  gc_provider:     { en: "Provider", ru: "Провайдер", de: "Anbieter", uk: "Провайдер", fr: "Fournisseur", pl: "Dostawca" },
-  gc_model:        { en: "Model", ru: "Модель", de: "Modell", uk: "Модель", fr: "Modèle", pl: "Model" },
-  gc_disabled_note:{ en: "Switching a generator off keeps its configuration and applies to new jobs only.", ru: "Выключение генератора сохраняет его настройки и действует только для новых задач.", de: "Das Deaktivieren behält die Konfiguration und gilt nur für neue Aufträge.", uk: "Вимкнення генератора зберігає його налаштування та діє лише для нових завдань.", fr: "Désactiver un générateur conserve sa configuration et ne concerne que les nouvelles tâches.", pl: "Wyłączenie generatora zachowuje konfigurację i dotyczy tylko nowych zadań." },
+  gc_title: {
+    en: "Generator control centre",
+    ru: "Центр управления генераторами",
+    de: "Generator-Kontrollzentrum",
+    uk: "Центр керування генераторами",
+    fr: "Centre de contrôle des générateurs",
+    pl: "Centrum sterowania generatorami",
+  },
+  gc_intro: {
+    en: "Real providers and models currently used by Project Joy. Changes apply to new jobs only — running jobs are never interrupted.",
+    ru: "Реальные провайдеры и модели, которые сейчас использует Project Joy. Изменения действуют только для новых задач — текущие не прерываются.",
+    de: "Reale Anbieter und Modelle, die Project Joy derzeit nutzt. Änderungen gelten nur für neue Aufträge — laufende werden nie unterbrochen.",
+    uk: "Реальні провайдери та моделі, які зараз використовує Project Joy. Зміни діють лише для нових завдань — поточні не перериваються.",
+    fr: "Fournisseurs et modèles réellement utilisés par Project Joy. Les changements ne s'appliquent qu'aux nouvelles tâches.",
+    pl: "Rzeczywiści dostawcy i modele używane przez Project Joy. Zmiany dotyczą tylko nowych zadań.",
+  },
+  gc_save: {
+    en: "Save",
+    ru: "Сохранить",
+    de: "Speichern",
+    uk: "Зберегти",
+    fr: "Enregistrer",
+    pl: "Zapisz",
+  },
+  gc_saved: {
+    en: "Saved",
+    ru: "Сохранено",
+    de: "Gespeichert",
+    uk: "Збережено",
+    fr: "Enregistré",
+    pl: "Zapisano",
+  },
+  gc_reload: {
+    en: "Reload",
+    ru: "Обновить",
+    de: "Neu laden",
+    uk: "Оновити",
+    fr: "Recharger",
+    pl: "Odśwież",
+  },
+  gc_primary: {
+    en: "Primary generator",
+    ru: "Основной генератор",
+    de: "Primärer Generator",
+    uk: "Основний генератор",
+    fr: "Générateur principal",
+    pl: "Generator główny",
+  },
+  gc_backup: {
+    en: "Backup generator",
+    ru: "Резервный генератор",
+    de: "Ersatzgenerator",
+    uk: "Резервний генератор",
+    fr: "Générateur de secours",
+    pl: "Generator zapasowy",
+  },
+  gc_not_selected: {
+    en: "Not selected",
+    ru: "Не выбран",
+    de: "Nicht ausgewählt",
+    uk: "Не вибрано",
+    fr: "Non sélectionné",
+    pl: "Nie wybrano",
+  },
+  gc_not_conn: {
+    en: "Not connected",
+    ru: "Не подключено",
+    de: "Nicht verbunden",
+    uk: "Не підключено",
+    fr: "Non connecté",
+    pl: "Niepodłączone",
+  },
+  gc_autofail: {
+    en: "Automatically use backup generator",
+    ru: "Автоматически использовать резервный генератор",
+    de: "Ersatzgenerator automatisch verwenden",
+    uk: "Автоматично використовувати резервний генератор",
+    fr: "Utiliser automatiquement le générateur de secours",
+    pl: "Automatycznie użyj generatora zapasowego",
+  },
+  gc_autofail_h: {
+    en: "Only on a genuine technical failure or unavailable provider — never because a result is creatively unsatisfying.",
+    ru: "Только при реальном техническом сбое или недоступности провайдера — никогда из-за неудачного по качеству результата.",
+    de: "Nur bei echtem technischem Fehler oder nicht erreichbarem Anbieter — nie wegen eines kreativ unbefriedigenden Ergebnisses.",
+    uk: "Лише за реального технічного збою або недоступності провайдера — ніколи через незадовільний результат.",
+    fr: "Uniquement en cas de panne technique réelle ou de fournisseur indisponible.",
+    pl: "Tylko przy rzeczywistej awarii technicznej lub niedostępności dostawcy.",
+  },
+  gc_load: {
+    en: "Load distribution",
+    ru: "Распределение нагрузки",
+    de: "Lastverteilung",
+    uk: "Розподіл навантаження",
+    fr: "Répartition de charge",
+    pl: "Rozkład obciążenia",
+  },
+  gc_load_h: {
+    en: "Different customer jobs are spread across the enabled generators. One job is always processed by one generator only.",
+    ru: "Разные заказы клиентов распределяются между включёнными генераторами. Одна задача всегда обрабатывается только одним генератором.",
+    de: "Verschiedene Kundenaufträge werden auf die aktiven Generatoren verteilt. Ein Auftrag läuft immer nur auf einem Generator.",
+    uk: "Різні замовлення клієнтів розподіляються між увімкненими генераторами. Одне завдання завжди обробляє лише один генератор.",
+    fr: "Les tâches de clients différents sont réparties entre les générateurs actifs. Une tâche n'est traitée que par un seul générateur.",
+    pl: "Zadania różnych klientów są rozdzielane między aktywne generatory. Jedno zadanie obsługuje tylko jeden generator.",
+  },
+  gc_used_in: {
+    en: "Also used in",
+    ru: "Также используется в",
+    de: "Auch verwendet in",
+    uk: "Також використовується в",
+    fr: "Également utilisé dans",
+    pl: "Używany także w",
+  },
+  gc_engines: {
+    en: "Connected generators",
+    ru: "Подключённые генераторы",
+    de: "Verbundene Generatoren",
+    uk: "Підключені генератори",
+    fr: "Générateurs connectés",
+    pl: "Podłączone generatory",
+  },
+  gc_enabled: {
+    en: "Enabled",
+    ru: "Включён",
+    de: "Aktiv",
+    uk: "Увімкнено",
+    fr: "Activé",
+    pl: "Włączony",
+  },
+  gc_disabled: {
+    en: "Disabled",
+    ru: "Выключен",
+    de: "Deaktiviert",
+    uk: "Вимкнено",
+    fr: "Désactivé",
+    pl: "Wyłączony",
+  },
+  gc_enable: {
+    en: "Enable",
+    ru: "Включить",
+    de: "Aktivieren",
+    uk: "Увімкнути",
+    fr: "Activer",
+    pl: "Włącz",
+  },
+  gc_disable: {
+    en: "Disable",
+    ru: "Выключить",
+    de: "Deaktivieren",
+    uk: "Вимкнути",
+    fr: "Désactiver",
+    pl: "Wyłącz",
+  },
+  gc_parallel: {
+    en: "Parallel jobs",
+    ru: "Параллельные задачи",
+    de: "Parallele Aufträge",
+    uk: "Паралельні завдання",
+    fr: "Tâches parallèles",
+    pl: "Zadania równoległe",
+  },
+  gc_auto: { en: "Auto", ru: "Авто", de: "Auto", uk: "Авто", fr: "Auto", pl: "Auto" },
+  gc_manual: {
+    en: "Manual limit",
+    ru: "Ручной лимит",
+    de: "Manuelles Limit",
+    uk: "Ручний ліміт",
+    fr: "Limite manuelle",
+    pl: "Limit ręczny",
+  },
+  gc_check: {
+    en: "Check connection",
+    ru: "Проверить соединение",
+    de: "Verbindung prüfen",
+    uk: "Перевірити зʼєднання",
+    fr: "Vérifier la connexion",
+    pl: "Sprawdź połączenie",
+  },
+  gc_working: {
+    en: "Working",
+    ru: "Работает",
+    de: "Funktioniert",
+    uk: "Працює",
+    fr: "Fonctionne",
+    pl: "Działa",
+  },
+  gc_error: { en: "Error", ru: "Ошибка", de: "Fehler", uk: "Помилка", fr: "Erreur", pl: "Błąd" },
+  gc_unknown: {
+    en: "Not checked",
+    ru: "Не проверено",
+    de: "Nicht geprüft",
+    uk: "Не перевірено",
+    fr: "Non vérifié",
+    pl: "Niesprawdzone",
+  },
+  gc_provider: {
+    en: "Provider",
+    ru: "Провайдер",
+    de: "Anbieter",
+    uk: "Провайдер",
+    fr: "Fournisseur",
+    pl: "Dostawca",
+  },
+  gc_model: { en: "Model", ru: "Модель", de: "Modell", uk: "Модель", fr: "Modèle", pl: "Model" },
+  gc_disabled_note: {
+    en: "Switching a generator off keeps its configuration and applies to new jobs only.",
+    ru: "Выключение генератора сохраняет его настройки и действует только для новых задач.",
+    de: "Das Deaktivieren behält die Konfiguration und gilt nur für neue Aufträge.",
+    uk: "Вимкнення генератора зберігає його налаштування та діє лише для нових завдань.",
+    fr: "Désactiver un générateur conserve sa configuration et ne concerne que les nouvelles tâches.",
+    pl: "Wyłączenie generatora zachowuje konfigurację i dotyczy tylko nowych zadań.",
+  },
   // features
-  gc_feature_cards:       { en: "Greeting Cards", ru: "Открытки", de: "Grußkarten", uk: "Листівки", fr: "Cartes de vœux", pl: "Kartki" },
-  gc_feature_live:        { en: "Live Cards", ru: "Живые открытки", de: "Live-Karten", uk: "Живі листівки", fr: "Cartes animées", pl: "Żywe kartki" },
-  gc_feature_pvg:         { en: "Personal Video Greeting", ru: "Персональное видеопоздравление", de: "Persönlicher Video-Gruß", uk: "Персональне відеопривітання", fr: "Vidéo personnalisée", pl: "Osobiste wideo" },
-  gc_feature_translation: { en: "Catalog & translations", ru: "Каталог и переводы", de: "Katalog & Übersetzungen", uk: "Каталог і переклади", fr: "Catalogue et traductions", pl: "Katalog i tłumaczenia" },
-  gc_feature_future:      { en: "Future sections", ru: "Будущие разделы", de: "Künftige Bereiche", uk: "Майбутні розділи", fr: "Sections futures", pl: "Przyszłe sekcje" },
+  gc_feature_cards: {
+    en: "Greeting Cards",
+    ru: "Открытки",
+    de: "Grußkarten",
+    uk: "Листівки",
+    fr: "Cartes de vœux",
+    pl: "Kartki",
+  },
+  gc_feature_live: {
+    en: "Live Cards",
+    ru: "Живые открытки",
+    de: "Live-Karten",
+    uk: "Живі листівки",
+    fr: "Cartes animées",
+    pl: "Żywe kartki",
+  },
+  gc_feature_pvg: {
+    en: "Personal Video Greeting",
+    ru: "Персональное видеопоздравление",
+    de: "Persönlicher Video-Gruß",
+    uk: "Персональне відеопривітання",
+    fr: "Vidéo personnalisée",
+    pl: "Osobiste wideo",
+  },
+  gc_feature_translation: {
+    en: "Catalog & translations",
+    ru: "Каталог и переводы",
+    de: "Katalog & Übersetzungen",
+    uk: "Каталог і переклади",
+    fr: "Catalogue et traductions",
+    pl: "Katalog i tłumaczenia",
+  },
+  gc_feature_future: {
+    en: "Future sections",
+    ru: "Будущие разделы",
+    de: "Künftige Bereiche",
+    uk: "Майбутні розділи",
+    fr: "Sections futures",
+    pl: "Przyszłe sekcje",
+  },
   // functions
-  gc_fn_card_image:        { en: "Image generation", ru: "Генерация изображения", de: "Bilderzeugung", uk: "Генерація зображення", fr: "Génération d'image", pl: "Generowanie obrazu" },
-  gc_fn_prompt_translation:{ en: "Prompt preparation", ru: "Подготовка запроса", de: "Prompt-Aufbereitung", uk: "Підготовка запиту", fr: "Préparation du prompt", pl: "Przygotowanie promptu" },
-  gc_fn_start_image:       { en: "Start image", ru: "Стартовое изображение", de: "Startbild", uk: "Стартове зображення", fr: "Image de départ", pl: "Obraz startowy" },
-  gc_fn_animation:         { en: "Animation", ru: "Анимация", de: "Animation", uk: "Анімація", fr: "Animation", pl: "Animacja" },
-  gc_fn_start_scene:       { en: "Start scene", ru: "Стартовая сцена", de: "Startszene", uk: "Стартова сцена", fr: "Scène de départ", pl: "Scena startowa" },
-  gc_fn_voice:             { en: "Voice / TTS", ru: "Голос / озвучка", de: "Stimme / TTS", uk: "Голос / TTS", fr: "Voix / TTS", pl: "Głos / TTS" },
-  gc_fn_greeting_text:     { en: "Greeting text", ru: "Текст поздравления", de: "Grußtext", uk: "Текст привітання", fr: "Texte du message", pl: "Tekst życzeń" },
-  gc_fn_transcription:     { en: "Voice sample check", ru: "Проверка образца голоса", de: "Sprachprobe-Prüfung", uk: "Перевірка зразка голосу", fr: "Vérification d'échantillon vocal", pl: "Sprawdzenie próbki głosu" },
-  gc_fn_video:             { en: "Video", ru: "Видео", de: "Video", uk: "Відео", fr: "Vidéo", pl: "Wideo" },
-  gc_fn_catalog_text:      { en: "Catalog text translation", ru: "Перевод текстов каталога", de: "Katalogtext-Übersetzung", uk: "Переклад текстів каталогу", fr: "Traduction des textes du catalogue", pl: "Tłumaczenie tekstów katalogu" },
-  gc_fn_clip:              { en: "Personal Video Clip", ru: "Персональный видеоклип", de: "Persönlicher Videoclip", uk: "Персональний відеокліп", fr: "Clip vidéo personnel", pl: "Osobisty klip wideo" },
-  gc_fn_cartoon:           { en: "Cartoon", ru: "Мультфильм", de: "Zeichentrick", uk: "Мультфільм", fr: "Dessin animé", pl: "Kreskówka" },
-  gc_fn_premium:           { en: "Premium Order", ru: "Премиум-заказ", de: "Premium-Auftrag", uk: "Преміум-замовлення", fr: "Commande premium", pl: "Zamówienie premium" },
+  gc_fn_card_image: {
+    en: "Image generation",
+    ru: "Генерация изображения",
+    de: "Bilderzeugung",
+    uk: "Генерація зображення",
+    fr: "Génération d'image",
+    pl: "Generowanie obrazu",
+  },
+  gc_fn_prompt_translation: {
+    en: "Prompt preparation",
+    ru: "Подготовка запроса",
+    de: "Prompt-Aufbereitung",
+    uk: "Підготовка запиту",
+    fr: "Préparation du prompt",
+    pl: "Przygotowanie promptu",
+  },
+  gc_fn_start_image: {
+    en: "Start image",
+    ru: "Стартовое изображение",
+    de: "Startbild",
+    uk: "Стартове зображення",
+    fr: "Image de départ",
+    pl: "Obraz startowy",
+  },
+  gc_fn_animation: {
+    en: "Animation",
+    ru: "Анимация",
+    de: "Animation",
+    uk: "Анімація",
+    fr: "Animation",
+    pl: "Animacja",
+  },
+  gc_fn_start_scene: {
+    en: "Start scene",
+    ru: "Стартовая сцена",
+    de: "Startszene",
+    uk: "Стартова сцена",
+    fr: "Scène de départ",
+    pl: "Scena startowa",
+  },
+  gc_fn_voice: {
+    en: "Voice / TTS",
+    ru: "Голос / озвучка",
+    de: "Stimme / TTS",
+    uk: "Голос / TTS",
+    fr: "Voix / TTS",
+    pl: "Głos / TTS",
+  },
+  gc_fn_greeting_text: {
+    en: "Greeting text",
+    ru: "Текст поздравления",
+    de: "Grußtext",
+    uk: "Текст привітання",
+    fr: "Texte du message",
+    pl: "Tekst życzeń",
+  },
+  gc_fn_transcription: {
+    en: "Voice sample check",
+    ru: "Проверка образца голоса",
+    de: "Sprachprobe-Prüfung",
+    uk: "Перевірка зразка голосу",
+    fr: "Vérification d'échantillon vocal",
+    pl: "Sprawdzenie próbki głosu",
+  },
+  gc_fn_video: { en: "Video", ru: "Видео", de: "Video", uk: "Відео", fr: "Vidéo", pl: "Wideo" },
+  gc_fn_catalog_text: {
+    en: "Catalog text translation",
+    ru: "Перевод текстов каталога",
+    de: "Katalogtext-Übersetzung",
+    uk: "Переклад текстів каталогу",
+    fr: "Traduction des textes du catalogue",
+    pl: "Tłumaczenie tekstów katalogu",
+  },
+  gc_fn_clip: {
+    en: "Personal Video Clip",
+    ru: "Персональный видеоклип",
+    de: "Persönlicher Videoclip",
+    uk: "Персональний відеокліп",
+    fr: "Clip vidéo personnel",
+    pl: "Osobisty klip wideo",
+  },
+  gc_fn_cartoon: {
+    en: "Cartoon",
+    ru: "Мультфильм",
+    de: "Zeichentrick",
+    uk: "Мультфільм",
+    fr: "Dessin animé",
+    pl: "Kreskówka",
+  },
+  gc_fn_premium: {
+    en: "Premium Order",
+    ru: "Премиум-заказ",
+    de: "Premium-Auftrag",
+    uk: "Преміум-замовлення",
+    fr: "Commande premium",
+    pl: "Zamówienie premium",
+  },
 };
 
 type CheckState = { state: string; detail: string } | undefined;
@@ -92,7 +393,9 @@ export function GeneratorsPanel() {
   const { lang } = useI18n();
   const t = (key: string) => T[key]?.[lang as Lang] ?? T[key]?.en ?? key;
 
-  const [settings, setSettings] = useState<GeneratorControlSettings>(() => defaultGeneratorSettings());
+  const [settings, setSettings] = useState<GeneratorControlSettings>(() =>
+    defaultGeneratorSettings(),
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(false);
@@ -114,7 +417,10 @@ export function GeneratorsPanel() {
     void reload();
   }, []);
 
-  function patchFunction(id: string, patch: Partial<GeneratorControlSettings["functions"][string]>) {
+  function patchFunction(
+    id: string,
+    patch: Partial<GeneratorControlSettings["functions"][string]>,
+  ) {
     setSettings((prev) => {
       const current = prev.functions[id];
       if (!current) return prev;
@@ -123,7 +429,10 @@ export function GeneratorsPanel() {
     setSavedAt(false);
   }
 
-  function patchGenerator(key: string, patch: Partial<GeneratorControlSettings["generators"][string]>) {
+  function patchGenerator(
+    key: string,
+    patch: Partial<GeneratorControlSettings["generators"][string]>,
+  ) {
     setSettings((prev) => {
       const current = prev.generators[key];
       if (!current) return prev;
@@ -181,8 +490,14 @@ export function GeneratorsPanel() {
             ? t("gc_disabled")
             : t("gc_unknown");
     return (
-      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>
-        {state === "working" ? <CheckCircle2 className="h-3 w-3" /> : state === "error" ? <XCircle className="h-3 w-3" /> : null}
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}
+      >
+        {state === "working" ? (
+          <CheckCircle2 className="h-3 w-3" />
+        ) : state === "error" ? (
+          <XCircle className="h-3 w-3" />
+        ) : null}
         {label}
       </span>
     );
@@ -202,7 +517,11 @@ export function GeneratorsPanel() {
               {t("gc_reload")}
             </button>
             <button className={btnPrimary} onClick={() => void save()} disabled={saving || loading}>
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
               {savedAt ? t("gc_saved") : t("gc_save")}
             </button>
           </div>
@@ -222,7 +541,10 @@ export function GeneratorsPanel() {
                   .flatMap((g) => g.usedBy.filter((u) => u !== fn.id)),
               );
               return (
-                <div key={fn.id} className="rounded-xl border border-border/50 bg-background/60 p-4">
+                <div
+                  key={fn.id}
+                  className="rounded-xl border border-border/50 bg-background/60 p-4"
+                >
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-foreground">{t(fn.titleKey)}</span>
                     {!connected && (
@@ -240,7 +562,9 @@ export function GeneratorsPanel() {
                           <select
                             className={selectCls}
                             value={config.primary ?? ""}
-                            onChange={(e) => patchFunction(fn.id, { primary: e.target.value || null })}
+                            onChange={(e) =>
+                              patchFunction(fn.id, { primary: e.target.value || null })
+                            }
                           >
                             {fn.candidates.map((c) => (
                               <option key={c.key} value={c.key}>
@@ -254,7 +578,9 @@ export function GeneratorsPanel() {
                           <select
                             className={selectCls}
                             value={config.backup ?? ""}
-                            onChange={(e) => patchFunction(fn.id, { backup: e.target.value || null })}
+                            onChange={(e) =>
+                              patchFunction(fn.id, { backup: e.target.value || null })
+                            }
                           >
                             <option value="">{t("gc_not_selected")}</option>
                             {fn.candidates
@@ -342,7 +668,9 @@ export function GeneratorsPanel() {
                           className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs"
                           value={parallel === "auto" ? "auto" : "manual"}
                           onChange={(e) =>
-                            patchGenerator(gen.key, { parallel: e.target.value === "auto" ? "auto" : 5 })
+                            patchGenerator(gen.key, {
+                              parallel: e.target.value === "auto" ? "auto" : 5,
+                            })
                           }
                         >
                           <option value="auto">{t("gc_auto")}</option>
@@ -367,11 +695,18 @@ export function GeneratorsPanel() {
                     <td className="px-2 py-2">{statusPill(gen.key)}</td>
                     <td className="px-2 py-2 text-right">
                       <div className="inline-flex gap-1">
-                        <button className={btnBase} onClick={() => patchGenerator(gen.key, { enabled: !enabled })}>
+                        <button
+                          className={btnBase}
+                          onClick={() => patchGenerator(gen.key, { enabled: !enabled })}
+                        >
                           <Power className="h-3.5 w-3.5" />
                           {enabled ? t("gc_disable") : t("gc_enable")}
                         </button>
-                        <button className={btnBase} onClick={() => void check(gen.key)} disabled={checking === gen.key}>
+                        <button
+                          className={btnBase}
+                          onClick={() => void check(gen.key)}
+                          disabled={checking === gen.key}
+                        >
                           {checking === gen.key ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
@@ -381,7 +716,9 @@ export function GeneratorsPanel() {
                         </button>
                       </div>
                       {checks[gen.key]?.detail && (
-                        <p className="mt-1 text-right text-[10px] text-muted-foreground">{checks[gen.key]?.detail}</p>
+                        <p className="mt-1 text-right text-[10px] text-muted-foreground">
+                          {checks[gen.key]?.detail}
+                        </p>
                       )}
                     </td>
                   </tr>
@@ -417,7 +754,9 @@ function Toggle(props: {
       />
       <span>
         <span className="block text-xs font-medium text-foreground">{props.label}</span>
-        {props.hint && <span className="block text-[10px] text-muted-foreground">{props.hint}</span>}
+        {props.hint && (
+          <span className="block text-[10px] text-muted-foreground">{props.hint}</span>
+        )}
       </span>
     </label>
   );

@@ -34,10 +34,12 @@ export async function writeGeneratorSettings(
 ): Promise<GeneratorControlSettings> {
   const merged = mergeGeneratorSettings(next);
   const db = await admin();
-  await db.from("app_settings").upsert(
-    { key: GENERATOR_SETTINGS_KEY, value: merged as never, updated_by: actorUserId },
-    { onConflict: "key" },
-  );
+  await db
+    .from("app_settings")
+    .upsert(
+      { key: GENERATOR_SETTINGS_KEY, value: merged as never, updated_by: actorUserId },
+      { onConflict: "key" },
+    );
   return merged;
 }
 
@@ -68,7 +70,9 @@ async function checkReplicate(model: string): Promise<ConnectionResult> {
 async function checkElevenLabs(): Promise<ConnectionResult> {
   const key = process.env["ELEVENLABS_API_KEY"];
   if (!key) return { state: "error", detail: "No credential configured." };
-  const res = await fetch("https://api.elevenlabs.io/v1/models", { headers: { "xi-api-key": key } });
+  const res = await fetch("https://api.elevenlabs.io/v1/models", {
+    headers: { "xi-api-key": key },
+  });
   if (res.ok) return { state: "working", detail: "Voice studio reachable." };
   return { state: "error", detail: `Voice studio responded ${res.status}.` };
 }
@@ -123,7 +127,8 @@ export async function checkGeneratorConnection(key: string): Promise<ConnectionR
   } catch (err) {
     return {
       state: "error",
-      detail: err instanceof Error ? err.message.slice(0, 160) : "The provider could not be reached.",
+      detail:
+        err instanceof Error ? err.message.slice(0, 160) : "The provider could not be reached.",
     };
   }
 }

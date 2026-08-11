@@ -25,14 +25,19 @@ import { wanImageToVideoGenerator } from "./replicate-video.server";
  * request: engines switched off are skipped, the chosen primary leads and a
  * backup only follows when automatic failover is on.
  */
-async function orderByAdmin<T extends { key: string }>(functionId: string, engines: T[]): Promise<T[]> {
+async function orderByAdmin<T extends { key: string }>(
+  functionId: string,
+  engines: T[],
+): Promise<T[]> {
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
     const order = await generatorOrder(
       functionId,
       engines.map((e) => e.key),
     );
-    const ordered = order.map((key) => engines.find((e) => e.key === key)).filter((e): e is T => Boolean(e));
+    const ordered = order
+      .map((key) => engines.find((e) => e.key === key))
+      .filter((e): e is T => Boolean(e));
     return ordered.length ? ordered : [];
   } catch {
     return engines;
@@ -106,18 +111,31 @@ export async function startVideoRequest(request: VideoRequest): Promise<RoutedAn
       lastError =
         err instanceof GeneratorError
           ? err
-          : new GeneratorError("unknown", err instanceof Error ? err.message : "Unexpected error.", engine.key);
+          : new GeneratorError(
+              "unknown",
+              err instanceof Error ? err.message : "Unexpected error.",
+              engine.key,
+            );
       if (isTerminal(lastError.code)) break;
     }
   }
-  throw lastError ?? new GeneratorError("generation_failed", "The animation could not be started.", "-");
+  throw (
+    lastError ?? new GeneratorError("generation_failed", "The animation could not be started.", "-")
+  );
 }
 
 /** Reads the progress of an accepted animation from the engine that owns it. */
-export async function pollVideoRequest(generatorKey: string, jobId: string): Promise<VideoProgress> {
+export async function pollVideoRequest(
+  generatorKey: string,
+  jobId: string,
+): Promise<VideoProgress> {
   const engine = VIDEO_GENERATORS.find((g) => g.key === generatorKey);
   if (!engine) {
-    return { state: "failed", errorCode: "no_generator", errorMessage: "The engine is no longer available." };
+    return {
+      state: "failed",
+      errorCode: "no_generator",
+      errorMessage: "The engine is no longer available.",
+    };
   }
   return engine.progress(jobId);
 }
@@ -169,9 +187,15 @@ export async function routeImageRequest(request: ImageRequest): Promise<RoutedIm
       lastError =
         err instanceof GeneratorError
           ? err
-          : new GeneratorError("unknown", err instanceof Error ? err.message : "Unexpected error.", engine.key);
+          : new GeneratorError(
+              "unknown",
+              err instanceof Error ? err.message : "Unexpected error.",
+              engine.key,
+            );
       if (isTerminal(lastError.code)) break;
     }
   }
-  throw lastError ?? new GeneratorError("generation_failed", "The picture could not be created.", "-");
+  throw (
+    lastError ?? new GeneratorError("generation_failed", "The picture could not be created.", "-")
+  );
 }

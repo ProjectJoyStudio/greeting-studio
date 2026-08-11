@@ -21,22 +21,32 @@ export type GenerateCardResult =
  */
 export const generateCardImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { prompt: string; keywords?: string[]; greetingText?: string; greetingMode?: GreetingMode }) => {
-    const prompt = String(input?.prompt ?? "").trim();
-    if (prompt.length < 3) throw new Error("prompt_too_short");
-    return {
-      prompt: prompt.slice(0, 1000),
-      keywords: Array.isArray(input?.keywords)
-        ? input.keywords.filter((k) => typeof k === "string").slice(0, 30).map((k) => k.slice(0, 60))
-        : [],
-      greetingText: String(input?.greetingText ?? "").slice(0, 4000),
-      greetingMode: input?.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
-    };
-  })
+  .inputValidator(
+    (input: {
+      prompt: string;
+      keywords?: string[];
+      greetingText?: string;
+      greetingMode?: GreetingMode;
+    }) => {
+      const prompt = String(input?.prompt ?? "").trim();
+      if (prompt.length < 3) throw new Error("prompt_too_short");
+      return {
+        prompt: prompt.slice(0, 1000),
+        keywords: Array.isArray(input?.keywords)
+          ? input.keywords
+              .filter((k) => typeof k === "string")
+              .slice(0, 30)
+              .map((k) => k.slice(0, 60))
+          : [],
+        greetingText: String(input?.greetingText ?? "").slice(0, 4000),
+        greetingMode:
+          input?.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
+      };
+    },
+  )
   .handler(async ({ data, context }): Promise<GenerateCardResult> => {
-    const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } = await import(
-      "@/lib/replicate/replicate.server"
-    );
+    const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } =
+      await import("@/lib/replicate/replicate.server");
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
 
     // The person writes in their own language; the engine always receives English.
@@ -47,7 +57,8 @@ export const generateCardImage = createServerFn({ method: "POST" })
 
     // The administrator decides in the Admin Panel which engine leads and
     // whether a backup may take over after a genuine technical failure.
-    const { generatorOrder, withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
+    const { generatorOrder, withGeneratorSlot } =
+      await import("@/lib/admin/generators/runtime.server");
     const MODEL_BY_KEY: Record<string, string> = {
       flux_schnell: PRIMARY_MODEL,
       flux_dev: FALLBACK_MODEL,
@@ -66,20 +77,32 @@ export const generateCardImage = createServerFn({ method: "POST" })
       } catch (err) {
         if (err instanceof ReplicateError) {
           lastError = { code: err.code, message: err.message };
-          if (err.code === "missing_token" || err.code === "invalid_token" || err.code === "insufficient_credit") {
+          if (
+            err.code === "missing_token" ||
+            err.code === "invalid_token" ||
+            err.code === "insufficient_credit"
+          ) {
             break;
           }
         } else {
-          lastError = { code: "unknown", message: err instanceof Error ? err.message : "Unexpected error." };
+          lastError = {
+            code: "unknown",
+            message: err instanceof Error ? err.message : "Unexpected error.",
+          };
         }
       }
     }
 
-    if (!imageSource) return { ok: false, errorCode: lastError.code, errorMessage: lastError.message };
+    if (!imageSource)
+      return { ok: false, errorCode: lastError.code, errorMessage: lastError.message };
 
     const res = await fetch(imageSource);
     if (!res.ok) {
-      return { ok: false, errorCode: "download_failed", errorMessage: `Could not download the artwork (${res.status}).` };
+      return {
+        ok: false,
+        errorCode: "download_failed",
+        errorMessage: `Could not download the artwork (${res.status}).`,
+      };
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
     const storagePath = `${context.userId}/${crypto.randomUUID()}.webp`;
@@ -108,10 +131,16 @@ export const generateCardImage = createServerFn({ method: "POST" })
       .single();
     if (error || !row) {
       await supabaseAdmin.storage.from(USER_CARD_BUCKET).remove([storagePath]);
-      return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not save the card." };
+      return {
+        ok: false,
+        errorCode: "db_failed",
+        errorMessage: error?.message ?? "Could not save the card.",
+      };
     }
 
-    const signed = await supabaseAdmin.storage.from(USER_CARD_BUCKET).createSignedUrl(storagePath, 60 * 60 * 24);
+    const signed = await supabaseAdmin.storage
+      .from(USER_CARD_BUCKET)
+      .createSignedUrl(storagePath, 60 * 60 * 24);
     return {
       ok: true,
       cardId: row.id,
@@ -146,11 +175,14 @@ export const saveCardProject = createServerFn({ method: "POST" })
         title: String(input.title ?? "").slice(0, 160),
         language: String(input.language ?? "en").slice(0, 5),
         greetingText: String(input.greetingText ?? "").slice(0, 4000),
-        greetingMode: input.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
+        greetingMode:
+          input.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
         keywords: Array.isArray(input.keywords) ? input.keywords.slice(0, 30) : [],
         prompt: String(input.prompt ?? "").slice(0, 1000),
         textDesign: input.textDesign,
-        finalStoragePath: input.finalStoragePath ? String(input.finalStoragePath).slice(0, 400) : null,
+        finalStoragePath: input.finalStoragePath
+          ? String(input.finalStoragePath).slice(0, 400)
+          : null,
         enableShare: input.enableShare !== false,
       };
     },
@@ -166,7 +198,8 @@ export const saveCardProject = createServerFn({ method: "POST" })
     if (!existing) throw new Error("card_not_found");
 
     const shareSlug =
-      existing.share_slug ?? (data.enableShare ? crypto.randomUUID().replace(/-/g, "").slice(0, 22) : null);
+      existing.share_slug ??
+      (data.enableShare ? crypto.randomUUID().replace(/-/g, "").slice(0, 22) : null);
 
     const { error } = await context.supabase
       .from("user_greeting_cards")
@@ -245,14 +278,18 @@ export const getSharedCard = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_greeting_cards")
-      .select("id, title, greeting_text, text_design, language, storage_bucket, storage_path, final_storage_bucket, final_storage_path, view_count")
+      .select(
+        "id, title, greeting_text, text_design, language, storage_bucket, storage_path, final_storage_bucket, final_storage_path, view_count",
+      )
       .eq("share_slug", data.slug)
       .eq("is_shared", true)
       .is("deleted_at", null)
       .maybeSingle();
     if (!row) return null;
 
-    const bucket = row.final_storage_path ? (row.final_storage_bucket ?? USER_CARD_BUCKET) : row.storage_bucket;
+    const bucket = row.final_storage_path
+      ? (row.final_storage_bucket ?? USER_CARD_BUCKET)
+      : row.storage_bucket;
     const path = row.final_storage_path ?? row.storage_path;
     const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24);
 
@@ -290,7 +327,8 @@ export const saveCardDetails = createServerFn({ method: "POST" })
       return {
         cardId: input.cardId,
         greetingText: String(input.greetingText ?? "").slice(0, 4000),
-        greetingMode: input.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
+        greetingMode:
+          input.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
         keywords: Array.isArray(input.keywords) ? input.keywords.slice(0, 30) : [],
         prompt: String(input.prompt ?? "").slice(0, 1000),
         textDesign: input.textDesign,
@@ -469,7 +507,12 @@ export const composeGreetingFromKeywords = createServerFn({ method: "POST" })
     if (!apiKey) return { ok: false, text: "", errorMessage: "service_unavailable" };
 
     const languageNames: Record<string, string> = {
-      en: "English", ru: "Russian", de: "German", uk: "Ukrainian", fr: "French", pl: "Polish",
+      en: "English",
+      ru: "Russian",
+      de: "German",
+      uk: "Ukrainian",
+      fr: "French",
+      pl: "Polish",
     };
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -496,7 +539,11 @@ export const composeGreetingFromKeywords = createServerFn({ method: "POST" })
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`Greeting composition failed [${res.status}]: ${body.slice(0, 400)}`);
-      return { ok: false, text: "", errorMessage: res.status === 429 ? "rate_limited" : "service_unavailable" };
+      return {
+        ok: false,
+        text: "",
+        errorMessage: res.status === 429 ? "rate_limited" : "service_unavailable",
+      };
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const text = json.choices?.[0]?.message?.content?.trim() ?? "";

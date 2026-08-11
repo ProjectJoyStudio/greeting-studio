@@ -85,7 +85,10 @@ const ENGINE_BY_ADMIN_KEY: Record<string, string> = {
 async function activeEngine(): Promise<EngineDefinition> {
   try {
     const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
-    const key = await primaryGenerator("personal_video.start_scene", Object.keys(ENGINE_BY_ADMIN_KEY));
+    const key = await primaryGenerator(
+      "personal_video.start_scene",
+      Object.keys(ENGINE_BY_ADMIN_KEY),
+    );
     const name = key ? ENGINE_BY_ADMIN_KEY[key] : undefined;
     const chosen = name ? ENGINES[name] : undefined;
     if (chosen) {

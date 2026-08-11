@@ -1,38 +1,109 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  Save, RefreshCw, Activity, Database, ShieldCheck, Globe, Server, Wrench,
-  BellRing, Info, HardDrive, Download, RotateCcw, Trash2, Eye, X, Search,
-  AlertTriangle, CheckCircle2, XCircle, LogOut, ChevronRight,
-  Cpu, Scale, GitBranch, Languages, Type, Cloud, Plug, HeartPulse, Gauge, ScrollText,
-  Plus, Power, Play, ArrowRightLeft,
-  Zap, ListOrdered, Siren, GripVertical, TrendingUp, Route,
-  CreditCard, UserCog, Boxes, Plug2, Beaker, Pause, Rocket,
+  Save,
+  RefreshCw,
+  Activity,
+  Database,
+  ShieldCheck,
+  Globe,
+  Server,
+  Wrench,
+  BellRing,
+  Info,
+  HardDrive,
+  Download,
+  RotateCcw,
+  Trash2,
+  Eye,
+  X,
+  Search,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  LogOut,
+  ChevronRight,
+  Cpu,
+  Scale,
+  GitBranch,
+  Languages,
+  Type,
+  Cloud,
+  Plug,
+  HeartPulse,
+  Gauge,
+  ScrollText,
+  Plus,
+  Power,
+  Play,
+  ArrowRightLeft,
+  Zap,
+  ListOrdered,
+  Siren,
+  GripVertical,
+  TrendingUp,
+  Route,
+  CreditCard,
+  UserCog,
+  Boxes,
+  Plug2,
+  Beaker,
+  Pause,
+  Rocket,
 } from "lucide-react";
 
 import { useI18n, LANGS } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n/types";
 import {
-  DEFAULT_PLATFORM_SETTINGS, DEFAULT_PLATFORM_ADVANCED,
-  TRANSLATION_PROVIDERS, computeBalancerLive, computeBalancerStats,
-  DEFAULT_BALANCER_DASHBOARD, CONTENT_TYPES, PRIORITY_TIERS,
-  SUPPORTED_CURRENCIES, SUPPORTED_TIMEZONES, DATE_FORMATS, TIME_FORMATS,
-  WEEK_STARTS, COUNTRY_CODES,
-  validateGeneral, formatDate, formatDateTime, statusTone, progressTone,
-  type PlatformSettingsState, type PlatformAdvancedState, type IndicatorStatus,
-  type BackupRecord, type MonitoringCheck, type BackupType,
-  type BalancerMode, type TranslationProvider,
-  type HealthStatus, type LogCategory, type LogResult,
-  type BalancerDashboardSettings, type PriorityTier, type ContentType,
-  type BalancerEvent, type BalancerEventSeverity,
+  DEFAULT_PLATFORM_SETTINGS,
+  DEFAULT_PLATFORM_ADVANCED,
+  TRANSLATION_PROVIDERS,
+  computeBalancerLive,
+  computeBalancerStats,
+  DEFAULT_BALANCER_DASHBOARD,
+  CONTENT_TYPES,
+  PRIORITY_TIERS,
+  SUPPORTED_CURRENCIES,
+  SUPPORTED_TIMEZONES,
+  DATE_FORMATS,
+  TIME_FORMATS,
+  WEEK_STARTS,
+  COUNTRY_CODES,
+  validateGeneral,
+  formatDate,
+  formatDateTime,
+  statusTone,
+  progressTone,
+  type PlatformSettingsState,
+  type PlatformAdvancedState,
+  type IndicatorStatus,
+  type BackupRecord,
+  type MonitoringCheck,
+  type BackupType,
+  type BalancerMode,
+  type TranslationProvider,
+  type HealthStatus,
+  type LogCategory,
+  type LogResult,
+  type BalancerDashboardSettings,
+  type PriorityTier,
+  type ContentType,
+  type BalancerEvent,
+  type BalancerEventSeverity,
 } from "@/lib/admin/platform-settings";
 import { useLocalPlatform } from "./i18n";
 import { GeneratorsPanel } from "./GeneratorsPanel";
 import {
-  DEFAULT_INFRASTRUCTURE, type InfrastructureState,
+  DEFAULT_INFRASTRUCTURE,
+  type InfrastructureState,
 } from "@/lib/admin/platform-infrastructure";
 import {
-  PaymentsTab, AuthTab, StorageMgmtTab, ServicesTab,
-  SandboxTab, ControlTab, LaunchTab,
+  PaymentsTab,
+  AuthTab,
+  StorageMgmtTab,
+  ServicesTab,
+  SandboxTab,
+  ControlTab,
+  LaunchTab,
 } from "./InfrastructureTabs";
 
 // ---------- shared classes ----------
@@ -43,50 +114,75 @@ const btnBase =
   "inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/50 disabled:opacity-40";
 const btnPrimary =
   "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow hover:bg-primary/90";
-const cardCls =
-  "rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur";
+const cardCls = "rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur";
 
 type TabKey =
-  | "general" | "domain" | "server" | "maintenance"
-  | "backup" | "security" | "monitoring" | "info"
-  | "generators" | "balancer" | "fallback" | "translations"
-  | "overlay" | "storage" | "api" | "health" | "scaling" | "logs"
-  | "payments" | "auth" | "storage_mgmt" | "services"
-  | "sandbox" | "control" | "launch";
+  | "general"
+  | "domain"
+  | "server"
+  | "maintenance"
+  | "backup"
+  | "security"
+  | "monitoring"
+  | "info"
+  | "generators"
+  | "balancer"
+  | "fallback"
+  | "translations"
+  | "overlay"
+  | "storage"
+  | "api"
+  | "health"
+  | "scaling"
+  | "logs"
+  | "payments"
+  | "auth"
+  | "storage_mgmt"
+  | "services"
+  | "sandbox"
+  | "control"
+  | "launch";
 
 const TABS: { key: TabKey; icon: typeof Save; labelKey: string; catKey: string }[] = [
-  { key: "general",     icon: Wrench,      labelKey: "tab_general",     catKey: "cat_general" },
-  { key: "domain",      icon: Globe,       labelKey: "tab_domain",      catKey: "cat_domain" },
-  { key: "server",      icon: Server,      labelKey: "tab_server",      catKey: "cat_server" },
-  { key: "maintenance", icon: BellRing,    labelKey: "tab_maintenance", catKey: "cat_maintenance" },
-  { key: "backup",      icon: HardDrive,   labelKey: "tab_backup",      catKey: "cat_backup" },
-  { key: "security",    icon: ShieldCheck, labelKey: "tab_security",    catKey: "cat_security" },
-  { key: "monitoring",  icon: Activity,    labelKey: "tab_monitoring",  catKey: "cat_monitoring" },
-  { key: "info",        icon: Info,        labelKey: "tab_info",        catKey: "cat_info" },
-  { key: "generators",  icon: Cpu,         labelKey: "tab_generators",  catKey: "cat_generators" },
-  { key: "balancer",    icon: Scale,       labelKey: "tab_balancer",    catKey: "cat_balancer" },
-  { key: "fallback",    icon: GitBranch,   labelKey: "tab_fallback",    catKey: "cat_fallback" },
-  { key: "translations",icon: Languages,   labelKey: "tab_translations",catKey: "cat_translations" },
-  { key: "overlay",     icon: Type,        labelKey: "tab_overlay",     catKey: "cat_overlay" },
-  { key: "storage",     icon: Cloud,       labelKey: "tab_storage",     catKey: "cat_storage" },
-  { key: "api",         icon: Plug,        labelKey: "tab_api",         catKey: "cat_api" },
-  { key: "health",      icon: HeartPulse,  labelKey: "tab_health",      catKey: "cat_health" },
-  { key: "scaling",     icon: Gauge,       labelKey: "tab_scaling",     catKey: "cat_scaling" },
-  { key: "logs",        icon: ScrollText,  labelKey: "tab_logs",        catKey: "cat_logs" },
-  { key: "payments",    icon: CreditCard,  labelKey: "tab_payments",    catKey: "tab_payments" },
-  { key: "auth",        icon: UserCog,     labelKey: "tab_auth",        catKey: "tab_auth" },
-  { key: "storage_mgmt",icon: Boxes,       labelKey: "tab_storage_mgmt",catKey: "tab_storage_mgmt" },
-  { key: "services",    icon: Plug2,       labelKey: "tab_services",    catKey: "tab_services" },
-  { key: "sandbox",     icon: Beaker,      labelKey: "tab_sandbox",     catKey: "tab_sandbox" },
-  { key: "control",     icon: Pause,       labelKey: "tab_control",     catKey: "tab_control" },
-  { key: "launch",      icon: Rocket,      labelKey: "tab_launch",      catKey: "tab_launch" },
+  { key: "general", icon: Wrench, labelKey: "tab_general", catKey: "cat_general" },
+  { key: "domain", icon: Globe, labelKey: "tab_domain", catKey: "cat_domain" },
+  { key: "server", icon: Server, labelKey: "tab_server", catKey: "cat_server" },
+  { key: "maintenance", icon: BellRing, labelKey: "tab_maintenance", catKey: "cat_maintenance" },
+  { key: "backup", icon: HardDrive, labelKey: "tab_backup", catKey: "cat_backup" },
+  { key: "security", icon: ShieldCheck, labelKey: "tab_security", catKey: "cat_security" },
+  { key: "monitoring", icon: Activity, labelKey: "tab_monitoring", catKey: "cat_monitoring" },
+  { key: "info", icon: Info, labelKey: "tab_info", catKey: "cat_info" },
+  { key: "generators", icon: Cpu, labelKey: "tab_generators", catKey: "cat_generators" },
+  { key: "balancer", icon: Scale, labelKey: "tab_balancer", catKey: "cat_balancer" },
+  { key: "fallback", icon: GitBranch, labelKey: "tab_fallback", catKey: "cat_fallback" },
+  {
+    key: "translations",
+    icon: Languages,
+    labelKey: "tab_translations",
+    catKey: "cat_translations",
+  },
+  { key: "overlay", icon: Type, labelKey: "tab_overlay", catKey: "cat_overlay" },
+  { key: "storage", icon: Cloud, labelKey: "tab_storage", catKey: "cat_storage" },
+  { key: "api", icon: Plug, labelKey: "tab_api", catKey: "cat_api" },
+  { key: "health", icon: HeartPulse, labelKey: "tab_health", catKey: "cat_health" },
+  { key: "scaling", icon: Gauge, labelKey: "tab_scaling", catKey: "cat_scaling" },
+  { key: "logs", icon: ScrollText, labelKey: "tab_logs", catKey: "cat_logs" },
+  { key: "payments", icon: CreditCard, labelKey: "tab_payments", catKey: "tab_payments" },
+  { key: "auth", icon: UserCog, labelKey: "tab_auth", catKey: "tab_auth" },
+  { key: "storage_mgmt", icon: Boxes, labelKey: "tab_storage_mgmt", catKey: "tab_storage_mgmt" },
+  { key: "services", icon: Plug2, labelKey: "tab_services", catKey: "tab_services" },
+  { key: "sandbox", icon: Beaker, labelKey: "tab_sandbox", catKey: "tab_sandbox" },
+  { key: "control", icon: Pause, labelKey: "tab_control", catKey: "tab_control" },
+  { key: "launch", icon: Rocket, labelKey: "tab_launch", catKey: "tab_launch" },
 ];
 
 function StatusPill({ status, label }: { status: IndicatorStatus; label: string }) {
   const icon = status === "online" ? CheckCircle2 : status === "warning" ? AlertTriangle : XCircle;
   const Icon = icon;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusTone(status)}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusTone(status)}`}
+    >
       <Icon className="h-3 w-3" /> {label}
     </span>
   );
@@ -105,8 +201,16 @@ function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
 }
 
 function Field({
-  label, hint, error, children,
-}: { label: string; hint?: string; error?: string; children: ReactNode }) {
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <div className={labelCls}>{label}</div>
@@ -160,12 +264,14 @@ export function PlatformSettingsPage() {
     setTimeout(() => setToast(null), 2400);
   }
   function update<K extends keyof PlatformSettingsState>(
-    key: K, mut: (draft: PlatformSettingsState[K]) => PlatformSettingsState[K],
+    key: K,
+    mut: (draft: PlatformSettingsState[K]) => PlatformSettingsState[K],
   ) {
     setState((s) => ({ ...s, [key]: mut(s[key]) }));
   }
   function updateAdv<K extends keyof PlatformAdvancedState>(
-    key: K, mut: (draft: PlatformAdvancedState[K]) => PlatformAdvancedState[K],
+    key: K,
+    mut: (draft: PlatformAdvancedState[K]) => PlatformAdvancedState[K],
   ) {
     setAdv((s) => ({ ...s, [key]: mut(s[key]) }));
   }
@@ -178,18 +284,20 @@ export function PlatformSettingsPage() {
     // Randomize demo metrics slightly.
     update("server", (s) => ({
       ...s,
-      cpuPercent: Math.max(5, Math.min(95, s.cpuPercent + (Math.random() * 16 - 8) | 0)),
-      ramPercent: Math.max(5, Math.min(95, s.ramPercent + (Math.random() * 12 - 6) | 0)),
+      cpuPercent: Math.max(5, Math.min(95, (s.cpuPercent + (Math.random() * 16 - 8)) | 0)),
+      ramPercent: Math.max(5, Math.min(95, (s.ramPercent + (Math.random() * 12 - 6)) | 0)),
     }));
     update("monitoring", (m) => m.map((c) => ({ ...c, lastCheck: new Date().toISOString() })));
     showToast("refreshed_toast");
   }
   function handleCheck() {
-    update("monitoring", (m) => m.map((c) => ({
-      ...c,
-      lastCheck: new Date().toISOString(),
-      responseMs: Math.max(8, Math.round(c.responseMs * (0.7 + Math.random() * 0.6))),
-    })));
+    update("monitoring", (m) =>
+      m.map((c) => ({
+        ...c,
+        lastCheck: new Date().toISOString(),
+        responseMs: Math.max(8, Math.round(c.responseMs * (0.7 + Math.random() * 0.6))),
+      })),
+    );
     showToast("check_toast");
   }
   function handleCreateBackup() {
@@ -212,8 +320,10 @@ export function PlatformSettingsPage() {
   const filteredTabs = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return TABS;
-    return TABS.filter(({ labelKey, catKey }) =>
-      t(labelKey).toLowerCase().includes(q) || t(catKey).toLowerCase().includes(q));
+    return TABS.filter(
+      ({ labelKey, catKey }) =>
+        t(labelKey).toLowerCase().includes(q) || t(catKey).toLowerCase().includes(q),
+    );
   }, [query, t]);
 
   return (
@@ -229,12 +339,9 @@ export function PlatformSettingsPage() {
             </span>
             <span className="text-xs opacity-80">· {infra.control.mode}</span>
           </div>
-          <button
-            type="button"
-            className={btnBase}
-            onClick={() => setTab("control")}
-          >
-            <Play className="h-3.5 w-3.5" />{t("btn_check")}
+          <button type="button" className={btnBase} onClick={() => setTab("control")}>
+            <Play className="h-3.5 w-3.5" />
+            {t("btn_check")}
           </button>
         </div>
       )}
@@ -246,11 +353,21 @@ export function PlatformSettingsPage() {
           <p className="mt-1 text-xs text-amber-700">{t("demo_notice")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className={btnBase} onClick={handleRefresh}><RefreshCw className="h-3.5 w-3.5" />{t("btn_refresh")}</button>
-          <button className={btnBase} onClick={handleCheck}><Activity className="h-3.5 w-3.5" />{t("btn_check")}</button>
-          <button className={btnBase} onClick={handleCreateBackup}><HardDrive className="h-3.5 w-3.5" />{t("btn_backup")}</button>
+          <button className={btnBase} onClick={handleRefresh}>
+            <RefreshCw className="h-3.5 w-3.5" />
+            {t("btn_refresh")}
+          </button>
+          <button className={btnBase} onClick={handleCheck}>
+            <Activity className="h-3.5 w-3.5" />
+            {t("btn_check")}
+          </button>
+          <button className={btnBase} onClick={handleCreateBackup}>
+            <HardDrive className="h-3.5 w-3.5" />
+            {t("btn_backup")}
+          </button>
           <button className={btnPrimary} onClick={handleSave} disabled={errors.length > 0}>
-            <Save className="h-3.5 w-3.5" />{t("btn_save")}
+            <Save className="h-3.5 w-3.5" />
+            {t("btn_save")}
           </button>
         </div>
       </div>
@@ -276,7 +393,10 @@ export function PlatformSettingsPage() {
               <button
                 key={key}
                 type="button"
-                onClick={() => { setTab(key); setQuery(""); }}
+                onClick={() => {
+                  setTab(key);
+                  setQuery("");
+                }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs hover:bg-muted/50"
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -315,86 +435,212 @@ export function PlatformSettingsPage() {
       {tab === "general" && (
         <div className={cardCls}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label={t("g_platform_name")} error={errorMap.platformName && t(errorMap.platformName)}>
-              <input className={inputCls} value={state.general.platformName}
-                onChange={(e) => update("general", (g) => ({ ...g, platformName: e.target.value }))} />
+            <Field
+              label={t("g_platform_name")}
+              error={errorMap.platformName && t(errorMap.platformName)}
+            >
+              <input
+                className={inputCls}
+                value={state.general.platformName}
+                onChange={(e) => update("general", (g) => ({ ...g, platformName: e.target.value }))}
+              />
             </Field>
             <Field label={t("g_logo")} hint={t("g_logo_hint")}>
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/50 font-[Fraunces] text-lg font-semibold text-primary">
                   {state.general.logoPlaceholder}
                 </div>
-                <input className={inputCls} value={state.general.logoPlaceholder}
-                  onChange={(e) => update("general", (g) => ({ ...g, logoPlaceholder: e.target.value.slice(0, 4) }))} />
+                <input
+                  className={inputCls}
+                  value={state.general.logoPlaceholder}
+                  onChange={(e) =>
+                    update("general", (g) => ({
+                      ...g,
+                      logoPlaceholder: e.target.value.slice(0, 4),
+                    }))
+                  }
+                />
               </div>
             </Field>
             <Field label={t("g_platform_description")}>
-              <textarea rows={3} className={inputCls} value={state.general.platformDescription}
-                onChange={(e) => update("general", (g) => ({ ...g, platformDescription: e.target.value }))} />
+              <textarea
+                rows={3}
+                className={inputCls}
+                value={state.general.platformDescription}
+                onChange={(e) =>
+                  update("general", (g) => ({ ...g, platformDescription: e.target.value }))
+                }
+              />
             </Field>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label={t("g_support_email")} error={errorMap.supportEmail && t(errorMap.supportEmail)}>
-                <input className={inputCls} type="email" value={state.general.supportEmail}
-                  onChange={(e) => update("general", (g) => ({ ...g, supportEmail: e.target.value }))} />
+              <Field
+                label={t("g_support_email")}
+                error={errorMap.supportEmail && t(errorMap.supportEmail)}
+              >
+                <input
+                  className={inputCls}
+                  type="email"
+                  value={state.general.supportEmail}
+                  onChange={(e) =>
+                    update("general", (g) => ({ ...g, supportEmail: e.target.value }))
+                  }
+                />
               </Field>
-              <Field label={t("g_notification_email")} error={errorMap.notificationEmail && t(errorMap.notificationEmail)}>
-                <input className={inputCls} type="email" value={state.general.notificationEmail}
-                  onChange={(e) => update("general", (g) => ({ ...g, notificationEmail: e.target.value }))} />
+              <Field
+                label={t("g_notification_email")}
+                error={errorMap.notificationEmail && t(errorMap.notificationEmail)}
+              >
+                <input
+                  className={inputCls}
+                  type="email"
+                  value={state.general.notificationEmail}
+                  onChange={(e) =>
+                    update("general", (g) => ({ ...g, notificationEmail: e.target.value }))
+                  }
+                />
               </Field>
               <Field label={t("g_support_phone")}>
-                <input className={inputCls} value={state.general.supportPhone}
-                  onChange={(e) => update("general", (g) => ({ ...g, supportPhone: e.target.value }))} />
+                <input
+                  className={inputCls}
+                  value={state.general.supportPhone}
+                  onChange={(e) =>
+                    update("general", (g) => ({ ...g, supportPhone: e.target.value }))
+                  }
+                />
               </Field>
             </div>
             <Field label={t("g_default_language")}>
-              <select className={inputCls} value={state.general.defaultLanguage}
-                onChange={(e) => update("general", (g) => ({ ...g, defaultLanguage: e.target.value as Lang }))}>
-                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.defaultLanguage}
+                onChange={(e) =>
+                  update("general", (g) => ({ ...g, defaultLanguage: e.target.value as Lang }))
+                }
+              >
+                {LANGS.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_default_currency")}>
-              <select className={inputCls} value={state.general.defaultCurrency}
-                onChange={(e) => update("general", (g) => ({ ...g, defaultCurrency: e.target.value as typeof SUPPORTED_CURRENCIES[number] }))}>
-                {SUPPORTED_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.defaultCurrency}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    defaultCurrency: e.target.value as (typeof SUPPORTED_CURRENCIES)[number],
+                  }))
+                }
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_default_country")}>
-              <select className={inputCls} value={state.general.defaultCountry}
-                onChange={(e) => update("general", (g) => ({ ...g, defaultCountry: e.target.value as typeof COUNTRY_CODES[number] }))}>
-                {COUNTRY_CODES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.defaultCountry}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    defaultCountry: e.target.value as (typeof COUNTRY_CODES)[number],
+                  }))
+                }
+              >
+                {COUNTRY_CODES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_default_timezone")}>
-              <select className={inputCls} value={state.general.defaultTimezone}
-                onChange={(e) => update("general", (g) => ({ ...g, defaultTimezone: e.target.value as typeof SUPPORTED_TIMEZONES[number] }))}>
-                {SUPPORTED_TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.defaultTimezone}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    defaultTimezone: e.target.value as (typeof SUPPORTED_TIMEZONES)[number],
+                  }))
+                }
+              >
+                {SUPPORTED_TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_date_format")}>
-              <select className={inputCls} value={state.general.dateFormat}
-                onChange={(e) => update("general", (g) => ({ ...g, dateFormat: e.target.value as typeof DATE_FORMATS[number] }))}>
-                {DATE_FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.dateFormat}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    dateFormat: e.target.value as (typeof DATE_FORMATS)[number],
+                  }))
+                }
+              >
+                {DATE_FORMATS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_time_format")}>
-              <select className={inputCls} value={state.general.timeFormat}
-                onChange={(e) => update("general", (g) => ({ ...g, timeFormat: e.target.value as typeof TIME_FORMATS[number] }))}>
-                {TIME_FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.timeFormat}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    timeFormat: e.target.value as (typeof TIME_FORMATS)[number],
+                  }))
+                }
+              >
+                {TIME_FORMATS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("g_week_start")}>
-              <select className={inputCls} value={state.general.weekStart}
-                onChange={(e) => update("general", (g) => ({ ...g, weekStart: e.target.value as typeof WEEK_STARTS[number] }))}>
-                {WEEK_STARTS.map((w) => <option key={w} value={w}>{t(`week_${w}`)}</option>)}
+              <select
+                className={inputCls}
+                value={state.general.weekStart}
+                onChange={(e) =>
+                  update("general", (g) => ({
+                    ...g,
+                    weekStart: e.target.value as (typeof WEEK_STARTS)[number],
+                  }))
+                }
+              >
+                {WEEK_STARTS.map((w) => (
+                  <option key={w} value={w}>
+                    {t(`week_${w}`)}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
           <div className="mt-6 flex flex-wrap justify-end gap-2">
             <button className={btnBase} onClick={handleRestoreDefaults}>
-              <RotateCcw className="h-3.5 w-3.5" />{t("btn_restore_default")}
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t("btn_restore_default")}
             </button>
             <button className={btnPrimary} onClick={handleSave} disabled={errors.length > 0}>
-              <Save className="h-3.5 w-3.5" />{t("btn_save")}
+              <Save className="h-3.5 w-3.5" />
+              {t("btn_save")}
             </button>
           </div>
         </div>
@@ -404,34 +650,58 @@ export function PlatformSettingsPage() {
         <div className={cardCls}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label={t("d_primary")}>
-              <input className={inputCls} value={state.domain.primaryDomain}
-                onChange={(e) => update("domain", (d) => ({ ...d, primaryDomain: e.target.value }))} />
+              <input
+                className={inputCls}
+                value={state.domain.primaryDomain}
+                onChange={(e) => update("domain", (d) => ({ ...d, primaryDomain: e.target.value }))}
+              />
             </Field>
             <Field label={t("d_testing")}>
-              <input className={inputCls} value={state.domain.testingDomain}
-                onChange={(e) => update("domain", (d) => ({ ...d, testingDomain: e.target.value }))} />
+              <input
+                className={inputCls}
+                value={state.domain.testingDomain}
+                onChange={(e) => update("domain", (d) => ({ ...d, testingDomain: e.target.value }))}
+              />
             </Field>
             <Field label={t("d_ssl_status")}>
-              <StatusPill status={state.domain.sslStatus} label={t(`status_${state.domain.sslStatus}`)} />
+              <StatusPill
+                status={state.domain.sslStatus}
+                label={t(`status_${state.domain.sslStatus}`)}
+              />
             </Field>
             <Field label={t("d_ssl_expires")}>
               <div className="text-sm">{formatDate(state.domain.sslExpiresAt)}</div>
             </Field>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={state.domain.httpsEnabled}
-                onChange={(e) => update("domain", (d) => ({ ...d, httpsEnabled: e.target.checked }))} />
+              <input
+                type="checkbox"
+                checked={state.domain.httpsEnabled}
+                onChange={(e) =>
+                  update("domain", (d) => ({ ...d, httpsEnabled: e.target.checked }))
+                }
+              />
               {t("d_https_enabled")}
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={state.domain.httpRedirect}
-                onChange={(e) => update("domain", (d) => ({ ...d, httpRedirect: e.target.checked }))} />
+              <input
+                type="checkbox"
+                checked={state.domain.httpRedirect}
+                onChange={(e) =>
+                  update("domain", (d) => ({ ...d, httpRedirect: e.target.checked }))
+                }
+              />
               {t("d_http_redirect")}
             </label>
             <Field label={t("d_verification")}>
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                state.domain.verificationStatus === "verified" ? statusTone("online")
-                : state.domain.verificationStatus === "pending" ? statusTone("warning")
-                : statusTone("error")}`}>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  state.domain.verificationStatus === "verified"
+                    ? statusTone("online")
+                    : state.domain.verificationStatus === "pending"
+                      ? statusTone("warning")
+                      : statusTone("error")
+                }`}
+              >
                 {t(state.domain.verificationStatus)}
               </span>
             </Field>
@@ -460,9 +730,18 @@ export function PlatformSettingsPage() {
             </div>
           </div>
           <div className="mt-6 flex flex-wrap justify-end gap-2">
-            <button className={btnBase} onClick={() => showToast("check_toast")}><Globe className="h-3.5 w-3.5" />{t("btn_verify_domain")}</button>
-            <button className={btnBase} onClick={() => showToast("check_toast")}><ShieldCheck className="h-3.5 w-3.5" />{t("btn_check_ssl")}</button>
-            <button className={btnBase} onClick={() => showToast("check_toast")}><Activity className="h-3.5 w-3.5" />{t("btn_test_https")}</button>
+            <button className={btnBase} onClick={() => showToast("check_toast")}>
+              <Globe className="h-3.5 w-3.5" />
+              {t("btn_verify_domain")}
+            </button>
+            <button className={btnBase} onClick={() => showToast("check_toast")}>
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {t("btn_check_ssl")}
+            </button>
+            <button className={btnBase} onClick={() => showToast("check_toast")}>
+              <Activity className="h-3.5 w-3.5" />
+              {t("btn_test_https")}
+            </button>
           </div>
         </div>
       )}
@@ -475,22 +754,31 @@ export function PlatformSettingsPage() {
               <StatusPill status={state.server.status} label={t(`status_${state.server.status}`)} />
             </div>
             <div className="mt-3 text-sm text-muted-foreground">
-              {t("s_uptime")}: <span className="font-medium text-foreground">{state.server.uptimeDays} {t("s_days")}</span>
+              {t("s_uptime")}:{" "}
+              <span className="font-medium text-foreground">
+                {state.server.uptimeDays} {t("s_days")}
+              </span>
             </div>
           </div>
           <div className={cardCls}>
             <div className={labelCls}>{t("s_cpu")}</div>
-            <div className="mt-1 text-2xl font-semibold text-foreground">{state.server.cpuPercent}%</div>
+            <div className="mt-1 text-2xl font-semibold text-foreground">
+              {state.server.cpuPercent}%
+            </div>
             <Progress value={state.server.cpuPercent} />
           </div>
           <div className={cardCls}>
             <div className={labelCls}>{t("s_ram")}</div>
-            <div className="mt-1 text-2xl font-semibold text-foreground">{state.server.ramPercent}%</div>
+            <div className="mt-1 text-2xl font-semibold text-foreground">
+              {state.server.ramPercent}%
+            </div>
             <Progress value={state.server.ramPercent} />
           </div>
           <div className={cardCls}>
             <div className={labelCls}>{t("s_storage")}</div>
-            <div className="mt-1 text-2xl font-semibold text-foreground">{state.server.storagePercent}%</div>
+            <div className="mt-1 text-2xl font-semibold text-foreground">
+              {state.server.storagePercent}%
+            </div>
             <Progress value={state.server.storagePercent} />
           </div>
           <div className={cardCls}>
@@ -520,31 +808,55 @@ export function PlatformSettingsPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button className={btnBase} onClick={() => update("maintenance", (m) => ({ ...m, enabled: true }))}>
+              <button
+                className={btnBase}
+                onClick={() => update("maintenance", (m) => ({ ...m, enabled: true }))}
+              >
                 {t("btn_enable")}
               </button>
-              <button className={btnBase} onClick={() => update("maintenance", (m) => ({ ...m, enabled: false }))}>
+              <button
+                className={btnBase}
+                onClick={() => update("maintenance", (m) => ({ ...m, enabled: false }))}
+              >
                 {t("btn_disable")}
               </button>
               <button className={btnBase} onClick={() => setMaintenancePreview(true)}>
-                <Eye className="h-3.5 w-3.5" />{t("btn_preview")}
+                <Eye className="h-3.5 w-3.5" />
+                {t("btn_preview")}
               </button>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={state.maintenance.adminsOnly}
-                onChange={(e) => update("maintenance", (m) => ({ ...m, adminsOnly: e.target.checked }))} />
+              <input
+                type="checkbox"
+                checked={state.maintenance.adminsOnly}
+                onChange={(e) =>
+                  update("maintenance", (m) => ({ ...m, adminsOnly: e.target.checked }))
+                }
+              />
               {t("m_admins_only")}
             </label>
             <Field label={t("m_scheduled_end")}>
-              <input type="datetime-local" className={inputCls} value={state.maintenance.scheduledEnd.slice(0, 16)}
-                onChange={(e) => update("maintenance", (m) => ({ ...m, scheduledEnd: e.target.value }))} />
+              <input
+                type="datetime-local"
+                className={inputCls}
+                value={state.maintenance.scheduledEnd.slice(0, 16)}
+                onChange={(e) =>
+                  update("maintenance", (m) => ({ ...m, scheduledEnd: e.target.value }))
+                }
+              />
             </Field>
             <div className="md:col-span-2">
               <Field label={t("m_message")}>
-                <textarea rows={3} className={inputCls} value={state.maintenance.message}
-                  onChange={(e) => update("maintenance", (m) => ({ ...m, message: e.target.value }))} />
+                <textarea
+                  rows={3}
+                  className={inputCls}
+                  value={state.maintenance.message}
+                  onChange={(e) =>
+                    update("maintenance", (m) => ({ ...m, message: e.target.value }))
+                  }
+                />
               </Field>
             </div>
           </div>
@@ -553,7 +865,9 @@ export function PlatformSettingsPage() {
               <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl">
                 <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
                   <h3 className="font-[Fraunces] text-lg font-semibold">{t("m_preview_title")}</h3>
-                  <button className={btnBase} onClick={() => setMaintenancePreview(false)}><X className="h-4 w-4" /></button>
+                  <button className={btnBase} onClick={() => setMaintenancePreview(false)}>
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
                 <div className="max-h-[70vh] overflow-y-auto px-6 py-8 text-center">
                   <Wrench className="mx-auto h-10 w-10 text-primary" />
@@ -575,28 +889,48 @@ export function PlatformSettingsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className={labelCls}>{t("b_schedule")}</div>
               <div className="flex gap-2">
-                <button className={btnPrimary} onClick={handleCreateBackup}><HardDrive className="h-3.5 w-3.5" />{t("btn_backup")}</button>
+                <button className={btnPrimary} onClick={handleCreateBackup}>
+                  <HardDrive className="h-3.5 w-3.5" />
+                  {t("btn_backup")}
+                </button>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.backup.daily}
-                  onChange={(e) => update("backup", (b) => ({ ...b, daily: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={state.backup.daily}
+                  onChange={(e) => update("backup", (b) => ({ ...b, daily: e.target.checked }))}
+                />
                 {t("b_daily")}
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.backup.weekly}
-                  onChange={(e) => update("backup", (b) => ({ ...b, weekly: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={state.backup.weekly}
+                  onChange={(e) => update("backup", (b) => ({ ...b, weekly: e.target.checked }))}
+                />
                 {t("b_weekly")}
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.backup.monthly}
-                  onChange={(e) => update("backup", (b) => ({ ...b, monthly: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={state.backup.monthly}
+                  onChange={(e) => update("backup", (b) => ({ ...b, monthly: e.target.checked }))}
+                />
                 {t("b_monthly")}
               </label>
               <Field label={t("b_retention")}>
-                <input type="number" min={1} max={365} className={inputCls} value={state.backup.retentionDays}
-                  onChange={(e) => update("backup", (b) => ({ ...b, retentionDays: Number(e.target.value) || 1 }))} />
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  className={inputCls}
+                  value={state.backup.retentionDays}
+                  onChange={(e) =>
+                    update("backup", (b) => ({ ...b, retentionDays: Number(e.target.value) || 1 }))
+                  }
+                />
               </Field>
             </div>
           </div>
@@ -624,11 +958,25 @@ export function PlatformSettingsPage() {
                       <td className="px-3 py-2">{b.automatic ? t("b_auto") : t("b_manual")}</td>
                       <td className="px-3 py-2 text-right">
                         <div className="inline-flex gap-1">
-                          <button className={btnBase} onClick={() => showToast("check_toast")}><Download className="h-3 w-3" />{t("btn_download")}</button>
-                          <button className={btnBase} onClick={() => showToast("check_toast")}><RotateCcw className="h-3 w-3" />{t("btn_restore")}</button>
-                          <button className={btnBase}
-                            onClick={() => update("backup", (bk) => ({ ...bk, history: bk.history.filter((x) => x.id !== b.id) }))}>
-                            <Trash2 className="h-3 w-3" />{t("btn_delete")}
+                          <button className={btnBase} onClick={() => showToast("check_toast")}>
+                            <Download className="h-3 w-3" />
+                            {t("btn_download")}
+                          </button>
+                          <button className={btnBase} onClick={() => showToast("check_toast")}>
+                            <RotateCcw className="h-3 w-3" />
+                            {t("btn_restore")}
+                          </button>
+                          <button
+                            className={btnBase}
+                            onClick={() =>
+                              update("backup", (bk) => ({
+                                ...bk,
+                                history: bk.history.filter((x) => x.id !== b.id),
+                              }))
+                            }
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t("btn_delete")}
                           </button>
                         </div>
                       </td>
@@ -646,49 +994,113 @@ export function PlatformSettingsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className={labelCls}>{t("sec_status")}</div>
-              <div className="mt-1"><StatusPill status={state.security.status} label={t(`status_${state.security.status}`)} /></div>
+              <div className="mt-1">
+                <StatusPill
+                  status={state.security.status}
+                  label={t(`status_${state.security.status}`)}
+                />
+              </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              {t("sec_last_scan")}: <span className="font-medium text-foreground">{formatDateTime(state.security.lastSecurityScan)}</span>
+              {t("sec_last_scan")}:{" "}
+              <span className="font-medium text-foreground">
+                {formatDateTime(state.security.lastSecurityScan)}
+              </span>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={state.security.twoFactorEnabled}
-                onChange={(e) => update("security", (s) => ({ ...s, twoFactorEnabled: e.target.checked }))} />
+              <input
+                type="checkbox"
+                checked={state.security.twoFactorEnabled}
+                onChange={(e) =>
+                  update("security", (s) => ({ ...s, twoFactorEnabled: e.target.checked }))
+                }
+              />
               {t("sec_2fa")}
             </label>
             <Field label={t("sec_min_len")}>
-              <input type="number" min={6} max={64} className={inputCls} value={state.security.passwordMinLength}
-                onChange={(e) => update("security", (s) => ({ ...s, passwordMinLength: Number(e.target.value) || 6 }))} />
+              <input
+                type="number"
+                min={6}
+                max={64}
+                className={inputCls}
+                value={state.security.passwordMinLength}
+                onChange={(e) =>
+                  update("security", (s) => ({
+                    ...s,
+                    passwordMinLength: Number(e.target.value) || 6,
+                  }))
+                }
+              />
             </Field>
             <Field label={t("sec_complexity")}>
-              <select className={inputCls} value={state.security.passwordComplexity}
-                onChange={(e) => update("security", (s) => ({ ...s, passwordComplexity: e.target.value as any }))}>
+              <select
+                className={inputCls}
+                value={state.security.passwordComplexity}
+                onChange={(e) =>
+                  update("security", (s) => ({ ...s, passwordComplexity: e.target.value as any }))
+                }
+              >
                 <option value="basic">{t("sec_complexity_basic")}</option>
                 <option value="standard">{t("sec_complexity_standard")}</option>
                 <option value="strong">{t("sec_complexity_strong")}</option>
               </select>
             </Field>
             <Field label={t("sec_max_attempts")}>
-              <input type="number" min={1} max={20} className={inputCls} value={state.security.maxLoginAttempts}
-                onChange={(e) => update("security", (s) => ({ ...s, maxLoginAttempts: Number(e.target.value) || 1 }))} />
+              <input
+                type="number"
+                min={1}
+                max={20}
+                className={inputCls}
+                value={state.security.maxLoginAttempts}
+                onChange={(e) =>
+                  update("security", (s) => ({
+                    ...s,
+                    maxLoginAttempts: Number(e.target.value) || 1,
+                  }))
+                }
+              />
             </Field>
             <Field label={t("sec_auto_lock")}>
-              <input type="number" min={1} max={1440} className={inputCls} value={state.security.autoLockMinutes}
-                onChange={(e) => update("security", (s) => ({ ...s, autoLockMinutes: Number(e.target.value) || 1 }))} />
+              <input
+                type="number"
+                min={1}
+                max={1440}
+                className={inputCls}
+                value={state.security.autoLockMinutes}
+                onChange={(e) =>
+                  update("security", (s) => ({
+                    ...s,
+                    autoLockMinutes: Number(e.target.value) || 1,
+                  }))
+                }
+              />
             </Field>
             <Field label={t("sec_session_timeout")}>
-              <input type="number" min={5} max={1440} className={inputCls} value={state.security.sessionTimeoutMinutes}
-                onChange={(e) => update("security", (s) => ({ ...s, sessionTimeoutMinutes: Number(e.target.value) || 5 }))} />
+              <input
+                type="number"
+                min={5}
+                max={1440}
+                className={inputCls}
+                value={state.security.sessionTimeoutMinutes}
+                onChange={(e) =>
+                  update("security", (s) => ({
+                    ...s,
+                    sessionTimeoutMinutes: Number(e.target.value) || 5,
+                  }))
+                }
+              />
             </Field>
           </div>
           <div className="mt-6 flex flex-wrap justify-end gap-2">
             <button className={btnBase} onClick={() => setConfirmLogout(true)}>
-              <LogOut className="h-3.5 w-3.5" />{t("btn_logout_all")}
+              <LogOut className="h-3.5 w-3.5" />
+              {t("btn_logout_all")}
             </button>
             <button className={btnPrimary} onClick={handleSave}>
-              <Save className="h-3.5 w-3.5" />{t("btn_save")}
+              <Save className="h-3.5 w-3.5" />
+              {t("btn_save")}
             </button>
           </div>
 
@@ -698,8 +1110,16 @@ export function PlatformSettingsPage() {
                 <h3 className="font-[Fraunces] text-lg font-semibold">{t("btn_logout_all")}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t("sec_logout_confirm")}</p>
                 <div className="mt-5 flex justify-end gap-2">
-                  <button className={btnBase} onClick={() => setConfirmLogout(false)}>{t("btn_close")}</button>
-                  <button className={btnPrimary} onClick={() => { setConfirmLogout(false); showToast("saved_toast"); }}>
+                  <button className={btnBase} onClick={() => setConfirmLogout(false)}>
+                    {t("btn_close")}
+                  </button>
+                  <button
+                    className={btnPrimary}
+                    onClick={() => {
+                      setConfirmLogout(false);
+                      showToast("saved_toast");
+                    }}
+                  >
                     {t("btn_apply")}
                   </button>
                 </div>
@@ -727,384 +1147,553 @@ export function PlatformSettingsPage() {
             <InfoStat label={t("info_admin_version")} value={state.info.adminVersion} />
             <InfoStat label={t("info_last_update")} value={formatDateTime(state.info.lastUpdate)} />
             <InfoStat label={t("info_avg_response")} value={`${state.info.avgResponseMs} ms`} />
-            <InfoStat label={t("info_registered_users")} value={state.info.registeredUsers.toLocaleString()} />
-            <InfoStat label={t("info_total_orders")} value={state.info.totalOrders.toLocaleString()} />
-            <InfoStat label={t("info_catalog_items")} value={state.info.catalogItems.toLocaleString()} />
-            <InfoStat label={t("info_total_generated")} value={state.info.totalDeliveries.toLocaleString()} />
+            <InfoStat
+              label={t("info_registered_users")}
+              value={state.info.registeredUsers.toLocaleString()}
+            />
+            <InfoStat
+              label={t("info_total_orders")}
+              value={state.info.totalOrders.toLocaleString()}
+            />
+            <InfoStat
+              label={t("info_catalog_items")}
+              value={state.info.catalogItems.toLocaleString()}
+            />
+            <InfoStat
+              label={t("info_total_generated")}
+              value={state.info.totalDeliveries.toLocaleString()}
+            />
           </div>
         </div>
       )}
 
       {tab === "generators" && <GeneratorsPanel />}
 
-      {tab === "balancer" && (() => {
-        const stats = computeBalancerStats(adv.generators, balDash);
-        const scalingWarn = stats.currentQueue >= balDash.queueThreshold;
-        const modes: BalancerMode[] = ["lowest_queue","fastest","cheapest","priority","round_robin"];
-        return (
-          <div className="space-y-4">
-            {/* Enable + core settings (kept from Part 2) */}
-            <div className={cardCls}>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={adv.balancer.enabled}
-                  onChange={(e) => updateAdv("balancer", (b) => ({ ...b, enabled: e.target.checked }))} />
-                {t("bal_enable")}
-              </label>
-              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label={t("bal_max_queue")}>
-                  <input type="number" min={1} className={inputCls} value={adv.balancer.maxQueueLength}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, maxQueueLength: Number(e.target.value) || 1 }))} />
-                </Field>
-                <Field label={t("bal_max_conc")}>
-                  <input type="number" min={1} className={inputCls} value={adv.balancer.maxConcurrent}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, maxConcurrent: Number(e.target.value) || 1 }))} />
-                </Field>
-                <Field label={t("bal_timeout")}>
-                  <input type="number" min={5} className={inputCls} value={adv.balancer.queueTimeoutSeconds}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, queueTimeoutSeconds: Number(e.target.value) || 5 }))} />
-                </Field>
+      {tab === "balancer" &&
+        (() => {
+          const stats = computeBalancerStats(adv.generators, balDash);
+          const scalingWarn = stats.currentQueue >= balDash.queueThreshold;
+          const modes: BalancerMode[] = [
+            "lowest_queue",
+            "fastest",
+            "cheapest",
+            "priority",
+            "round_robin",
+          ];
+          return (
+            <div className="space-y-4">
+              {/* Enable + core settings (kept from Part 2) */}
+              <div className={cardCls}>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={adv.balancer.autoOverflow}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, autoOverflow: e.target.checked }))} />
-                  {t("bal_overflow")}
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={adv.balancer.autoFailover}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, autoFailover: e.target.checked }))} />
-                  {t("bal_failover")}
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={adv.balancer.retryFailed}
-                    onChange={(e) => updateAdv("balancer", (b) => ({ ...b, retryFailed: e.target.checked }))} />
-                  {t("bal_retry")}
-                </label>
-              </div>
-            </div>
-
-            {/* Real-time monitoring dashboard */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" />
-                <div className={labelCls}>{t("bal_section_dashboard")}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                <InfoStat label={t("bal_stat_total")}       value={String(stats.total)} />
-                <InfoStat label={t("bal_stat_active")}      value={String(stats.active)} />
-                <InfoStat label={t("bal_stat_offline")}     value={String(stats.offline)} />
-                <InfoStat label={t("bal_stat_backup")}      value={String(stats.backup)} />
-                <InfoStat label={t("bal_stat_queue")}       value={String(stats.currentQueue)} />
-                <InfoStat label={t("bal_stat_jobs_active")} value={String(stats.activeJobs)} />
-                <InfoStat label={t("bal_stat_jobs_wait")}   value={String(stats.waitingJobs)} />
-                <InfoStat label={t("bal_stat_avg_time")}    value={`${stats.avgProcessingSec}s`} />
-                <InfoStat label={t("bal_stat_avg_load")}    value={`${stats.avgLoadPercent}%`} />
-                <InfoStat label={t("bal_stat_error_rate")}  value={`${stats.errorRate}%`} />
-                <InfoStat label={t("bal_stat_completed")}   value={stats.completedToday.toLocaleString()} />
-                <InfoStat label={t("bal_stat_failed")}      value={stats.failedToday.toLocaleString()} />
-              </div>
-            </div>
-
-            {/* Distribution modes */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_modes")}</div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("bal_mode_only_one")}</p>
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {modes.map((m) => {
-                  const active = adv.balancer.mode === m;
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => updateAdv("balancer", (b) => ({ ...b, mode: m }))}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${active ? "border-primary bg-primary/5 text-foreground" : "border-border/60 bg-background hover:bg-muted/40"}`}
-                    >
-                      <span className="font-medium">{t(`bal_mode_${m}`)}</span>
-                      <span className={`h-3.5 w-3.5 rounded-full border ${active ? "border-primary bg-primary" : "border-border/60"}`} />
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  disabled
-                  className="flex items-center justify-between rounded-xl border border-dashed border-border/60 bg-background/60 px-3 py-2.5 text-left text-sm text-muted-foreground"
-                >
-                  <span className="font-medium">{t("bal_mode_custom")}</span>
-                  <span className="text-[10px] uppercase tracking-wide">{t("demo_notice") ? "soon" : "soon"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Smart routing */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <Route className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_smart")}</div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("bal_smart_intro")}</p>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[560px] text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr className="border-b border-border/60">
-                      <th className="px-2 py-2 text-left">{t("bal_smart_content")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_smart_target")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_smart_enabled")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {balDash.smartRouting.map((rule, i) => (
-                      <tr key={rule.content} className="border-b border-border/40">
-                        <td className="px-2 py-2 font-medium text-foreground">{t(`ct_${rule.content}`)}</td>
-                        <td className="px-2 py-2">
-                          <select
-                            className={inputCls}
-                            value={rule.targetType}
-                            onChange={(e) => setBalDash((d) => {
-                              const smart = [...d.smartRouting];
-                              smart[i] = { ...smart[i], targetType: e.target.value as typeof rule.targetType };
-                              return { ...d, smartRouting: smart };
-                            })}
-                          >
-                            {(["images","video","animation","music","voice","text","translation"] as const).map((tg) => (
-                              <option key={tg} value={tg}>{t(`gen_type_${tg}`)}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-2 py-2">
-                          <label className="inline-flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={rule.enabled}
-                              onChange={(e) => setBalDash((d) => {
-                                const smart = [...d.smartRouting];
-                                smart[i] = { ...smart[i], enabled: e.target.checked };
-                                return { ...d, smartRouting: smart };
-                              })}
-                            />
-                            <span className="text-muted-foreground">{rule.enabled ? t("bal_smart_enabled") : "—"}</span>
-                          </label>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Automatic failover summary */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_failover")}</div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("bal_failover_intro")}</p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  ["bal_trigger_offline", XCircle],
-                  ["bal_trigger_errors", AlertTriangle],
-                  ["bal_trigger_timeout", RefreshCw],
-                  ["bal_trigger_queue", ListOrdered],
-                ].map(([k, Icon]) => {
-                  const IconComp = Icon as typeof XCircle;
-                  return (
-                    <div key={k as string} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-xs">
-                      <IconComp className="h-3.5 w-3.5 text-amber-600" />
-                      <span className="font-medium">{t(k as string)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button className={btnBase} onClick={() => setTab("fallback")}>
-                  <ArrowRightLeft className="h-3.5 w-3.5" />{t("bal_failover_open")}
-                </button>
-              </div>
-            </div>
-
-            {/* Queue priority (drag-and-drop) */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <ListOrdered className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_priority")}</div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("bal_priority_intro")}</p>
-              <ul className="mt-3 space-y-1.5">
-                {balDash.priorityOrder.map((tier, idx) => (
-                  <li
-                    key={tier}
-                    draggable
-                    onDragStart={() => setDragTier(tier)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => {
-                      if (!dragTier || dragTier === tier) return;
-                      setBalDash((d) => {
-                        const list = d.priorityOrder.filter((x) => x !== dragTier);
-                        const targetIdx = list.indexOf(tier);
-                        list.splice(targetIdx, 0, dragTier);
-                        return { ...d, priorityOrder: list };
-                      });
-                      setDragTier(null);
-                    }}
-                    onDragEnd={() => setDragTier(null)}
-                    className={`flex items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm ${dragTier === tier ? "border-primary" : "border-border/60"}`}
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <span className="w-6 text-xs font-semibold text-muted-foreground tabular-nums">{idx + 1}</span>
-                    <span className="font-medium text-foreground">{t(`pri_${tier}`)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Load limits */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_limits")}</div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("bal_lim_intro")}</p>
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {([
-                  ["maxJobsPerGenerator", "bal_lim_jobs_per_gen", 1],
-                  ["maxQueue",             "bal_lim_queue",        1],
-                  ["maxCpuPercent",        "bal_lim_cpu",          1],
-                  ["maxMemoryPercent",     "bal_lim_mem",          1],
-                  ["maxDailyRequests",     "bal_lim_daily",        1],
-                  ["maxHourlyRequests",    "bal_lim_hourly",       1],
-                ] as const).map(([field, key, min]) => (
-                  <Field key={field} label={t(key)}>
-                    <input
-                      type="number"
-                      min={min}
-                      className={inputCls}
-                      value={balDash.limits[field]}
-                      onChange={(e) => setBalDash((d) => ({
-                        ...d,
-                        limits: { ...d.limits, [field]: Number(e.target.value) || min },
-                      }))}
-                    />
-                  </Field>
-                ))}
-              </div>
-            </div>
-
-            {/* Emergency mode */}
-            <div className={cardCls}>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-2">
-                  <Siren className={`h-4 w-4 ${balDash.emergencyMode ? "text-rose-600" : "text-primary"}`} />
-                  <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_emergency")}</div>
-                </div>
-                <label className="inline-flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={balDash.emergencyMode}
-                    onChange={(e) => {
-                      setBalDash((d) => ({ ...d, emergencyMode: e.target.checked }));
-                      showToast("saved_toast");
-                    }}
+                    checked={adv.balancer.enabled}
+                    onChange={(e) =>
+                      updateAdv("balancer", (b) => ({ ...b, enabled: e.target.checked }))
+                    }
                   />
-                  {t("bal_em_enable")}
+                  {t("bal_enable")}
                 </label>
+                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Field label={t("bal_max_queue")}>
+                    <input
+                      type="number"
+                      min={1}
+                      className={inputCls}
+                      value={adv.balancer.maxQueueLength}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({
+                          ...b,
+                          maxQueueLength: Number(e.target.value) || 1,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={t("bal_max_conc")}>
+                    <input
+                      type="number"
+                      min={1}
+                      className={inputCls}
+                      value={adv.balancer.maxConcurrent}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({
+                          ...b,
+                          maxConcurrent: Number(e.target.value) || 1,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={t("bal_timeout")}>
+                    <input
+                      type="number"
+                      min={5}
+                      className={inputCls}
+                      value={adv.balancer.queueTimeoutSeconds}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({
+                          ...b,
+                          queueTimeoutSeconds: Number(e.target.value) || 5,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={adv.balancer.autoOverflow}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({ ...b, autoOverflow: e.target.checked }))
+                      }
+                    />
+                    {t("bal_overflow")}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={adv.balancer.autoFailover}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({ ...b, autoFailover: e.target.checked }))
+                      }
+                    />
+                    {t("bal_failover")}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={adv.balancer.retryFailed}
+                      onChange={(e) =>
+                        updateAdv("balancer", (b) => ({ ...b, retryFailed: e.target.checked }))
+                      }
+                    />
+                    {t("bal_retry")}
+                  </label>
+                </div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">{t("bal_em_desc")}</p>
-              <div className={`mt-3 rounded-lg border px-3 py-2 text-xs font-semibold ${balDash.emergencyMode ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
-                {balDash.emergencyMode ? t("bal_em_state_on") : t("bal_em_state_off")}
-              </div>
-              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 text-xs">
-                {["bal_em_free","bal_em_paused","bal_em_reserve"].map((k) => (
-                  <li key={k} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-                    <CheckCircle2 className={`h-3.5 w-3.5 ${balDash.emergencyMode ? "text-rose-600" : "text-muted-foreground"}`} />
-                    <span>{t(k)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
 
-            {/* Automatic scaling */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_scaling")}</div>
-              </div>
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label={t("bal_scaling_threshold")}>
-                  <input
-                    type="number" min={1} className={inputCls}
-                    value={balDash.queueThreshold}
-                    onChange={(e) => setBalDash((d) => ({ ...d, queueThreshold: Number(e.target.value) || 1 }))}
+              {/* Real-time monitoring dashboard */}
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <div className={labelCls}>{t("bal_section_dashboard")}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+                  <InfoStat label={t("bal_stat_total")} value={String(stats.total)} />
+                  <InfoStat label={t("bal_stat_active")} value={String(stats.active)} />
+                  <InfoStat label={t("bal_stat_offline")} value={String(stats.offline)} />
+                  <InfoStat label={t("bal_stat_backup")} value={String(stats.backup)} />
+                  <InfoStat label={t("bal_stat_queue")} value={String(stats.currentQueue)} />
+                  <InfoStat label={t("bal_stat_jobs_active")} value={String(stats.activeJobs)} />
+                  <InfoStat label={t("bal_stat_jobs_wait")} value={String(stats.waitingJobs)} />
+                  <InfoStat label={t("bal_stat_avg_time")} value={`${stats.avgProcessingSec}s`} />
+                  <InfoStat label={t("bal_stat_avg_load")} value={`${stats.avgLoadPercent}%`} />
+                  <InfoStat label={t("bal_stat_error_rate")} value={`${stats.errorRate}%`} />
+                  <InfoStat
+                    label={t("bal_stat_completed")}
+                    value={stats.completedToday.toLocaleString()}
                   />
-                </Field>
-                <Field label={t("bal_scaling_backup")}>
-                  <input
-                    type="number" min={0} className={inputCls}
-                    value={balDash.backupGenerators}
-                    onChange={(e) => setBalDash((d) => ({ ...d, backupGenerators: Math.max(0, Number(e.target.value) || 0) }))}
+                  <InfoStat
+                    label={t("bal_stat_failed")}
+                    value={stats.failedToday.toLocaleString()}
                   />
-                </Field>
+                </div>
               </div>
-              <div className={`mt-4 rounded-lg border px-3 py-2 text-xs ${scalingWarn ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
-                <div className="font-semibold">{scalingWarn ? t("bal_scaling_warn") : t("bal_scaling_healthy")}</div>
-                <div className="mt-0.5 text-[11px] opacity-80">{t("bal_scaling_placeholder")}</div>
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button
-                  className={btnBase}
-                  disabled={!scalingWarn}
-                  onClick={() => showToast("saved_toast")}
-                >
-                  <Plus className="h-3.5 w-3.5" />{t("bal_scaling_action")}
-                </button>
-              </div>
-            </div>
 
-            {/* System events */}
-            <div className={cardCls}>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                <div className="font-[Fraunces] text-lg font-semibold">{t("bal_section_events")}</div>
+              {/* Distribution modes */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <Scale className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_modes")}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bal_mode_only_one")}</p>
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {modes.map((m) => {
+                    const active = adv.balancer.mode === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => updateAdv("balancer", (b) => ({ ...b, mode: m }))}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${active ? "border-primary bg-primary/5 text-foreground" : "border-border/60 bg-background hover:bg-muted/40"}`}
+                      >
+                        <span className="font-medium">{t(`bal_mode_${m}`)}</span>
+                        <span
+                          className={`h-3.5 w-3.5 rounded-full border ${active ? "border-primary bg-primary" : "border-border/60"}`}
+                        />
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    disabled
+                    className="flex items-center justify-between rounded-xl border border-dashed border-border/60 bg-background/60 px-3 py-2.5 text-left text-sm text-muted-foreground"
+                  >
+                    <span className="font-medium">{t("bal_mode_custom")}</span>
+                    <span className="text-[10px] uppercase tracking-wide">
+                      {t("demo_notice") ? "soon" : "soon"}
+                    </span>
+                  </button>
+                </div>
               </div>
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[640px] text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr className="border-b border-border/60">
-                      <th className="px-2 py-2 text-left">{t("bal_ev_time")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_ev_kind")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_ev_generator")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_ev_detail")}</th>
-                      <th className="px-2 py-2 text-left">{t("bal_ev_severity")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {balDash.events.map((ev) => (
-                      <tr key={ev.id} className="border-b border-border/40">
-                        <td className="px-2 py-2 whitespace-nowrap">{formatDateTime(ev.at)}</td>
-                        <td className="px-2 py-2 font-medium text-foreground">{t(`bal_ev_kind_${ev.kind}`)}</td>
-                        <td className="px-2 py-2 text-muted-foreground">{ev.generator ?? "—"}</td>
-                        <td className="px-2 py-2 text-muted-foreground">{ev.detail}</td>
-                        <td className="px-2 py-2"><BalEventSeverityBadge severity={ev.severity} t={t} /></td>
+
+              {/* Smart routing */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <Route className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_smart")}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bal_smart_intro")}</p>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[560px] text-xs">
+                    <thead className="text-muted-foreground">
+                      <tr className="border-b border-border/60">
+                        <th className="px-2 py-2 text-left">{t("bal_smart_content")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_smart_target")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_smart_enabled")}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {balDash.smartRouting.map((rule, i) => (
+                        <tr key={rule.content} className="border-b border-border/40">
+                          <td className="px-2 py-2 font-medium text-foreground">
+                            {t(`ct_${rule.content}`)}
+                          </td>
+                          <td className="px-2 py-2">
+                            <select
+                              className={inputCls}
+                              value={rule.targetType}
+                              onChange={(e) =>
+                                setBalDash((d) => {
+                                  const smart = [...d.smartRouting];
+                                  smart[i] = {
+                                    ...smart[i],
+                                    targetType: e.target.value as typeof rule.targetType,
+                                  };
+                                  return { ...d, smartRouting: smart };
+                                })
+                              }
+                            >
+                              {(
+                                [
+                                  "images",
+                                  "video",
+                                  "animation",
+                                  "music",
+                                  "voice",
+                                  "text",
+                                  "translation",
+                                ] as const
+                              ).map((tg) => (
+                                <option key={tg} value={tg}>
+                                  {t(`gen_type_${tg}`)}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-2 py-2">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={rule.enabled}
+                                onChange={(e) =>
+                                  setBalDash((d) => {
+                                    const smart = [...d.smartRouting];
+                                    smart[i] = { ...smart[i], enabled: e.target.checked };
+                                    return { ...d, smartRouting: smart };
+                                  })
+                                }
+                              />
+                              <span className="text-muted-foreground">
+                                {rule.enabled ? t("bal_smart_enabled") : "—"}
+                              </span>
+                            </label>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Automatic failover summary */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_failover")}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bal_failover_intro")}</p>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    ["bal_trigger_offline", XCircle],
+                    ["bal_trigger_errors", AlertTriangle],
+                    ["bal_trigger_timeout", RefreshCw],
+                    ["bal_trigger_queue", ListOrdered],
+                  ].map(([k, Icon]) => {
+                    const IconComp = Icon as typeof XCircle;
+                    return (
+                      <div
+                        key={k as string}
+                        className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-xs"
+                      >
+                        <IconComp className="h-3.5 w-3.5 text-amber-600" />
+                        <span className="font-medium">{t(k as string)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button className={btnBase} onClick={() => setTab("fallback")}>
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    {t("bal_failover_open")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Queue priority (drag-and-drop) */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <ListOrdered className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_priority")}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bal_priority_intro")}</p>
+                <ul className="mt-3 space-y-1.5">
+                  {balDash.priorityOrder.map((tier, idx) => (
+                    <li
+                      key={tier}
+                      draggable
+                      onDragStart={() => setDragTier(tier)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (!dragTier || dragTier === tier) return;
+                        setBalDash((d) => {
+                          const list = d.priorityOrder.filter((x) => x !== dragTier);
+                          const targetIdx = list.indexOf(tier);
+                          list.splice(targetIdx, 0, dragTier);
+                          return { ...d, priorityOrder: list };
+                        });
+                        setDragTier(null);
+                      }}
+                      onDragEnd={() => setDragTier(null)}
+                      className={`flex items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm ${dragTier === tier ? "border-primary" : "border-border/60"}`}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      <span className="w-6 text-xs font-semibold text-muted-foreground tabular-nums">
+                        {idx + 1}
+                      </span>
+                      <span className="font-medium text-foreground">{t(`pri_${tier}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Load limits */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <Gauge className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_limits")}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bal_lim_intro")}</p>
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {(
+                    [
+                      ["maxJobsPerGenerator", "bal_lim_jobs_per_gen", 1],
+                      ["maxQueue", "bal_lim_queue", 1],
+                      ["maxCpuPercent", "bal_lim_cpu", 1],
+                      ["maxMemoryPercent", "bal_lim_mem", 1],
+                      ["maxDailyRequests", "bal_lim_daily", 1],
+                      ["maxHourlyRequests", "bal_lim_hourly", 1],
+                    ] as const
+                  ).map(([field, key, min]) => (
+                    <Field key={field} label={t(key)}>
+                      <input
+                        type="number"
+                        min={min}
+                        className={inputCls}
+                        value={balDash.limits[field]}
+                        onChange={(e) =>
+                          setBalDash((d) => ({
+                            ...d,
+                            limits: { ...d.limits, [field]: Number(e.target.value) || min },
+                          }))
+                        }
+                      />
+                    </Field>
+                  ))}
+                </div>
+              </div>
+
+              {/* Emergency mode */}
+              <div className={cardCls}>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-2">
+                    <Siren
+                      className={`h-4 w-4 ${balDash.emergencyMode ? "text-rose-600" : "text-primary"}`}
+                    />
+                    <div className="font-[Fraunces] text-lg font-semibold">
+                      {t("bal_section_emergency")}
+                    </div>
+                  </div>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={balDash.emergencyMode}
+                      onChange={(e) => {
+                        setBalDash((d) => ({ ...d, emergencyMode: e.target.checked }));
+                        showToast("saved_toast");
+                      }}
+                    />
+                    {t("bal_em_enable")}
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{t("bal_em_desc")}</p>
+                <div
+                  className={`mt-3 rounded-lg border px-3 py-2 text-xs font-semibold ${balDash.emergencyMode ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
+                >
+                  {balDash.emergencyMode ? t("bal_em_state_on") : t("bal_em_state_off")}
+                </div>
+                <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 text-xs">
+                  {["bal_em_free", "bal_em_paused", "bal_em_reserve"].map((k) => (
+                    <li
+                      key={k}
+                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-2"
+                    >
+                      <CheckCircle2
+                        className={`h-3.5 w-3.5 ${balDash.emergencyMode ? "text-rose-600" : "text-muted-foreground"}`}
+                      />
+                      <span>{t(k)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Automatic scaling */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_scaling")}
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Field label={t("bal_scaling_threshold")}>
+                    <input
+                      type="number"
+                      min={1}
+                      className={inputCls}
+                      value={balDash.queueThreshold}
+                      onChange={(e) =>
+                        setBalDash((d) => ({ ...d, queueThreshold: Number(e.target.value) || 1 }))
+                      }
+                    />
+                  </Field>
+                  <Field label={t("bal_scaling_backup")}>
+                    <input
+                      type="number"
+                      min={0}
+                      className={inputCls}
+                      value={balDash.backupGenerators}
+                      onChange={(e) =>
+                        setBalDash((d) => ({
+                          ...d,
+                          backupGenerators: Math.max(0, Number(e.target.value) || 0),
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+                <div
+                  className={`mt-4 rounded-lg border px-3 py-2 text-xs ${scalingWarn ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
+                >
+                  <div className="font-semibold">
+                    {scalingWarn ? t("bal_scaling_warn") : t("bal_scaling_healthy")}
+                  </div>
+                  <div className="mt-0.5 text-[11px] opacity-80">
+                    {t("bal_scaling_placeholder")}
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    className={btnBase}
+                    disabled={!scalingWarn}
+                    onClick={() => showToast("saved_toast")}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {t("bal_scaling_action")}
+                  </button>
+                </div>
+              </div>
+
+              {/* System events */}
+              <div className={cardCls}>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <div className="font-[Fraunces] text-lg font-semibold">
+                    {t("bal_section_events")}
+                  </div>
+                </div>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-xs">
+                    <thead className="text-muted-foreground">
+                      <tr className="border-b border-border/60">
+                        <th className="px-2 py-2 text-left">{t("bal_ev_time")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_ev_kind")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_ev_generator")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_ev_detail")}</th>
+                        <th className="px-2 py-2 text-left">{t("bal_ev_severity")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {balDash.events.map((ev) => (
+                        <tr key={ev.id} className="border-b border-border/40">
+                          <td className="px-2 py-2 whitespace-nowrap">{formatDateTime(ev.at)}</td>
+                          <td className="px-2 py-2 font-medium text-foreground">
+                            {t(`bal_ev_kind_${ev.kind}`)}
+                          </td>
+                          <td className="px-2 py-2 text-muted-foreground">{ev.generator ?? "—"}</td>
+                          <td className="px-2 py-2 text-muted-foreground">{ev.detail}</td>
+                          <td className="px-2 py-2">
+                            <BalEventSeverityBadge severity={ev.severity} t={t} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {tab === "fallback" && (
         <div className="space-y-4">
           <div className={cardCls}>
             <p className="text-sm text-muted-foreground">{t("fb_intro")}</p>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {(["primaryId","secondaryId","tertiaryId"] as const).map((slot, idx) => (
-                <Field key={slot} label={t(idx === 0 ? "fb_primary" : idx === 1 ? "fb_secondary" : "fb_tertiary")}>
-                  <select className={inputCls} value={adv.failover[slot]}
-                    onChange={(e) => updateAdv("failover", (f) => ({ ...f, [slot]: e.target.value }))}>
+              {(["primaryId", "secondaryId", "tertiaryId"] as const).map((slot, idx) => (
+                <Field
+                  key={slot}
+                  label={t(idx === 0 ? "fb_primary" : idx === 1 ? "fb_secondary" : "fb_tertiary")}
+                >
+                  <select
+                    className={inputCls}
+                    value={adv.failover[slot]}
+                    onChange={(e) =>
+                      updateAdv("failover", (f) => ({ ...f, [slot]: e.target.value }))
+                    }
+                  >
                     {adv.generators.map((g) => (
-                      <option key={g.id} value={g.id}>{g.name} · {t(`gen_type_${g.type}`)}</option>
+                      <option key={g.id} value={g.id}>
+                        {g.name} · {t(`gen_type_${g.type}`)}
+                      </option>
                     ))}
                   </select>
                 </Field>
@@ -1112,10 +1701,12 @@ export function PlatformSettingsPage() {
             </div>
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               <button className={btnBase} onClick={() => showToast("check_toast")}>
-                <Play className="h-3.5 w-3.5" />{t("fb_test")}
+                <Play className="h-3.5 w-3.5" />
+                {t("fb_test")}
               </button>
               <button className={btnBase} onClick={() => showToast("saved_toast")}>
-                <ArrowRightLeft className="h-3.5 w-3.5" />{t("fb_manual")}
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+                {t("fb_manual")}
               </button>
             </div>
           </div>
@@ -1154,47 +1745,107 @@ export function PlatformSettingsPage() {
       {tab === "translations" && (
         <div className={cardCls}>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={adv.translation.enabled}
-              onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, enabled: e.target.checked }))} />
+            <input
+              type="checkbox"
+              checked={adv.translation.enabled}
+              onChange={(e) =>
+                updateAdv("translation", (tr) => ({ ...tr, enabled: e.target.checked }))
+              }
+            />
             {t("tr_enable")}
           </label>
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label={t("tr_primary")}>
-              <select className={inputCls} value={adv.translation.primary}
-                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, primary: e.target.value as TranslationProvider }))}>
-                {TRANSLATION_PROVIDERS.map((p) => <option key={p} value={p}>{t(`tr_prov_${p}`)}</option>)}
+              <select
+                className={inputCls}
+                value={adv.translation.primary}
+                onChange={(e) =>
+                  updateAdv("translation", (tr) => ({
+                    ...tr,
+                    primary: e.target.value as TranslationProvider,
+                  }))
+                }
+              >
+                {TRANSLATION_PROVIDERS.map((p) => (
+                  <option key={p} value={p}>
+                    {t(`tr_prov_${p}`)}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("tr_backup")}>
-              <select className={inputCls} value={adv.translation.backup}
-                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, backup: e.target.value as TranslationProvider }))}>
-                {TRANSLATION_PROVIDERS.map((p) => <option key={p} value={p}>{t(`tr_prov_${p}`)}</option>)}
+              <select
+                className={inputCls}
+                value={adv.translation.backup}
+                onChange={(e) =>
+                  updateAdv("translation", (tr) => ({
+                    ...tr,
+                    backup: e.target.value as TranslationProvider,
+                  }))
+                }
+              >
+                {TRANSLATION_PROVIDERS.map((p) => (
+                  <option key={p} value={p}>
+                    {t(`tr_prov_${p}`)}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label={t("tr_retries")}>
-              <input type="number" min={0} max={10} className={inputCls} value={adv.translation.maxRetries}
-                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, maxRetries: Number(e.target.value) || 0 }))} />
+              <input
+                type="number"
+                min={0}
+                max={10}
+                className={inputCls}
+                value={adv.translation.maxRetries}
+                onChange={(e) =>
+                  updateAdv("translation", (tr) => ({
+                    ...tr,
+                    maxRetries: Number(e.target.value) || 0,
+                  }))
+                }
+              />
             </Field>
             <Field label={t("tr_limit")}>
-              <input type="number" min={0} className={inputCls} value={adv.translation.dailyLimit}
-                onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, dailyLimit: Number(e.target.value) || 0 }))} />
+              <input
+                type="number"
+                min={0}
+                className={inputCls}
+                value={adv.translation.dailyLimit}
+                onChange={(e) =>
+                  updateAdv("translation", (tr) => ({
+                    ...tr,
+                    dailyLimit: Number(e.target.value) || 0,
+                  }))
+                }
+              />
             </Field>
-            {([
-              ["autoDetectLanguage","tr_detect"],
-              ["translateTitle","tr_title"],
-              ["translateDescription","tr_desc"],
-              ["translateGreeting","tr_greeting"],
-              ["translateGeneratedText","tr_generated"],
-            ] as const).map(([field, key]) => (
+            {(
+              [
+                ["autoDetectLanguage", "tr_detect"],
+                ["translateTitle", "tr_title"],
+                ["translateDescription", "tr_desc"],
+                ["translateGreeting", "tr_greeting"],
+                ["translateGeneratedText", "tr_generated"],
+              ] as const
+            ).map(([field, key]) => (
               <label key={field} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={adv.translation[field] as boolean}
-                  onChange={(e) => updateAdv("translation", (tr) => ({ ...tr, [field]: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={adv.translation[field] as boolean}
+                  onChange={(e) =>
+                    updateAdv("translation", (tr) => ({ ...tr, [field]: e.target.checked }))
+                  }
+                />
                 {t(key)}
               </label>
             ))}
           </div>
           <div className="mt-6 flex justify-end">
-            <button className={btnPrimary} onClick={handleSave}><Save className="h-3.5 w-3.5" />{t("btn_save")}</button>
+            <button className={btnPrimary} onClick={handleSave}>
+              <Save className="h-3.5 w-3.5" />
+              {t("btn_save")}
+            </button>
           </div>
         </div>
       )}
@@ -1204,34 +1855,69 @@ export function PlatformSettingsPage() {
           <div className={cardCls}>
             <p className="text-sm text-muted-foreground">{t("ov_intro")}</p>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-              {([
-                ["autoPosition","ov_auto_pos"],
-                ["autoFontSize","ov_auto_font"],
-                ["autoWrap","ov_auto_wrap"],
-                ["shadow","ov_shadow"],
-                ["outline","ov_outline"],
-                ["languageSpecificFonts","ov_langfonts"],
-              ] as const).map(([field, key]) => (
+              {(
+                [
+                  ["autoPosition", "ov_auto_pos"],
+                  ["autoFontSize", "ov_auto_font"],
+                  ["autoWrap", "ov_auto_wrap"],
+                  ["shadow", "ov_shadow"],
+                  ["outline", "ov_outline"],
+                  ["languageSpecificFonts", "ov_langfonts"],
+                ] as const
+              ).map(([field, key]) => (
                 <label key={field} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={adv.overlay[field] as boolean}
-                    onChange={(e) => updateAdv("overlay", (o) => ({ ...o, [field]: e.target.checked }))} />
+                  <input
+                    type="checkbox"
+                    checked={adv.overlay[field] as boolean}
+                    onChange={(e) =>
+                      updateAdv("overlay", (o) => ({ ...o, [field]: e.target.checked }))
+                    }
+                  />
                   {t(key)}
                 </label>
               ))}
               <Field label={t("ov_safe")}>
-                <input type="number" min={0} max={40} className={inputCls} value={adv.overlay.safeMarginPercent}
-                  onChange={(e) => updateAdv("overlay", (o) => ({ ...o, safeMarginPercent: Number(e.target.value) || 0 }))} />
+                <input
+                  type="number"
+                  min={0}
+                  max={40}
+                  className={inputCls}
+                  value={adv.overlay.safeMarginPercent}
+                  onChange={(e) =>
+                    updateAdv("overlay", (o) => ({
+                      ...o,
+                      safeMarginPercent: Number(e.target.value) || 0,
+                    }))
+                  }
+                />
               </Field>
               <Field label={t("ov_opacity")}>
-                <input type="number" min={0} max={100} className={inputCls} value={adv.overlay.opacityPercent}
-                  onChange={(e) => updateAdv("overlay", (o) => ({ ...o, opacityPercent: Number(e.target.value) || 0 }))} />
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className={inputCls}
+                  value={adv.overlay.opacityPercent}
+                  onChange={(e) =>
+                    updateAdv("overlay", (o) => ({
+                      ...o,
+                      opacityPercent: Number(e.target.value) || 0,
+                    }))
+                  }
+                />
               </Field>
             </div>
           </div>
           <div className={cardCls}>
             <div className={labelCls}>{t("ov_preview")}</div>
-            <div className="relative mt-3 aspect-[4/5] w-full overflow-hidden rounded-xl bg-gradient-to-br from-amber-200 via-rose-300 to-plum-400" style={{ background: "linear-gradient(135deg,#f6d5a7,#f4a6a0,#b58bbf)" }}>
-              <div className="absolute inset-0" style={{ padding: `${adv.overlay.safeMarginPercent}%` }}>
+            <div
+              className="relative mt-3 aspect-[4/5] w-full overflow-hidden rounded-xl bg-gradient-to-br from-amber-200 via-rose-300 to-plum-400"
+              style={{ background: "linear-gradient(135deg,#f6d5a7,#f4a6a0,#b58bbf)" }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{ padding: `${adv.overlay.safeMarginPercent}%` }}
+              >
                 <div className="flex h-full w-full items-center justify-center text-center">
                   <span
                     className="font-[Fraunces] text-white"
@@ -1261,28 +1947,58 @@ export function PlatformSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-[Fraunces] text-lg font-semibold">{s.name}</div>
-                    {s.primary && <div className="mt-0.5 text-[10px] uppercase tracking-wider text-amber-700">{t("st_primary")}</div>}
+                    {s.primary && (
+                      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-amber-700">
+                        {t("st_primary")}
+                      </div>
+                    )}
                   </div>
                   <StatusPill status={s.status} label={t(`status_${s.status}`)} />
                 </div>
                 <div className="mt-3">
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">{t("st_used")}</span>
-                    <span className="tabular-nums font-medium">{s.usedGb} / {s.totalGb} GB</span>
+                    <span className="tabular-nums font-medium">
+                      {s.usedGb} / {s.totalGb} GB
+                    </span>
                   </div>
                   <Progress value={pct} />
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_files")}</span><span className="tabular-nums">{s.files.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_videos")}</span><span className="tabular-nums">{s.videos.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_images")}</span><span className="tabular-nums">{s.images.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("st_music")}</span><span className="tabular-nums">{s.music.toLocaleString()}</span></div>
-                  <div className="flex justify-between col-span-2"><span className="text-muted-foreground">{t("st_backups")}</span><span className="tabular-nums">{s.backups.toLocaleString()}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("st_files")}</span>
+                    <span className="tabular-nums">{s.files.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("st_videos")}</span>
+                    <span className="tabular-nums">{s.videos.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("st_images")}</span>
+                    <span className="tabular-nums">{s.images.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("st_music")}</span>
+                    <span className="tabular-nums">{s.music.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">{t("st_backups")}</span>
+                    <span className="tabular-nums">{s.backups.toLocaleString()}</span>
+                  </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  <button className={btnBase} onClick={() => showToast("check_toast")}><Activity className="h-3 w-3" />{t("st_test")}</button>
-                  <button className={btnBase} onClick={() => showToast("saved_toast")}><RefreshCw className="h-3 w-3" />{t("st_reconnect")}</button>
-                  <button className={btnBase} onClick={() => showToast("saved_toast")}><RotateCcw className="h-3 w-3" />{t("st_sync")}</button>
+                  <button className={btnBase} onClick={() => showToast("check_toast")}>
+                    <Activity className="h-3 w-3" />
+                    {t("st_test")}
+                  </button>
+                  <button className={btnBase} onClick={() => showToast("saved_toast")}>
+                    <RefreshCw className="h-3 w-3" />
+                    {t("st_reconnect")}
+                  </button>
+                  <button className={btnBase} onClick={() => showToast("saved_toast")}>
+                    <RotateCcw className="h-3 w-3" />
+                    {t("st_sync")}
+                  </button>
                 </div>
               </div>
             );
@@ -1308,18 +2024,42 @@ export function PlatformSettingsPage() {
                 {adv.apis.map((a) => (
                   <tr key={a.id} className="border-b border-border/40">
                     <td className="px-2 py-2 font-medium text-foreground">{a.service}</td>
-                    <td className="px-2 py-2"><StatusPill status={a.status} label={t(`status_${a.status}`)} /></td>
+                    <td className="px-2 py-2">
+                      <StatusPill status={a.status} label={t(`status_${a.status}`)} />
+                    </td>
                     <td className="px-2 py-2 font-mono text-muted-foreground">{a.apiKeyMasked}</td>
                     <td className="px-2 py-2">{formatDateTime(a.lastCheck)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{a.avgResponseMs ? `${a.avgResponseMs} ms` : "—"}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">
+                      {a.avgResponseMs ? `${a.avgResponseMs} ms` : "—"}
+                    </td>
                     <td className="px-2 py-2 text-right">
                       <div className="inline-flex gap-1">
-                        <button className={btnBase} onClick={() =>
-                          updateAdv("apis", (list) => list.map((x) => x.id === a.id ? { ...x, connected: !x.connected } : x))}>
-                          <Plug className="h-3 w-3" />{a.connected ? t("api_disconnect") : t("api_connect")}
+                        <button
+                          className={btnBase}
+                          onClick={() =>
+                            updateAdv("apis", (list) =>
+                              list.map((x) =>
+                                x.id === a.id ? { ...x, connected: !x.connected } : x,
+                              ),
+                            )
+                          }
+                        >
+                          <Plug className="h-3 w-3" />
+                          {a.connected ? t("api_disconnect") : t("api_connect")}
                         </button>
-                        <button className={btnBase} onClick={() => showToast("check_toast")}><Activity className="h-3 w-3" />{t("api_test")}</button>
-                        <button className={btnBase} onClick={() => { setTab("logs"); }}><ScrollText className="h-3 w-3" />{t("api_logs")}</button>
+                        <button className={btnBase} onClick={() => showToast("check_toast")}>
+                          <Activity className="h-3 w-3" />
+                          {t("api_test")}
+                        </button>
+                        <button
+                          className={btnBase}
+                          onClick={() => {
+                            setTab("logs");
+                          }}
+                        >
+                          <ScrollText className="h-3 w-3" />
+                          {t("api_logs")}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1335,7 +2075,9 @@ export function PlatformSettingsPage() {
           {adv.health.map((h) => (
             <div key={h.kind} className={cardCls}>
               <div className="flex items-center justify-between">
-                <div className="font-[Fraunces] text-base font-semibold text-foreground">{t(`h_${h.kind}`)}</div>
+                <div className="font-[Fraunces] text-base font-semibold text-foreground">
+                  {t(`h_${h.kind}`)}
+                </div>
                 <HealthPill status={h.status} t={t} />
               </div>
               <p className="mt-3 text-sm text-muted-foreground">{h.message}</p>
@@ -1347,34 +2089,67 @@ export function PlatformSettingsPage() {
       {tab === "scaling" && (
         <div className={cardCls}>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={adv.scaling.enabled}
-              onChange={(e) => updateAdv("scaling", (s) => ({ ...s, enabled: e.target.checked }))} />
+            <input
+              type="checkbox"
+              checked={adv.scaling.enabled}
+              onChange={(e) => updateAdv("scaling", (s) => ({ ...s, enabled: e.target.checked }))}
+            />
             {t("sc_enable")}
           </label>
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label={t("sc_min")}>
-              <input type="number" min={1} className={inputCls} value={adv.scaling.minGenerators}
-                onChange={(e) => updateAdv("scaling", (s) => ({ ...s, minGenerators: Number(e.target.value) || 1 }))} />
+              <input
+                type="number"
+                min={1}
+                className={inputCls}
+                value={adv.scaling.minGenerators}
+                onChange={(e) =>
+                  updateAdv("scaling", (s) => ({
+                    ...s,
+                    minGenerators: Number(e.target.value) || 1,
+                  }))
+                }
+              />
             </Field>
             <Field label={t("sc_max")}>
-              <input type="number" min={1} className={inputCls} value={adv.scaling.maxGenerators}
-                onChange={(e) => updateAdv("scaling", (s) => ({ ...s, maxGenerators: Number(e.target.value) || 1 }))} />
+              <input
+                type="number"
+                min={1}
+                className={inputCls}
+                value={adv.scaling.maxGenerators}
+                onChange={(e) =>
+                  updateAdv("scaling", (s) => ({
+                    ...s,
+                    maxGenerators: Number(e.target.value) || 1,
+                  }))
+                }
+              />
             </Field>
-            {([
-              ["autoBalancing","sc_balance"],
-              ["peakMode","sc_peak"],
-              ["nightMode","sc_night"],
-              ["holidayMode","sc_holiday"],
-            ] as const).map(([field, key]) => (
+            {(
+              [
+                ["autoBalancing", "sc_balance"],
+                ["peakMode", "sc_peak"],
+                ["nightMode", "sc_night"],
+                ["holidayMode", "sc_holiday"],
+              ] as const
+            ).map(([field, key]) => (
               <label key={field} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={adv.scaling[field] as boolean}
-                  onChange={(e) => updateAdv("scaling", (s) => ({ ...s, [field]: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={adv.scaling[field] as boolean}
+                  onChange={(e) =>
+                    updateAdv("scaling", (s) => ({ ...s, [field]: e.target.checked }))
+                  }
+                />
                 {t(key)}
               </label>
             ))}
           </div>
           <div className="mt-6 flex justify-end">
-            <button className={btnPrimary} onClick={handleSave}><Save className="h-3.5 w-3.5" />{t("btn_save")}</button>
+            <button className={btnPrimary} onClick={handleSave}>
+              <Save className="h-3.5 w-3.5" />
+              {t("btn_save")}
+            </button>
           </div>
         </div>
       )}
@@ -1389,20 +2164,32 @@ export function PlatformSettingsPage() {
       {tab === "control" && <ControlTab state={infra} setState={setInfra} t={t} lang={lang} />}
       {tab === "launch" && <LaunchTab state={infra} setState={setInfra} t={t} />}
 
-      {toast && <Toast msg={toast} onDone={() => { /* auto */ }} />}
+      {toast && (
+        <Toast
+          msg={toast}
+          onDone={() => {
+            /* auto */
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function HealthPill({ status, t }: { status: HealthStatus; t: (k: string) => string }) {
   const tone =
-    status === "healthy" ? statusTone("online")
-    : status === "warning" ? statusTone("warning")
-    : statusTone("error");
+    status === "healthy"
+      ? statusTone("online")
+      : status === "warning"
+        ? statusTone("warning")
+        : statusTone("error");
   const Icon = status === "healthy" ? CheckCircle2 : status === "warning" ? AlertTriangle : XCircle;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${tone}`}>
-      <Icon className="h-3 w-3" />{t(`h_${status}`)}
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${tone}`}
+    >
+      <Icon className="h-3 w-3" />
+      {t(`h_${status}`)}
     </span>
   );
 }
@@ -1417,10 +2204,16 @@ function LogsPanel({ logs, t }: { logs: PlatformAdvancedState["logs"]; t: (k: st
         {CATS.map((c) => {
           const active = cat === c;
           return (
-            <button key={c} type="button" onClick={() => setCat(c)}
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCat(c)}
               className={`rounded-t-md border border-b-0 px-3 py-1.5 text-xs font-medium transition ${
-                active ? "border-border/60 bg-card text-foreground shadow-sm" : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}>
+                active
+                  ? "border-border/60 bg-card text-foreground shadow-sm"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
               {t(`logs_cat_${c}`)}
             </button>
           );
@@ -1440,7 +2233,11 @@ function LogsPanel({ logs, t }: { logs: PlatformAdvancedState["logs"]; t: (k: st
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="px-2 py-6 text-center text-muted-foreground">—</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-2 py-6 text-center text-muted-foreground">
+                    —
+                  </td>
+                </tr>
               )}
               {filtered.map((l) => (
                 <tr key={l.id} className="border-b border-border/40">
@@ -1448,7 +2245,9 @@ function LogsPanel({ logs, t }: { logs: PlatformAdvancedState["logs"]; t: (k: st
                   <td className="px-2 py-2 font-medium text-foreground">{l.service}</td>
                   <td className="px-2 py-2 font-mono text-muted-foreground">{l.action}</td>
                   <td className="px-2 py-2 text-right tabular-nums">
-                    {l.durationMs >= 1000 ? `${(l.durationMs / 1000).toFixed(1)}s` : `${l.durationMs} ms`}
+                    {l.durationMs >= 1000
+                      ? `${(l.durationMs / 1000).toFixed(1)}s`
+                      : `${l.durationMs} ms`}
                   </td>
                   <td className="px-2 py-2">
                     <LogResultBadge result={l.result} t={t} />
@@ -1465,25 +2264,37 @@ function LogsPanel({ logs, t }: { logs: PlatformAdvancedState["logs"]; t: (k: st
 
 function LogResultBadge({ result, t }: { result: LogResult; t: (k: string) => string }) {
   const tone =
-    result === "success" ? statusTone("online")
-    : result === "warning" ? statusTone("warning")
-    : statusTone("error");
+    result === "success"
+      ? statusTone("online")
+      : result === "warning"
+        ? statusTone("warning")
+        : statusTone("error");
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}
+    >
       {t(`logs_res_${result}`)}
     </span>
   );
 }
 
 function BalEventSeverityBadge({
-  severity, t,
-}: { severity: BalancerEventSeverity; t: (k: string) => string }) {
+  severity,
+  t,
+}: {
+  severity: BalancerEventSeverity;
+  t: (k: string) => string;
+}) {
   const tone =
-    severity === "info" ? statusTone("online")
-    : severity === "warning" ? statusTone("warning")
-    : statusTone("error");
+    severity === "info"
+      ? statusTone("online")
+      : severity === "warning"
+        ? statusTone("warning")
+        : statusTone("error");
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone}`}
+    >
       {t(`bal_ev_sev_${severity}`)}
     </span>
   );
@@ -1502,7 +2313,9 @@ function MonitoringCard({ check, t }: { check: MonitoringCheck; t: (k: string) =
   return (
     <div className={cardCls}>
       <div className="flex items-center justify-between">
-        <div className="font-[Fraunces] text-lg font-semibold text-foreground">{t(`mon_${check.kind}`)}</div>
+        <div className="font-[Fraunces] text-lg font-semibold text-foreground">
+          {t(`mon_${check.kind}`)}
+        </div>
         <StatusPill status={check.status} label={t(`status_${check.status}`)} />
       </div>
       <div className="mt-3 space-y-1 text-xs">
