@@ -1,18 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Film, Loader2, Pause, Play, RotateCcw } from "lucide-react";
+import { Check, Download, Film, Loader2, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
+import { creditWord } from "@/lib/credits/i18n";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
 import {
   getPvgVideo,
   retryPvgVideo,
+  selectPvgVideoVariant,
   startPvgVideo,
 } from "@/lib/personal-video/video-render.functions";
-import { isPvgVideoRunning, pvgVideoStatusKey } from "@/lib/personal-video/video-render";
+import {
+  PVR_REGENERATION_CREDITS,
+  isPvgVideoRunning,
+  pvgVideoStatusKey,
+} from "@/lib/personal-video/video-render";
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
@@ -30,13 +37,18 @@ export function FinalVideoPanel({
   disabled?: boolean;
   onChanged?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const load = useServerFn(getPvgVideo);
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
+  const choose = useServerFn(selectPvgVideoVariant);
+  const { isTest } = useCreditBalance();
+  const refreshCredits = useRefreshCreditBalance();
+  const word = creditWord(lang, isTest, t("pvg_credits_word"));
 
   const [starting, setStarting] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -46,8 +58,22 @@ export function FinalVideoPanel({
     queryFn: () => load({ data: { projectId } }),
     refetchInterval: (q) => (isPvgVideoRunning(q.state.data?.video ?? null) ? 5000 : false),
   });
-  const video = query.data?.video ?? null;
+  const state = query.data ?? null;
+  const video = state?.video ?? null;
   const running = isPvgVideoRunning(video);
+  const readyVariants = useMemo(
+    () => (state?.variants ?? []).filter((v) => v.status === "ready" && v.videoUrl),
+    [state],
+  );
+  const selected = useMemo(
+    () =>
+      readyVariants.find((v) => v.id === activeId) ??
+      readyVariants.find((v) => v.id === state?.selectedId) ??
+      readyVariants[0] ??
+      null,
+    [readyVariants, activeId, state],
+  );
+  const balance = state?.balance ?? 0;
 
   const bucket = music.mode === "upload" ? music.uploadBucket : music.trackBucket;
   const path = music.mode === "upload" ? music.uploadPath : music.trackPath;
@@ -96,14 +122,22 @@ export function FinalVideoPanel({
     setPlaying(true);
   }
 
-  async function create() {
+  async function create(again = false) {
     if (starting || running || disabled) return;
+    if (again && balance < PVR_REGENERATION_CREDITS) {
+      toast.error(t("pvr_err_credits"));
+      return;
+    }
+    stopAll();
     setStarting(true);
     try {
-      const res = await start({ data: { projectId } });
+      const res = await start({ data: { projectId, again } });
       if (!res.ok) {
         toast.error(t(res.error ?? "pvr_err_generic"));
+      } else if (again) {
+        toast.success(t("pvr_again_started"));
       }
+      refreshCredits(res.balance);
       await query.refetch();
       onChanged?.();
     } catch (e) {
@@ -113,10 +147,21 @@ export function FinalVideoPanel({
     }
   }
 
+  async function pick(videoId: string) {
+    setActiveId(videoId);
+    stopAll();
+    try {
+      await choose({ data: { projectId, videoId } });
+      await query.refetch();
+    } catch {
+      // Choosing is free and harmless; the picture already switched.
+    }
+  }
+
   async function tryAgain() {
     await retry({ data: { projectId } });
     await query.refetch();
-    await create();
+    await create(readyVariants.length > 0);
   }
 
   return (
@@ -128,11 +173,12 @@ export function FinalVideoPanel({
         {t("pvr_title")}
       </p>
 
-      {video?.status === "ready" && video.videoUrl ? (
+      {selected ? (
         <div className="space-y-3">
           <video
+            key={selected.id}
             ref={videoRef}
-            src={video.videoUrl}
+            src={selected.videoUrl ?? undefined}
             playsInline
             controls={false}
             className="w-full rounded-2xl"
@@ -148,7 +194,7 @@ export function FinalVideoPanel({
               {playing ? t("pvr_pause") : t("pvr_play")}
             </button>
             <a
-              href={video.videoUrl}
+              href={selected.videoUrl ?? "#"}
               download
               className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50"
             >
@@ -157,9 +203,62 @@ export function FinalVideoPanel({
             </a>
           </div>
           <p className="text-xs text-primary">{t("pvr_status_ready")}</p>
-          {trackUrl && (
-            <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
+
+          {readyVariants.length > 1 && (
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("pvr_variants_title")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {readyVariants
+                  .slice()
+                  .sort((a, b) => a.variantIndex - b.variantIndex)
+                  .map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => void pick(v.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition ${
+                        v.id === selected.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      {v.id === selected.id && <Check className="h-3.5 w-3.5" />}
+                      {t("pvr_variant")} {v.variantIndex}
+                    </button>
+                  ))}
+              </div>
+            </div>
           )}
+
+          {running ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t(pvgVideoStatusKey(video!.status))}
+            </p>
+          ) : (
+            <div className="space-y-2 border-t border-border/60 pt-3">
+              <button
+                type="button"
+                disabled={disabled || starting || balance < PVR_REGENERATION_CREDITS}
+                onClick={() => void create(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/50 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
+              >
+                {starting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {t("pvr_again")} — {PVR_REGENERATION_CREDITS} {word}
+              </button>
+              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                {balance < PVR_REGENERATION_CREDITS ? t("pvr_err_credits") : t("pvr_again_note")}
+              </p>
+            </div>
+          )}
+
+          {trackUrl && <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />}
         </div>
       ) : running ? (
         <div className="space-y-3">
@@ -172,7 +271,11 @@ export function FinalVideoPanel({
               className="h-full rounded-full bg-primary transition-all"
               style={{
                 width:
-                  video!.status === "pending" ? "20%" : video!.status === "processing" ? "65%" : "90%",
+                  video!.status === "pending"
+                    ? "20%"
+                    : video!.status === "processing"
+                      ? "65%"
+                      : "90%",
               }}
             />
           </div>
@@ -196,7 +299,7 @@ export function FinalVideoPanel({
           <button
             type="button"
             disabled={disabled || starting}
-            onClick={() => void create()}
+            onClick={() => void create(false)}
             className="w-full rounded-full bg-gold-gradient px-6 py-4 text-base font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
           >
             {starting ? t("pvr_creating") : t("pvr_create")}
