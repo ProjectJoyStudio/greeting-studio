@@ -4,7 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { GeneratorControlSettings } from "./settings";
 
-async function assertAdmin(context: { supabase: any; userId: string }): Promise<void> {
+type AdminContext = {
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
+  userId: string;
+};
+
+async function assertAdmin(context: AdminContext): Promise<void> {
   const { data } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
   if (data !== true) throw new Error("forbidden");
 }
