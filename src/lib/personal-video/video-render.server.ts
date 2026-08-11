@@ -176,6 +176,8 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
       storage_path: storagePath,
       completed_at: new Date().toISOString(),
     });
+    // A brand new film becomes the preferred one; earlier variants stay.
+    await markSelectedVariant(row.project_id, row.id);
     await supabaseAdmin
       .from("pvg_projects")
       .update({ status: "video_ready" } as never)
