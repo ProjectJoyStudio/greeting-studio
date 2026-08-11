@@ -91,6 +91,8 @@ export interface PvgProject {
   speakerPersonId: string | null;
   /** Background music of the whole video. It never costs a credit. */
   music: PvgMusicSettings;
+  /** Optional quiet life of the picture: wind, water, a room, a street. */
+  sceneSounds: boolean;
   people: PvgPerson[];
   scenes: PvgScene[];
 }

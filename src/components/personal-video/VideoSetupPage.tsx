@@ -10,6 +10,7 @@ import {
   Loader2,
   PenLine,
   Sparkles,
+  Waves,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import { MusicPanel } from "@/components/personal-video/MusicPanel";
 import { SoundPanel } from "@/components/personal-video/SoundPanel";
+import { FinalVideoPanel } from "@/components/personal-video/FinalVideoPanel";
 import { DEFAULT_MUSIC_SETTINGS, type PvgMusicSettings } from "@/lib/music/types";
 import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
@@ -35,6 +37,7 @@ import {
   clampDuration,
   costSummary,
   greetingFit,
+  sceneSoundCredits,
   type PvsGreetingMode,
 } from "@/lib/personal-video/video-setup";
 
@@ -68,6 +71,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [greeting, setGreeting] = useState("");
   const [keywords, setKeywords] = useState("");
   const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
+  const [sceneSounds, setSceneSounds] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
@@ -104,6 +108,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     setGreeting(project.videoSetup.greetingText);
     setKeywords(project.videoSetup.greetingKeywords);
     setMusic(project.music);
+    setSceneSounds(project.sceneSounds);
   }, [project]);
 
   // Everything the person changes is stored quietly in their draft.
@@ -118,11 +123,12 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingText: greeting,
         greetingKeywords: keywords,
         music,
+        sceneSounds,
       },
     })
       .then(() => setSaveState("saved"))
       .catch(() => setSaveState("failed"));
-  }, [project, readOnly, duration, mode, greeting, keywords, music, saveSetup]);
+  }, [project, readOnly, duration, mode, greeting, keywords, music, sceneSounds, saveSetup]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
@@ -151,7 +157,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   );
 
   const fit = greetingFit(greeting, duration);
-  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance);
+  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance, sceneSounds);
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
 
   async function runCompose(task: "compose" | "shorten" | "expand") {
@@ -378,6 +384,32 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 disabled={readOnly}
                 onChange={setMusic}
               />
+
+              {/* The quiet life of the picture */}
+              <Panel icon={<Waves className="h-4 w-4" />} title={t("pvr_sounds_title")}>
+                <div className="flex flex-wrap gap-2">
+                  {[false, true].map((value) => (
+                    <button
+                      key={String(value)}
+                      type="button"
+                      disabled={readOnly}
+                      onClick={() => setSceneSounds(value)}
+                      className={`rounded-full border px-4 py-2 text-xs font-medium transition disabled:opacity-60 ${
+                        sceneSounds === value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      {value
+                        ? `${t("pvr_sounds_on")} · +${sceneSoundCredits(duration)} ${word}`
+                        : t("pvr_sounds_off")}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("pvr_sounds_hint")}
+                </p>
+              </Panel>
             </div>
 
             {/* RIGHT — the approved picture and the live cost -------------- */}
@@ -418,6 +450,10 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                   <Row label={t("pvs_cost_spent")} value={`${cost.alreadySpent} ${word}`} />
                   <Row label={t("pvs_cost_video")} value={`${cost.video} ${word}`} />
                   <Row label={t("pvs_cost_voice")} value={`+${cost.voice} ${word}`} />
+                  <Row
+                    label={t("pvr_cost_sounds")}
+                    value={`+${cost.sceneSounds} ${word}`}
+                  />
                   <Row label={t("pvs_cost_music")} value={t("pvs_cost_included")} />
                   <div className="my-2 h-px bg-border/60" />
                   <Row label={t("pvs_cost_total")} value={`${cost.total} ${word}`} strong />
@@ -427,16 +463,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                   {t("pvs_no_charge_note")}
                 </p>
 
-                <button
-                  type="button"
-                  disabled
-                  className="mt-6 w-full rounded-full bg-gold-gradient px-6 py-4 text-base font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-                >
-                  {t("pvs_create_video")}
-                </button>
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  {t("pvs_create_note")}
-                </p>
                 <Link
                   to="/dashboard/video-greetings"
                   className="mt-4 block text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
@@ -444,6 +470,13 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                   {t("pvg_drafts_title")}
                 </Link>
               </div>
+
+              <FinalVideoPanel
+                projectId={project.id}
+                music={music}
+                disabled={readOnly}
+                onChanged={() => void query.refetch()}
+              />
             </div>
           </div>
         )}

@@ -34,6 +34,7 @@ import { PERSONAL_VIDEO_VOICE_I18N } from "./locales/personal-video-voice";
 import { PERSONAL_VIDEO_ORDER_I18N } from "./locales/personal-video-order";
 import { MY_VOICES_I18N } from "./locales/my-voices";
 import { MUSIC_I18N } from "./locales/music";
+import { PERSONAL_VIDEO_RENDER_I18N } from "./locales/personal-video-render";
 import { CM_DICT } from "@/lib/admin/catalog-mgmt/i18n";
 
 export { LANGS };
@@ -65,6 +66,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.en,
     ...MY_VOICES_I18N.en,
     ...MUSIC_I18N.en,
+    ...PERSONAL_VIDEO_RENDER_I18N.en,
   },
   ru: {
     ...ru,
@@ -89,6 +91,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.ru,
     ...MY_VOICES_I18N.ru,
     ...MUSIC_I18N.ru,
+    ...PERSONAL_VIDEO_RENDER_I18N.ru,
   },
   de: {
     ...de,
@@ -113,6 +116,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.de,
     ...MY_VOICES_I18N.de,
     ...MUSIC_I18N.de,
+    ...PERSONAL_VIDEO_RENDER_I18N.de,
   },
   uk: {
     ...uk,
@@ -137,6 +141,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.uk,
     ...MY_VOICES_I18N.uk,
     ...MUSIC_I18N.uk,
+    ...PERSONAL_VIDEO_RENDER_I18N.uk,
   },
   fr: {
     ...fr,
@@ -161,6 +166,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.fr,
     ...MY_VOICES_I18N.fr,
     ...MUSIC_I18N.fr,
+    ...PERSONAL_VIDEO_RENDER_I18N.fr,
   },
   pl: {
     ...pl,
@@ -185,6 +191,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_ORDER_I18N.pl,
     ...MY_VOICES_I18N.pl,
     ...MUSIC_I18N.pl,
+    ...PERSONAL_VIDEO_RENDER_I18N.pl,
   },
 };
 

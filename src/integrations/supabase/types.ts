@@ -2715,6 +2715,7 @@ export type Database = {
           restored_at: string | null
           restored_by: string | null
           scene_description: string | null
+          scene_sounds: boolean
           selected_scene_id: string | null
           single_speaker_person_id: string | null
           speech_mode: string
@@ -2752,6 +2753,7 @@ export type Database = {
           restored_at?: string | null
           restored_by?: string | null
           scene_description?: string | null
+          scene_sounds?: boolean
           selected_scene_id?: string | null
           single_speaker_person_id?: string | null
           speech_mode?: string
@@ -2789,6 +2791,7 @@ export type Database = {
           restored_at?: string | null
           restored_by?: string | null
           scene_description?: string | null
+          scene_sounds?: boolean
           selected_scene_id?: string | null
           single_speaker_person_id?: string | null
           speech_mode?: string
@@ -2873,6 +2876,77 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pvg_scenes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvg_videos: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          credits_charged: number
+          duration_seconds: number
+          error_code: string | null
+          error_message: string | null
+          generator_key: string | null
+          generator_model: string | null
+          id: string
+          job_id: string
+          prediction_id: string | null
+          project_id: string
+          scene_sounds: boolean
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          duration_seconds?: number
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          job_id: string
+          prediction_id?: string | null
+          project_id: string
+          scene_sounds?: boolean
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          duration_seconds?: number
+          error_code?: string | null
+          error_message?: string | null
+          generator_key?: string | null
+          generator_model?: string | null
+          id?: string
+          job_id?: string
+          prediction_id?: string | null
+          project_id?: string
+          scene_sounds?: boolean
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvg_videos_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "pvg_projects"
