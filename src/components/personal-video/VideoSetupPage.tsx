@@ -10,6 +10,7 @@ import {
   Loader2,
   PenLine,
   Sparkles,
+  Waves,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import { MusicPanel } from "@/components/personal-video/MusicPanel";
 import { SoundPanel } from "@/components/personal-video/SoundPanel";
+import { FinalVideoPanel } from "@/components/personal-video/FinalVideoPanel";
 import { DEFAULT_MUSIC_SETTINGS, type PvgMusicSettings } from "@/lib/music/types";
 import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
@@ -35,6 +37,7 @@ import {
   clampDuration,
   costSummary,
   greetingFit,
+  sceneSoundCredits,
   type PvsGreetingMode,
 } from "@/lib/personal-video/video-setup";
 
@@ -68,6 +71,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [greeting, setGreeting] = useState("");
   const [keywords, setKeywords] = useState("");
   const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
+  const [sceneSounds, setSceneSounds] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
@@ -104,6 +108,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     setGreeting(project.videoSetup.greetingText);
     setKeywords(project.videoSetup.greetingKeywords);
     setMusic(project.music);
+    setSceneSounds(project.sceneSounds);
   }, [project]);
 
   // Everything the person changes is stored quietly in their draft.
@@ -118,11 +123,12 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingText: greeting,
         greetingKeywords: keywords,
         music,
+        sceneSounds,
       },
     })
       .then(() => setSaveState("saved"))
       .catch(() => setSaveState("failed"));
-  }, [project, readOnly, duration, mode, greeting, keywords, music, saveSetup]);
+  }, [project, readOnly, duration, mode, greeting, keywords, music, sceneSounds, saveSetup]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
@@ -151,7 +157,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   );
 
   const fit = greetingFit(greeting, duration);
-  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance);
+  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance, sceneSounds);
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
 
   async function runCompose(task: "compose" | "shorten" | "expand") {
