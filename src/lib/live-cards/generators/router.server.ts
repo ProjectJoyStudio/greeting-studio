@@ -20,6 +20,39 @@ import {
 import { fluxProGenerator, fluxUltraGenerator } from "./replicate-image.server";
 import { wanImageToVideoGenerator } from "./replicate-video.server";
 
+/**
+ * Applies the administrator's Generator Control Centre settings to one new
+ * request: engines switched off are skipped, the chosen primary leads and a
+ * backup only follows when automatic failover is on.
+ */
+async function orderByAdmin<T extends { key: string }>(
+  functionId: string,
+  engines: T[],
+): Promise<T[]> {
+  try {
+    const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
+    const order = await generatorOrder(
+      functionId,
+      engines.map((e) => e.key),
+    );
+    const ordered = order
+      .map((key) => engines.find((e) => e.key === key))
+      .filter((e): e is T => Boolean(e));
+    return ordered.length ? ordered : [];
+  } catch {
+    return engines;
+  }
+}
+
+/** Honours the engine's parallel-job limit; "Auto" holds nothing back. */
+async function withSlot<T>(key: string, run: () => Promise<T>): Promise<T> {
+  // The generation itself is never retried here: only the limiter is optional.
+  const limiter = await import("@/lib/admin/generators/runtime.server")
+    .then((m) => m.withGeneratorSlot)
+    .catch(() => null);
+  return limiter ? limiter(key, run) : run();
+}
+
 /** Registered image engines. Add, remove or replace entries here only. */
 const IMAGE_GENERATORS: ImageGenerator[] = [fluxUltraGenerator, fluxProGenerator];
 
@@ -65,31 +98,44 @@ export type RoutedAnimation = {
 
 /** Hands the animation to the best available engine, with silent fallback. */
 export async function startVideoRequest(request: VideoRequest): Promise<RoutedAnimation> {
-  const engines = resolveVideoGenerators();
+  const engines = await orderByAdmin("live_cards.animation", resolveVideoGenerators());
   if (!engines.length) {
     throw new GeneratorError("no_generator", "No animation engine is available right now.", "-");
   }
   let lastError: GeneratorError | null = null;
   for (const engine of engines) {
     try {
-      const job = await engine.start(request);
+      const job = await withSlot(engine.key, () => engine.start(request));
       return { jobId: job.jobId, generatorKey: engine.key, generatorModel: engine.model };
     } catch (err) {
       lastError =
         err instanceof GeneratorError
           ? err
-          : new GeneratorError("unknown", err instanceof Error ? err.message : "Unexpected error.", engine.key);
+          : new GeneratorError(
+              "unknown",
+              err instanceof Error ? err.message : "Unexpected error.",
+              engine.key,
+            );
       if (isTerminal(lastError.code)) break;
     }
   }
-  throw lastError ?? new GeneratorError("generation_failed", "The animation could not be started.", "-");
+  throw (
+    lastError ?? new GeneratorError("generation_failed", "The animation could not be started.", "-")
+  );
 }
 
 /** Reads the progress of an accepted animation from the engine that owns it. */
-export async function pollVideoRequest(generatorKey: string, jobId: string): Promise<VideoProgress> {
+export async function pollVideoRequest(
+  generatorKey: string,
+  jobId: string,
+): Promise<VideoProgress> {
   const engine = VIDEO_GENERATORS.find((g) => g.key === generatorKey);
   if (!engine) {
-    return { state: "failed", errorCode: "no_generator", errorMessage: "The engine is no longer available." };
+    return {
+      state: "failed",
+      errorCode: "no_generator",
+      errorMessage: "The engine is no longer available.",
+    };
   }
   return engine.progress(jobId);
 }
@@ -127,7 +173,7 @@ export type RoutedImage = {
 
 /** Runs the request through the best available engine, with silent fallback. */
 export async function routeImageRequest(request: ImageRequest): Promise<RoutedImage> {
-  const engines = resolveImageGenerators();
+  const engines = await orderByAdmin("live_cards.start_image", resolveImageGenerators());
   if (!engines.length) {
     throw new GeneratorError("no_generator", "No image engine is available right now.", "-");
   }
@@ -135,15 +181,21 @@ export async function routeImageRequest(request: ImageRequest): Promise<RoutedIm
   let lastError: GeneratorError | null = null;
   for (const engine of engines) {
     try {
-      const output = await engine.generate(request);
+      const output = await withSlot(engine.key, () => engine.generate(request));
       return { ...output, generatorKey: engine.key, generatorModel: engine.model };
     } catch (err) {
       lastError =
         err instanceof GeneratorError
           ? err
-          : new GeneratorError("unknown", err instanceof Error ? err.message : "Unexpected error.", engine.key);
+          : new GeneratorError(
+              "unknown",
+              err instanceof Error ? err.message : "Unexpected error.",
+              engine.key,
+            );
       if (isTerminal(lastError.code)) break;
     }
   }
-  throw lastError ?? new GeneratorError("generation_failed", "The picture could not be created.", "-");
+  throw (
+    lastError ?? new GeneratorError("generation_failed", "The picture could not be created.", "-")
+  );
 }

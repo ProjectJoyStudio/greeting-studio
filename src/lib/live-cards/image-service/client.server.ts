@@ -47,7 +47,8 @@ function extractUrl(output: unknown): string | null {
     return typeof first === "string" ? first : null;
   }
   if (output && typeof output === "object") {
-    const maybe = (output as Record<string, unknown>).url ?? (output as Record<string, unknown>).image;
+    const maybe =
+      (output as Record<string, unknown>).url ?? (output as Record<string, unknown>).image;
     if (typeof maybe === "string") return maybe;
   }
   return null;
@@ -67,13 +68,38 @@ export type LiveImageRender = {
   model: string;
 };
 
+/** Engines the administrator may pick for the Live Cards starting picture. */
+const MODEL_BY_KEY: Record<string, string> = {
+  flux_schnell: "black-forest-labs/flux-schnell",
+  flux_ultra: "black-forest-labs/flux-1.1-pro-ultra",
+  flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
+};
+
+/**
+ * The model of this section: the environment default unless the administrator
+ * selected another primary engine in the Generator Control Centre.
+ */
+async function adminPrimaryModel(): Promise<string> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const key = await primaryGenerator("live_cards.start_image", Object.keys(MODEL_BY_KEY));
+    if (key && MODEL_BY_KEY[key]) return MODEL_BY_KEY[key]!;
+  } catch {
+    // fall back to the environment configuration
+  }
+  return primaryModel();
+}
+
 /** Renders one picture with the low-cost primary engine of this section. */
-export async function renderPrimaryImage(prompt: string, aspectRatio: string): Promise<LiveImageRender> {
+export async function renderPrimaryImage(
+  prompt: string,
+  aspectRatio: string,
+): Promise<LiveImageRender> {
   const token = process.env.LIVE_CARDS_IMAGE_API_TOKEN || process.env.REPLICATE_API_TOKEN;
   if (!token) {
     throw new LiveImageError("missing_token", "The Live Cards image service is not configured.");
   }
-  const model = primaryModel();
+  const model = await adminPrimaryModel();
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   const startedAt = Date.now();
 
@@ -94,7 +120,11 @@ export async function renderPrimaryImage(prompt: string, aspectRatio: string): P
     const body = await createRes.text().catch(() => "");
     const code = codeForStatus(createRes.status);
     logError("primary_create_failed", { model, status: createRes.status, code });
-    throw new LiveImageError(code, `Live Cards image engine error [${createRes.status}]: ${body.slice(0, 300)}`, createRes.status);
+    throw new LiveImageError(
+      code,
+      `Live Cards image engine error [${createRes.status}]: ${body.slice(0, 300)}`,
+      createRes.status,
+    );
   }
 
   let prediction = (await createRes.json()) as Prediction;
@@ -110,16 +140,25 @@ export async function renderPrimaryImage(prompt: string, aspectRatio: string): P
       const body = await pollRes.text().catch(() => "");
       const code = codeForStatus(pollRes.status);
       logError("primary_poll_failed", { model, status: pollRes.status, code });
-      throw new LiveImageError(code, `Live Cards image engine error [${pollRes.status}]: ${body.slice(0, 300)}`, pollRes.status);
+      throw new LiveImageError(
+        code,
+        `Live Cards image engine error [${pollRes.status}]: ${body.slice(0, 300)}`,
+        pollRes.status,
+      );
     }
     prediction = (await pollRes.json()) as Prediction;
   }
 
   if (prediction.status !== "succeeded") {
     const detail =
-      typeof prediction.error === "string" ? prediction.error : JSON.stringify(prediction.error ?? null);
+      typeof prediction.error === "string"
+        ? prediction.error
+        : JSON.stringify(prediction.error ?? null);
     logError("primary_generation_failed", { model, status: prediction.status ?? null });
-    throw new LiveImageError("generation_failed", `Rendering failed: ${detail.slice(0, 300)}`.trim());
+    throw new LiveImageError(
+      "generation_failed",
+      `Rendering failed: ${detail.slice(0, 300)}`.trim(),
+    );
   }
 
   const url = extractUrl(prediction.output);
