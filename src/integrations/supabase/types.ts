@@ -2058,6 +2058,48 @@ export type Database = {
           },
         ]
       }
+      music_tracks: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          duration_seconds: number
+          id: string
+          is_active: boolean
+          sort_order: number
+          storage_bucket: string
+          storage_path: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          storage_bucket?: string
+          storage_path: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          storage_bucket?: string
+          storage_path?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_jobs: {
         Row: {
           channel: Database["public"]["Enums"]["notification_channel"]

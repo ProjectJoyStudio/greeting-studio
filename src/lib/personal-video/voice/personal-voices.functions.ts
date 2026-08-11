@@ -36,7 +36,9 @@ export const addVoiceSample = createServerFn({ method: "POST" })
   .inputValidator((input: { voiceId: string; sample: SampleInput }) => input)
   .handler(async ({ data, context }): Promise<{ voice: PersonalVoice }> => {
     const { addVoiceSample: add } = await import("./personal-voices.server");
-    return { voice: await add({ voiceId: data.voiceId, sample: data.sample, userId: context.userId }) };
+    return {
+      voice: await add({ voiceId: data.voiceId, sample: data.sample, userId: context.userId }),
+    };
   });
 
 /** A short spoken sample of one profile speaking fresh text, never stored. */

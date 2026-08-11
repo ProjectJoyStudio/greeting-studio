@@ -86,14 +86,11 @@ export async function checkVoiceSample(input: {
   mimeType: string;
   expectedWords: number;
 }): Promise<SampleCheck> {
-  const AudioCtx =
-    (globalThis as any).AudioContext ?? (globalThis as any).webkitAudioContext;
+  const AudioCtx = (globalThis as any).AudioContext ?? (globalThis as any).webkitAudioContext;
   const audioContext = new AudioCtx();
   let buffer: AudioBuffer;
   try {
-    buffer = await audioContext.decodeAudioData(
-      base64ToArrayBuffer(input.base64),
-    );
+    buffer = await audioContext.decodeAudioData(base64ToArrayBuffer(input.base64));
   } finally {
     if (typeof audioContext.close === "function") await audioContext.close();
   }
@@ -128,11 +125,8 @@ export async function checkVoiceSample(input: {
   const sortedRms = [...frameRms].sort((a, b) => a - b);
   const noiseCount = Math.max(1, Math.round(sortedRms.length * 0.1));
   const speechCount = Math.max(1, Math.round(sortedRms.length * 0.25));
-  const noiseRms =
-    sortedRms.slice(0, noiseCount).reduce((sum, v) => sum + v, 0) / noiseCount;
-  const speechRms =
-    sortedRms.slice(-speechCount).reduce((sum, v) => sum + v, 0) /
-    speechCount;
+  const noiseRms = sortedRms.slice(0, noiseCount).reduce((sum, v) => sum + v, 0) / noiseCount;
+  const speechRms = sortedRms.slice(-speechCount).reduce((sum, v) => sum + v, 0) / speechCount;
 
   const noiseDb = rmsToDb(noiseRms);
   const speechDb = rmsToDb(speechRms);
@@ -157,7 +151,7 @@ export async function checkVoiceSample(input: {
 
   // Count voiced segments (runs of consecutive voiced frames) as a word estimate.
   let segments = 0;
-  let segmentLevels: number[] = [];
+  const segmentLevels: number[] = [];
   let inSegment = false;
   let segmentSum = 0;
   let segmentLen = 0;

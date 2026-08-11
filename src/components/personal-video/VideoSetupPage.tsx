@@ -8,7 +8,6 @@ import {
   Coins,
   Film,
   Loader2,
-  Music,
   PenLine,
   Sliders,
   Sparkles,
@@ -25,6 +24,8 @@ import { openPvgProject } from "@/lib/personal-video/pvg.functions";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
+import { MusicPanel } from "@/components/personal-video/MusicPanel";
+import { DEFAULT_MUSIC_SETTINGS, type PvgMusicSettings } from "@/lib/music/types";
 import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
 import {
@@ -66,6 +67,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [mode, setMode] = useState<PvsGreetingMode>("manual");
   const [greeting, setGreeting] = useState("");
   const [keywords, setKeywords] = useState("");
+  const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
@@ -101,6 +103,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     setMode(project.videoSetup.greetingMode);
     setGreeting(project.videoSetup.greetingText);
     setKeywords(project.videoSetup.greetingKeywords);
+    setMusic(project.music);
   }, [project]);
 
   // Everything the person changes is stored quietly in their draft.
@@ -114,11 +117,12 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingMode: mode,
         greetingText: greeting,
         greetingKeywords: keywords,
+        music,
       },
     })
       .then(() => setSaveState("saved"))
       .catch(() => setSaveState("failed"));
-  }, [project, readOnly, duration, mode, greeting, keywords, saveSetup]);
+  }, [project, readOnly, duration, mode, greeting, keywords, music, saveSetup]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
@@ -358,12 +362,13 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 onAssigned={() => void query.refetch()}
               />
 
-              {/* Reserved: music */}
-              <ReservedPanel
-                icon={<Music className="h-4 w-4" />}
-                title={t("pvs_music")}
-                soon={t("pvs_soon")}
-                options={[t("pvs_music_library"), t("pvs_music_upload")]}
+              {/* Background music of the whole video */}
+              <MusicPanel
+                projectId={project.id}
+                settings={music}
+                videoSeconds={duration}
+                disabled={readOnly}
+                onChange={setMusic}
               />
 
               {/* Reserved: audio levels */}
@@ -487,35 +492,6 @@ function Panel({
       </p>
       {children}
     </div>
-  );
-}
-
-function ReservedPanel({
-  icon,
-  title,
-  soon,
-  options,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  soon: string;
-  options: string[];
-}) {
-  return (
-    <Panel icon={icon} title={title} soon={soon}>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-2xl border border-dashed border-border/60 px-4 py-3 text-left text-xs font-medium text-muted-foreground opacity-70"
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </Panel>
   );
 }
 

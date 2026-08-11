@@ -50,7 +50,9 @@ export function rememberPace(
   const all = read();
   const before = all[keyOf(voiceId, language)];
   // A gentle average keeps the pace steady across greetings.
-  all[keyOf(voiceId, language)] = before ? Math.round((before * 0.6 + measured * 0.4) * 1000) / 1000 : Math.round(measured * 1000) / 1000;
+  all[keyOf(voiceId, language)] = before
+    ? Math.round((before * 0.6 + measured * 0.4) * 1000) / 1000
+    : Math.round(measured * 1000) / 1000;
   try {
     window.localStorage.setItem(STORE_KEY, JSON.stringify(all));
   } catch {
