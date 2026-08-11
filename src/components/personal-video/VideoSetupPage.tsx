@@ -25,6 +25,7 @@ import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import { MusicPanel } from "@/components/personal-video/MusicPanel";
+import { SoundPanel } from "@/components/personal-video/SoundPanel";
 import { DEFAULT_MUSIC_SETTINGS, type PvgMusicSettings } from "@/lib/music/types";
 import type { SaveState } from "@/lib/personal-video/order";
 import { composePvgGreeting, savePvgVideoSetup } from "@/lib/personal-video/video-setup.functions";
