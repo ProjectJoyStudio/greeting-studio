@@ -25,7 +25,9 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
-        ...(data.music ? { music_settings: music } : {}),
+        ...(data.music
+          ? { music_settings: music as unknown as Record<string, never> }
+          : {}),
         workflow_step: "video",
         order_cost: clampDuration(data.durationSeconds),
       })
