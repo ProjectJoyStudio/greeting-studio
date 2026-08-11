@@ -54,11 +54,13 @@ export const generateCardImage = createServerFn({ method: "POST" })
       flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
     };
     const order = await generatorOrder("greeting_cards.image", Object.keys(MODEL_BY_KEY));
-    const models = order.map((key) => MODEL_BY_KEY[key]!).filter(Boolean);
+    const chosen = order.length ? order : ["flux_schnell"];
 
-    for (const model of models.length ? models : [PRIMARY_MODEL]) {
+    for (const key of chosen) {
+      const model = MODEL_BY_KEY[key];
+      if (!model) continue;
       try {
-        const { imageUrl } = await withGeneratorSlot(model, () => runModel(model, enginePrompt));
+        const { imageUrl } = await withGeneratorSlot(key, () => runModel(model, enginePrompt));
         imageSource = imageUrl;
         break;
       } catch (err) {
