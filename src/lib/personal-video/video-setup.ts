@@ -10,10 +10,17 @@ export const PVS_DEFAULT_SECONDS = 10;
 export const PVS_CREDITS_PER_SECOND = 1;
 
 /**
+ * Scene sounds are paused while a separate, controlled scene-sound solution is
+ * being prepared. Nothing is generated, so nothing is ever charged for them.
+ */
+export const PVS_SCENE_SOUNDS_ENABLED = false;
+
+/**
  * Scene sounds are the quiet life of the picture — wind, waves, a room, a
  * street. They are optional and priced in three simple steps.
  */
 export function sceneSoundCredits(seconds: number): number {
+  if (!PVS_SCENE_SOUNDS_ENABLED) return 0;
   const duration = clampDuration(seconds);
   if (duration <= 5) return 2;
   if (duration <= 10) return 4;

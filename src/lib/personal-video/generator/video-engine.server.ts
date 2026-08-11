@@ -1,12 +1,12 @@
 // ---------------------------------------------------------------------------
 // The moving-picture engine of the Personal Video Greeting section.
 //
-//   video_generator = KLING_V3   (kwaivgi/kling-v3-video, image to video)
+//   video_generator = OMNIHUMAN_15   (bytedance/omni-human-1.5, image + audio)
 //
-// The approved starting scene of page one becomes the first frame of the film.
-// Optional scene sounds are the quiet life of the picture only — never speech,
-// never singing, never music. The greeting voice and the background music are
-// added afterwards from the customer's own choices.
+// The approved starting scene of page one becomes the picture, and the
+// greeting voice already prepared on page two drives the speaking and the lip
+// movement. The engine never invents a voice of its own, so the greeting is
+// never spoken twice. Background music is added afterwards by Project Joy.
 //
 // This module shares no state with the starting-scene, greeting-card or
 // live-card engines.
@@ -14,14 +14,11 @@
 
 const API_BASE = "https://api.replicate.com/v1";
 
-export const PVG_DEFAULT_VIDEO_ENGINE = "KLING_V3";
+export const PVG_DEFAULT_VIDEO_ENGINE = "OMNIHUMAN_15";
 
-/** Kling never invents a voice, a song or a soundtrack of its own. */
-const SOUND_INSTRUCTION =
-  "Ambient environment sounds only: room tone, wind, water, footsteps, nature and city atmosphere. " +
-  "Absolutely no speech, no voices, no singing, no lyrics and no music.";
-const SOUND_NEGATIVE =
-  "speech, talking, voice, voice over, narration, singing, song, lyrics, music, soundtrack, subtitles, text overlay, watermark, distorted faces";
+/** The engine adds no sound of its own beyond the greeting audio we send. */
+const NEGATIVE =
+  "extra speech, invented dialogue, narration, singing, song, lyrics, music, soundtrack, subtitles, text overlay, watermark, distorted faces";
 
 interface VideoEngineDefinition {
   key: string;
@@ -29,25 +26,23 @@ interface VideoEngineDefinition {
   buildInput: (input: {
     prompt: string;
     imageUrl: string;
+    audioUrl: string;
     durationSeconds: number;
     sceneSounds: boolean;
   }) => Record<string, unknown>;
 }
 
 const ENGINES: Record<string, VideoEngineDefinition> = {
-  KLING_V3: {
-    key: "kling_v3_video",
-    model: "kwaivgi/kling-v3-video",
-    buildInput: ({ prompt, imageUrl, durationSeconds, sceneSounds }) => ({
-      prompt: sceneSounds ? `${prompt} ${SOUND_INSTRUCTION}` : prompt,
-      start_image: imageUrl,
+  OMNIHUMAN_15: {
+    key: "omni_human_15",
+    model: "bytedance/omni-human-1.5",
+    buildInput: ({ prompt, imageUrl, audioUrl }) => ({
+      prompt,
       image: imageUrl,
-      duration: durationSeconds,
-      mode: "standard",
-      resolution: "720p",
-      aspect_ratio: "16:9",
-      generate_audio: sceneSounds,
-      negative_prompt: SOUND_NEGATIVE,
+      image_input: imageUrl,
+      audio: audioUrl,
+      audio_input: audioUrl,
+      negative_prompt: NEGATIVE,
     }),
   },
 };
@@ -62,7 +57,7 @@ function configured(): VideoEngineDefinition {
 }
 
 /** Engine keys as they appear in the Admin Panel's Generator Control Centre. */
-const ENGINE_BY_ADMIN_KEY: Record<string, string> = { kling_v3_video: "KLING_V3" };
+const ENGINE_BY_ADMIN_KEY: Record<string, string> = { omni_human_15: "OMNIHUMAN_15" };
 
 async function activeEngine(): Promise<VideoEngineDefinition> {
   try {
@@ -124,6 +119,7 @@ export interface PvgVideoStartResult {
 export async function startVideoRender(input: {
   prompt: string;
   imageUrl: string;
+  audioUrl: string;
   durationSeconds: number;
   sceneSounds: boolean;
 }): Promise<PvgVideoStartResult> {

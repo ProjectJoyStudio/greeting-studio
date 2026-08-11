@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
-import { getPvgVoiceover } from "@/lib/personal-video/voice.functions";
 import {
   getPvgVideo,
   retryPvgVideo,
@@ -17,8 +16,8 @@ import { isPvgVideoRunning, pvgVideoStatusKey } from "@/lib/personal-video/video
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
- * of the work and, at the end, the finished greeting played with its voice,
- * its music and its scene sounds together.
+ * of the work and, at the end, the finished greeting. The greeting voice is
+ * already inside the film — only the chosen music is added on top of it.
  */
 export function FinalVideoPanel({
   projectId,
@@ -35,14 +34,11 @@ export function FinalVideoPanel({
   const load = useServerFn(getPvgVideo);
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
-  const loadVoice = useServerFn(getPvgVoiceover);
 
   const [starting, setStarting] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const voiceRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
 
   const query = useQuery({
@@ -53,12 +49,6 @@ export function FinalVideoPanel({
   const video = query.data?.video ?? null;
   const running = isPvgVideoRunning(video);
 
-  const voiceQuery = useQuery({
-    queryKey: ["pvg", "voice", projectId],
-    queryFn: () => loadVoice({ data: { projectId } }),
-  });
-  const voiceUrl = voiceQuery.data?.voiceover?.audioUrl ?? null;
-
   const bucket = music.mode === "upload" ? music.uploadBucket : music.trackBucket;
   const path = music.mode === "upload" ? music.uploadPath : music.trackPath;
   const musicQuery = useQuery({
@@ -68,25 +58,21 @@ export function FinalVideoPanel({
   });
   const trackUrl = musicQuery.data ?? null;
 
-  /** Everything that is not the voice steps back while the voice speaks. */
+  /** The music steps back while the greeting inside the film is speaking. */
   const backgroundGain = useCallback(
-    (isSpeaking: boolean) =>
-      isSpeaking && music.ducking.enabled ? music.ducking.duckedGain : 1,
+    (isSpeaking: boolean) => (isSpeaking && music.ducking.enabled ? music.ducking.duckedGain : 1),
     [music.ducking.enabled, music.ducking.duckedGain],
   );
 
   useEffect(() => {
-    if (voiceRef.current) voiceRef.current.volume = music.voiceVolume;
-    if (musicRef.current) musicRef.current.volume = music.musicVolume * backgroundGain(speaking);
-    if (videoRef.current) videoRef.current.volume = backgroundGain(speaking);
-  }, [music.voiceVolume, music.musicVolume, speaking, backgroundGain]);
+    if (videoRef.current) videoRef.current.volume = music.voiceVolume;
+    if (musicRef.current) musicRef.current.volume = music.musicVolume * backgroundGain(playing);
+  }, [music.voiceVolume, music.musicVolume, playing, backgroundGain]);
 
   function stopAll() {
     videoRef.current?.pause();
-    voiceRef.current?.pause();
     musicRef.current?.pause();
     setPlaying(false);
-    setSpeaking(false);
   }
 
   function togglePlay() {
@@ -95,25 +81,18 @@ export function FinalVideoPanel({
       return;
     }
     const v = videoRef.current;
-    const voice = voiceRef.current;
     const track = musicRef.current;
     if (v) {
       v.currentTime = 0;
-      v.volume = backgroundGain(Boolean(voice));
+      v.volume = music.voiceVolume;
       void v.play().catch(() => undefined);
-    }
-    if (voice) {
-      voice.currentTime = 0;
-      voice.volume = music.voiceVolume;
-      void voice.play().catch(() => undefined);
     }
     if (track) {
       track.currentTime = 0;
       track.loop = true;
-      track.volume = music.musicVolume * backgroundGain(Boolean(voice));
+      track.volume = music.musicVolume * backgroundGain(true);
       void track.play().catch(() => undefined);
     }
-    setSpeaking(Boolean(voice));
     setPlaying(true);
   }
 
@@ -178,15 +157,6 @@ export function FinalVideoPanel({
             </a>
           </div>
           <p className="text-xs text-primary">{t("pvr_status_ready")}</p>
-          {voiceUrl && (
-            <audio
-              ref={voiceRef}
-              src={voiceUrl}
-              preload="metadata"
-              className="hidden"
-              onEnded={() => setSpeaking(false)}
-            />
-          )}
           {trackUrl && (
             <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
           )}
