@@ -71,6 +71,33 @@ function engine(): EngineDefinition {
   return override ? { ...chosen, model: override } : chosen;
 }
 
+/** Engine keys as they appear in the Admin Panel's Generator Control Centre. */
+const ENGINE_BY_ADMIN_KEY: Record<string, string> = {
+  flux2_max: "FLUX_2_MAX",
+  flux2_pro: "FLUX_2_PRO",
+  flux2_dev: "FLUX_2_DEV",
+};
+
+/**
+ * The engine used for one NEW scene: the administrator's choice when one is
+ * stored, otherwise the environment configuration.
+ */
+async function activeEngine(): Promise<EngineDefinition> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const key = await primaryGenerator("personal_video.start_scene", Object.keys(ENGINE_BY_ADMIN_KEY));
+    const name = key ? ENGINE_BY_ADMIN_KEY[key] : undefined;
+    const chosen = name ? ENGINES[name] : undefined;
+    if (chosen) {
+      const override = process.env["PVG_IMAGE_MODEL"];
+      return override ? { ...chosen, model: override } : chosen;
+    }
+  } catch {
+    // fall back to the environment configuration
+  }
+  return engine();
+}
+
 /** Key of the engine currently in use, stored with every generated scene. */
 export function pvgEngineKey(): string {
   return engine().key;
@@ -127,7 +154,7 @@ export async function startSceneRender(input: {
   prompt: string;
   referenceUrls: string[];
 }): Promise<PvgStartResult> {
-  const active = engine();
+  const active = await activeEngine();
   const res = await fetch(`${API_BASE}/models/${active.model}/predictions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
