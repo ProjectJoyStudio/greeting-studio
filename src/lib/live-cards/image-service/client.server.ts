@@ -73,7 +73,7 @@ export async function renderPrimaryImage(prompt: string, aspectRatio: string): P
   if (!token) {
     throw new LiveImageError("missing_token", "The Live Cards image service is not configured.");
   }
-  const model = primaryModel();
+  const model = await adminPrimaryModel();
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   const startedAt = Date.now();
 
