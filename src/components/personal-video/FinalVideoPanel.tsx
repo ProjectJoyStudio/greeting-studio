@@ -304,29 +304,13 @@ export function FinalVideoPanel({
                   video!.status === "pending"
                     ? "20%"
                     : video!.status === "processing"
-                      ? "55%"
-                      : video!.status === "lipsync"
-                        ? "80%"
-                        : "92%",
+                      ? "60%"
+                      : "92%",
               }}
             />
           </div>
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t("pvr_leave_note")}</p>
           {isTest && <TechnicalDetails job={video!} />}
-        </div>
-      ) : video?.status === "lipsync_failed" ? (
-        <div className="space-y-3">
-          <p className="text-sm text-destructive">{t("pvr_status_lipsync_failed")}</p>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => void tryLipsyncAgain()}
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
-          >
-            <RotateCcw className="h-4 w-4" />
-            {t("pvr_retry_lipsync")}
-          </button>
-          {isTest && <TechnicalDetails job={video} />}
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
