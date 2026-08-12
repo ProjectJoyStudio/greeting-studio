@@ -1,0 +1,16 @@
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS stage text NOT NULL DEFAULT 'silent_video';
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_generator_key text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_generator_model text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_prediction_id text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_resolution text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_audio_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_predict_seconds numeric;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS video_cost_usd numeric;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS silent_bucket text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS silent_path text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_generator_key text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_generator_model text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_prediction_id text;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_active_speaker boolean;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_predict_seconds numeric;
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS lipsync_cost_usd numeric;

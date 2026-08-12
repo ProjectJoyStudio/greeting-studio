@@ -2900,16 +2900,32 @@ export type Database = {
           id: string
           is_selected: boolean
           job_id: string
+          lipsync_active_speaker: boolean | null
+          lipsync_cost_usd: number | null
+          lipsync_generator_key: string | null
+          lipsync_generator_model: string | null
+          lipsync_predict_seconds: number | null
+          lipsync_prediction_id: string | null
           prediction_id: string | null
           project_id: string
           scene_sounds: boolean
           seed: number | null
+          silent_bucket: string | null
+          silent_path: string | null
+          stage: string
           status: string
           storage_bucket: string | null
           storage_path: string | null
           updated_at: string
           user_id: string
           variant_index: number
+          video_audio_enabled: boolean
+          video_cost_usd: number | null
+          video_generator_key: string | null
+          video_generator_model: string | null
+          video_predict_seconds: number | null
+          video_prediction_id: string | null
+          video_resolution: string | null
         }
         Insert: {
           action_description?: string | null
@@ -2924,16 +2940,32 @@ export type Database = {
           id?: string
           is_selected?: boolean
           job_id: string
+          lipsync_active_speaker?: boolean | null
+          lipsync_cost_usd?: number | null
+          lipsync_generator_key?: string | null
+          lipsync_generator_model?: string | null
+          lipsync_predict_seconds?: number | null
+          lipsync_prediction_id?: string | null
           prediction_id?: string | null
           project_id: string
           scene_sounds?: boolean
           seed?: number | null
+          silent_bucket?: string | null
+          silent_path?: string | null
+          stage?: string
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
           updated_at?: string
           user_id: string
           variant_index?: number
+          video_audio_enabled?: boolean
+          video_cost_usd?: number | null
+          video_generator_key?: string | null
+          video_generator_model?: string | null
+          video_predict_seconds?: number | null
+          video_prediction_id?: string | null
+          video_resolution?: string | null
         }
         Update: {
           action_description?: string | null
@@ -2948,16 +2980,32 @@ export type Database = {
           id?: string
           is_selected?: boolean
           job_id?: string
+          lipsync_active_speaker?: boolean | null
+          lipsync_cost_usd?: number | null
+          lipsync_generator_key?: string | null
+          lipsync_generator_model?: string | null
+          lipsync_predict_seconds?: number | null
+          lipsync_prediction_id?: string | null
           prediction_id?: string | null
           project_id?: string
           scene_sounds?: boolean
           seed?: number | null
+          silent_bucket?: string | null
+          silent_path?: string | null
+          stage?: string
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
           updated_at?: string
           user_id?: string
           variant_index?: number
+          video_audio_enabled?: boolean
+          video_cost_usd?: number | null
+          video_generator_key?: string | null
+          video_generator_model?: string | null
+          video_predict_seconds?: number | null
+          video_prediction_id?: string | null
+          video_resolution?: string | null
         }
         Relationships: [
           {
