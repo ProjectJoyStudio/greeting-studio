@@ -66,14 +66,13 @@ export const SILENT_VIDEO_ENGINES: Record<string, StageEngine<SilentVideoInput>>
     model: "vidu/q3-turbo",
     resolution: wanResolution(),
     usdPerSecond: Number(process.env["PVG_WAN_USD_PER_SECOND"] || 0.04),
-    buildInput: ({ prompt, imageUrl, durationSeconds, seed }) => ({
+    buildInput: ({ prompt, imageUrl, durationSeconds }) => ({
       start_image: imageUrl,
       prompt,
       duration: exactDuration(durationSeconds),
       resolution: wanResolution(),
       // The silent stage must never speak: no voice is sent, and none is made.
       audio: false,
-      ...(typeof seed === "number" ? { seed } : {}),
     }),
   },
 };
