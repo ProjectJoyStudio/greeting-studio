@@ -61,7 +61,9 @@ export const getPvgVideo = createServerFn({ method: "POST" })
     };
 
     let rows = await read();
-    const running = rows.filter((r) => ["pending", "processing", "assets"].includes(r.status));
+    const running = rows.filter((r) =>
+      ["pending", "processing", "lipsync", "assets"].includes(r.status),
+    );
     if (running.length > 0) {
       for (const row of running) await reconcileVideo(row.id);
       rows = await read();
@@ -154,7 +156,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         .from("pvg_videos")
         .select(VIDEO_COLUMNS)
         .eq("project_id", project.id)
-        .in("status", ["pending", "processing", "assets"])
+        .in("status", ["pending", "processing", "lipsync", "assets"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -205,8 +207,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         ? PVR_REGENERATION_CREDITS
         : videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
 
-      // The greeting voice already prepared on page two drives the speaking.
-      // It is never added a second time afterwards.
+      // The greeting voice already prepared on page two is needed for stage
+      // two. It is never sent to the silent stage, and never added twice.
       const { readVoiceover } = await import("./voice/voice.server");
       const voiceover = await readVoiceover(project.id);
       const audioUrl = voiceover?.audioUrl ?? null;
@@ -321,22 +323,27 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const videoRow = created as Row;
 
       try {
-        const { startVideoRender } = await import("./generator/video-engine.server");
-        const started = await startVideoRender({
+        // Stage one only: picture in, silent picture out. No voice is sent.
+        const { startSilentVideo } = await import("./generator/pipeline.server");
+        const started = await startSilentVideo({
           prompt,
           imageUrl,
-          audioUrl,
-          durationSeconds: duration,
-          sceneSounds,
+          durationSeconds: Math.min(duration, 15),
           seed,
         });
         await supabaseAdmin
           .from("pvg_videos")
           .update({
             status: "processing",
+            stage: "silent_video",
             prediction_id: started.predictionId,
             generator_key: started.engineKey,
             generator_model: started.model,
+            video_prediction_id: started.predictionId,
+            video_generator_key: started.engineKey,
+            video_generator_model: started.model,
+            video_resolution: started.resolution,
+            video_audio_enabled: started.audioEnabled,
           } as never)
           .eq("id", videoRow.id);
       } catch (err) {
@@ -409,4 +416,23 @@ export const retryPvgVideo = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("pvg_videos").delete().eq("project_id", p.id).eq("status", "failed");
     return { cleared: true as const };
+  });
+
+/**
+ * When only the lip movement failed, the silent film that already exists is
+ * kept and given to the lip-sync stage again. This never costs a credit.
+ */
+export const retryPvgLipsync = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; videoId: string }) => input)
+  .handler(async ({ data, context }): Promise<{ ok: boolean; error?: string }> => {
+    const { supabase, userId } = context;
+    const row = await loadRow(supabase, data.videoId);
+    if (!row || row.user_id !== userId || row.project_id !== data.projectId) {
+      throw new Error("video_not_found");
+    }
+    if (row.status !== "lipsync_failed") return { ok: false, error: "pvr_err_generic" };
+    const { beginLipsync } = await import("./video-render.server");
+    const status = await beginLipsync(row);
+    return status === "lipsync" ? { ok: true } : { ok: false, error: "pvr_err_generic" };
   });

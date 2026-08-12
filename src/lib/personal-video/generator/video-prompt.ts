@@ -1,9 +1,9 @@
-// The words Project Joy sends to the moving-picture engine together with the
-// approved starting scene and the greeting audio.
+// The words Project Joy sends to the silent-video stage together with the
+// approved starting scene.
 //
-// OmniHuman 1.5 accepts one picture, one speech recording and one written
-// instruction. It offers no separate control for individual speakers, so the
-// speaking behaviour of several people can only be asked for in words.
+// Stage one only brings the picture to life: no voice is sent to it and no
+// speech is asked for. The lip movement of the person who really speaks is
+// added afterwards by the lip-sync stage, which works on faces, not on words.
 
 export type PvgPromptSpeechMode = "single" | "parts" | "chorus";
 
@@ -33,25 +33,15 @@ function speakingRule(input: PvgVideoPromptInput): string {
   const speakers = list(input.speakerNames);
   const silent = list(input.silentNames);
   const quiet = silent
-    ? ` ${silent} do not speak and do not move their lips: they only smile, blink, breathe and react with small natural movements.`
+    ? ` ${silent} listen warmly: they smile, blink, breathe and react with small natural movements.`
     : "";
-  switch (input.speechMode) {
-    case "parts":
-      return speakers
-        ? `The greeting is spoken in turn: ${speakers}, in this order. Only the person whose voice is heard at that moment moves their lips; everyone else keeps their mouth closed and simply listens warmly.${quiet}`
-        : `Only the person whose voice is heard moves their lips; everyone else keeps their mouth closed.${quiet}`;
-    case "chorus":
-      return speakers
-        ? `${speakers} speak the greeting together, at the same time, with matching lip movement.${quiet}`
-        : `The chosen participants speak the greeting together.${quiet}`;
-    default:
-      return speakers
-        ? `Only ${speakers} speaks the whole greeting and moves their lips.${quiet}`
-        : `Only one person speaks the whole greeting and moves their lips.${quiet}`;
-  }
+  const attention = speakers
+    ? `${speakers} face the camera with a warm, lively expression.`
+    : "The people face the camera with warm, lively expressions.";
+  return `${attention}${quiet}`;
 }
 
-/** One plain instruction for the engine, built from the customer's own words. */
+/** One plain instruction for the silent stage, built from the customer's words. */
 export function buildVideoPrompt(input: PvgVideoPromptInput): string {
   const action = input.actionDescription.trim() || PVG_DEFAULT_ACTION_DESCRIPTION;
   const occasion = input.occasion.trim();
@@ -60,7 +50,8 @@ export function buildVideoPrompt(input: PvgVideoPromptInput): string {
     occasion ? `A warm, premium celebration film for ${occasion}.` : "",
     speakingRule(input),
     "The people are congratulating the viewer watching the video: they look toward the camera while speaking and never treat another person inside the picture as the person receiving the greeting.",
-    "Everyone keeps the exact appearance, clothing and setting of the picture. The lips follow the given speech recording precisely. Gentle natural motion, cinematic lighting, no text on screen, no invented speech, no singing.",
+    "Everyone keeps the exact face, identity, clothing, position and setting of the picture. Natural blinking, subtle head movement, gentle hand and body gestures, soft background and camera motion.",
+    "No talking, no lip movement, no speech, no singing, no music, no text on screen.",
   ]
     .filter(Boolean)
     .join(" ");

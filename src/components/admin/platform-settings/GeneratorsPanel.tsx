@@ -353,6 +353,22 @@ const T: Dict = {
     pl: "Sprawdzenie próbki głosu",
   },
   gc_fn_video: { en: "Video", ru: "Видео", de: "Video", uk: "Відео", fr: "Vidéo", pl: "Wideo" },
+  gc_fn_silent_video: {
+    en: "Video — stage 1 (silent motion)",
+    ru: "Видео — этап 1 (без звука)",
+    de: "Video — Stufe 1 (stumm)",
+    uk: "Відео — етап 1 (без звуку)",
+    fr: "Vidéo — étape 1 (silencieuse)",
+    pl: "Wideo — etap 1 (bez dźwięku)",
+  },
+  gc_fn_lipsync: {
+    en: "Video — stage 2 (lip-sync)",
+    ru: "Видео — этап 2 (синхрон губ)",
+    de: "Video — Stufe 2 (Lippensynchronisation)",
+    uk: "Відео — етап 2 (синхронізація губ)",
+    fr: "Vidéo — étape 2 (synchro labiale)",
+    pl: "Wideo — etap 2 (synchronizacja ust)",
+  },
   gc_fn_catalog_text: {
     en: "Catalog text translation",
     ru: "Перевод текстов каталога",
