@@ -717,7 +717,9 @@ export function VoicePanel({
                 disabled={disabled}
                 onClick={() => selectSpeaker(person)}
                 className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
-                  isSpeaker ? "border-primary bg-primary/10" : "border-border/60 hover:border-primary/40"
+                  isSpeaker
+                    ? "border-primary bg-primary/10"
+                    : "border-border/60 hover:border-primary/40"
                 }`}
               >
                 <ParticipantAvatar
