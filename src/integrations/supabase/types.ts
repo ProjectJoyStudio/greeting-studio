@@ -2889,6 +2889,7 @@ export type Database = {
       pvg_videos: {
         Row: {
           action_description: string | null
+          audio_seconds: number | null
           completed_at: string | null
           created_at: string
           credits_charged: number
@@ -2912,6 +2913,7 @@ export type Database = {
           seed: number | null
           silent_bucket: string | null
           silent_path: string | null
+          speaker_person_id: string | null
           stage: string
           status: string
           storage_bucket: string | null
@@ -2929,6 +2931,7 @@ export type Database = {
         }
         Insert: {
           action_description?: string | null
+          audio_seconds?: number | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -2952,6 +2955,7 @@ export type Database = {
           seed?: number | null
           silent_bucket?: string | null
           silent_path?: string | null
+          speaker_person_id?: string | null
           stage?: string
           status?: string
           storage_bucket?: string | null
@@ -2969,6 +2973,7 @@ export type Database = {
         }
         Update: {
           action_description?: string | null
+          audio_seconds?: number | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -2992,6 +2997,7 @@ export type Database = {
           seed?: number | null
           silent_bucket?: string | null
           silent_path?: string | null
+          speaker_person_id?: string | null
           stage?: string
           status?: string
           storage_bucket?: string | null

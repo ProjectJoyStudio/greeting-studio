@@ -132,7 +132,18 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     })
       .then(() => setSaveState("saved"))
       .catch(() => setSaveState("failed"));
-  }, [project, readOnly, duration, mode, greeting, keywords, music, sceneSounds, action, saveSetup]);
+  }, [
+    project,
+    readOnly,
+    duration,
+    mode,
+    greeting,
+    keywords,
+    music,
+    sceneSounds,
+    action,
+    saveSetup,
+  ]);
 
   useEffect(() => {
     if (!project || !loaded.current) return;
@@ -380,9 +391,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 language={lang}
                 videoSeconds={duration}
                 disabled={readOnly}
-                speechMode={project.speechMode}
-                syncMode={project.syncMode}
-                chorusVoiceIds={project.chorusVoiceIds}
                 speakerPersonId={project.speakerPersonId}
                 onAssigned={() => void query.refetch()}
               />
@@ -469,10 +477,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                   <Row label={t("pvs_cost_spent")} value={`${cost.alreadySpent} ${word}`} />
                   <Row label={t("pvs_cost_video")} value={`${cost.video} ${word}`} />
                   <Row label={t("pvs_cost_voice")} value={`+${cost.voice} ${word}`} />
-                  <Row
-                    label={t("pvr_cost_sounds")}
-                    value={`+${cost.sceneSounds} ${word}`}
-                  />
+                  <Row label={t("pvr_cost_sounds")} value={`+${cost.sceneSounds} ${word}`} />
                   <Row label={t("pvs_cost_music")} value={t("pvs_cost_included")} />
                   <div className="my-2 h-px bg-border/60" />
                   <Row label={t("pvs_cost_total")} value={`${cost.total} ${word}`} strong />

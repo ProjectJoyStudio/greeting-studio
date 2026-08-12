@@ -11,7 +11,6 @@ import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
 import {
   getPvgVideo,
-  retryPvgLipsync,
   retryPvgVideo,
   selectPvgVideoVariant,
   startPvgVideo,
@@ -26,19 +25,13 @@ import type { PvgVideoJob } from "@/lib/personal-video/video-render";
 /** Technical facts of one film. Only administrators and testers see this. */
 function TechnicalDetails({ job }: { job: PvgVideoJob }) {
   const rows: Array<[string, string]> = [
-    ["Stage 1 engine", `${job.tech.videoGenerator ?? "—"} (${job.tech.videoModel ?? "—"})`],
-    ["Stage 1 status", job.tech.stage === "silent_video" ? job.status : "done"],
-    ["Stage 1 duration", `${job.durationSeconds}s`],
-    ["Stage 1 resolution", job.tech.videoResolution ?? "—"],
-    ["Stage 1 audio_enabled", String(job.tech.videoAudioEnabled)],
-    ["Stage 1 prediction", job.tech.videoPredictionId ?? "—"],
-    ["Stage 1 cost", `$${job.tech.videoCostUsd.toFixed(4)}`],
-    ["Stage 2 engine", `${job.tech.lipsyncGenerator ?? "—"} (${job.tech.lipsyncModel ?? "—"})`],
-    ["Stage 2 status", job.tech.stage === "lipsync" ? job.status : job.status === "ready" ? "ready" : "—"],
-    ["Stage 2 active_speaker", job.tech.lipsyncActiveSpeaker === null ? "—" : String(job.tech.lipsyncActiveSpeaker)],
-    ["Stage 2 prediction", job.tech.lipsyncPredictionId ?? "—"],
-    ["Stage 2 cost", `$${job.tech.lipsyncCostUsd.toFixed(4)}`],
-    ["Total provider cost", `$${job.tech.totalCostUsd.toFixed(4)}`],
+    ["Engine", `${job.tech.generator ?? "—"} (${job.tech.model ?? "—"})`],
+    ["Status", job.status],
+    ["Prediction", job.tech.predictionId ?? "—"],
+    ["Audio duration", job.tech.audioSeconds ? `${job.tech.audioSeconds.toFixed(2)}s` : "—"],
+    ["Speaking participant", job.tech.speakerPersonId ?? "—"],
+    ["Provider cost", `$${job.tech.costUsd.toFixed(4)}`],
+    ["Error", job.errorMessage ?? "—"],
   ];
   return (
     <details className="mt-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
@@ -77,7 +70,6 @@ export function FinalVideoPanel({
   const load = useServerFn(getPvgVideo);
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
-  const retryLipsync = useServerFn(retryPvgLipsync);
   const choose = useServerFn(selectPvgVideoVariant);
   const { isTest } = useCreditBalance();
   const refreshCredits = useRefreshCreditBalance();
@@ -201,18 +193,6 @@ export function FinalVideoPanel({
     await create(readyVariants.length > 0);
   }
 
-  /** Only the lip movement is tried again; the silent film is kept, free. */
-  async function tryLipsyncAgain() {
-    if (!video) return;
-    try {
-      const res = await retryLipsync({ data: { projectId, videoId: video.id } });
-      if (!res.ok) toast.error(t(res.error ?? "pvr_err_generic"));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("pvr_err_generic"));
-    }
-    await query.refetch();
-  }
-
   return (
     <div className="mt-6 rounded-3xl border border-border/60 bg-card/70 p-5 shadow-warm">
       <p className="mb-4 flex items-center gap-2 font-display text-base font-semibold">
@@ -324,29 +304,13 @@ export function FinalVideoPanel({
                   video!.status === "pending"
                     ? "20%"
                     : video!.status === "processing"
-                      ? "55%"
-                      : video!.status === "lipsync"
-                        ? "80%"
-                        : "92%",
+                      ? "60%"
+                      : "92%",
               }}
             />
           </div>
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t("pvr_leave_note")}</p>
           {isTest && <TechnicalDetails job={video!} />}
-        </div>
-      ) : video?.status === "lipsync_failed" ? (
-        <div className="space-y-3">
-          <p className="text-sm text-destructive">{t("pvr_status_lipsync_failed")}</p>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => void tryLipsyncAgain()}
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
-          >
-            <RotateCcw className="h-4 w-4" />
-            {t("pvr_retry_lipsync")}
-          </button>
-          {isTest && <TechnicalDetails job={video} />}
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">

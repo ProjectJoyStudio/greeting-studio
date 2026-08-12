@@ -1,130 +1,89 @@
 // ---------------------------------------------------------------------------
-// The two-stage moving-picture pipeline of the Personal Video Greeting.
+// The final film of the Personal Video Greeting.
 //
-//   Group A — silent video   : the approved starting scene comes alive.
-//   Group B — lip-sync       : the prepared greeting voice is spoken by the
-//                              right participant, and by nobody else.
+// One single stage: the approved starting scene and the greeting voice that
+// ElevenLabs already produced are given to one engine, which returns the
+// finished speaking film. The voice inside that film is the ElevenLabs voice
+// itself — Project Joy never speaks the greeting a second time on top of it.
 //
-// Both groups are registries, not single engines: another engine of the same
-// purpose can be added to a group later without touching the pipeline. Which
-// engine of a group serves one job is decided by the Admin Panel's Generator
+// FINAL_VIDEO_ENGINES is a registry, not a single engine: another engine of
+// the same purpose can be added later without touching the pipeline or page
+// two. Which engine serves one job is decided by the Admin Panel's Generator
 // Control Centre (primary, backup, load distribution, parallel limits).
-//
-// The greeting voice is NEVER sent to the silent-video stage, and the film is
-// never given the greeting a second time afterwards.
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://api.replicate.com/v1";
 
-export type PvgStage = "silent_video" | "lipsync";
+/** The admin function id of the final-video group. */
+export const FINAL_VIDEO_FUNCTION_ID = "personal_video.final_video";
 
-/** The admin function id of each group inside the Generator Control Centre. */
-export const STAGE_FUNCTION_ID: Record<PvgStage, string> = {
-  silent_video: "personal_video.silent_video",
-  lipsync: "personal_video.lipsync",
-};
-
-export interface SilentVideoInput {
-  prompt: string;
+export interface FinalVideoInput {
+  /** The approved starting scene, exactly as page one produced it. */
   imageUrl: string;
-  durationSeconds: number;
+  /** The finished ElevenLabs greeting, already in the customer's language. */
+  audioUrl: string;
+  /** English scene control, describing who speaks and who only reacts. */
+  prompt: string;
   seed?: number | undefined;
 }
 
-export interface LipsyncInput {
-  videoUrl: string;
-  audioUrl: string;
-  /** True when the scene holds more than one face. */
-  multipleFaces: boolean;
-}
-
-export interface StageEngine<I> {
+export interface FinalVideoEngine {
   /** Key as it appears in the Generator Control Centre. */
   key: string;
   model: string;
-  /** Resolution the engine is asked for, shown in Admin/Test mode. */
-  resolution: string;
+  /** Longest greeting voice this engine accepts, in seconds. */
+  maxAudioSeconds: number;
   /** Provider price of one second of finished film, in US dollars. */
   usdPerSecond: number;
-  buildInput: (input: I) => Record<string, unknown>;
+  buildInput: (input: FinalVideoInput) => Record<string, unknown>;
 }
 
-// --- Group A — silent video ------------------------------------------------
-
-function wanResolution(): string {
-  return process.env["PVG_WAN_RESOLUTION"] || "720p";
-}
-
-/** The order's own duration, kept exactly as chosen, within the engine's range. */
-function exactDuration(seconds: number): number {
-  return Math.min(15, Math.max(5, Math.round(seconds)));
-}
-
-export const SILENT_VIDEO_ENGINES: Record<string, StageEngine<SilentVideoInput>> = {
-  vidu_q3_turbo: {
-    key: "vidu_q3_turbo",
-    model: "vidu/q3-turbo",
-    resolution: wanResolution(),
-    usdPerSecond: Number(process.env["PVG_WAN_USD_PER_SECOND"] || 0.04),
-    buildInput: ({ prompt, imageUrl, durationSeconds }) => ({
-      start_image: imageUrl,
-      prompt,
-      duration: exactDuration(durationSeconds),
-      resolution: wanResolution(),
-      // The silent stage must never speak: no voice is sent, and none is made.
-      audio: false,
-    }),
-  },
-};
-
-// --- Group B — lip-sync ----------------------------------------------------
-
-export const LIPSYNC_ENGINES: Record<string, StageEngine<LipsyncInput>> = {
-  sync_lipsync_2: {
-    key: "sync_lipsync_2",
-    model: "sync/lipsync-2",
-    resolution: "source",
-    usdPerSecond: Number(process.env["PVG_SYNC_USD_PER_SECOND"] || 0.05),
-    buildInput: ({ videoUrl, audioUrl, multipleFaces }) => ({
-      video: videoUrl,
+export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
+  omni_human_15: {
+    key: "omni_human_15",
+    model: "bytedance/omni-human-1.5",
+    // The engine refuses any greeting voice of 35 seconds or longer.
+    maxAudioSeconds: Number(process.env["PVG_OMNIHUMAN_MAX_AUDIO_SECONDS"] || 34),
+    usdPerSecond: Number(process.env["PVG_OMNIHUMAN_USD_PER_SECOND"] || 0.14),
+    buildInput: ({ imageUrl, audioUrl, prompt, seed }) => ({
+      image: imageUrl,
+      // The completed greeting voice. No voice is ever generated here.
       audio: audioUrl,
-      sync_mode: "loop",
-      // Only the person who is actually speaking receives the lip movement.
-      active_speaker: multipleFaces,
+      prompt,
+      ...(typeof seed === "number" ? { seed } : {}),
     }),
   },
 };
 
-export function stageEngines(stage: PvgStage): Record<string, StageEngine<never>> {
-  return (stage === "silent_video" ? SILENT_VIDEO_ENGINES : LIPSYNC_ENGINES) as unknown as Record<
-    string,
-    StageEngine<never>
-  >;
+/** The longest greeting voice the active engines can speak. */
+export function maxGreetingAudioSeconds(): number {
+  const values = Object.values(FINAL_VIDEO_ENGINES).map((e) => e.maxAudioSeconds);
+  return values.length ? Math.max(...values) : 0;
 }
 
 /**
- * The engines of one group, in the order this job should try them: the
- * administrator's primary first, then any allowed alternative. Adding another
- * engine to a group is enough for it to take part in routing.
+ * The engines of the group, in the order this job should try them: the
+ * administrator's primary first, then any allowed alternative.
  */
-export async function stageOrder(stage: PvgStage): Promise<string[]> {
-  const keys = Object.keys(stageEngines(stage));
+export async function finalVideoOrder(): Promise<string[]> {
+  const keys = Object.keys(FINAL_VIDEO_ENGINES);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    const order = await generatorOrder(STAGE_FUNCTION_ID[stage], keys);
+    const order = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, keys);
     return order.length ? order : keys;
   } catch {
     return keys;
   }
 }
 
-// --- Replicate plumbing shared by both groups ------------------------------
+// --- Replicate plumbing ----------------------------------------------------
 
 export type PvgStageErrorCode =
   | "missing_token"
   | "invalid_token"
   | "insufficient_credit"
   | "rate_limited"
+  | "audio_too_long"
   | "api_error";
 
 export class PvgStageError extends Error {
@@ -149,19 +108,15 @@ function codeForStatus(status: number): PvgStageErrorCode {
   return "api_error";
 }
 
-export interface StageStartResult {
+export interface FinalVideoStartResult {
   predictionId: string;
   engineKey: string;
   model: string;
-  resolution: string;
-  audioEnabled: boolean;
-  activeSpeaker: boolean | null;
+  /** Length of the greeting voice the engine received, in seconds. */
+  audioSeconds: number;
 }
 
-async function createPrediction(
-  model: string,
-  input: Record<string, unknown>,
-): Promise<string> {
+async function createPrediction(model: string, input: Record<string, unknown>): Promise<string> {
   const res = await fetch(`${API_BASE}/models/${model}/predictions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
@@ -179,12 +134,25 @@ async function createPrediction(
   return prediction.id;
 }
 
-/** Stage one: the approved picture comes alive, in complete silence. */
-export async function startSilentVideo(input: SilentVideoInput): Promise<StageStartResult> {
+/**
+ * The finished film: picture and completed greeting voice in, speaking film
+ * out. The greeting is never shortened — a voice the engine cannot accept is
+ * refused openly instead.
+ */
+export async function startFinalVideo(
+  input: FinalVideoInput & { audioSeconds: number },
+): Promise<FinalVideoStartResult> {
   let lastError: unknown = null;
-  for (const key of await stageOrder("silent_video")) {
-    const engine = SILENT_VIDEO_ENGINES[key];
+  for (const key of await finalVideoOrder()) {
+    const engine = FINAL_VIDEO_ENGINES[key];
     if (!engine) continue;
+    if (input.audioSeconds > engine.maxAudioSeconds) {
+      lastError = new PvgStageError(
+        "audio_too_long",
+        `The greeting voice lasts ${input.audioSeconds.toFixed(1)}s; ${engine.model} accepts at most ${engine.maxAudioSeconds}s.`,
+      );
+      continue;
+    }
     try {
       const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
       const predictionId = await withGeneratorSlot(engine.key, () =>
@@ -194,9 +162,7 @@ export async function startSilentVideo(input: SilentVideoInput): Promise<StageSt
         predictionId,
         engineKey: engine.key,
         model: engine.model,
-        resolution: engine.resolution,
-        audioEnabled: false,
-        activeSpeaker: null,
+        audioSeconds: input.audioSeconds,
       };
     } catch (err) {
       lastError = err;
@@ -204,36 +170,7 @@ export async function startSilentVideo(input: SilentVideoInput): Promise<StageSt
   }
   throw lastError instanceof Error
     ? lastError
-    : new PvgStageError("api_error", "No silent-video engine is available.");
-}
-
-/** Stage two: the prepared greeting voice is given to the right mouth. */
-export async function startLipsync(input: LipsyncInput): Promise<StageStartResult> {
-  let lastError: unknown = null;
-  for (const key of await stageOrder("lipsync")) {
-    const engine = LIPSYNC_ENGINES[key];
-    if (!engine) continue;
-    try {
-      const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
-      const built = engine.buildInput(input);
-      const predictionId = await withGeneratorSlot(engine.key, () =>
-        createPrediction(engine.model, built),
-      );
-      return {
-        predictionId,
-        engineKey: engine.key,
-        model: engine.model,
-        resolution: engine.resolution,
-        audioEnabled: true,
-        activeSpeaker: Boolean(built["active_speaker"]),
-      };
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw lastError instanceof Error
-    ? lastError
-    : new PvgStageError("api_error", "No lip-sync engine is available.");
+    : new PvgStageError("api_error", "No final-video engine is available.");
 }
 
 export type StageProgress =
@@ -257,7 +194,7 @@ function extractUrl(output: unknown): string | null {
   return null;
 }
 
-/** Asks one running stage how it is doing. Never throws. */
+/** Asks one running film how it is doing. Never throws. */
 export async function pollStage(predictionId: string): Promise<StageProgress> {
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}`, {
@@ -305,7 +242,7 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
   }
 }
 
-/** Stops one running stage, for example when its order is removed. */
+/** Stops one running film, for example when its order is removed. */
 export async function cancelStage(predictionId: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}/cancel`, {
@@ -318,9 +255,9 @@ export async function cancelStage(predictionId: string): Promise<boolean> {
   }
 }
 
-/** What one stage really cost the provider, in US dollars. */
-export function stageCostUsd(stage: PvgStage, engineKey: string, seconds: number): number {
-  const engine = stageEngines(stage)[engineKey];
+/** What one finished film really cost the provider, in US dollars. */
+export function finalVideoCostUsd(engineKey: string, seconds: number): number {
+  const engine = FINAL_VIDEO_ENGINES[engineKey];
   if (!engine || seconds <= 0) return 0;
   return Math.round(engine.usdPerSecond * seconds * 10_000) / 10_000;
 }

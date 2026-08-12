@@ -37,6 +37,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Another film is being made.",
     pvr_err_no_scene: "Choose and approve a starting scene first.",
     pvr_err_no_voice: "Your greeting voice is not ready yet. Create the greeting voice first.",
+    pvr_err_audio_too_long: "The greeting voice is too long for the film. Please shorten the greeting a little and create the voice again.",
     pvr_err_generic: "The film could not be started. Please try again.",
   },
   ru: {
@@ -75,6 +76,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Создаётся ещё одно видео.",
     pvr_err_no_scene: "Сначала выберите и подтвердите начальную сцену.",
     pvr_err_no_voice: "Голос поздравления ещё не готов. Сначала создайте голос поздравления.",
+    pvr_err_audio_too_long: "Голос поздравления слишком длинный для видео. Немного сократите текст и создайте голос заново.",
     pvr_err_generic: "Не удалось начать создание видео. Попробуйте ещё раз.",
   },
   de: {
@@ -114,6 +116,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Ein weiterer Film wird erstellt.",
     pvr_err_no_scene: "Wählen und bestätigen Sie zuerst eine Startszene.",
     pvr_err_no_voice: "Ihre Grußstimme ist noch nicht fertig. Erstellen Sie zuerst die Stimme.",
+    pvr_err_audio_too_long: "Die Grußstimme ist für den Film zu lang. Kürzen Sie den Text etwas und erstellen Sie die Stimme erneut.",
     pvr_err_generic: "Der Film konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
   },
   uk: {
@@ -152,6 +155,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Створюється ще одне відео.",
     pvr_err_no_scene: "Спершу оберіть і підтвердьте початкову сцену.",
     pvr_err_no_voice: "Голос привітання ще не готовий. Спершу створіть голос привітання.",
+    pvr_err_audio_too_long: "Голос привітання задовгий для відео. Трохи скоротіть текст і створіть голос знову.",
     pvr_err_generic: "Не вдалося розпочати створення відео. Спробуйте ще раз.",
   },
   fr: {
@@ -191,6 +195,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Un autre film est en cours de création.",
     pvr_err_no_scene: "Choisissez et validez d'abord une scène de départ.",
     pvr_err_no_voice: "Votre voix de vœux n'est pas encore prête. Créez-la d'abord.",
+    pvr_err_audio_too_long: "La voix des vœux est trop longue pour le film. Raccourcissez un peu le texte et recréez la voix.",
     pvr_err_generic: "Le film n'a pas pu démarrer. Veuillez réessayer.",
   },
   pl: {
@@ -229,6 +234,7 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Powstaje kolejny film.",
     pvr_err_no_scene: "Najpierw wybierz i zatwierdź scenę początkową.",
     pvr_err_no_voice: "Głos życzeń nie jest jeszcze gotowy. Najpierw utwórz głos życzeń.",
+    pvr_err_audio_too_long: "Głos życzeń jest za długi na film. Skróć nieco tekst i utwórz głos ponownie.",
     pvr_err_generic: "Nie udało się rozpocząć tworzenia filmu. Spróbuj ponownie.",
   },
 };
