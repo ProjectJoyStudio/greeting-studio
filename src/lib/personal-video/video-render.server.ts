@@ -127,33 +127,15 @@ export async function markSelectedVariant(projectId: string, videoId: string): P
 export async function refundVideo(row: VideoRow, reason: string): Promise<void> {
   if (row.credits_charged <= 0) return;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: wallet } = await supabaseAdmin
-    .from("credit_wallets")
-    .select("id, balance, lifetime_spent")
-    .eq("user_id", row.user_id)
-    .maybeSingle();
-  const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-  if (!w) return;
-  await supabaseAdmin
-    .from("credit_wallets")
-    .update({
-      balance: w.balance + row.credits_charged,
-      lifetime_spent: Math.max(0, w.lifetime_spent - row.credits_charged),
-    })
-    .eq("id", w.id);
-  await supabaseAdmin.from("credit_transactions").insert({
-    wallet_id: w.id,
-    user_id: row.user_id,
-    txn_type: "refund",
-    amount: row.credits_charged,
-    balance_after: w.balance + row.credits_charged,
-    description: "Personal video greeting — refund for a film that could not be made",
-    metadata: { project_id: row.project_id, video_id: row.id, reason },
+  const rpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
+    name: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: { message: string } | null }>;
+  const { error } = await rpc("refund_pvg_video_credits", {
+    _video_id: row.id,
+    _reason: reason,
   });
-  await supabaseAdmin
-    .from("pvg_videos")
-    .update({ credits_charged: 0 } as never)
-    .eq("id", row.id);
+  if (error) throw new Error(error.message);
 }
 
 /**
