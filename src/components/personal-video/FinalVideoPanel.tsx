@@ -11,6 +11,7 @@ import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
 import {
   getPvgVideo,
+  retryPvgLipsync,
   retryPvgVideo,
   selectPvgVideoVariant,
   startPvgVideo,
@@ -20,6 +21,41 @@ import {
   isPvgVideoRunning,
   pvgVideoStatusKey,
 } from "@/lib/personal-video/video-render";
+import type { PvgVideoJob } from "@/lib/personal-video/video-render";
+
+/** Technical facts of one film. Only administrators and testers see this. */
+function TechnicalDetails({ job }: { job: PvgVideoJob }) {
+  const rows: Array<[string, string]> = [
+    ["Stage 1 engine", `${job.tech.videoGenerator ?? "—"} (${job.tech.videoModel ?? "—"})`],
+    ["Stage 1 status", job.tech.stage === "silent_video" ? job.status : "done"],
+    ["Stage 1 duration", `${job.durationSeconds}s`],
+    ["Stage 1 resolution", job.tech.videoResolution ?? "—"],
+    ["Stage 1 audio_enabled", String(job.tech.videoAudioEnabled)],
+    ["Stage 1 prediction", job.tech.videoPredictionId ?? "—"],
+    ["Stage 1 cost", `$${job.tech.videoCostUsd.toFixed(4)}`],
+    ["Stage 2 engine", `${job.tech.lipsyncGenerator ?? "—"} (${job.tech.lipsyncModel ?? "—"})`],
+    ["Stage 2 status", job.tech.stage === "lipsync" ? job.status : job.status === "ready" ? "ready" : "—"],
+    ["Stage 2 active_speaker", job.tech.lipsyncActiveSpeaker === null ? "—" : String(job.tech.lipsyncActiveSpeaker)],
+    ["Stage 2 prediction", job.tech.lipsyncPredictionId ?? "—"],
+    ["Stage 2 cost", `$${job.tech.lipsyncCostUsd.toFixed(4)}`],
+    ["Total provider cost", `$${job.tech.totalCostUsd.toFixed(4)}`],
+  ];
+  return (
+    <details className="mt-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
+      <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        Admin / Test mode — technical details
+      </summary>
+      <dl className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <dt>{label}</dt>
+            <dd className="truncate font-mono text-foreground/80">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
@@ -41,6 +77,7 @@ export function FinalVideoPanel({
   const load = useServerFn(getPvgVideo);
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
+  const retryLipsync = useServerFn(retryPvgLipsync);
   const choose = useServerFn(selectPvgVideoVariant);
   const { isTest } = useCreditBalance();
   const refreshCredits = useRefreshCreditBalance();
@@ -164,6 +201,18 @@ export function FinalVideoPanel({
     await create(readyVariants.length > 0);
   }
 
+  /** Only the lip movement is tried again; the silent film is kept, free. */
+  async function tryLipsyncAgain() {
+    if (!video) return;
+    try {
+      const res = await retryLipsync({ data: { projectId, videoId: video.id } });
+      if (!res.ok) toast.error(t(res.error ?? "pvr_err_generic"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("pvr_err_generic"));
+    }
+    await query.refetch();
+  }
+
   return (
     <div className="mt-6 rounded-3xl border border-border/60 bg-card/70 p-5 shadow-warm">
       <p className="mb-4 flex items-center gap-2 font-display text-base font-semibold">
@@ -259,6 +308,7 @@ export function FinalVideoPanel({
           )}
 
           {trackUrl && <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />}
+          {isTest && <TechnicalDetails job={selected} />}
         </div>
       ) : running ? (
         <div className="space-y-3">
@@ -274,12 +324,29 @@ export function FinalVideoPanel({
                   video!.status === "pending"
                     ? "20%"
                     : video!.status === "processing"
-                      ? "65%"
-                      : "90%",
+                      ? "55%"
+                      : video!.status === "lipsync"
+                        ? "80%"
+                        : "92%",
               }}
             />
           </div>
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t("pvr_leave_note")}</p>
+          {isTest && <TechnicalDetails job={video!} />}
+        </div>
+      ) : video?.status === "lipsync_failed" ? (
+        <div className="space-y-3">
+          <p className="text-sm text-destructive">{t("pvr_status_lipsync_failed")}</p>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => void tryLipsyncAgain()}
+            className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {t("pvr_retry_lipsync")}
+          </button>
+          {isTest && <TechnicalDetails job={video} />}
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
@@ -293,6 +360,7 @@ export function FinalVideoPanel({
             <RotateCcw className="h-4 w-4" />
             {t("pvr_retry")}
           </button>
+          {isTest && <TechnicalDetails job={video} />}
         </div>
       ) : (
         <div className="space-y-3">
