@@ -55,6 +55,19 @@ function wanResolution(): string {
   return process.env["PVG_WAN_RESOLUTION"] || "720p";
 }
 
+/**
+ * Wan accepts only a fixed set of segment lengths. The order's own duration
+ * logic and pricing stay untouched; only the value handed to the engine is
+ * snapped to the nearest length the engine actually allows.
+ */
+const WAN_ALLOWED_DURATIONS = [5, 10, 15] as const;
+
+function wanDuration(seconds: number): number {
+  return WAN_ALLOWED_DURATIONS.reduce((best, value) =>
+    Math.abs(value - seconds) < Math.abs(best - seconds) ? value : best,
+  );
+}
+
 export const SILENT_VIDEO_ENGINES: Record<string, StageEngine<SilentVideoInput>> = {
   wan26_i2v_flash: {
     key: "wan26_i2v_flash",
@@ -64,7 +77,7 @@ export const SILENT_VIDEO_ENGINES: Record<string, StageEngine<SilentVideoInput>>
     buildInput: ({ prompt, imageUrl, durationSeconds, seed }) => ({
       image: imageUrl,
       prompt,
-      duration: durationSeconds,
+      duration: wanDuration(durationSeconds),
       resolution: wanResolution(),
       // The silent stage must never speak: no voice is sent, and none is made.
       audio_enabled: false,
