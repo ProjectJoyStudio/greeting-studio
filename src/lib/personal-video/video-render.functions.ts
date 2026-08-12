@@ -25,7 +25,6 @@ interface PersonLite {
   id: string;
   name: string | null;
   position: number;
-  part_text: string | null;
   voice_id: string | null;
 }
 
@@ -207,13 +206,27 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         ? PVR_REGENERATION_CREDITS
         : videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
 
-      // The greeting voice already prepared on page two is needed for stage
-      // two. It is never sent to the silent stage, and never added twice.
+      // The finished greeting voice from page two is what the film is built
+      // on. It is sent once, and never laid over the result again.
       const { readVoiceover } = await import("./voice/voice.server");
       const voiceover = await readVoiceover(project.id);
       const audioUrl = voiceover?.audioUrl ?? null;
       if (!audioUrl) {
         return { ok: false, error: "pvr_err_no_voice", video: null, balance: await balanceOf() };
+      }
+      // The film lasts exactly as long as the greeting voice. A voice that is
+      // longer than the engine accepts is refused openly, before any credit
+      // is taken — the greeting is never cut short in the middle.
+      const audioSeconds = Number(voiceover?.durationSeconds ?? 0);
+      const { maxGreetingAudioSeconds } = await import("./generator/pipeline.server");
+      const maxAudio = maxGreetingAudioSeconds();
+      if (audioSeconds > maxAudio) {
+        return {
+          ok: false,
+          error: "pvr_err_audio_too_long",
+          video: null,
+          balance: await balanceOf(),
+        };
       }
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -261,39 +274,27 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         } as never)
         .eq("id", project.id);
 
-      // Who speaks, and who only smiles, comes from this order's own people.
+      // Exactly one participant speaks: the one chosen on page two, or the
+      // only participant of the scene. Everyone else stays and only reacts.
       const { data: peopleRows } = await supabase
         .from("pvg_people")
-        .select("id, name, position, part_text, voice_id")
+        .select("id, name, position, voice_id")
         .eq("project_id", project.id)
         .order("position", { ascending: true });
       const people = (peopleRows ?? []) as PersonLite[];
-      const speechMode =
-        project.speech_mode === "parts" || project.speech_mode === "chorus"
-          ? project.speech_mode
-          : "single";
-      const named = (p: PersonLite, i: number) => (p.name?.trim() ? p.name.trim() : `Person ${i + 1}`);
-      let speakers: PersonLite[];
-      if (speechMode === "single") {
-        const one =
-          people.find((p) => p.id === project.single_speaker_person_id) ?? people[0] ?? null;
-        speakers = one ? [one] : [];
-      } else if (speechMode === "parts") {
-        speakers = people.filter((p) => (p.part_text ?? "").trim().length > 0);
-        if (speakers.length === 0) speakers = people;
-      } else {
-        speakers = people.filter((p) => Boolean(p.voice_id));
-        if (speakers.length === 0) speakers = people;
-      }
-      const speakerIds = new Set(speakers.map((p) => p.id));
+      const named = (p: PersonLite, i: number) =>
+        p.name?.trim() ? p.name.trim() : `Person ${i + 1}`;
+      const speaker =
+        people.find((p) => p.id === project.single_speaker_person_id) ?? people[0] ?? null;
 
       const { buildVideoPrompt } = await import("./generator/video-prompt");
       const prompt = buildVideoPrompt({
         actionDescription: project.action_description ?? "",
         occasion: project.occasion ?? "",
-        speechMode,
-        speakerNames: speakers.map((p) => named(p, people.indexOf(p))),
-        silentNames: people.filter((p) => !speakerIds.has(p.id)).map((p, i) => named(p, i)),
+        speakerName: speaker ? named(speaker, people.indexOf(speaker)) : "",
+        silentNames: people
+          .filter((p) => p.id !== speaker?.id)
+          .map((p) => named(p, people.indexOf(p))),
       });
 
       const variantIndex =
@@ -316,6 +317,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           variant_index: variantIndex,
           action_description: project.action_description ?? "",
           seed,
+          audio_seconds: audioSeconds,
+          speaker_person_id: speaker?.id ?? null,
         } as never)
         .select(VIDEO_COLUMNS)
         .single();
@@ -323,27 +326,25 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const videoRow = created as Row;
 
       try {
-        // Stage one only: picture in, silent picture out. No voice is sent.
-        const { startSilentVideo } = await import("./generator/pipeline.server");
-        const started = await startSilentVideo({
+        // Picture + finished greeting voice in, speaking film out.
+        const { startFinalVideo } = await import("./generator/pipeline.server");
+        const started = await startFinalVideo({
           prompt,
           imageUrl,
-          durationSeconds: Math.min(duration, 15),
+          audioUrl,
+          audioSeconds,
           seed,
         });
         await supabaseAdmin
           .from("pvg_videos")
           .update({
             status: "processing",
-            stage: "silent_video",
             prediction_id: started.predictionId,
             generator_key: started.engineKey,
             generator_model: started.model,
             video_prediction_id: started.predictionId,
             video_generator_key: started.engineKey,
             video_generator_model: started.model,
-            video_resolution: started.resolution,
-            video_audio_enabled: started.audioEnabled,
           } as never)
           .eq("id", videoRow.id);
       } catch (err) {
