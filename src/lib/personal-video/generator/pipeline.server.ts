@@ -55,32 +55,24 @@ function wanResolution(): string {
   return process.env["PVG_WAN_RESOLUTION"] || "720p";
 }
 
-/**
- * Wan accepts only a fixed set of segment lengths. The order's own duration
- * logic and pricing stay untouched; only the value handed to the engine is
- * snapped to the nearest length the engine actually allows.
- */
-const WAN_ALLOWED_DURATIONS = [5, 10, 15] as const;
-
-function wanDuration(seconds: number): number {
-  return WAN_ALLOWED_DURATIONS.reduce((best, value) =>
-    Math.abs(value - seconds) < Math.abs(best - seconds) ? value : best,
-  );
+/** The order's own duration, kept exactly as chosen, within the engine's range. */
+function exactDuration(seconds: number): number {
+  return Math.min(15, Math.max(5, Math.round(seconds)));
 }
 
 export const SILENT_VIDEO_ENGINES: Record<string, StageEngine<SilentVideoInput>> = {
-  wan26_i2v_flash: {
-    key: "wan26_i2v_flash",
-    model: "wan-video/wan2.6-i2v-flash",
+  vidu_q3_turbo: {
+    key: "vidu_q3_turbo",
+    model: "vidu/q3-turbo",
     resolution: wanResolution(),
     usdPerSecond: Number(process.env["PVG_WAN_USD_PER_SECOND"] || 0.04),
     buildInput: ({ prompt, imageUrl, durationSeconds, seed }) => ({
-      image: imageUrl,
+      start_image: imageUrl,
       prompt,
-      duration: wanDuration(durationSeconds),
+      duration: exactDuration(durationSeconds),
       resolution: wanResolution(),
       // The silent stage must never speak: no voice is sent, and none is made.
-      audio_enabled: false,
+      audio: false,
       ...(typeof seed === "number" ? { seed } : {}),
     }),
   },
