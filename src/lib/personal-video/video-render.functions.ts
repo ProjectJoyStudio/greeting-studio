@@ -418,22 +418,3 @@ export const retryPvgVideo = createServerFn({ method: "POST" })
     await supabaseAdmin.from("pvg_videos").delete().eq("project_id", p.id).eq("status", "failed");
     return { cleared: true as const };
   });
-
-/**
- * When only the lip movement failed, the silent film that already exists is
- * kept and given to the lip-sync stage again. This never costs a credit.
- */
-export const retryPvgLipsync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; videoId: string }) => input)
-  .handler(async ({ data, context }): Promise<{ ok: boolean; error?: string }> => {
-    const { supabase, userId } = context;
-    const row = await loadRow(supabase, data.videoId);
-    if (!row || row.user_id !== userId || row.project_id !== data.projectId) {
-      throw new Error("video_not_found");
-    }
-    if (row.status !== "lipsync_failed") return { ok: false, error: "pvr_err_generic" };
-    const { beginLipsync } = await import("./video-render.server");
-    const status = await beginLipsync(row);
-    return status === "lipsync" ? { ok: true } : { ok: false, error: "pvr_err_generic" };
-  });
