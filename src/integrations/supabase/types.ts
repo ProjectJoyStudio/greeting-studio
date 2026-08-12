@@ -4051,6 +4051,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      refund_pvg_video_credits: {
+        Args: { _reason: string; _video_id: string }
+        Returns: number
+      }
       release_first_free_greeting: {
         Args: { _order_id: string }
         Returns: boolean
