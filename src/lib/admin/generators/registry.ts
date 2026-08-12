@@ -166,8 +166,8 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "personal_video.silent_video",
         titleKey: "gc_fn_silent_video",
-        candidates: [REPLICATE("wan26_i2v_flash", "wan-video/wan2.6-i2v-flash")],
-        defaultPrimary: "wan26_i2v_flash",
+        candidates: [REPLICATE("vidu_q3_turbo", "vidu/q3-turbo")],
+        defaultPrimary: "vidu_q3_turbo",
         defaultBackup: null,
         defaultAutoFailover: false,
       },
