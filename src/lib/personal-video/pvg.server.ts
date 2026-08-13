@@ -1,14 +1,21 @@
 // Server-only helpers of the Personal Video Greeting section: signed links,
 // row mapping and the background completion of running starting scenes.
 
-import type { PvgFaceQuality, PvgPerson, PvgProject, PvgScene, PvgSceneStatus } from "./types";
+import type {
+  PvgFaceQuality,
+  PvgPerson,
+  PvgPersonRole,
+  PvgProject,
+  PvgScene,
+  PvgSceneStatus,
+} from "./types";
 import { normalizeMusicSettings } from "@/lib/music/types";
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
   "id, recipient_name, occasion, scene_description, action_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id, music_settings, scene_sounds";
 export const PERSON_COLUMNS =
-  "id, project_id, name, position, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
+  "id, project_id, name, position, role, appearance_description, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
   "id, project_id, variation_index, status, storage_bucket, storage_path, error_code, error_message, prediction_id, created_at";
 
@@ -49,6 +56,8 @@ export interface PersonRow {
   project_id: string;
   name: string | null;
   position: number;
+  role?: string | null;
+  appearance_description?: string | null;
   optimized_bucket: string | null;
   optimized_path: string | null;
   original_bucket: string | null;
@@ -99,6 +108,8 @@ export async function toPerson(row: PersonRow): Promise<PvgPerson> {
     id: row.id,
     name: row.name ?? "",
     position: row.position,
+    role: (row.role === "narrator" ? "narrator" : "speaker") as PvgPersonRole,
+    appearanceDescription: row.appearance_description ?? "",
     photoUrl: await signedUrl(row.optimized_bucket, row.optimized_path),
     faceQuality: quality,
     source: row.source === "group" ? "group" : "individual",
