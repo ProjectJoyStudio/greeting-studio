@@ -18,7 +18,6 @@ import {
   getOwnCard,
   logCardEvent,
   markCardDelivered,
-  rejectCard,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
 import { buyCardAttemptPack, getCardAttempts } from "@/lib/greeting-card/attempts.functions";
@@ -85,7 +84,6 @@ function CreateCardPage() {
 
   const runGenerate = useServerFn(generateCardImage);
   const runCompose = useServerFn(composeGreetingFromKeywords);
-  const runReject = useServerFn(rejectCard);
   const runSave = useServerFn(saveCardProject);
   const runLoad = useServerFn(getOwnCard);
   const trackEvent = useServerFn(logCardEvent);
@@ -407,15 +405,43 @@ function CreateCardPage() {
               </div>
 
               {stage === "edit" && (
-                <button
-                  type="button"
-                  onClick={handleGenerate}
-                  disabled={generating}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                >
-                  {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {generating ? t("gc_generating") : t("gc_generate_btn")}
-                </button>
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("gc_attempt_of")
+                        .replace("{n}", String(Math.min(attempts.used + 1, attempts.allowed)))
+                        .replace("{total}", String(attempts.allowed))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {attempts.remaining > 0
+                        ? t("gc_attempts_left").replace("{n}", String(attempts.remaining))
+                        : t("gc_attempts_none")}
+                    </p>
+                  </div>
+                  {attempts.remaining > 0 ? (
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={generating}
+                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {generating ? t("gc_generating") : t("gc_generate_btn")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleBuyPack}
+                      disabled={buying}
+                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {buying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {t("gc_attempts_buy")
+                        .replace("{n}", String(ATTEMPTS_PER_PACK))
+                        .replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : null}
@@ -554,14 +580,17 @@ function CreateCardPage() {
             )}
 
             {(stage === "design" || stage === "done") && card && (
-              <button
-                type="button"
-                onClick={() => downloadFinalCard(card.imageUrl, greeting, design)}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm hover:bg-secondary"
-              >
-                <Download className="h-4 w-4" />
-                {t("gc_download")}
-              </button>
+              <div className="mt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadAndFinish}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm hover:bg-secondary"
+                >
+                  <Download className="h-4 w-4" />
+                  {t("gc_download")}
+                </button>
+                <p className="text-center text-xs text-muted-foreground">{t("gc_delivery_hint")}</p>
+              </div>
             )}
           </div>
         </aside>
@@ -598,8 +627,13 @@ function CreateCardPage() {
           onClose={() => setShareOpen(false)}
           url={shareUrl}
           title={title || t("gc_shared_title")}
-          onShared={(channel) => trackEvent({ data: { cardId: card.id, eventType: "share", channel } })}
-          onDownload={() => downloadFinalCard(card.imageUrl, greeting, design)}
+          onShared={(channel) => {
+            void trackEvent({ data: { cardId: card.id, eventType: "share", channel } });
+            void finishDelivery(channel);
+          }}
+          onDownload={() => {
+            void handleDownloadAndFinish();
+          }}
         />
       )}
     </SiteLayout>
