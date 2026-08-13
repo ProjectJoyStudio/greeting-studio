@@ -75,7 +75,11 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
 
-    const variants = await Promise.all(rows.map((row) => toVideoJob(row)));
+    // Films the customer already downloaded or shared are kept in the archive
+    // but leave the active page. Pricing still counts them.
+    const everReady = rows.some((r) => r.status === "ready");
+    const active = rows.filter((r) => !r.delivered_at);
+    const variants = await Promise.all(active.map((row) => toVideoJob(row)));
     const ready = variants.filter((v) => v.status === "ready");
     const project = await supabase
       .from("pvg_projects")
@@ -91,7 +95,7 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       video: variants[0] ?? null,
       selectedId: (ready.find((v) => v.isSelected) ?? ready[0])?.id ?? null,
       balance: (wallet as { balance: number } | null)?.balance ?? 0,
-      nextPrice: ready.length > 0 ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
+      nextPrice: everReady ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
       hasReady: ready.length > 0,
     };
   });
@@ -420,6 +424,33 @@ export const selectPvgVideoVariant = createServerFn({ method: "POST" })
     const { markSelectedVariant } = await import("./video-render.server");
     await markSelectedVariant(data.projectId, data.videoId);
     return { selected: true as const };
+  });
+
+/**
+ * The customer has taken the film home — downloaded it or handed it to the
+ * device's own sharing. The film stays safely stored; it simply leaves the
+ * active page. Nothing is deleted and no credit is touched.
+ */
+export const markPvgVideoDelivered = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; videoId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("pvg_videos")
+      .select("id, project_id, user_id")
+      .eq("id", data.videoId)
+      .maybeSingle();
+    const video = row as { id: string; project_id: string; user_id: string } | null;
+    if (!video || video.user_id !== userId || video.project_id !== data.projectId) {
+      throw new Error("video_not_found");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("pvg_videos")
+      .update({ delivered_at: new Date().toISOString() } as never)
+      .eq("id", video.id);
+    return { delivered: true as const };
   });
 
 /** After a failure the customer may try again; the failed film was refunded. */
