@@ -1738,6 +1738,7 @@ export type Database = {
           credits_charged: number
           deleted_at: string | null
           deleted_by: string | null
+          delivered_at: string | null
           delivery_status: string | null
           duration_seconds: number
           error_code: string | null
@@ -1787,6 +1788,7 @@ export type Database = {
           credits_charged?: number
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
@@ -1836,6 +1838,7 @@ export type Database = {
           credits_charged?: number
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           delivery_status?: string | null
           duration_seconds?: number
           error_code?: string | null
