@@ -166,12 +166,8 @@ export function validatePvgProject(
   // Only the specially added person is checked here. People who merely appear
   // because the customer described them are part of the scene, not of this list.
   const people = addedPeople(project.people);
-  if (project.recipientName.trim().length < 2) {
-    issues.push({ field: "recipientName", key: "pvg_err_recipient" });
-  }
-  if (project.occasion.trim().length < 2) {
-    issues.push({ field: "occasion", key: "pvg_err_occasion" });
-  }
+  // The name of the person receiving the greeting and the occasion are
+  // optional: the starting scene is built from the scene description alone.
   if (project.sceneDescription.trim().length < 15) {
     issues.push({ field: "sceneDescription", key: "pvg_err_description" });
   }
