@@ -16,7 +16,8 @@ import {
 } from "./pvg.server";
 import {
   PVG_EXTRA_SCENE_CREDITS,
-  PVG_MAX_PEOPLE,
+  PVG_MAX_ADDED_PEOPLE,
+  addedPeople,
   pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
@@ -88,7 +89,7 @@ async function loadProject(
   return {
     ...toProjectShell(row),
     // Included scenes follow the current number of people at all times.
-    generationsLimit: pvgIncludedGenerations(people.length),
+    generationsLimit: pvgIncludedGenerations(addedPeople(people).length),
     people,
     scenes: await Promise.all(((sceneData ?? []) as SceneRow[]).map(toScene)),
   };
@@ -255,8 +256,9 @@ export const savePvgPerson = createServerFn({ method: "POST" })
       const { count } = await supabase
         .from("pvg_people")
         .select("id", { count: "exact", head: true })
-        .eq("project_id", data.projectId);
-      if ((count ?? 0) >= PVG_MAX_PEOPLE) throw new Error("people_limit");
+        .eq("project_id", data.projectId)
+        .eq("role", "speaker");
+      if ((count ?? 0) >= PVG_MAX_ADDED_PEOPLE) throw new Error("people_limit");
     }
 
     const ext = extensionFor(data.contentType);
@@ -291,6 +293,7 @@ export const savePvgPerson = createServerFn({ method: "POST" })
       original_path: originalPath,
       face_quality: data.faceQuality ?? "unknown",
       source: data.source ?? "individual",
+      role: "speaker",
       ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
     };
 
