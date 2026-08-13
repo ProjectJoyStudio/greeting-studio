@@ -320,40 +320,49 @@ export function AnimationStep({
           <input
             id="la-duration"
             type="range"
-            min={ANIMATION_DURATION_MIN}
-            max={ANIMATION_DURATION_MAX}
-            step={ANIMATION_DURATION_STEP}
-            value={chosenDuration}
+            min={0}
+            max={ANIMATION_DURATIONS.length - 1}
+            step={1}
+            value={Math.max(0, ANIMATION_DURATIONS.indexOf(chosenDuration))}
             disabled={sending || running}
-            onChange={(e) => setDuration(Number(e.target.value))}
+            onChange={(e) => setDuration(ANIMATION_DURATIONS[Number(e.target.value)])}
             className="mt-3 w-full accent-primary disabled:cursor-not-allowed disabled:opacity-50"
           />
           <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
-            <span>
-              {ANIMATION_DURATION_MIN}
-              {t("la_seconds")}
-            </span>
-            <span>
-              {ANIMATION_DURATION_MAX}
-              {t("la_seconds")}
-            </span>
+            {ANIMATION_DURATIONS.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                disabled={sending || running}
+                onClick={() => setDuration(seconds)}
+                className={`rounded-full px-2 py-0.5 transition ${
+                  chosenDuration === seconds ? "font-semibold text-primary" : "hover:text-foreground"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {seconds}
+                {t("la_seconds")}
+              </button>
+            ))}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t("la_price_estimate")}: <span className="font-medium">{priceCredits ?? "—"}</span>{" "}
-            {t("la_price_credits")}
-          </p>
         </div>
 
-        {/* Compact summary ------------------------------------------------- */}
+        {/* Credits — everything the person pays, always up to date --------- */}
         <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
+          <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
           <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
+          <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
+          <SummaryRow
+            label={t("la_balance_after")}
+            value={`${Math.max(0, balanceAfter)} ${t("la_price_credits")}`}
+          />
           <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
         </dl>
+        {!canAfford && <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>}
 
         <button
           type="button"
           onClick={animate}
-          disabled={sending || running || motion.trim().length < 3}
+          disabled={sending || running || motion.trim().length < 3 || !canAfford}
           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending || running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
