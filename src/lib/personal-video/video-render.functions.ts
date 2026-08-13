@@ -75,7 +75,11 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
 
-    const variants = await Promise.all(rows.map((row) => toVideoJob(row)));
+    // Films the customer already downloaded or shared are kept in the archive
+    // but leave the active page. Pricing still counts them.
+    const everReady = rows.some((r) => r.status === "ready");
+    const active = rows.filter((r) => !r.delivered_at);
+    const variants = await Promise.all(active.map((row) => toVideoJob(row)));
     const ready = variants.filter((v) => v.status === "ready");
     const project = await supabase
       .from("pvg_projects")
@@ -91,7 +95,7 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       video: variants[0] ?? null,
       selectedId: (ready.find((v) => v.isSelected) ?? ready[0])?.id ?? null,
       balance: (wallet as { balance: number } | null)?.balance ?? 0,
-      nextPrice: ready.length > 0 ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
+      nextPrice: everReady ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
       hasReady: ready.length > 0,
     };
   });
