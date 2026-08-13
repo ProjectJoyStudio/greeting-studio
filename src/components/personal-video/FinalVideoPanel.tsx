@@ -197,14 +197,17 @@ export function FinalVideoPanel({
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? t("pvr_pause") : t("pvr_play")}
             </button>
-            <a
-              href={selected.videoUrl ?? "#"}
-              download
+            <button
+              type="button"
+              onClick={() => {
+                stopAll();
+                setDelivering(true);
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50"
             >
-              <Download className="h-4 w-4" />
-              {t("pvr_download")}
-            </a>
+              <Send className="h-4 w-4" />
+              {t("pvr_deliver_open")}
+            </button>
           </div>
           <p className="text-xs text-primary">{t("pvr_status_ready")}</p>
 
