@@ -481,7 +481,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     }
 
     const used = successfulScenes(project);
-    const included = pvgIncludedGenerations(project.people.length);
+    const added = addedPeople(project.people);
+    const included = pvgIncludedGenerations(added.length);
 
     // One request at a time: repeated clicks never start a second render and
     // never take a second credit.
@@ -498,7 +499,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const isExtra = used >= included;
     // The one-off order price is taken only with the very first scene of the
     // project — reopening or refreshing the page never charges it again.
-    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(project.people.length);
+    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(added.length);
     const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -550,11 +551,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
             description: isExtra
               ? "Personal video greeting — one additional starting scene"
               : "Personal video greeting — starting scene package",
-            metadata: {
-              project_id: project.id,
-              people: project.people.length,
-              extra_scene: isExtra,
-            },
+            metadata: { project_id: project.id, people: added.length, extra_scene: isExtra },
           });
           await supabase
             .from("pvg_projects")
@@ -568,12 +565,23 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const variationIndex =
       project.scenes.reduce((max, s) => Math.max(max, s.variationIndex), 0) + 1;
 
-    const people = project.people.map((p, i) => `${p.name.trim() || `person ${i + 1}`}`).join(", ");
+    // The scene is always built from the customer's own words. Only a person
+    // who was specially added is described on top of it; anybody else the
+    // description mentions simply belongs to the scene.
+    const main = added[0] ?? null;
+    const mainName = main?.name.trim() || "the main person";
+    const withPhoto = Boolean(main?.photoUrl);
     const prompt = [
       project.sceneDescription.trim(),
-      `The people in the scene: ${people}. Keep every face true to the supplied portraits.`,
+      main
+        ? withPhoto
+          ? `One main person is present in this scene: ${mainName}. Keep this face true to the supplied portrait. Any other people belong to the described scene.`
+          : `One main person is present in this scene: ${mainName} — ${main.appearanceDescription.trim()}. Show this person clearly in the foreground, facing the camera. Any other people belong to the described scene.`
+        : "",
       `A warm, premium celebration scene for ${project.occasion.trim()}, cinematic lighting, photo-real, wide framing.`,
-    ].join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     const { data: sceneRow, error: sceneError } = await supabase
       .from("pvg_scenes")
@@ -598,7 +606,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       .eq("id", project.id);
 
     try {
-      const referenceUrls = project.people
+      const referenceUrls = added
         .map((p) => p.photoUrl)
         .filter((url): url is string => Boolean(url));
       const { startSceneRender } = await import("./generator/image-engine.server");
