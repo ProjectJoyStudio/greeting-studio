@@ -95,14 +95,16 @@ function LiveCardsPage() {
   const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
   const generate = useServerFn(generateLiveCardImage);
-  const upload = useServerFn(uploadLiveCardImage);
   const select = useServerFn(selectLiveCardImage);
   const discard = useServerFn(discardLiveCardImage);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const readAttempts = useServerFn(getLiveCardAttempts);
+  const buyPack = useServerFn(buyLiveCardAttemptPack);
+  const { balance } = useCreditBalance();
+  const refreshBalance = useRefreshCreditBalance();
 
   const [prompt, setPrompt] = useState("");
   const [ratio, setRatio] = useState<LiveCardRatio>("1:1");
-  const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
+  const [busy, setBusy] = useState<null | "generate" | "buy" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
@@ -118,10 +120,19 @@ function LiveCardsPage() {
     enabled: isAuthenticated && Boolean(sessionId),
   });
 
-  /** Up to three starting pictures may be created per project. */
-  const MAX_ATTEMPTS = 3;
-  const generatedCount = (recent.data ?? []).filter((c) => c.source === "generated").length;
-  const attemptsLeft = Math.max(0, MAX_ATTEMPTS - generatedCount);
+  // One credit buys a package of three start-image attempts; the counter is
+  // kept on the server, so refreshes and retries never change it.
+  const attempts = useQuery({
+    queryKey: ["live-cards", "attempts", sessionId],
+    queryFn: () => readAttempts({ data: { sessionKey: sessionId! } }),
+    enabled: isAuthenticated && Boolean(sessionId),
+  });
+  const attemptsUsedInPack =
+    (attempts.data?.used ?? 0) -
+    Math.max(0, (attempts.data?.packs ?? 0) - 1) * LIVE_CARD_ATTEMPTS_PER_PACK;
+  const attemptsLeft = attempts.data?.remaining ?? 0;
+  const generatedCount = attempts.data?.used ?? 0;
+  const canBuyPack = balance >= LIVE_CARD_PACK_CREDITS;
 
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
@@ -144,6 +155,7 @@ function LiveCardsPage() {
       toast.error(t("lc_attempts_done"));
       return;
     }
+    if (busy) return;
     setBusy("generate");
     setRestored(true);
     try {
@@ -158,6 +170,28 @@ function LiveCardsPage() {
       setSelectedId(null);
       toast.success(t("lc_saved"));
       void recent.refetch();
+      void attempts.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Buys three more attempts for one credit — charged exactly once. */
+  async function buyAttempts() {
+    if (busy) return;
+    setBusy("buy");
+    try {
+      const result = await buyPack({ data: { sessionKey: sessionId! } });
+      if (!result.ok) {
+        toast.error(t("lc_insufficient"));
+        refreshBalance(result.balance);
+        return;
+      }
+      refreshBalance(result.balance);
+      void attempts.refetch();
+      toast.success(t("lc_pack_bought"));
     } catch {
       toast.error(t("lc_failed"));
     } finally {
