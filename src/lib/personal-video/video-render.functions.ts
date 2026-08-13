@@ -304,10 +304,16 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const named = (p: PersonLite, i: number) =>
         p.name?.trim() ? p.name.trim() : `Person ${i + 1}`;
 
+      // Kling's prompt field is positive-only and should contain English
+      // motion direction, not untranslated prose or negative text concepts.
+      const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
+      const translatedAction = await translatePromptToEnglish(
+        project.action_description ?? "",
+        "animation",
+      );
       const { buildVideoPrompt } = await import("./generator/video-prompt");
       const prompt = buildVideoPrompt({
-        actionDescription: project.action_description ?? "",
-        occasion: project.occasion ?? "",
+        actionDescription: translatedAction.english,
         speakerName: named(speaker, addedPersons.indexOf(speaker)),
         speakerIndex: addedPersons.indexOf(speaker),
         totalPeople: addedPersons.length,

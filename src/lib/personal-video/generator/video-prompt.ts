@@ -6,12 +6,9 @@
 // given. Everyone else stays in the scene and only reacts. The control text is
 // always written in English, whatever language the greeting itself is in.
 
-import { NO_NEW_TEXT_IN_VIDEO_INSTRUCTION } from "./text-policy";
-
 export interface PvgVideoPromptInput {
   /** "What happens in the video?" — the actions during the film. */
   actionDescription: string;
-  occasion: string;
   /** The single participant who speaks the whole greeting. */
   speakerName: string;
   /** Everyone else in the picture; they never speak. */
@@ -25,6 +22,21 @@ export interface PvgVideoPromptInput {
 /** The natural way a greeting film behaves unless the customer says otherwise. */
 export const PVG_DEFAULT_ACTION_DESCRIPTION =
   "The participants look toward the camera and warmly congratulate the viewer. They smile and make natural small gestures. They are speaking to the viewer, not to each other.";
+
+// Kling documents `prompt` as a positive prompt. Mentioning captions, letters,
+// logos or other writing there — even to negate them — can make those visual
+// concepts appear in the generated frames. Keep writing-related requests out
+// of this field; the approved source image remains the visual source of truth.
+const WRITING_DIRECTION =
+  /\b(text|caption|subtitle|translation|title|lettering|letters?|words?|writing|inscription|sign|banner|poster|label|logo|watermark)\b|текст|надпис|подпис|букв|слова|плакат|баннер|банер|вывеск|вивіск|літер|логотип|schrift|beschriftung|aufschrift|buchstaben|texte|lettres|affiche|pancarte|tekst|napis|litery/i;
+
+function motionOnly(description: string): string {
+  return description
+    .split(/(?<=[.!?;])\s+|\s*[,;]\s*/u)
+    .filter((part) => !WRITING_DIRECTION.test(part))
+    .join(". ")
+    .trim();
+}
 
 function list(names: string[]): string {
   const clean = names.map((n) => n.trim()).filter(Boolean);
@@ -44,25 +56,21 @@ export function positionPhrase(index: number, total: number): string {
 
 /** One plain English instruction, built from the customer's own words. */
 export function buildVideoPrompt(input: PvgVideoPromptInput): string {
-  const action = input.actionDescription.trim() || PVG_DEFAULT_ACTION_DESCRIPTION;
+  const action = motionOnly(input.actionDescription.trim()) || PVG_DEFAULT_ACTION_DESCRIPTION;
   const total = input.totalPeople ?? input.silentNames.length + 1;
   const where = positionPhrase(input.speakerIndex ?? -1, total);
-  const name = input.speakerName.trim();
-  const speaker = name
-    ? where
-      ? `${name} (${where})`
-      : name
-    : where || "the person in the foreground";
+  // A personal name can be interpreted as a request to render that name.
+  // Position alone identifies the speaker without introducing printable text.
+  const speaker = where || "the person in the foreground";
   const others = list(input.silentNames);
   return [
     action,
-    `Only ${speaker} speaks. ${speaker} delivers the entire spoken greeting, with lip movement matching the given audio exactly.`,
+    `Only ${speaker} moves their lips. Their lip movement matches the given audio exactly from beginning to end.`,
     others
       ? `${others} remain completely silent: their mouths stay naturally closed apart from a natural smile, they never mouth or repeat the spoken words, and they never speak. They may smile, blink, breathe, move their heads and bodies naturally and react warmly to the greeting.`
       : "",
-    "The greeting is addressed to the viewer watching the video: the participants look toward the camera and never treat another person inside the picture as the person receiving the greeting, unless the described scene requires otherwise.",
-    "Everyone keeps the exact face, identity, clothing, position and setting of the picture. Soft, natural camera and background motion.",
-    NO_NEW_TEXT_IN_VIDEO_INSTRUCTION,
+    "The performance is directed toward the viewer watching the video: the participants look toward the camera and never treat another person inside the picture as the audience, unless the described scene requires otherwise.",
+    "Preserve every visual element of the approved source picture exactly. Animate only natural lip movement, facial expression, breathing, small body gestures, and subtle camera or background motion. The frame remains a faithful moving version of the source picture from beginning to end, with no new visual elements.",
     "No added music.",
   ]
     .filter(Boolean)
