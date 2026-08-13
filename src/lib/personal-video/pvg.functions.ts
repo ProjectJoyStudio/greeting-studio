@@ -578,7 +578,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
           ? `One main person is present in this scene: ${mainName}. Keep this face true to the supplied portrait. Any other people belong to the described scene.`
           : `One main person is present in this scene: ${mainName} — ${main.appearanceDescription.trim()}. Show this person clearly in the foreground, facing the camera. Any other people belong to the described scene.`
         : "",
-      `A warm, premium celebration scene for ${project.occasion.trim()}, cinematic lighting, photo-real, wide framing.`,
+      "A warm, premium celebration scene, cinematic lighting, photo-real, wide framing.",
+      wantsVisibleText(project.sceneDescription) ? "" : NO_TEXT_INSTRUCTION,
     ]
       .filter(Boolean)
       .join(" ");
