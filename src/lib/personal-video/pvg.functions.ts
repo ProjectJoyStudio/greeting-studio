@@ -14,6 +14,7 @@ import {
   type ProjectRow,
   type SceneRow,
 } from "./pvg.server";
+import { NO_TEXT_INSTRUCTION, wantsVisibleText } from "./generator/text-policy";
 import {
   PVG_EXTRA_SCENE_CREDITS,
   PVG_MAX_ADDED_PEOPLE,
