@@ -5,10 +5,10 @@ import {
   Coins,
   ImagePlus,
   Loader2,
+  PencilLine,
   Plus,
-  ScanFace,
   Trash2,
-  Users,
+  UserPlus,
   Wand2,
   Check,
   X,
@@ -29,24 +29,17 @@ import {
   removePvgPerson,
   renamePvgPerson,
   savePvgPerson,
+  savePvgPersonDescription,
   savePvgProject,
   selectPvgScene,
 } from "@/lib/personal-video/pvg.functions";
-import {
-  detectFaces,
-  fileToBase64,
-  optimizeImage,
-  readImage,
-} from "@/lib/personal-video/photo-tools";
-import {
-  ManualFaceEditor,
-  type ManualFaceResult,
-} from "@/components/personal-video/ManualFaceEditor";
+import { fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
 import {
-  PVG_MAX_PEOPLE,
+  PVG_MAX_ADDED_PEOPLE,
+  addedPeople,
   pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
@@ -63,6 +56,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const open = useServerFn(openPvgProject);
   const save = useServerFn(savePvgProject);
   const savePerson = useServerFn(savePvgPerson);
+  const savePersonDescription = useServerFn(savePvgPersonDescription);
   const addPhoto = useServerFn(addPvgPersonPhoto);
   const rename = useServerFn(renamePvgPerson);
   const removePerson = useServerFn(removePvgPerson);
@@ -93,10 +87,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
   const [confirmExtra, setConfirmExtra] = useState(false);
-  const [manualFile, setManualFile] = useState<File | null>(null);
-  const [manualOffered, setManualOffered] = useState<File | null>(null);
+  // Which of the two ways of adding the one main person is open, if any.
+  const [addMode, setAddMode] = useState<"none" | "choose" | "describe">("none");
+  const [appearance, setAppearance] = useState("");
   const personInput = useRef<HTMLInputElement>(null);
-  const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
   const replaceFor = useRef<string | null>(null);
   const extraFor = useRef<string | null>(null);
