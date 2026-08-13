@@ -1735,6 +1735,7 @@ export type Database = {
           aspect_ratio: string | null
           completed_at: string | null
           created_at: string
+          credits_charged: number
           deleted_at: string | null
           deleted_by: string | null
           delivery_status: string | null
@@ -1783,6 +1784,7 @@ export type Database = {
           aspect_ratio?: string | null
           completed_at?: string | null
           created_at?: string
+          credits_charged?: number
           deleted_at?: string | null
           deleted_by?: string | null
           delivery_status?: string | null
@@ -1831,6 +1833,7 @@ export type Database = {
           aspect_ratio?: string | null
           completed_at?: string | null
           created_at?: string
+          credits_charged?: number
           deleted_at?: string | null
           deleted_by?: string | null
           delivery_status?: string | null
@@ -1884,6 +1887,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      live_card_attempt_sessions: {
+        Row: {
+          attempts_used: number
+          created_at: string
+          id: string
+          packs_purchased: number
+          session_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts_used?: number
+          created_at?: string
+          id?: string
+          packs_purchased?: number
+          session_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts_used?: number
+          created_at?: string
+          id?: string
+          packs_purchased?: number
+          session_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       live_greeting_cards: {
         Row: {
@@ -4063,6 +4096,19 @@ export type Database = {
           total_credits: number
         }[]
       }
+      buy_live_card_attempt_pack: {
+        Args: {
+          _attempts_per_pack: number
+          _price: number
+          _session_key: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      charge_live_card_animation: {
+        Args: { _duration: number; _price: number; _user_id: string }
+        Returns: Json
+      }
       claim_first_free_greeting: {
         Args: {
           _configuration?: Json
@@ -4077,6 +4123,14 @@ export type Database = {
           order_number: string
           used_at: string
         }[]
+      }
+      consume_live_card_attempt: {
+        Args: {
+          _attempts_per_pack: number
+          _session_key: string
+          _user_id: string
+        }
+        Returns: Json
       }
       get_first_free_greeting_status: {
         Args: { _user_id?: string }
@@ -4102,6 +4156,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      refund_live_card_animation: {
+        Args: { _price: number; _reason: string; _user_id: string }
+        Returns: number
+      }
       refund_pvg_video_credits: {
         Args: { _reason: string; _video_id: string }
         Returns: number
