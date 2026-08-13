@@ -203,6 +203,13 @@ export function VoicePanel({
     participants.find((p) => p.id === speakerId) ??
     (participants.length === 1 ? (participants[0] ?? null) : null);
 
+  /**
+   * No person was specially added: the greeting is a voice-over over the
+   * scene. The single invisible carrier still holds the chosen voice.
+   */
+  const voiceOverOnly =
+    participants.length === 1 && (participants[0]?.role ?? "speaker") === "narrator";
+
   const saved = useQuery({
     queryKey: ["pvg", "voice", projectId],
     queryFn: () => load({ data: { projectId } }),
