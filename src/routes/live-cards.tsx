@@ -449,8 +449,8 @@ function LiveCardsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy !== null || (attemptsLeft <= 0 && generatedCount >= MAX_ATTEMPTS)}
-                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : setConfirmReplace(true))}
+                  disabled={busy !== null || (attemptsLeft <= 0 && !canBuyPack)}
+                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAttempts())}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
@@ -458,7 +458,7 @@ function LiveCardsPage() {
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  {t("lc_regenerate")}
+                  {attemptsLeft > 0 ? t("lc_regenerate") : t("lc_buy_attempts")}
                 </button>
               </div>
             )}
