@@ -2454,6 +2454,7 @@ export type Database = {
       }
       pvg_people: {
         Row: {
+          appearance_description: string | null
           created_at: string
           extra_photos: Json
           face_quality: string
@@ -2471,6 +2472,7 @@ export type Database = {
           recording_duration_seconds: number | null
           recording_mime: string | null
           recording_path: string | null
+          role: string
           source: string
           speaking_style: string | null
           updated_at: string
@@ -2483,6 +2485,7 @@ export type Database = {
           voice_source: string | null
         }
         Insert: {
+          appearance_description?: string | null
           created_at?: string
           extra_photos?: Json
           face_quality?: string
@@ -2500,6 +2503,7 @@ export type Database = {
           recording_duration_seconds?: number | null
           recording_mime?: string | null
           recording_path?: string | null
+          role?: string
           source?: string
           speaking_style?: string | null
           updated_at?: string
@@ -2512,6 +2516,7 @@ export type Database = {
           voice_source?: string | null
         }
         Update: {
+          appearance_description?: string | null
           created_at?: string
           extra_photos?: Json
           face_quality?: string
@@ -2529,6 +2534,7 @@ export type Database = {
           recording_duration_seconds?: number | null
           recording_mime?: string | null
           recording_path?: string | null
+          role?: string
           source?: string
           speaking_style?: string | null
           updated_at?: string
