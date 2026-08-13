@@ -550,31 +550,26 @@ function LiveCardsPage() {
   );
 }
 
-function ReservedPanel({
+function InfoPanel({
   icon,
   title,
   note,
-  badge,
-  children,
+  value,
 }: {
   icon: React.ReactNode;
   title: string;
   note: string;
-  badge: string;
-  children: React.ReactNode;
+  value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-4">
+    <div className="rounded-2xl border border-border/60 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-sm font-medium">
           {icon}
           {title}
         </span>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          {badge}
-        </span>
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3 font-display text-2xl font-semibold tracking-tight text-primary">{value}</div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
     </div>
   );
