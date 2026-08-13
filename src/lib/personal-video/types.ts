@@ -4,8 +4,14 @@ import type { PvsVideoSetup } from "./video-setup";
 import type { PvgSpeechMode, PvgSyncMode, PvgVoiceSource } from "./voice/speech";
 import type { PvgMusicSettings } from "@/lib/music/types";
 
-/** Standard projects hold up to five people. Premium raises this later. */
+/** Stored limit of the table. Older orders may still hold several people. */
 export const PVG_MAX_PEOPLE = 5;
+/**
+ * A Personal Video Greeting has at most ONE specially added person — the one
+ * who later speaks the greeting. Everybody else visible in the picture simply
+ * belongs to the described scene.
+ */
+export const PVG_MAX_ADDED_PEOPLE = 1;
 /** No project ever includes more than five free starting-scene creations. */
 export const PVG_MAX_GENERATIONS = 5;
 /** Cost of one additional starting scene beyond the included ones. */
@@ -21,11 +27,22 @@ export function pvgIncludedGenerations(peopleCount: number): number {
 
 export type PvgFaceQuality = "good" | "low" | "unknown";
 
+/**
+ * "speaker" — the one person the customer specially added; they deliver the
+ * greeting in the finished film. "narrator" — no person was added, so the
+ * greeting is only heard as a voice-over over the scene.
+ */
+export type PvgPersonRole = "speaker" | "narrator";
+
 export interface PvgPerson {
   /** Internal reference only — never shown to the person using the site. */
   id: string;
   name: string;
   position: number;
+  /** Specially added person, or the invisible voice of the greeting. */
+  role: PvgPersonRole;
+  /** Words describing the person when no photo was uploaded. */
+  appearanceDescription: string;
   photoUrl: string | null;
   faceQuality: PvgFaceQuality;
   source: "individual" | "group";
