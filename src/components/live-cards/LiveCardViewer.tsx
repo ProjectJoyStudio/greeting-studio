@@ -14,10 +14,13 @@ export function LiveCardViewer({
   videoUrl,
   title,
   onClose,
+  onDelivered,
 }: {
   videoUrl: string;
   title?: string | null;
   onClose: () => void;
+  /** Called only after a successful download or share, never on preview. */
+  onDelivered?: (method: "download" | "share") => void;
 }) {
   const { t } = useI18n();
 
@@ -41,6 +44,7 @@ export function LiveCardViewer({
       a.click();
       a.remove();
       URL.revokeObjectURL(href);
+      onDelivered?.("download");
     } catch {
       toast.error(t("llc_download_failed"));
     }
@@ -50,10 +54,12 @@ export function LiveCardViewer({
     try {
       if (navigator.share) {
         await navigator.share({ title: title || t("llc_title"), url: videoUrl });
+        onDelivered?.("share");
         return;
       }
       await navigator.clipboard.writeText(videoUrl);
       toast.success(t("llc_link_copied"));
+      onDelivered?.("share");
     } catch {
       /* the person cancelled */
     }

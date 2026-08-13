@@ -12,6 +12,7 @@ import {
   deleteMyLiveGreeting,
   listMyLiveDrafts,
   listMyLiveGreetings,
+  markLiveGreetingDelivered,
   syncMyLiveCardAnimations,
 } from "@/lib/live-cards/library.functions";
 import { retryLiveCardAnimation } from "@/lib/live-cards/animations.functions";
@@ -26,6 +27,7 @@ function MyLiveCardsPage() {
   const queryClient = useQueryClient();
   const fetchAll = useServerFn(listMyLiveGreetings);
   const remove = useServerFn(deleteMyLiveGreeting);
+  const markDelivered = useServerFn(markLiveGreetingDelivered);
 
   const [open, setOpen] = useState<LiveGreetingRecord | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<LiveGreetingRecord | null>(null);
@@ -64,6 +66,15 @@ function MyLiveCardsPage() {
       void drafts.refetch();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+  });
+
+  const deliver = useMutation({
+    mutationFn: (vars: { animationId: string; method: "download" | "share" }) =>
+      markDelivered({ data: vars }),
+    onSuccess: () => {
+      setOpen(null);
+      void queryClient.invalidateQueries({ queryKey: ["my-live-greetings"] });
+    },
   });
 
   const del = useMutation({
@@ -230,6 +241,7 @@ function MyLiveCardsPage() {
           videoUrl={open.videoUrl}
           title={open.title}
           onClose={() => setOpen(null)}
+          onDelivered={(method) => deliver.mutate({ animationId: open.id, method })}
         />
       )}
 

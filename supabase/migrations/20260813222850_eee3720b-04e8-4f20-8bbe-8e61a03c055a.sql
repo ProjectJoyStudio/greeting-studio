@@ -1,0 +1,2 @@
+ALTER TABLE public.live_card_animations ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS live_card_animations_delivered_idx ON public.live_card_animations (user_id, delivered_at);
