@@ -2899,6 +2899,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           credits_charged: number
+          delivered_at: string | null
           duration_seconds: number
           error_code: string | null
           error_message: string | null
@@ -2941,6 +2942,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
+          delivered_at?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
@@ -2983,6 +2985,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
+          delivered_at?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.pvg_videos ADD COLUMN IF NOT EXISTS delivered_at timestamptz;
