@@ -450,6 +450,11 @@ export const markPvgVideoDelivered = createServerFn({ method: "POST" })
       .from("pvg_videos")
       .update({ delivered_at: new Date().toISOString() } as never)
       .eq("id", video.id);
+    // The whole order is finished: it leaves the workflow and the cabinet.
+    await supabaseAdmin
+      .from("pvg_projects")
+      .update({ delivered_at: new Date().toISOString(), status: "completed" } as never)
+      .eq("id", video.project_id);
     return { delivered: true as const };
   });
 

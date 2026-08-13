@@ -69,6 +69,8 @@ async function loadProject(
     .select(PROJECT_COLUMNS)
     .eq("id", projectId)
     .is("deleted_at", null)
+    // A delivered order has left the customer's hands for good.
+    .is("delivered_at", null)
     .maybeSingle();
   const row = data as ProjectRow | null;
   if (!row) return null;
@@ -154,6 +156,7 @@ export const listPvgProjects = createServerFn({ method: "GET" })
       .from("pvg_projects")
       .select(PROJECT_COLUMNS)
       .is("deleted_at", null)
+      .is("delivered_at", null)
       .order("updated_at", { ascending: false })
       .limit(50);
     const rows = (data ?? []) as ProjectRow[];

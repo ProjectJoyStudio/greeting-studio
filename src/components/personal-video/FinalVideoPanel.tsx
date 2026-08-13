@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Film, Loader2, Pause, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ export function FinalVideoPanel({
   onChanged?: () => void;
 }) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const load = useServerFn(getPvgVideo);
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
@@ -181,9 +183,9 @@ export function FinalVideoPanel({
     } catch {
       // The customer already has the film; nothing else needs to happen.
     }
-    await query.refetch();
-    onChanged?.();
     toast.success(t("pvr_delivered"));
+    // A finished order is gone: the customer starts page one afresh.
+    await navigate({ to: "/video-greeting", search: {}, replace: true });
   }
 
   return (
