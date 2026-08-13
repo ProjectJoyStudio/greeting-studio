@@ -35,22 +35,34 @@ export interface FinalVideoEngine {
   maxAudioSeconds: number;
   /** Provider price of one second of finished film, in US dollars. */
   usdPerSecond: number;
+  /** How the engine ran, recorded for the administrator. */
+  variant?: string;
   buildInput: (input: FinalVideoInput) => Record<string, unknown>;
 }
 
+/** Quality mode of Kling Avatar V2: "std" (cheaper) or "pro". */
+function klingMode(): "std" | "pro" {
+  return process.env["PVG_KLING_AVATAR_MODE"] === "pro" ? "pro" : "std";
+}
+
 export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
-  omni_human_15: {
-    key: "omni_human_15",
-    model: "bytedance/omni-human-1.5",
-    // The engine refuses any greeting voice of 35 seconds or longer.
-    maxAudioSeconds: Number(process.env["PVG_OMNIHUMAN_MAX_AUDIO_SECONDS"] || 34),
-    usdPerSecond: Number(process.env["PVG_OMNIHUMAN_USD_PER_SECOND"] || 0.14),
-    buildInput: ({ imageUrl, audioUrl, prompt, seed }) => ({
+  kling_avatar_v2: {
+    key: "kling_avatar_v2",
+    model: "kwaivgi/kling-avatar-v2",
+    variant: klingMode(),
+    // The film lasts as long as the greeting voice; the engine accepts a
+    // voice of at most one minute.
+    maxAudioSeconds: Number(process.env["PVG_KLING_AVATAR_MAX_AUDIO_SECONDS"] || 60),
+    // Provider price per second of finished film: std $0.056, pro $0.11.
+    usdPerSecond: Number(
+      process.env["PVG_KLING_AVATAR_USD_PER_SECOND"] || (klingMode() === "pro" ? 0.11 : 0.056),
+    ),
+    buildInput: ({ imageUrl, audioUrl, prompt }) => ({
       image: imageUrl,
       // The completed greeting voice. No voice is ever generated here.
       audio: audioUrl,
       prompt,
-      ...(typeof seed === "number" ? { seed } : {}),
+      mode: klingMode(),
     }),
   },
 };
@@ -161,7 +173,7 @@ export async function startFinalVideo(
       return {
         predictionId,
         engineKey: engine.key,
-        model: engine.model,
+        model: engine.variant ? `${engine.model} (${engine.variant})` : engine.model,
         audioSeconds: input.audioSeconds,
       };
     } catch (err) {

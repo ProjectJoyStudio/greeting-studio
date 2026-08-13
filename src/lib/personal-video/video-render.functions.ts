@@ -292,6 +292,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         actionDescription: project.action_description ?? "",
         occasion: project.occasion ?? "",
         speakerName: speaker ? named(speaker, people.indexOf(speaker)) : "",
+        speakerIndex: speaker ? people.indexOf(speaker) : -1,
+        totalPeople: people.length,
         silentNames: people
           .filter((p) => p.id !== speaker?.id)
           .map((p) => named(p, people.indexOf(p))),
