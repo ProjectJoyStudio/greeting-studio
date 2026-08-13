@@ -307,7 +307,6 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const { buildVideoPrompt } = await import("./generator/video-prompt");
       const prompt = buildVideoPrompt({
         actionDescription: project.action_description ?? "",
-        occasion: project.occasion ?? "",
         speakerName: named(speaker, addedPersons.indexOf(speaker)),
         speakerIndex: addedPersons.indexOf(speaker),
         totalPeople: addedPersons.length,

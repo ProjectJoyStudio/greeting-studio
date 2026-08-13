@@ -6,12 +6,9 @@
 // given. Everyone else stays in the scene and only reacts. The control text is
 // always written in English, whatever language the greeting itself is in.
 
-import { NO_NEW_TEXT_IN_VIDEO_INSTRUCTION } from "./text-policy";
-
 export interface PvgVideoPromptInput {
   /** "What happens in the video?" — the actions during the film. */
   actionDescription: string;
-  occasion: string;
   /** The single participant who speaks the whole greeting. */
   speakerName: string;
   /** Everyone else in the picture; they never speak. */
@@ -61,8 +58,7 @@ export function buildVideoPrompt(input: PvgVideoPromptInput): string {
       ? `${others} remain completely silent: their mouths stay naturally closed apart from a natural smile, they never mouth or repeat the spoken words, and they never speak. They may smile, blink, breathe, move their heads and bodies naturally and react warmly to the greeting.`
       : "",
     "The greeting is addressed to the viewer watching the video: the participants look toward the camera and never treat another person inside the picture as the person receiving the greeting, unless the described scene requires otherwise.",
-    "Everyone keeps the exact face, identity, clothing, position and setting of the picture. Soft, natural camera and background motion.",
-    NO_NEW_TEXT_IN_VIDEO_INSTRUCTION,
+    "Preserve every visual element of the approved source picture exactly. Animate only natural lip movement, facial expression, breathing, small body gestures, and subtle camera or background motion. The frame remains a faithful moving version of the source picture from beginning to end, with no new visual elements.",
     "No added music.",
   ]
     .filter(Boolean)
