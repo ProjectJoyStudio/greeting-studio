@@ -16,7 +16,8 @@ import {
 } from "./pvg.server";
 import {
   PVG_EXTRA_SCENE_CREDITS,
-  PVG_MAX_PEOPLE,
+  PVG_MAX_ADDED_PEOPLE,
+  addedPeople,
   pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
@@ -88,7 +89,7 @@ async function loadProject(
   return {
     ...toProjectShell(row),
     // Included scenes follow the current number of people at all times.
-    generationsLimit: pvgIncludedGenerations(people.length),
+    generationsLimit: pvgIncludedGenerations(addedPeople(people).length),
     people,
     scenes: await Promise.all(((sceneData ?? []) as SceneRow[]).map(toScene)),
   };
@@ -255,8 +256,9 @@ export const savePvgPerson = createServerFn({ method: "POST" })
       const { count } = await supabase
         .from("pvg_people")
         .select("id", { count: "exact", head: true })
-        .eq("project_id", data.projectId);
-      if ((count ?? 0) >= PVG_MAX_PEOPLE) throw new Error("people_limit");
+        .eq("project_id", data.projectId)
+        .eq("role", "speaker");
+      if ((count ?? 0) >= PVG_MAX_ADDED_PEOPLE) throw new Error("people_limit");
     }
 
     const ext = extensionFor(data.contentType);
@@ -291,6 +293,7 @@ export const savePvgPerson = createServerFn({ method: "POST" })
       original_path: originalPath,
       face_quality: data.faceQuality ?? "unknown",
       source: data.source ?? "individual",
+      role: "speaker",
       ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
     };
 
@@ -357,6 +360,98 @@ export const renamePvgPerson = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * The second way of adding the one main person: the customer describes them
+ * in words instead of uploading a photo. Project Joy then creates that person
+ * inside the starting scene.
+ */
+export const savePvgPersonDescription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      projectId: string;
+      personId?: string | undefined;
+      name?: string | undefined;
+      appearanceDescription: string;
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: owned } = await supabase
+      .from("pvg_projects")
+      .select("id")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    if (!owned) throw new Error("project_not_found");
+
+    const description = data.appearanceDescription.slice(0, 600);
+    if (data.personId) {
+      const { error } = await supabase
+        .from("pvg_people")
+        .update({
+          appearance_description: description,
+          ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
+        })
+        .eq("id", data.personId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { count } = await supabase
+        .from("pvg_people")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", data.projectId)
+        .eq("role", "speaker");
+      if ((count ?? 0) >= PVG_MAX_ADDED_PEOPLE) throw new Error("people_limit");
+      const { error } = await supabase.from("pvg_people").insert({
+        project_id: data.projectId,
+        user_id: userId,
+        position: 0,
+        role: "speaker",
+        source: "individual",
+        face_quality: "good",
+        appearance_description: description,
+        ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
+      });
+      if (error) throw new Error(error.message);
+    }
+    return { project: await loadProject(supabase, data.projectId) };
+  });
+
+/**
+ * A scene without a specially added person still needs one voice for the
+ * greeting. It is kept on an invisible carrier row so the voice tools of page
+ * two keep working unchanged. It is never a speaking character.
+ */
+export const ensurePvgVoiceCarrier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: owned } = await supabase
+      .from("pvg_projects")
+      .select("id, user_id")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    const row = owned as { id: string; user_id: string } | null;
+    if (!row || row.user_id !== userId) throw new Error("project_not_found");
+
+    const { data: existing } = await supabase
+      .from("pvg_people")
+      .select("id, role")
+      .eq("project_id", data.projectId);
+    const rows = (existing ?? []) as { id: string; role: string | null }[];
+    if (rows.length === 0) {
+      await supabase.from("pvg_people").insert({
+        project_id: data.projectId,
+        user_id: userId,
+        position: 0,
+        role: "narrator",
+        source: "individual",
+        face_quality: "unknown",
+      });
+    }
+    return { project: await loadProject(supabase, data.projectId) };
+  });
+
 export const removePvgPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string }) => input)
@@ -386,7 +481,8 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     }
 
     const used = successfulScenes(project);
-    const included = pvgIncludedGenerations(project.people.length);
+    const added = addedPeople(project.people);
+    const included = pvgIncludedGenerations(added.length);
 
     // One request at a time: repeated clicks never start a second render and
     // never take a second credit.
@@ -403,7 +499,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const isExtra = used >= included;
     // The one-off order price is taken only with the very first scene of the
     // project — reopening or refreshing the page never charges it again.
-    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(project.people.length);
+    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(added.length);
     const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
     const price = packagePrice + extraPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -455,11 +551,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
             description: isExtra
               ? "Personal video greeting — one additional starting scene"
               : "Personal video greeting — starting scene package",
-            metadata: {
-              project_id: project.id,
-              people: project.people.length,
-              extra_scene: isExtra,
-            },
+            metadata: { project_id: project.id, people: added.length, extra_scene: isExtra },
           });
           await supabase
             .from("pvg_projects")
@@ -473,12 +565,23 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const variationIndex =
       project.scenes.reduce((max, s) => Math.max(max, s.variationIndex), 0) + 1;
 
-    const people = project.people.map((p, i) => `${p.name.trim() || `person ${i + 1}`}`).join(", ");
+    // The scene is always built from the customer's own words. Only a person
+    // who was specially added is described on top of it; anybody else the
+    // description mentions simply belongs to the scene.
+    const main = added[0] ?? null;
+    const mainName = main?.name.trim() || "the main person";
+    const withPhoto = Boolean(main?.photoUrl);
     const prompt = [
       project.sceneDescription.trim(),
-      `The people in the scene: ${people}. Keep every face true to the supplied portraits.`,
+      main
+        ? withPhoto
+          ? `One main person is present in this scene: ${mainName}. Keep this face true to the supplied portrait. Any other people belong to the described scene.`
+          : `One main person is present in this scene: ${mainName} — ${main.appearanceDescription.trim()}. Show this person clearly in the foreground, facing the camera. Any other people belong to the described scene.`
+        : "",
       `A warm, premium celebration scene for ${project.occasion.trim()}, cinematic lighting, photo-real, wide framing.`,
-    ].join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     const { data: sceneRow, error: sceneError } = await supabase
       .from("pvg_scenes")
@@ -503,7 +606,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       .eq("id", project.id);
 
     try {
-      const referenceUrls = project.people
+      const referenceUrls = added
         .map((p) => p.photoUrl)
         .filter((url): url is string => Boolean(url));
       const { startSceneRender } = await import("./generator/image-engine.server");

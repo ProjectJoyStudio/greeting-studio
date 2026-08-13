@@ -5,10 +5,10 @@ import {
   Coins,
   ImagePlus,
   Loader2,
+  PencilLine,
   Plus,
-  ScanFace,
   Trash2,
-  Users,
+  UserPlus,
   Wand2,
   Check,
   X,
@@ -29,24 +29,17 @@ import {
   removePvgPerson,
   renamePvgPerson,
   savePvgPerson,
+  savePvgPersonDescription,
   savePvgProject,
   selectPvgScene,
 } from "@/lib/personal-video/pvg.functions";
-import {
-  detectFaces,
-  fileToBase64,
-  optimizeImage,
-  readImage,
-} from "@/lib/personal-video/photo-tools";
-import {
-  ManualFaceEditor,
-  type ManualFaceResult,
-} from "@/components/personal-video/ManualFaceEditor";
+import { fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
 import {
-  PVG_MAX_PEOPLE,
+  PVG_MAX_ADDED_PEOPLE,
+  addedPeople,
   pvgIncludedGenerations,
   pvgPriceCredits,
   validatePvgProject,
@@ -63,6 +56,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const open = useServerFn(openPvgProject);
   const save = useServerFn(savePvgProject);
   const savePerson = useServerFn(savePvgPerson);
+  const savePersonDescription = useServerFn(savePvgPersonDescription);
   const addPhoto = useServerFn(addPvgPersonPhoto);
   const rename = useServerFn(renamePvgPerson);
   const removePerson = useServerFn(removePvgPerson);
@@ -93,10 +87,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmSceneId, setConfirmSceneId] = useState<string | null>(null);
   const [confirmExtra, setConfirmExtra] = useState(false);
-  const [manualFile, setManualFile] = useState<File | null>(null);
-  const [manualOffered, setManualOffered] = useState<File | null>(null);
+  // Which of the two ways of adding the one main person is open, if any.
+  const [addMode, setAddMode] = useState<"none" | "choose" | "describe">("none");
+  const [appearance, setAppearance] = useState("");
   const personInput = useRef<HTMLInputElement>(null);
-  const groupInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
   const replaceFor = useRef<string | null>(null);
   const extraFor = useRef<string | null>(null);
@@ -203,14 +197,17 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     [issues],
   );
 
-  const price = pvgPriceCredits(project?.people.length ?? 1);
+  /** The one specially added person of this order, if the customer added one. */
+  const main = useMemo(() => addedPeople(project?.people ?? [])[0] ?? null, [project]);
+  const addedCount = main ? 1 : 0;
+  const price = pvgPriceCredits(addedCount || 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
 
   // A gentle, short note whenever one more included scene becomes available.
   const includedRef = useRef<number | null>(null);
   useEffect(() => {
     if (!project) return;
-    const next = pvgIncludedGenerations(project.people.length);
+    const next = pvgIncludedGenerations(addedPeople(project.people).length);
     const prev = includedRef.current;
     includedRef.current = next;
     if (prev !== null && next > prev) toast.success(t("pvg_included_added"), { duration: 4000 });
@@ -219,7 +216,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const includedCount = pvgIncludedGenerations(project?.people.length ?? 0);
+  const includedCount = pvgIncludedGenerations(addedCount);
   const generationsLeft = includedCount - usedCount;
   const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
@@ -273,80 +270,21 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     }
   }
 
-  async function handleGroupFile(file: File) {
-    if (!project) return;
-    setBusy("group");
+  /** The second way of adding the one main person: words instead of a photo. */
+  async function handleDescription() {
+    if (!project || !appearance.trim()) return;
+    setBusy("describe");
     try {
-      const room = PVG_MAX_PEOPLE - project.people.length;
-      const faces = await detectFaces(file, Math.max(0, room));
-      if (!faces || faces.length === 0) {
-        // Automatic recognition was not sure: offer manual marking instead.
-        setManualOffered(file);
-        setManualFile(file);
-        return;
-      }
-      let latest = project;
-      for (const face of faces) {
-        const res = await savePerson({
-          data: {
-            projectId: project.id,
-            optimizedBase64: face.photo.base64,
-            contentType: face.photo.contentType,
-            faceQuality: face.quality,
-            source: "group",
-          },
-        });
-        if (res.project) latest = res.project;
-      }
-      setProject(latest);
-      setManualOffered(file);
-      toast.success(`${t("pvg_faces_found")}: ${faces.length}`);
-    } catch {
-      setManualOffered(file);
-      setManualFile(file);
-    } finally {
-      setBusy(null);
-      if (groupInput.current) groupInput.current.value = "";
-    }
-  }
-
-  /**
-   * Stores the manually marked faces. Faces given to somebody already in the
-   * project only add a reference photo, so the number of people — and with it
-   * the price — stays the same.
-   */
-  async function handleManualFaces(faces: ManualFaceResult[]) {
-    if (!project) return;
-    setBusy("group");
-    try {
-      let latest = project;
-      for (const face of faces) {
-        if (face.personId) {
-          const res = await addPhoto({
-            data: {
-              projectId: project.id,
-              personId: face.personId,
-              base64: face.base64,
-              contentType: face.contentType,
-            },
-          });
-          if (res.project) latest = res.project;
-        } else {
-          const res = await savePerson({
-            data: {
-              projectId: project.id,
-              optimizedBase64: face.base64,
-              contentType: face.contentType,
-              faceQuality: face.quality,
-              source: "group",
-            },
-          });
-          if (res.project) latest = res.project;
-        }
-      }
-      setProject(latest);
-      setManualFile(null);
-      toast.success(`${t("pvg_face_saved")}: ${faces.length}`);
+      const res = await savePersonDescription({
+        data: {
+          projectId: project.id,
+          personId: main?.id,
+          appearanceDescription: appearance.trim(),
+        },
+      });
+      if (res.project) setProject(res.project);
+      setAddMode("none");
+      toast.success(t("pvg_saved"));
     } catch {
       toast.error(t("pvg_scene_failed"));
     } finally {
@@ -465,158 +403,213 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             </div>
           </div>
 
-          {/* People ---------------------------------------------------- */}
+          {/* The one specially added main person — always optional -------- */}
           <div className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-warm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="inline-flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
-                <Users className="h-4 w-4 text-primary" />
-                {t("pvg_people")}
+                <UserPlus className="h-4 w-4 text-primary" />
+                {t("pvg_person_section")}
               </h2>
               <span className="text-xs text-muted-foreground">
-                {project?.people.length ?? 0}/{PVG_MAX_PEOPLE}
+                {main ? 1 : 0}/{PVG_MAX_ADDED_PEOPLE}
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("pvg_people_hint")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("pvg_person_hint")}</p>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {(project?.people ?? []).map((person) => (
-                <div
-                  key={person.id}
-                  className="rounded-2xl border border-border/60 bg-background/60 p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    {person.photoUrl ? (
-                      <img
-                        src={person.photoUrl}
-                        alt={person.name || t("pvg_person_fallback")}
-                        className="h-16 w-16 shrink-0 rounded-xl object-cover"
-                      />
-                    ) : (
-                      <span className="h-16 w-16 shrink-0 rounded-xl bg-muted" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <input
-                        defaultValue={person.name}
-                        placeholder={t("pvg_name_ph")}
-                        onBlur={(e) => {
-                          if (!project) return;
-                          const value = e.target.value;
-                          if (value === person.name) return;
-                          void rename({
-                            data: { projectId: project.id, personId: person.id, name: value },
-                          }).then(() =>
-                            setProject((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    people: prev.people.map((p) =>
-                                      p.id === person.id ? { ...p, name: value } : p,
-                                    ),
-                                  }
-                                : prev,
-                            ),
-                          );
-                        }}
-                        className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm font-medium outline-none focus:border-primary/60"
-                      />
-                      <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                        {person.name.trim() || t("pvg_person_fallback")}
-                        {person.source === "group" ? ` · ${t("pvg_source_group")}` : ""}
-                      </p>
-                    </div>
-                  </div>
-
-                  {person.faceQuality === "low" && (
-                    <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[11px] text-destructive">
-                      {t("pvg_quality_low")}
-                    </p>
+            {main ? (
+              <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
+                <div className="flex items-start gap-3">
+                  {main.photoUrl ? (
+                    <img
+                      src={main.photoUrl}
+                      alt={main.name || t("pvg_person_fallback")}
+                      className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted">
+                      <PencilLine className="h-5 w-5 text-muted-foreground" />
+                    </span>
                   )}
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <MiniButton
-                      onClick={() => {
-                        replaceFor.current = person.id;
-                        personInput.current?.click();
+                  <div className="min-w-0 flex-1">
+                    <input
+                      defaultValue={main.name}
+                      placeholder={t("pvg_name_ph")}
+                      onBlur={(e) => {
+                        if (!project) return;
+                        const value = e.target.value;
+                        if (value === main.name) return;
+                        void rename({
+                          data: { projectId: project.id, personId: main.id, name: value },
+                        }).then(() =>
+                          setProject((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  people: prev.people.map((p) =>
+                                    p.id === main.id ? { ...p, name: value } : p,
+                                  ),
+                                }
+                              : prev,
+                          ),
+                        );
                       }}
-                    >
-                      {t("pvg_replace_photo")}
-                    </MiniButton>
+                      className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm font-medium outline-none focus:border-primary/60"
+                    />
+                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {main.photoUrl
+                        ? main.name.trim() || t("pvg_person_fallback")
+                        : `${t("pvg_person_described")}: ${main.appearanceDescription}`}
+                    </p>
+                  </div>
+                </div>
+
+                {main.photoUrl && main.faceQuality === "low" && (
+                  <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-[11px] text-destructive">
+                    {t("pvg_quality_low")}
+                  </p>
+                )}
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <MiniButton
+                    onClick={() => {
+                      replaceFor.current = main.id;
+                      personInput.current?.click();
+                    }}
+                  >
+                    {t("pvg_replace_photo")}
+                  </MiniButton>
+                  {main.photoUrl && (
                     <MiniButton
                       onClick={() => {
-                        extraFor.current = person.id;
+                        extraFor.current = main.id;
                         extraInput.current?.click();
                       }}
                     >
                       <ImagePlus className="h-3.5 w-3.5" />
                       {t("pvg_add_photos")}
-                      {person.extraPhotoCount > 0 ? ` (${person.extraPhotoCount})` : ""}
+                      {main.extraPhotoCount > 0 ? ` (${main.extraPhotoCount})` : ""}
                     </MiniButton>
-                    <MiniButton
-                      onClick={() => {
-                        if (!project) return;
-                        void removePerson({
-                          data: { projectId: project.id, personId: person.id },
-                        }).then((res) => res.project && setProject(res.project));
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      {t("pvg_remove_person")}
-                    </MiniButton>
-                  </div>
+                  )}
+                  <MiniButton
+                    onClick={() => {
+                      setAppearance(main.appearanceDescription);
+                      setAddMode("describe");
+                    }}
+                  >
+                    <PencilLine className="h-3.5 w-3.5" />
+                    {t("pvg_person_describe_option")}
+                  </MiniButton>
+                  <MiniButton
+                    onClick={() => {
+                      if (!project) return;
+                      void removePerson({
+                        data: { projectId: project.id, personId: main.id },
+                      }).then((res) => res.project && setProject(res.project));
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t("pvg_remove_person")}
+                  </MiniButton>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+                {t("pvg_person_none")}
+              </p>
+            )}
 
             {issueFor("people") && (
               <p className="mt-4 text-xs text-destructive">{t(issueFor("people")!.key)}</p>
             )}
 
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={busy !== null || (project?.people.length ?? 0) >= PVG_MAX_PEOPLE}
-                onClick={() => {
-                  replaceFor.current = null;
-                  personInput.current?.click();
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "person" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                {t("pvg_add_person")}
-              </button>
-              <button
-                type="button"
-                disabled={busy !== null || (project?.people.length ?? 0) >= PVG_MAX_PEOPLE}
-                onClick={() => groupInput.current?.click()}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "group" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Users className="h-4 w-4" />
-                )}
-                {t("pvg_add_group")}
-              </button>
-              {manualOffered && (
+            {addMode === "describe" ? (
+              <div className="mt-5 space-y-3">
+                <textarea
+                  value={appearance}
+                  onChange={(e) => setAppearance(e.target.value)}
+                  rows={3}
+                  maxLength={600}
+                  placeholder={t("pvg_person_describe_ph")}
+                  className="w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed outline-none transition focus:border-primary/60"
+                />
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={busy !== null || appearance.trim().length < 5}
+                    onClick={() => void handleDescription()}
+                    className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-50"
+                  >
+                    {busy === "describe" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                    {t("pvg_person_describe_save")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAddMode("none")}
+                    className="rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium"
+                  >
+                    {t("pvg_person_cancel")}
+                  </button>
+                </div>
+              </div>
+            ) : addMode === "choose" ? (
+              <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   type="button"
                   disabled={busy !== null}
-                  onClick={() => setManualFile(manualOffered)}
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-5 py-2.5 text-sm font-medium text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => {
+                    replaceFor.current = null;
+                    personInput.current?.click();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-50"
                 >
-                  <ScanFace className="h-4 w-4" />
-                  {t("pvg_mark_faces")}
+                  {busy === "person" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-4 w-4" />
+                  )}
+                  {t("pvg_person_photo_option")}
                 </button>
-              )}
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t("pvg_upload_hint")}</p>
-            {manualOffered && (
-              <p className="mt-1 text-xs text-muted-foreground">{t("pvg_mark_faces_hint")}</p>
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    setAppearance("");
+                    setAddMode("describe");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-50"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  {t("pvg_person_describe_option")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddMode("none")}
+                  className="rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium"
+                >
+                  {t("pvg_person_cancel")}
+                </button>
+              </div>
+            ) : (
+              !main && (
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => setAddMode("choose")}
+                    className="inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("pvg_add_person")}
+                  </button>
+                </div>
+              )
             )}
+
+            <p className="mt-2 text-xs text-muted-foreground">{t("pvg_upload_hint")}</p>
 
             <input
               ref={personInput}
@@ -626,16 +619,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) void handlePersonFile(file);
-              }}
-            />
-            <input
-              ref={groupInput}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleGroupFile(file);
               }}
             />
             <input
@@ -863,17 +846,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             onContextMenu={(e) => e.preventDefault()}
           />
         </div>
-      )}
-
-      {/* Manual face marking on a group photo ------------------------------ */}
-      {manualFile && project && (
-        <ManualFaceEditor
-          file={manualFile}
-          people={project.people}
-          busy={busy === "group"}
-          onCancel={() => setManualFile(null)}
-          onSave={(faces) => void handleManualFaces(faces)}
-        />
       )}
 
       {/* Confirmation before the scene becomes the first frame ------------- */}

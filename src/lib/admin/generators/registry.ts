@@ -171,6 +171,16 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         defaultBackup: null,
         defaultAutoFailover: false,
       },
+      {
+        // Scenes without a specially added speaking person. The slot is
+        // prepared; no engine is connected to it yet.
+        id: "personal_video.no_person_video",
+        titleKey: "gc_fn_no_person_video",
+        candidates: [],
+        defaultPrimary: null,
+        defaultBackup: null,
+        defaultAutoFailover: false,
+      },
     ],
   },
   {

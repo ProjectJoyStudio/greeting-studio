@@ -4,8 +4,14 @@ import type { PvsVideoSetup } from "./video-setup";
 import type { PvgSpeechMode, PvgSyncMode, PvgVoiceSource } from "./voice/speech";
 import type { PvgMusicSettings } from "@/lib/music/types";
 
-/** Standard projects hold up to five people. Premium raises this later. */
+/** Stored limit of the table. Older orders may still hold several people. */
 export const PVG_MAX_PEOPLE = 5;
+/**
+ * A Personal Video Greeting has at most ONE specially added person — the one
+ * who later speaks the greeting. Everybody else visible in the picture simply
+ * belongs to the described scene.
+ */
+export const PVG_MAX_ADDED_PEOPLE = 1;
 /** No project ever includes more than five free starting-scene creations. */
 export const PVG_MAX_GENERATIONS = 5;
 /** Cost of one additional starting scene beyond the included ones. */
@@ -21,11 +27,22 @@ export function pvgIncludedGenerations(peopleCount: number): number {
 
 export type PvgFaceQuality = "good" | "low" | "unknown";
 
+/**
+ * "speaker" — the one person the customer specially added; they deliver the
+ * greeting in the finished film. "narrator" — no person was added, so the
+ * greeting is only heard as a voice-over over the scene.
+ */
+export type PvgPersonRole = "speaker" | "narrator";
+
 export interface PvgPerson {
   /** Internal reference only — never shown to the person using the site. */
   id: string;
   name: string;
   position: number;
+  /** Specially added person, or the invisible voice of the greeting. */
+  role: PvgPersonRole;
+  /** Words describing the person when no photo was uploaded. */
+  appearanceDescription: string;
   photoUrl: string | null;
   faceQuality: PvgFaceQuality;
   source: "individual" | "group";
@@ -104,6 +121,11 @@ export function pvgPriceCredits(peopleCount: number): number {
   return Math.min(PVG_MAX_PEOPLE, Math.max(1, peopleCount));
 }
 
+/** Only the specially added people — never the invisible voice of a scene. */
+export function addedPeople<T extends { role?: PvgPersonRole }>(people: T[]): T[] {
+  return people.filter((p) => (p.role ?? "speaker") === "speaker");
+}
+
 export type PvgIssueField =
   | "recipientName"
   | "occasion"
@@ -130,11 +152,20 @@ export function validatePvgProject(
     generationsUsed: number;
     generationsLimit: number;
     creditsCharged: number;
-    people: { name: string; photoUrl: string | null; faceQuality: PvgFaceQuality }[];
+    people: {
+      name: string;
+      photoUrl: string | null;
+      faceQuality: PvgFaceQuality;
+      role?: PvgPersonRole;
+      appearanceDescription?: string;
+    }[];
   },
   balance: number,
 ): PvgIssue[] {
   const issues: PvgIssue[] = [];
+  // Only the specially added person is checked here. People who merely appear
+  // because the customer described them are part of the scene, not of this list.
+  const people = addedPeople(project.people);
   if (project.recipientName.trim().length < 2) {
     issues.push({ field: "recipientName", key: "pvg_err_recipient" });
   }
@@ -144,22 +175,20 @@ export function validatePvgProject(
   if (project.sceneDescription.trim().length < 15) {
     issues.push({ field: "sceneDescription", key: "pvg_err_description" });
   }
-  if (project.people.length < 1) {
-    issues.push({ field: "people", key: "pvg_err_people_min" });
-  }
-  if (project.people.length > PVG_MAX_PEOPLE) {
+  if (people.length > PVG_MAX_ADDED_PEOPLE) {
     issues.push({ field: "people", key: "pvg_err_people_max" });
   }
-  if (project.people.some((p) => !p.photoUrl)) {
+  // A specially added person is either a photo or a description — never neither.
+  if (people.some((p) => !p.photoUrl && !(p.appearanceDescription ?? "").trim())) {
     issues.push({ field: "people", key: "pvg_err_people_photo" });
   }
-  if (project.people.some((p) => p.faceQuality === "low")) {
+  if (people.some((p) => p.photoUrl && p.faceQuality === "low")) {
     issues.push({ field: "people", key: "pvg_err_people_quality" });
   }
-  const included = pvgIncludedGenerations(project.people.length);
+  const included = pvgIncludedGenerations(people.length);
   const needsExtra = project.generationsUsed >= included;
   const price =
-    (project.creditsCharged === 0 ? pvgPriceCredits(project.people.length) : 0) +
+    (project.creditsCharged === 0 ? pvgPriceCredits(people.length) : 0) +
     (needsExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
   if (price > 0 && balance < price) {
     issues.push({ field: "credits", key: "pvg_err_credits" });

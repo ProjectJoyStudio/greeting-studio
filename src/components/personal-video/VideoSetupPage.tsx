@@ -21,7 +21,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditWord } from "@/lib/credits/i18n";
-import { openPvgProject } from "@/lib/personal-video/pvg.functions";
+import { ensurePvgVoiceCarrier, openPvgProject } from "@/lib/personal-video/pvg.functions";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
@@ -59,6 +59,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const saveSetup = useServerFn(savePvgVideoSetup);
   const compose = useServerFn(composePvgGreeting);
   const claim = useServerFn(claimPvgEditSession);
+  const ensureVoiceCarrier = useServerFn(ensurePvgVoiceCarrier);
 
   const query = useQuery({
     queryKey: ["pvg", "setup", projectId ?? "new"],
@@ -66,6 +67,18 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     enabled: Boolean(projectId),
   });
   const project = query.data?.project ?? null;
+
+  // A scene without a specially added person still needs one voice for the
+  // greeting; it is carried invisibly so the voice tools work unchanged.
+  const carrierAsked = useRef(false);
+  useEffect(() => {
+    if (!project || carrierAsked.current) return;
+    if (project.people.length > 0) return;
+    carrierAsked.current = true;
+    void ensureVoiceCarrier({ data: { projectId: project.id } })
+      .then(() => query.refetch())
+      .catch(() => undefined);
+  }, [project, ensureVoiceCarrier, query]);
 
   const [duration, setDuration] = useState(15);
   const [mode, setMode] = useState<PvsGreetingMode>("manual");
