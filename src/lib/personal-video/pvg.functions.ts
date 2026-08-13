@@ -452,17 +452,6 @@ export const ensurePvgVoiceCarrier = createServerFn({ method: "POST" })
     return { project: await loadProject(supabase, data.projectId) };
   });
 
-const renamePvgPersonLegacy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; personId: string; name: string }) => input)
-  .handler(async ({ data, context }) => {
-    await context.supabase
-      .from("pvg_people")
-      .update({ name: data.name.slice(0, 80) })
-      .eq("id", data.personId);
-    return { ok: true as const };
-  });
-
 export const removePvgPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string }) => input)
