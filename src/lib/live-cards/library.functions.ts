@@ -134,6 +134,7 @@ export const listMyLiveGreetings = createServerFn({ method: "GET" })
       .eq("status", "ready")
       .not("finalized_at", "is", null)
       .is("deleted_at", null)
+      .is("delivered_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error || !rows) return [];
@@ -175,10 +176,43 @@ export const getLiveGreetingDraft = createServerFn({ method: "POST" })
       .eq("id", data.animationId)
       .eq("user_id", context.userId)
       .is("deleted_at", null)
+      .is("delivered_at", null)
       .maybeSingle();
     if (!row) return null;
     const [record] = await hydrate(context as never, [row as Row]);
     return record ?? null;
+  });
+
+/**
+ * A finished live greeting card is completed the moment it was successfully
+ * downloaded or shared. It then leaves the personal account for good: no
+ * further download, sharing or reopening. Previewing changes nothing.
+ */
+export const markLiveGreetingDelivered = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { animationId: string; method?: string }) => {
+    const animationId = String(input?.animationId ?? "");
+    if (!animationId) throw new Error("animation_required");
+    return { animationId, method: String(input?.method ?? "download").slice(0, 20) };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { error } = await context.supabase
+      .from("live_card_animations")
+      .update({ delivered_at: new Date().toISOString() })
+      .eq("id", data.animationId)
+      .eq("user_id", context.userId)
+      .is("deleted_at", null)
+      .is("delivered_at", null);
+    if (error) throw new Error(error.message);
+    const { logLiveCardEvent } = await import("./lifecycle.server");
+    await logLiveCardEvent({
+      actorUserId: context.userId,
+      ownerUserId: context.userId,
+      animationId: data.animationId,
+      stage: "notification_sent",
+      detail: { delivered_via: data.method },
+    });
+    return { ok: true };
   });
 
 /**
