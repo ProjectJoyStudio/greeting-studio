@@ -26,6 +26,7 @@ interface PersonLite {
   name: string | null;
   position: number;
   voice_id: string | null;
+  role?: string | null;
 }
 
 export interface PvgVideoState {
