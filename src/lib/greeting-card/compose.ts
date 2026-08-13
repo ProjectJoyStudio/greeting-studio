@@ -1,5 +1,22 @@
 import type { CardTextDesign } from "./types";
 
+/**
+ * A web font that has not been used on screen yet is not available to the
+ * canvas, which would silently fall back to a default face in the saved and
+ * downloaded card. Loading it first keeps the editor and the final picture
+ * identical, also for the handwritten fonts.
+ */
+async function ensureFontReady(fontFamily: string, fontPx: number): Promise<void> {
+  const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+  if (!fonts?.load) return;
+  try {
+    await fonts.load(`${fontPx}px ${fontFamily}`, "AaЯяĄąЇї");
+    await fonts.ready;
+  } catch {
+    // The fallback in the font stack takes over; nothing else to do.
+  }
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace("#", "");
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
@@ -48,6 +65,7 @@ export async function composeFinalCard(
 
   if (text.trim()) {
     const fontPx = (design.fontSize / 100) * canvas.width;
+    await ensureFontReady(design.fontFamily, fontPx);
     ctx.font = `${fontPx}px ${design.fontFamily}`;
     ctx.textBaseline = "middle";
     ctx.textAlign = design.align;
