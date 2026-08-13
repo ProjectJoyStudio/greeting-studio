@@ -23,6 +23,7 @@ import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditWord } from "@/lib/credits/i18n";
 import { ensurePvgVoiceCarrier, openPvgProject } from "@/lib/personal-video/pvg.functions";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
+import { getPvgEditSessionId } from "@/lib/personal-video/edit-session";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import { MusicPanel } from "@/components/personal-video/MusicPanel";
@@ -91,11 +92,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
   const loaded = useRef(false);
-  const sessionId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : String(Math.random()),
-  );
+  const sessionId = useRef<string>(getPvgEditSessionId());
 
   // One writer at a time: another open device is told instead of overwritten.
   useEffect(() => {

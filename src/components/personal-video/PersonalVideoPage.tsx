@@ -35,6 +35,7 @@ import {
 } from "@/lib/personal-video/pvg.functions";
 import { fileToBase64, optimizeImage, readImage } from "@/lib/personal-video/photo-tools";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
+import { getPvgEditSessionId } from "@/lib/personal-video/edit-session";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
 import {
@@ -75,11 +76,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const [busy, setBusy] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
-  const sessionId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : String(Math.random()),
-  );
+  const sessionId = useRef<string>(getPvgEditSessionId());
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [description, setDescription] = useState("");

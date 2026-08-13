@@ -65,7 +65,7 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       ["pending", "processing", "lipsync", "assets"].includes(r.status),
     );
     if (running.length > 0) {
-      for (const row of running) await reconcileVideo(row.id);
+      await Promise.all(running.map((row) => reconcileVideo(row.id)));
       rows = await read();
     }
 

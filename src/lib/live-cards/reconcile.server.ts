@@ -169,12 +169,10 @@ export async function reconcileUserAnimations(userId: string): Promise<number> {
     .in("status", PENDING)
     .limit(20);
   const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
-  let finished = 0;
-  for (const id of ids) {
-    const outcome = await reconcileAnimation(id);
-    if (outcome === "ready" || outcome === "failed") finished += 1;
-  }
-  return finished;
+  // Finished work is collected side by side: one slow download must not hold
+  // back every other card of the same person.
+  const outcomes = await Promise.all(ids.map((id) => reconcileAnimation(id)));
+  return outcomes.filter((o) => o === "ready" || o === "failed").length;
 }
 
 /** Platform-wide sweep used by the scheduled background job. */
