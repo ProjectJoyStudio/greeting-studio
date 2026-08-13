@@ -9,7 +9,7 @@
 import type { PvgVideoJob, PvgVideoStatus } from "./video-render";
 
 export const VIDEO_COLUMNS =
-  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id";
+  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at";
 
 export interface VideoRow {
   id: string;
@@ -38,6 +38,8 @@ export interface VideoRow {
   video_cost_usd?: number | null;
   audio_seconds?: number | null;
   speaker_person_id?: string | null;
+  /** Set once the customer downloaded or shared this film. */
+  delivered_at?: string | null;
 }
 
 export function pvgVideoBucket(): string {
