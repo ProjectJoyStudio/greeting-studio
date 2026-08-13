@@ -17,9 +17,19 @@ import {
   generateCardImage,
   getOwnCard,
   logCardEvent,
+  markCardDelivered,
   rejectCard,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
+import { buyCardAttemptPack, getCardAttempts } from "@/lib/greeting-card/attempts.functions";
+import {
+  ATTEMPTS_PER_PACK,
+  ATTEMPT_PACK_CREDITS,
+  attemptState,
+  type CardAttemptState,
+} from "@/lib/greeting-card/attempts";
+import { currentCardSession, resetCardSession } from "@/lib/greeting-card/card-session";
+import { useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   DEFAULT_TEXT_DESIGN,
   normalizeTextDesign,
@@ -79,6 +89,10 @@ function CreateCardPage() {
   const runSave = useServerFn(saveCardProject);
   const runLoad = useServerFn(getOwnCard);
   const trackEvent = useServerFn(logCardEvent);
+  const runAttempts = useServerFn(getCardAttempts);
+  const runBuyPack = useServerFn(buyCardAttemptPack);
+  const runDelivered = useServerFn(markCardDelivered);
+  const refreshCredits = useRefreshCreditBalance();
 
   const [stage, setStage] = useState<Stage>("edit");
   const [prompt, setPrompt] = useState(search.prompt ?? "");
@@ -95,6 +109,26 @@ function CreateCardPage() {
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [card, setCard] = useState<{ id: string; imageUrl: string } | null>(null);
+  const [sessionKey, setSessionKey] = useState("");
+  const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
+  const [buying, setBuying] = useState(false);
+
+  useEffect(() => {
+    setSessionKey(currentCardSession());
+  }, []);
+
+  useEffect(() => {
+    if (!user || !sessionKey) return;
+    let active = true;
+    void runAttempts({ data: { sessionKey } })
+      .then((state) => {
+        if (active) setAttempts(state);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user, sessionKey, runAttempts]);
 
   /** Re-opening a saved postcard restores the whole project, not just the picture. */
   const { data: existing } = useQuery({
@@ -132,19 +166,91 @@ function CreateCardPage() {
     setGenerating(true);
     try {
       const res = await runGenerate({
-        data: { prompt: prompt.trim(), keywords: keywordList, greetingText: greeting, greetingMode: mode },
+        data: {
+          prompt: prompt.trim(),
+          keywords: keywordList,
+          greetingText: greeting,
+          greetingMode: mode,
+          sessionKey,
+          // The current card is replaced only after the new one succeeded.
+          replaceCardId: card?.id ?? "",
+        },
       });
       if (!res.ok) {
+        if (res.errorCode === "attempt_limit") {
+          toast.error(t("gc_attempts_none"));
+          setAttempts((a) => ({ ...a, used: a.allowed, remaining: 0 }));
+          return;
+        }
         toast.error(`${t("gc_err_generate")} (${res.errorCode})`);
         return;
       }
       setCard({ id: res.cardId, imageUrl: res.imageUrl });
+      setShareUrl(null);
+      setAttempts((a) => attemptState(Math.min(a.allowed, a.used + 1), a.packs));
       setStage("preview");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("gc_err_generate"));
     } finally {
       setGenerating(false);
     }
+  }
+
+  /** Buys five more generation attempts for a single credit. */
+  async function handleBuyPack() {
+    if (!sessionKey) return;
+    setBuying(true);
+    try {
+      const res = await runBuyPack({ data: { sessionKey } });
+      if (!res.ok) {
+        toast.error(t("gc_attempts_no_credits"));
+        return;
+      }
+      setAttempts(res.attempts);
+      refreshCredits(res.balance);
+      toast.success(t("gc_attempts_bought"));
+    } catch {
+      toast.error(t("gc_attempts_no_credits"));
+    } finally {
+      setBuying(false);
+    }
+  }
+
+  /** Download or send finishes the order: the card leaves the workflow. */
+  async function finishDelivery(channel: string) {
+    if (!card) return;
+    try {
+      await runDelivered({ data: { cardId: card.id, channel } });
+    } catch {
+      // The delivery itself already happened; nothing to undo here.
+    }
+    setShareOpen(false);
+    setCard(null);
+    setShareUrl(null);
+    setPrompt("");
+    setGreeting("");
+    setKeywords("");
+    setTitle("");
+    setMode("manual");
+    setDesign({ ...DEFAULT_TEXT_DESIGN });
+    const key = resetCardSession();
+    setSessionKey(key);
+    setAttempts(attemptState(0, 0));
+    setStage("edit");
+    toast.success(t("gc_delivered_toast"));
+    void navigate({ to: "/create-card", search: {}, replace: true });
+  }
+
+  /** Renders and downloads the final picture, then closes the order. */
+  async function handleDownloadAndFinish() {
+    if (!card) return;
+    try {
+      await downloadFinalCard(card.imageUrl, greeting, design);
+    } catch {
+      toast.error(t("gc_err_save"));
+      return;
+    }
+    await finishDelivery("download");
   }
 
   async function handleCompose() {
@@ -171,12 +277,7 @@ function CreateCardPage() {
   async function handleConfirmReplace() {
     if (!card) return;
     setConfirmReplace(false);
-    try {
-      await runReject({ data: { cardId: card.id } });
-    } catch {
-      // The card is already unreachable for the user; nothing to restore.
-    }
-    setCard(null);
+    // The current card stays available until a new generation succeeds.
     setStage("edit"); // back to the editor with every field still filled in
   }
 
