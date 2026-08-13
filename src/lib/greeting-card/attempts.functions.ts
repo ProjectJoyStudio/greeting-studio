@@ -4,21 +4,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
-  FREE_CARD_ATTEMPTS,
   attemptState,
   type CardAttemptState,
 } from "./attempts";
 
-function sessionKeyOf(input: { sessionKey?: string } | undefined): string {
-  const key = String(input?.sessionKey ?? "").slice(0, 64);
-  if (!key) throw new Error("session_required");
-  return key;
-}
-
 /** Reads (and creates on first use) the attempt counter of one card creation. */
 export const getCardAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sessionKey: string }) => ({ sessionKey: sessionKeyOf(input) }))
+  .inputValidator((input: { sessionKey: string }) => {
+    const sessionKey = String(input?.sessionKey ?? "").slice(0, 64);
+    if (!sessionKey) throw new Error("session_required");
+    return { sessionKey };
+  })
   .handler(async ({ data, context }): Promise<CardAttemptState> => {
     const { data: row } = await context.supabase
       .from("user_card_attempt_sessions")
@@ -43,7 +40,11 @@ export const getCardAttempts = createServerFn({ method: "POST" })
  */
 export const buyCardAttemptPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sessionKey: string }) => ({ sessionKey: sessionKeyOf(input) }))
+  .inputValidator((input: { sessionKey: string }) => {
+    const sessionKey = String(input?.sessionKey ?? "").slice(0, 64);
+    if (!sessionKey) throw new Error("session_required");
+    return { sessionKey };
+  })
   .handler(
     async ({
       data,
@@ -115,5 +116,3 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
       };
     },
   );
-
-export { FREE_CARD_ATTEMPTS, ATTEMPTS_PER_PACK, ATTEMPT_PACK_CREDITS };
