@@ -23,6 +23,7 @@ import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditWord } from "@/lib/credits/i18n";
 import { ensurePvgVoiceCarrier, openPvgProject } from "@/lib/personal-video/pvg.functions";
 import { claimPvgEditSession } from "@/lib/personal-video/order.functions";
+import { getPvgEditSessionId } from "@/lib/personal-video/edit-session";
 import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import { VoicePanel } from "@/components/personal-video/VoicePanel";
 import { MusicPanel } from "@/components/personal-video/MusicPanel";
