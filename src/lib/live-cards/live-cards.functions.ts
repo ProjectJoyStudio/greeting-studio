@@ -74,25 +74,29 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
     const { createLiveCardImage, LiveCardImageServiceError } = await import(
       "./image-service/service.server"
     );
-    const { maxAttemptsPerProject } = await import("./image-service/config.server");
     const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
     const { liveCardsImageBucket } = await import("./env.server");
+    const { LIVE_CARD_ATTEMPTS_PER_PACK } = await import("./attempts");
 
-    // Each project may create a limited number of starting pictures.
-    if (data.sessionId) {
-      const { count } = await context.supabase
-        .from("live_greeting_cards")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", context.userId)
-        .eq("session_id", data.sessionId)
-        .eq("source", "generated");
-      if ((count ?? 0) >= maxAttemptsPerProject()) {
-        return {
-          ok: false,
-          errorCode: "attempt_limit",
-          errorMessage: "You have created the maximum number of starting pictures for this project.",
-        };
-      }
+    // Attempts are always bought in packages; a picture is only created while
+    // the current package still has an unused attempt.
+    if (!data.sessionId) {
+      return { ok: false, errorCode: "session_required", errorMessage: "No creation session." };
+    }
+    const { data: session } = await context.supabase
+      .from("live_card_attempt_sessions")
+      .select("attempts_used, packs_purchased")
+      .eq("user_id", context.userId)
+      .eq("session_key", data.sessionId)
+      .maybeSingle();
+    const used = session?.attempts_used ?? 0;
+    const allowed = (session?.packs_purchased ?? 0) * LIVE_CARD_ATTEMPTS_PER_PACK;
+    if (used >= allowed) {
+      return {
+        ok: false,
+        errorCode: "attempt_limit",
+        errorMessage: "No attempts left in the current package.",
+      };
     }
 
     // Universal translation layer — the engine only ever receives English.
@@ -151,6 +155,30 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
       await supabaseAdmin.storage.from(bucket).remove([storagePath]);
       return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not store the picture." };
     }
+
+    // Only a picture that really exists consumes one attempt.
+    await supabaseAdmin.rpc("consume_live_card_attempt", {
+      _user_id: context.userId,
+      _session_key: data.sessionId,
+      _attempts_per_pack: LIVE_CARD_ATTEMPTS_PER_PACK,
+    });
+
+    // Only the newest successful picture stays in the active flow. The older
+    // ones move to the recycle bin — after, never before, the new success.
+    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+    const days = await readRetentionDays();
+    const now = new Date();
+    await context.supabase
+      .from("live_greeting_cards")
+      .update({
+        status: "discarded",
+        deleted_at: now.toISOString(),
+        purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
+      })
+      .eq("user_id", context.userId)
+      .eq("session_id", data.sessionId)
+      .neq("id", (row as Row).id)
+      .is("deleted_at", null);
 
     return { ok: true, card: await toAsset(row as Row) };
   });

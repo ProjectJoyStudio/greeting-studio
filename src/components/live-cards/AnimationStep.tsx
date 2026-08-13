@@ -21,12 +21,11 @@ import {
 } from "@/lib/live-cards/types";
 import {
   ANIMATION_DURATION_DEFAULT,
-  ANIMATION_DURATION_MAX,
-  ANIMATION_DURATION_MIN,
-  ANIMATION_DURATION_STEP,
+  ANIMATION_DURATIONS,
   animationDurationCredits,
   normaliseAnimationDuration,
 } from "@/lib/live-cards/duration-pricing";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 
 const DRAFT_KEY = "joy.live-cards.motion";
 
@@ -52,6 +51,8 @@ export function AnimationStep({
   const { t, lang } = useI18n();
   const start = useServerFn(startLiveCardAnimation);
   const refresh = useServerFn(refreshLiveCardAnimation);
+  const { balance } = useCreditBalance();
+  const refreshBalance = useRefreshCreditBalance();
 
   const [motion, setMotion] = useState("");
   const [duration, setDuration] = useState<number | null>(null);
@@ -83,6 +84,8 @@ export function AnimationStep({
   void durations;
   const chosenDuration = normaliseAnimationDuration(duration ?? ANIMATION_DURATION_DEFAULT);
   const priceCredits = animationDurationCredits(chosenDuration);
+  const balanceAfter = balance - priceCredits;
+  const canAfford = balance >= priceCredits;
 
   // Generation runs in the background: whatever is unfinished for this session
   // is picked up again when the person returns to the page.
@@ -128,6 +131,10 @@ export function AnimationStep({
 
   async function animate() {
     if (motion.trim().length < 3) return;
+    if (!canAfford) {
+      toast.error(t("la_insufficient"));
+      return;
+    }
     setSending(true);
     try {
       const result = await start({
@@ -140,11 +147,19 @@ export function AnimationStep({
         },
       });
       if (!result.ok) {
-        toast.error(result.errorCode === "no_generator" ? t("la_unavailable") : t("la_failed_toast"));
+        toast.error(
+          result.errorCode === "no_generator"
+            ? t("la_unavailable")
+            : result.errorCode === "insufficient_credits" || result.errorCode === "charge_failed"
+              ? t("la_insufficient")
+              : t("la_failed_toast"),
+        );
+        refreshBalance();
         return;
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
+      refreshBalance();
     } catch {
       toast.error(t("la_failed_toast"));
     } finally {
@@ -305,40 +320,49 @@ export function AnimationStep({
           <input
             id="la-duration"
             type="range"
-            min={ANIMATION_DURATION_MIN}
-            max={ANIMATION_DURATION_MAX}
-            step={ANIMATION_DURATION_STEP}
-            value={chosenDuration}
+            min={0}
+            max={ANIMATION_DURATIONS.length - 1}
+            step={1}
+            value={Math.max(0, ANIMATION_DURATIONS.indexOf(chosenDuration))}
             disabled={sending || running}
-            onChange={(e) => setDuration(Number(e.target.value))}
+            onChange={(e) => setDuration(ANIMATION_DURATIONS[Number(e.target.value)])}
             className="mt-3 w-full accent-primary disabled:cursor-not-allowed disabled:opacity-50"
           />
           <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
-            <span>
-              {ANIMATION_DURATION_MIN}
-              {t("la_seconds")}
-            </span>
-            <span>
-              {ANIMATION_DURATION_MAX}
-              {t("la_seconds")}
-            </span>
+            {ANIMATION_DURATIONS.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                disabled={sending || running}
+                onClick={() => setDuration(seconds)}
+                className={`rounded-full px-2 py-0.5 transition ${
+                  chosenDuration === seconds ? "font-semibold text-primary" : "hover:text-foreground"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {seconds}
+                {t("la_seconds")}
+              </button>
+            ))}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t("la_price_estimate")}: <span className="font-medium">{priceCredits ?? "—"}</span>{" "}
-            {t("la_price_credits")}
-          </p>
         </div>
 
-        {/* Compact summary ------------------------------------------------- */}
+        {/* Credits — everything the person pays, always up to date --------- */}
         <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
+          <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
           <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
+          <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
+          <SummaryRow
+            label={t("la_balance_after")}
+            value={`${Math.max(0, balanceAfter)} ${t("la_price_credits")}`}
+          />
           <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
         </dl>
+        {!canAfford && <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>}
 
         <button
           type="button"
           onClick={animate}
-          disabled={sending || running || motion.trim().length < 3}
+          disabled={sending || running || motion.trim().length < 3 || !canAfford}
           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending || running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}

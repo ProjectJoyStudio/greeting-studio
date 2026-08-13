@@ -92,6 +92,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
     const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
     const { liveCardsVideoResolution } = await import("./env.server");
     const { normaliseAnimationDuration } = await import("./duration-pricing");
+    const { animationDurationCredits } = await import("./duration-pricing");
     const requestId = crypto.randomUUID();
 
     const { data: card, error: cardError } = await context.supabase
@@ -106,6 +107,41 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
 
     // The person's choice is used as it is; only impossible values are clamped.
     const duration = normaliseAnimationDuration(data.durationSeconds);
+    const price = animationDurationCredits(duration);
+
+    // One live greeting card is animated once. A double click, a refresh or a
+    // repeated request returns the animation that already exists instead of
+    // starting — and paying for — a second one.
+    const { data: existing } = await context.supabase
+      .from("live_card_animations")
+      .select(COLUMNS)
+      .eq("user_id", context.userId)
+      .eq("source_card_id", card.id)
+      .in("status", ["preparing", "queued", "processing", "storing", "ready"])
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      return { ok: true, animation: await toAnimation(existing as Row) };
+    }
+
+    // The price is taken before the paid provider request is created; the
+    // wallet is locked in the database, so the balance can never go negative.
+    const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
+    const { data: charge, error: chargeError } = await wallet.rpc("charge_live_card_animation", {
+      _user_id: context.userId,
+      _price: price,
+      _duration: duration,
+    });
+    const charged = (charge ?? {}) as { ok?: boolean; error?: string; balance?: number };
+    if (chargeError || !charged.ok) {
+      return {
+        ok: false,
+        errorCode: charged.error ?? "charge_failed",
+        errorMessage: "Not enough credits for this animation.",
+      };
+    }
 
     // Universal translation layer — the engine only ever receives English.
     const translated = await translatePromptToEnglish(data.prompt, "animation");
@@ -131,6 +167,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       duration_seconds: duration,
       aspect_ratio: card.aspect_ratio,
       resolution: liveCardsVideoResolution(),
+      credits_charged: price,
     };
 
     try {
@@ -177,10 +214,16 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       const known = err instanceof GeneratorError;
       const errorCode = known ? err.code : "unknown";
       const errorMessage = err instanceof Error ? err.message : "The animation could not be started.";
+      // Nothing was produced — the credits go straight back.
+      await wallet.rpc("refund_live_card_animation", {
+        _user_id: context.userId,
+        _price: price,
+        _reason: errorCode,
+      });
       // The failure is recorded for administrators; nothing the person typed is lost.
       await context.supabase
         .from("live_card_animations")
-        .insert({ ...base, status: "failed", error_code: errorCode, error_message: errorMessage });
+        .insert({ ...base, credits_charged: 0, status: "failed", error_code: errorCode, error_message: errorMessage });
       const { logLiveCardEvent } = await import("./lifecycle.server");
       await logLiveCardEvent({
         actorUserId: context.userId,

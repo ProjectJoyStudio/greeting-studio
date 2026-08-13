@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Sparkles, Upload, Wand2, Coins, Wallet, Play } from "lucide-react";
+import { Check, Loader2, Sparkles, Wand2, Coins, Wallet, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -13,9 +13,17 @@ import {
   generateLiveCardImage,
   listOwnLiveCards,
   selectLiveCardImage,
-  uploadLiveCardImage,
   discardLiveCardImage,
 } from "@/lib/live-cards/live-cards.functions";
+import {
+  buyLiveCardAttemptPack,
+  getLiveCardAttempts,
+} from "@/lib/live-cards/attempts.functions";
+import {
+  LIVE_CARD_ATTEMPTS_PER_PACK,
+  LIVE_CARD_PACK_CREDITS,
+} from "@/lib/live-cards/attempts";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   LIVE_CARD_RATIOS,
   type LiveCardAsset,
@@ -32,12 +40,12 @@ export const Route = createFileRoute("/live-cards")({
       {
         name: "description",
         content:
-          "Create the picture for your live greeting card: describe it in your own words or upload your own photo, and keep it in your Project Joy account.",
+          "Create the picture for your live greeting card: describe it in your own words and keep it in your Project Joy account.",
       },
       { property: "og:title", content: "Live greeting cards — Project Joy" },
       {
         property: "og:description",
-        content: "Describe or upload the picture for your living greeting and preview it instantly.",
+        content: "Describe the picture for your living greeting and preview it instantly.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -87,14 +95,16 @@ function LiveCardsPage() {
   const { t, lang } = useI18n();
   const { isAuthenticated } = useAuth();
   const generate = useServerFn(generateLiveCardImage);
-  const upload = useServerFn(uploadLiveCardImage);
   const select = useServerFn(selectLiveCardImage);
   const discard = useServerFn(discardLiveCardImage);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const readAttempts = useServerFn(getLiveCardAttempts);
+  const buyPack = useServerFn(buyLiveCardAttemptPack);
+  const { balance } = useCreditBalance();
+  const refreshBalance = useRefreshCreditBalance();
 
   const [prompt, setPrompt] = useState("");
   const [ratio, setRatio] = useState<LiveCardRatio>("1:1");
-  const [busy, setBusy] = useState<null | "generate" | "upload" | "select">(null);
+  const [busy, setBusy] = useState<null | "generate" | "buy" | "select">(null);
   const [current, setCurrent] = useState<LiveCardAsset | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
@@ -110,10 +120,16 @@ function LiveCardsPage() {
     enabled: isAuthenticated && Boolean(sessionId),
   });
 
-  /** Up to three starting pictures may be created per project. */
-  const MAX_ATTEMPTS = 3;
-  const generatedCount = (recent.data ?? []).filter((c) => c.source === "generated").length;
-  const attemptsLeft = Math.max(0, MAX_ATTEMPTS - generatedCount);
+  // One credit buys a package of three start-image attempts; the counter is
+  // kept on the server, so refreshes and retries never change it.
+  const attempts = useQuery({
+    queryKey: ["live-cards", "attempts", sessionId],
+    queryFn: () => readAttempts({ data: { sessionKey: sessionId! } }),
+    enabled: isAuthenticated && Boolean(sessionId),
+  });
+  const attemptsLeft = attempts.data?.remaining ?? 0;
+  const generatedCount = attempts.data?.used ?? 0;
+  const canBuyPack = balance >= LIVE_CARD_PACK_CREDITS;
 
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
@@ -136,6 +152,7 @@ function LiveCardsPage() {
       toast.error(t("lc_attempts_done"));
       return;
     }
+    if (busy) return;
     setBusy("generate");
     setRestored(true);
     try {
@@ -150,6 +167,28 @@ function LiveCardsPage() {
       setSelectedId(null);
       toast.success(t("lc_saved"));
       void recent.refetch();
+      void attempts.refetch();
+    } catch {
+      toast.error(t("lc_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Buys three more attempts for one credit — charged exactly once. */
+  async function buyAttempts() {
+    if (busy) return;
+    setBusy("buy");
+    try {
+      const result = await buyPack({ data: { sessionKey: sessionId! } });
+      if (!result.ok) {
+        toast.error(t("lc_insufficient"));
+        refreshBalance(result.balance);
+        return;
+      }
+      refreshBalance(result.balance);
+      void attempts.refetch();
+      toast.success(t("lc_pack_bought"));
     } catch {
       toast.error(t("lc_failed"));
     } finally {
@@ -210,37 +249,6 @@ function LiveCardsPage() {
     setRestored(true);
     resetSession();
     void recent.refetch();
-  }
-
-  async function uploadFile(file: File) {
-    setBusy("upload");
-    try {
-      const buffer = new Uint8Array(await file.arrayBuffer());
-      let binary = "";
-      for (let i = 0; i < buffer.length; i += 1) binary += String.fromCharCode(buffer[i]);
-      const result = await upload({
-        data: {
-          fileBase64: btoa(binary),
-          contentType: file.type || "image/png",
-          prompt,
-          aspectRatio: ratio,
-          sessionId: sessionId ?? undefined,
-        },
-      });
-      if (!result.ok) {
-        toast.error(t("lc_failed"));
-        return;
-      }
-      setCurrent(result.card);
-      setSelectedId(null);
-      toast.success(t("lc_saved"));
-      void recent.refetch();
-    } catch {
-      toast.error(t("lc_failed"));
-    } finally {
-      setBusy(null);
-      if (fileRef.current) fileRef.current.value = "";
-    }
   }
 
   return (
@@ -318,38 +326,33 @@ function LiveCardsPage() {
                 </button>
               )}
 
-              {!current && (
-              <button
-                type="button"
-                disabled={!isAuthenticated || busy !== null}
-                onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "upload" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                {busy === "upload" ? t("lc_uploading") : t("lc_upload")}
-              </button>
+              {attemptsLeft <= 0 && (
+                <button
+                  type="button"
+                  disabled={!isAuthenticated || busy !== null || !canBuyPack}
+                  onClick={buyAttempts}
+                  className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "buy" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Coins className="h-4 w-4" />
+                  )}
+                  {t("lc_buy_attempts")}
+                </button>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void uploadFile(file);
-                }}
-              />
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t("lc_upload_hint")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-muted-foreground">
               {attemptsLeft > 0
-                ? `${t("lc_attempts_left")} ${attemptsLeft}/${MAX_ATTEMPTS}`
+                ? `${t("lc_attempts_left")} ${attemptsLeft}/${LIVE_CARD_ATTEMPTS_PER_PACK}`
                 : t("lc_attempts_done")}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("lc_balance")}: {balance} · {t("lc_pack_price")}
+            </p>
+            {attemptsLeft <= 0 && !canBuyPack && (
+              <p className="mt-1 text-xs font-medium text-destructive">{t("lc_insufficient")}</p>
+            )}
 
             {!isAuthenticated && (
               <p className="mt-4 text-sm text-muted-foreground">
@@ -360,24 +363,20 @@ function LiveCardsPage() {
             )}
           </div>
 
-          {/* Reserved panels for the credit phase -------------------------- */}
+          {/* Credits — what an attempt package costs and what is left ------ */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <ReservedPanel
+            <InfoPanel
               icon={<Coins className="h-4 w-4" />}
               title={t("lc_price_title")}
-              note={t("lc_price_soon")}
-              badge={t("lc_soon")}
-            >
-              <span className="font-display text-2xl text-muted-foreground/60">—</span>
-            </ReservedPanel>
-            <ReservedPanel
+              note={t("lc_pack_price")}
+              value={`${LIVE_CARD_PACK_CREDITS}`}
+            />
+            <InfoPanel
               icon={<Wallet className="h-4 w-4" />}
               title={t("lc_balance_title")}
-              note={t("lc_balance_soon")}
-              badge={t("lc_soon")}
-            >
-              <span className="font-display text-2xl text-muted-foreground/60">—</span>
-            </ReservedPanel>
+              note={t("lc_balance")}
+              value={`${balance}`}
+            />
           </div>
           </>
           )}
@@ -443,8 +442,8 @@ function LiveCardsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy !== null || (attemptsLeft <= 0 && generatedCount >= MAX_ATTEMPTS)}
-                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : setConfirmReplace(true))}
+                  disabled={busy !== null || (attemptsLeft <= 0 && !canBuyPack)}
+                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAttempts())}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
@@ -452,7 +451,7 @@ function LiveCardsPage() {
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  {t("lc_regenerate")}
+                  {attemptsLeft > 0 ? t("lc_regenerate") : t("lc_buy_attempts")}
                 </button>
               </div>
             )}
@@ -551,31 +550,26 @@ function LiveCardsPage() {
   );
 }
 
-function ReservedPanel({
+function InfoPanel({
   icon,
   title,
   note,
-  badge,
-  children,
+  value,
 }: {
   icon: React.ReactNode;
   title: string;
   note: string;
-  badge: string;
-  children: React.ReactNode;
+  value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-4">
+    <div className="rounded-2xl border border-border/60 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-sm font-medium">
           {icon}
           {title}
         </span>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          {badge}
-        </span>
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3 font-display text-2xl font-semibold tracking-tight text-primary">{value}</div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
     </div>
   );
