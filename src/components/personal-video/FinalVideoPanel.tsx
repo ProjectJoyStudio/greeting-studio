@@ -168,6 +168,24 @@ export function FinalVideoPanel({
     await create(readyVariants.length > 0);
   }
 
+  /**
+   * The film has left the workshop: it is kept safely, but the active page
+   * returns to its calm, empty state. Only downloading or sharing does this.
+   */
+  async function onDelivered(videoId: string) {
+    setDelivering(false);
+    stopAll();
+    setActiveId(null);
+    try {
+      await deliver({ data: { projectId, videoId } });
+    } catch {
+      // The customer already has the film; nothing else needs to happen.
+    }
+    await query.refetch();
+    onChanged?.();
+    toast.success(t("pvr_delivered"));
+  }
+
   return (
     <div className="mt-6 rounded-3xl border border-border/60 bg-card/70 p-5 shadow-warm">
       <p className="mb-4 flex items-center gap-2 font-display text-base font-semibold">
@@ -266,6 +284,14 @@ export function FinalVideoPanel({
           )}
 
           {trackUrl && <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />}
+
+          {delivering && selected.videoUrl && (
+            <DeliveryDialog
+              videoUrl={selected.videoUrl}
+              onDelivered={() => void onDelivered(selected.id)}
+              onClose={() => setDelivering(false)}
+            />
+          )}
         </div>
       ) : running ? (
         <div className="space-y-3">
