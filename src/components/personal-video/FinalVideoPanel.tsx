@@ -20,35 +20,6 @@ import {
   isPvgVideoRunning,
   pvgVideoStatusKey,
 } from "@/lib/personal-video/video-render";
-import type { PvgVideoJob } from "@/lib/personal-video/video-render";
-
-/** Technical facts of one film. Only administrators and testers see this. */
-function TechnicalDetails({ job }: { job: PvgVideoJob }) {
-  const rows: Array<[string, string]> = [
-    ["Engine", `${job.tech.generator ?? "—"} (${job.tech.model ?? "—"})`],
-    ["Status", job.status],
-    ["Prediction", job.tech.predictionId ?? "—"],
-    ["Audio duration", job.tech.audioSeconds ? `${job.tech.audioSeconds.toFixed(2)}s` : "—"],
-    ["Speaking participant", job.tech.speakerPersonId ?? "—"],
-    ["Provider cost", `$${job.tech.costUsd.toFixed(4)}`],
-    ["Error", job.errorMessage ?? "—"],
-  ];
-  return (
-    <details className="mt-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
-      <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        Admin / Test mode — technical details
-      </summary>
-      <dl className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground sm:grid-cols-2">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-3">
-            <dt>{label}</dt>
-            <dd className="truncate font-mono text-foreground/80">{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </details>
-  );
-}
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
@@ -288,7 +259,6 @@ export function FinalVideoPanel({
           )}
 
           {trackUrl && <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />}
-          {isTest && <TechnicalDetails job={selected} />}
         </div>
       ) : running ? (
         <div className="space-y-3">
@@ -310,7 +280,6 @@ export function FinalVideoPanel({
             />
           </div>
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t("pvr_leave_note")}</p>
-          {isTest && <TechnicalDetails job={video!} />}
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
@@ -324,7 +293,6 @@ export function FinalVideoPanel({
             <RotateCcw className="h-4 w-4" />
             {t("pvr_retry")}
           </button>
-          {isTest && <TechnicalDetails job={video} />}
         </div>
       ) : (
         <div className="space-y-3">
