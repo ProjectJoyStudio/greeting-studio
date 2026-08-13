@@ -254,37 +254,6 @@ function LiveCardsPage() {
     void recent.refetch();
   }
 
-  async function uploadFile(file: File) {
-    setBusy("upload");
-    try {
-      const buffer = new Uint8Array(await file.arrayBuffer());
-      let binary = "";
-      for (let i = 0; i < buffer.length; i += 1) binary += String.fromCharCode(buffer[i]);
-      const result = await upload({
-        data: {
-          fileBase64: btoa(binary),
-          contentType: file.type || "image/png",
-          prompt,
-          aspectRatio: ratio,
-          sessionId: sessionId ?? undefined,
-        },
-      });
-      if (!result.ok) {
-        toast.error(t("lc_failed"));
-        return;
-      }
-      setCurrent(result.card);
-      setSelectedId(null);
-      toast.success(t("lc_saved"));
-      void recent.refetch();
-    } catch {
-      toast.error(t("lc_failed"));
-    } finally {
-      setBusy(null);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
   return (
     <SiteLayout>
       <PageHeader title={t("lc_title")} subtitle={t("lc_sub")} />
