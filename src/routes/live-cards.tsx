@@ -127,9 +127,6 @@ function LiveCardsPage() {
     queryFn: () => readAttempts({ data: { sessionKey: sessionId! } }),
     enabled: isAuthenticated && Boolean(sessionId),
   });
-  const attemptsUsedInPack =
-    (attempts.data?.used ?? 0) -
-    Math.max(0, (attempts.data?.packs ?? 0) - 1) * LIVE_CARD_ATTEMPTS_PER_PACK;
   const attemptsLeft = attempts.data?.remaining ?? 0;
   const generatedCount = attempts.data?.used ?? 0;
   const canBuyPack = balance >= LIVE_CARD_PACK_CREDITS;
@@ -366,24 +363,20 @@ function LiveCardsPage() {
             )}
           </div>
 
-          {/* Reserved panels for the credit phase -------------------------- */}
+          {/* Credits — what an attempt package costs and what is left ------ */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <ReservedPanel
+            <InfoPanel
               icon={<Coins className="h-4 w-4" />}
               title={t("lc_price_title")}
-              note={t("lc_price_soon")}
-              badge={t("lc_soon")}
-            >
-              <span className="font-display text-2xl text-muted-foreground/60">—</span>
-            </ReservedPanel>
-            <ReservedPanel
+              note={t("lc_pack_price")}
+              value={`${LIVE_CARD_PACK_CREDITS}`}
+            />
+            <InfoPanel
               icon={<Wallet className="h-4 w-4" />}
               title={t("lc_balance_title")}
-              note={t("lc_balance_soon")}
-              badge={t("lc_soon")}
-            >
-              <span className="font-display text-2xl text-muted-foreground/60">—</span>
-            </ReservedPanel>
+              note={t("lc_balance")}
+              value={`${balance}`}
+            />
           </div>
           </>
           )}
