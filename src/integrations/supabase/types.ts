@@ -2704,6 +2704,7 @@ export type Database = {
           credit_history: Json
           credits_charged: number
           deleted_at: string | null
+          delivered_at: string | null
           edit_heartbeat_at: string | null
           edit_session_id: string | null
           generations_limit: number
@@ -2743,6 +2744,7 @@ export type Database = {
           credit_history?: Json
           credits_charged?: number
           deleted_at?: string | null
+          delivered_at?: string | null
           edit_heartbeat_at?: string | null
           edit_session_id?: string | null
           generations_limit?: number
@@ -2782,6 +2784,7 @@ export type Database = {
           credit_history?: Json
           credits_charged?: number
           deleted_at?: string | null
+          delivered_at?: string | null
           edit_heartbeat_at?: string | null
           edit_session_id?: string | null
           generations_limit?: number
