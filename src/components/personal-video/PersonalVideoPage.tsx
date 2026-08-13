@@ -267,86 +267,28 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     }
   }
 
-  async function handleGroupFile(file: File) {
-    if (!project) return;
-    setBusy("group");
+  /** The second way of adding the one main person: words instead of a photo. */
+  async function handleDescription() {
+    if (!project || !appearance.trim()) return;
+    setBusy("describe");
     try {
-      const room = PVG_MAX_PEOPLE - project.people.length;
-      const faces = await detectFaces(file, Math.max(0, room));
-      if (!faces || faces.length === 0) {
-        // Automatic recognition was not sure: offer manual marking instead.
-        setManualOffered(file);
-        setManualFile(file);
-        return;
-      }
-      let latest = project;
-      for (const face of faces) {
-        const res = await savePerson({
-          data: {
-            projectId: project.id,
-            optimizedBase64: face.photo.base64,
-            contentType: face.photo.contentType,
-            faceQuality: face.quality,
-            source: "group",
-          },
-        });
-        if (res.project) latest = res.project;
-      }
-      setProject(latest);
-      setManualOffered(file);
-      toast.success(`${t("pvg_faces_found")}: ${faces.length}`);
-    } catch {
-      setManualOffered(file);
-      setManualFile(file);
-    } finally {
-      setBusy(null);
-      if (groupInput.current) groupInput.current.value = "";
-    }
-  }
-
-  /**
-   * Stores the manually marked faces. Faces given to somebody already in the
-   * project only add a reference photo, so the number of people — and with it
-   * the price — stays the same.
-   */
-  async function handleManualFaces(faces: ManualFaceResult[]) {
-    if (!project) return;
-    setBusy("group");
-    try {
-      let latest = project;
-      for (const face of faces) {
-        if (face.personId) {
-          const res = await addPhoto({
-            data: {
-              projectId: project.id,
-              personId: face.personId,
-              base64: face.base64,
-              contentType: face.contentType,
-            },
-          });
-          if (res.project) latest = res.project;
-        } else {
-          const res = await savePerson({
-            data: {
-              projectId: project.id,
-              optimizedBase64: face.base64,
-              contentType: face.contentType,
-              faceQuality: face.quality,
-              source: "group",
-            },
-          });
-          if (res.project) latest = res.project;
-        }
-      }
-      setProject(latest);
-      setManualFile(null);
-      toast.success(`${t("pvg_face_saved")}: ${faces.length}`);
+      const res = await savePersonDescription({
+        data: {
+          projectId: project.id,
+          personId: main?.id,
+          appearanceDescription: appearance.trim(),
+        },
+      });
+      if (res.project) setProject(res.project);
+      setAddMode("none");
+      toast.success(t("pvg_saved"));
     } catch {
       toast.error(t("pvg_scene_failed"));
     } finally {
       setBusy(null);
     }
   }
+
 
   async function handleExtraFile(file: File) {
     if (!project || !extraFor.current) return;
