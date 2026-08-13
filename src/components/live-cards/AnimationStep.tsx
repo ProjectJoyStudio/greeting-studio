@@ -21,12 +21,11 @@ import {
 } from "@/lib/live-cards/types";
 import {
   ANIMATION_DURATION_DEFAULT,
-  ANIMATION_DURATION_MAX,
-  ANIMATION_DURATION_MIN,
-  ANIMATION_DURATION_STEP,
+  ANIMATION_DURATIONS,
   animationDurationCredits,
   normaliseAnimationDuration,
 } from "@/lib/live-cards/duration-pricing";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 
 const DRAFT_KEY = "joy.live-cards.motion";
 
@@ -52,6 +51,8 @@ export function AnimationStep({
   const { t, lang } = useI18n();
   const start = useServerFn(startLiveCardAnimation);
   const refresh = useServerFn(refreshLiveCardAnimation);
+  const { balance } = useCreditBalance();
+  const refreshBalance = useRefreshCreditBalance();
 
   const [motion, setMotion] = useState("");
   const [duration, setDuration] = useState<number | null>(null);
@@ -83,6 +84,8 @@ export function AnimationStep({
   void durations;
   const chosenDuration = normaliseAnimationDuration(duration ?? ANIMATION_DURATION_DEFAULT);
   const priceCredits = animationDurationCredits(chosenDuration);
+  const balanceAfter = balance - priceCredits;
+  const canAfford = balance >= priceCredits;
 
   // Generation runs in the background: whatever is unfinished for this session
   // is picked up again when the person returns to the page.
@@ -128,6 +131,10 @@ export function AnimationStep({
 
   async function animate() {
     if (motion.trim().length < 3) return;
+    if (!canAfford) {
+      toast.error(t("la_insufficient"));
+      return;
+    }
     setSending(true);
     try {
       const result = await start({
@@ -140,11 +147,19 @@ export function AnimationStep({
         },
       });
       if (!result.ok) {
-        toast.error(result.errorCode === "no_generator" ? t("la_unavailable") : t("la_failed_toast"));
+        toast.error(
+          result.errorCode === "no_generator"
+            ? t("la_unavailable")
+            : result.errorCode === "insufficient_credits" || result.errorCode === "charge_failed"
+              ? t("la_insufficient")
+              : t("la_failed_toast"),
+        );
+        refreshBalance();
         return;
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
+      refreshBalance();
     } catch {
       toast.error(t("la_failed_toast"));
     } finally {
