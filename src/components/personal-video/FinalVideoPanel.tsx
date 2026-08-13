@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Download, Film, Loader2, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { Check, Film, Loader2, Pause, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -11,6 +11,7 @@ import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
 import {
   getPvgVideo,
+  markPvgVideoDelivered,
   retryPvgVideo,
   selectPvgVideoVariant,
   startPvgVideo,
@@ -20,6 +21,7 @@ import {
   isPvgVideoRunning,
   pvgVideoStatusKey,
 } from "@/lib/personal-video/video-render";
+import { DeliveryDialog } from "./DeliveryDialog";
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
@@ -42,6 +44,7 @@ export function FinalVideoPanel({
   const start = useServerFn(startPvgVideo);
   const retry = useServerFn(retryPvgVideo);
   const choose = useServerFn(selectPvgVideoVariant);
+  const deliver = useServerFn(markPvgVideoDelivered);
   const { isTest } = useCreditBalance();
   const refreshCredits = useRefreshCreditBalance();
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
@@ -49,6 +52,7 @@ export function FinalVideoPanel({
   const [starting, setStarting] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [delivering, setDelivering] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
