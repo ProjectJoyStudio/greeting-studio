@@ -329,38 +329,33 @@ function LiveCardsPage() {
                 </button>
               )}
 
-              {!current && (
-              <button
-                type="button"
-                disabled={!isAuthenticated || busy !== null}
-                onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === "upload" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                {busy === "upload" ? t("lc_uploading") : t("lc_upload")}
-              </button>
+              {attemptsLeft <= 0 && (
+                <button
+                  type="button"
+                  disabled={!isAuthenticated || busy !== null || !canBuyPack}
+                  onClick={buyAttempts}
+                  className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "buy" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Coins className="h-4 w-4" />
+                  )}
+                  {t("lc_buy_attempts")}
+                </button>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void uploadFile(file);
-                }}
-              />
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t("lc_upload_hint")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-muted-foreground">
               {attemptsLeft > 0
-                ? `${t("lc_attempts_left")} ${attemptsLeft}/${MAX_ATTEMPTS}`
+                ? `${t("lc_attempts_left")} ${attemptsLeft}/${LIVE_CARD_ATTEMPTS_PER_PACK}`
                 : t("lc_attempts_done")}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("lc_balance")}: {balance} · {t("lc_pack_price")}
+            </p>
+            {attemptsLeft <= 0 && !canBuyPack && (
+              <p className="mt-1 text-xs font-medium text-destructive">{t("lc_insufficient")}</p>
+            )}
 
             {!isAuthenticated && (
               <p className="mt-4 text-sm text-muted-foreground">
