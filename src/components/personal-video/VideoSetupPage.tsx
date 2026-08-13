@@ -91,11 +91,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
   const loaded = useRef(false);
-  const sessionId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : String(Math.random()),
-  );
+  const sessionId = useRef<string>(getPvgEditSessionId());
 
   // One writer at a time: another open device is told instead of overwritten.
   useEffect(() => {
