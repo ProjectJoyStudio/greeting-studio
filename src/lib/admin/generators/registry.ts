@@ -166,8 +166,8 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "personal_video.final_video",
         titleKey: "gc_fn_final_video",
-        candidates: [REPLICATE("omni_human_15", "bytedance/omni-human-1.5")],
-        defaultPrimary: "omni_human_15",
+        candidates: [REPLICATE("kling_avatar_v2", "kwaivgi/kling-avatar-v2")],
+        defaultPrimary: "kling_avatar_v2",
         defaultBackup: null,
         defaultAutoFailover: false,
       },
