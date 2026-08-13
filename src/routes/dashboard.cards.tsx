@@ -14,6 +14,7 @@ import {
   deleteOwnCard,
   listOwnCards,
   logCardEvent,
+  markCardDelivered,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
 import { normalizeTextDesign } from "@/lib/greeting-card/types";
@@ -33,6 +34,7 @@ function MyCardsPage() {
   const removeCard = useServerFn(deleteOwnCard);
   const saveProject = useServerFn(saveCardProject);
   const trackEvent = useServerFn(logCardEvent);
+  const deliverCard = useServerFn(markCardDelivered);
 
   const [open, setOpen] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -57,6 +59,21 @@ function MyCardsPage() {
 
   const cards = data ?? [];
   const active = cards.find((c) => c.id === open) ?? null;
+
+  /**
+   * Download or Share completes the order: the card is marked delivered and
+   * leaves the personal account for good. Previewing never does this.
+   */
+  async function finishCard(cardId: string, channel: string) {
+    try {
+      await deliverCard({ data: { cardId, channel } });
+    } catch {
+      /* the card stays visible if the state could not be written */
+    }
+    setOpen((cur) => (cur === cardId ? null : cur));
+    setShare((cur) => (cur?.id === cardId ? null : cur));
+    queryClient.invalidateQueries({ queryKey: ["my-greeting-cards"] });
+  }
 
   /** Sharing always saves first, so a link never points at an unsaved card. */
   async function handleShare(card: (typeof cards)[number]) {
@@ -148,7 +165,9 @@ function MyCardsPage() {
                   <button
                     onClick={() =>
                       c.image_url
-                        ? downloadFinalCard(c.image_url, c.greeting_text, design, `project-joy-${c.id}.png`)
+                        ? downloadFinalCard(c.image_url, c.greeting_text, design, `project-joy-${c.id}.png`).then(
+                            () => finishCard(c.id, "download"),
+                          )
                         : undefined
                     }
                     className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary"
@@ -223,11 +242,20 @@ function MyCardsPage() {
           onClose={() => setShare(null)}
           url={share.url}
           title={share.title}
-          onShared={(channel) => trackEvent({ data: { cardId: share.id, eventType: "share", channel } })}
+          onShared={(channel) => {
+            const cardId = share.id;
+            void trackEvent({ data: { cardId, eventType: "share", channel } });
+            void finishCard(cardId, `share_${channel}`);
+          }}
           onDownload={() => {
             const card = cards.find((c) => c.id === share.id);
             if (card?.image_url) {
-              downloadFinalCard(card.image_url, card.greeting_text, normalizeTextDesign(card.text_design), `project-joy-${card.id}.png`);
+              void downloadFinalCard(
+                card.image_url,
+                card.greeting_text,
+                normalizeTextDesign(card.text_design),
+                `project-joy-${card.id}.png`,
+              ).then(() => finishCard(card.id, "download"));
             }
           }}
         />
