@@ -702,6 +702,18 @@ export function VoicePanel({
       </p>
 
       {/* Who speaks the greeting ------------------------------------------ */}
+      {voiceOverOnly ? (
+        // Nobody was specially added, so the greeting is simply heard over the
+        // scene. There is no speaking character to choose.
+        <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("pvv_voiceover")}
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            {t("pvv_voiceover_hint")}
+          </p>
+        </div>
+      ) : (
       <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {t("pvv_single_title")}
@@ -750,6 +762,7 @@ export function VoicePanel({
           </p>
         )}
       </div>
+      )}
 
       {/* Where the voice comes from --------------------------------------- */}
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
