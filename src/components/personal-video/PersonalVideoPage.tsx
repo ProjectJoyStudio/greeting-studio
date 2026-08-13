@@ -197,14 +197,17 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     [issues],
   );
 
-  const price = pvgPriceCredits(project?.people.length ?? 1);
+  /** The one specially added person of this order, if the customer added one. */
+  const main = useMemo(() => addedPeople(project?.people ?? [])[0] ?? null, [project]);
+  const addedCount = main ? 1 : 0;
+  const price = pvgPriceCredits(addedCount || 1);
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
 
   // A gentle, short note whenever one more included scene becomes available.
   const includedRef = useRef<number | null>(null);
   useEffect(() => {
     if (!project) return;
-    const next = pvgIncludedGenerations(project.people.length);
+    const next = pvgIncludedGenerations(addedPeople(project.people).length);
     const prev = includedRef.current;
     includedRef.current = next;
     if (prev !== null && next > prev) toast.success(t("pvg_included_added"), { duration: 4000 });
@@ -213,7 +216,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const includedCount = pvgIncludedGenerations(project?.people.length ?? 0);
+  const includedCount = pvgIncludedGenerations(addedCount);
   const generationsLeft = includedCount - usedCount;
   const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
