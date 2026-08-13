@@ -3452,6 +3452,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_card_attempt_sessions: {
+        Row: {
+          attempts_used: number
+          created_at: string
+          extra_packs: number
+          id: string
+          session_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts_used?: number
+          created_at?: string
+          extra_packs?: number
+          id?: string
+          session_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts_used?: number
+          created_at?: string
+          extra_packs?: number
+          id?: string
+          session_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_card_drafts: {
         Row: {
           created_at: string
@@ -3573,6 +3603,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          delivered_at: string | null
           file_size: number | null
           final_storage_bucket: string | null
           final_storage_path: string | null
@@ -3603,6 +3634,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           file_size?: number | null
           final_storage_bucket?: string | null
           final_storage_path?: string | null
@@ -3633,6 +3665,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          delivered_at?: string | null
           file_size?: number | null
           final_storage_bucket?: string | null
           final_storage_path?: string | null

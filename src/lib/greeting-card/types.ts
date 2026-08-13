@@ -41,6 +41,10 @@ export const CARD_FONTS: { value: string; label: string }[] = [
   { value: "Georgia, 'Times New Roman', serif", label: "Georgia" },
   { value: "'Trebuchet MS', sans-serif", label: "Trebuchet" },
   { value: "'Courier New', monospace", label: "Courier" },
+  // Handwritten options. Both cover Latin and Cyrillic; the fallbacks keep any
+  // character the font itself does not carry readable instead of showing boxes.
+  { value: "'Caveat', 'Segoe Script', 'Bradley Hand', cursive", label: "Caveat" },
+  { value: "'Bad Script', 'Segoe Script', 'Bradley Hand', cursive", label: "Bad Script" },
 ];
 
 export function normalizeTextDesign(value: unknown): CardTextDesign {

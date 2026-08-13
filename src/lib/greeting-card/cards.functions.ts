@@ -27,6 +27,8 @@ export const generateCardImage = createServerFn({ method: "POST" })
       keywords?: string[];
       greetingText?: string;
       greetingMode?: GreetingMode;
+      sessionKey?: string;
+      replaceCardId?: string;
     }) => {
       const prompt = String(input?.prompt ?? "").trim();
       if (prompt.length < 3) throw new Error("prompt_too_short");
@@ -41,6 +43,8 @@ export const generateCardImage = createServerFn({ method: "POST" })
         greetingText: String(input?.greetingText ?? "").slice(0, 4000),
         greetingMode:
           input?.greetingMode === "keywords" ? ("keywords" as const) : ("manual" as const),
+        sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+        replaceCardId: String(input?.replaceCardId ?? "").slice(0, 60),
       };
     },
   )
@@ -48,6 +52,30 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } =
       await import("@/lib/replicate/replicate.server");
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
+    const { attemptState } = await import("./attempts");
+
+    // Every card creation carries its own attempt budget: five free ones, plus
+    // five for each package the person paid for.
+    let attemptRowId: string | null = null;
+    let attemptsUsed = 0;
+    if (data.sessionKey) {
+      const { data: row } = await context.supabase
+        .from("user_card_attempt_sessions")
+        .select("id, attempts_used, extra_packs")
+        .eq("user_id", context.userId)
+        .eq("session_key", data.sessionKey)
+        .maybeSingle();
+      const state = attemptState(row?.attempts_used ?? 0, row?.extra_packs ?? 0);
+      if (state.remaining <= 0) {
+        return {
+          ok: false,
+          errorCode: "attempt_limit",
+          errorMessage: "All generation attempts for this card have been used.",
+        };
+      }
+      attemptRowId = row?.id ?? null;
+      attemptsUsed = state.used;
+    }
 
     // The person writes in their own language; the engine always receives English.
     const enginePrompt = await toEnglishImagePrompt(data.prompt);
@@ -141,12 +169,75 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const signed = await supabaseAdmin.storage
       .from(USER_CARD_BUCKET)
       .createSignedUrl(storagePath, 60 * 60 * 24);
+
+    // Only a genuinely successful generation costs an attempt.
+    if (data.sessionKey) {
+      if (attemptRowId) {
+        await context.supabase
+          .from("user_card_attempt_sessions")
+          .update({ attempts_used: attemptsUsed + 1, updated_at: new Date().toISOString() })
+          .eq("id", attemptRowId);
+      } else {
+        await context.supabase.from("user_card_attempt_sessions").insert({
+          user_id: context.userId,
+          session_key: data.sessionKey,
+          attempts_used: 1,
+        });
+      }
+    }
+
+    // The previous version leaves the account only now, once the new one is
+    // safely stored, so a failed attempt never loses the current card.
+    if (data.replaceCardId && data.replaceCardId !== row.id) {
+      const { moveCardToDrafts } = await import("./reject.server");
+      try {
+        await moveCardToDrafts(
+          data.replaceCardId,
+          context.userId,
+          (context.claims as { email?: string } | null)?.email ?? null,
+        );
+      } catch {
+        // The new card is already in place; the old one stays untouched.
+      }
+    }
+
     return {
       ok: true,
       cardId: row.id,
       storagePath,
       imageUrl: signed.data?.signedUrl ?? "",
     };
+  });
+
+/**
+ * The person downloaded or sent the finished card: the order is complete. The
+ * card leaves the workflow and the personal account for good, while the public
+ * link the recipient received keeps working.
+ */
+export const markCardDelivered = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string; channel?: string }) => {
+    if (!input?.cardId) throw new Error("cardId is required");
+    return {
+      cardId: String(input.cardId).slice(0, 60),
+      channel: String(input?.channel ?? "").slice(0, 40) || null,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("user_greeting_cards")
+      .update({ delivered_at: new Date().toISOString(), status: "delivered" })
+      .eq("id", data.cardId)
+      .eq("user_id", context.userId)
+      .is("delivered_at", null);
+    if (error) throw new Error(error.message);
+    await context.supabase.from("user_card_events").insert({
+      card_id: data.cardId,
+      owner_user_id: context.userId,
+      event_type: "delivered",
+      channel: data.channel,
+    });
+    return { ok: true as const };
   });
 
 /**
@@ -255,6 +346,7 @@ export const getOwnCard = createServerFn({ method: "POST" })
       .eq("id", data.cardId)
       .eq("user_id", context.userId)
       .is("deleted_at", null)
+      .is("delivered_at", null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
@@ -468,6 +560,7 @@ export const listOwnCards = createServerFn({ method: "POST" })
       .select(CARD_COLUMNS)
       .eq("user_id", context.userId)
       .is("deleted_at", null)
+      .is("delivered_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) query = query.eq("status", data.status);
