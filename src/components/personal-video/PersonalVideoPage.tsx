@@ -849,17 +849,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
         </div>
       )}
 
-      {/* Manual face marking on a group photo ------------------------------ */}
-      {manualFile && project && (
-        <ManualFaceEditor
-          file={manualFile}
-          people={project.people}
-          busy={busy === "group"}
-          onCancel={() => setManualFile(null)}
-          onSave={(faces) => void handleManualFaces(faces)}
-        />
-      )}
-
       {/* Confirmation before the scene becomes the first frame ------------- */}
       {confirmExtra && (
         <div
