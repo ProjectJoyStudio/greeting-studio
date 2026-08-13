@@ -173,7 +173,7 @@ export async function startFinalVideo(
       return {
         predictionId,
         engineKey: engine.key,
-        model: engine.model,
+        model: engine.variant ? `${engine.model} (${engine.variant})` : engine.model,
         audioSeconds: input.audioSeconds,
       };
     } catch (err) {
