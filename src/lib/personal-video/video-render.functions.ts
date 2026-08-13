@@ -200,6 +200,32 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         return { ok: false, error: "pvr_err_no_scene", video: null, balance: await balanceOf() };
       }
 
+      // Who is in this order: the one specially added person, if any. People
+      // that merely appear because the scene was described that way are not
+      // stored here and never become speaking characters.
+      const { data: peopleRows } = await supabase
+        .from("pvg_people")
+        .select("id, name, position, voice_id, role")
+        .eq("project_id", project.id)
+        .order("position", { ascending: true });
+      const people = (peopleRows ?? []) as PersonLite[];
+      const addedPersons = people.filter((p) => (p.role ?? "speaker") === "speaker");
+      const speaker =
+        addedPersons.find((p) => p.id === project.single_speaker_person_id) ??
+        addedPersons[0] ??
+        null;
+
+      // Automatic routing. No designated speaker means the film belongs to the
+      // scene route, whose engine slot is prepared but not connected yet.
+      if (!speaker) {
+        return {
+          ok: false,
+          error: "pvr_err_no_person_engine",
+          video: null,
+          balance: await balanceOf(),
+        };
+      }
+
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       const sceneSounds = Boolean(project.scene_sounds);
       const isAgain = ready.length > 0;
@@ -275,29 +301,17 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         } as never)
         .eq("id", project.id);
 
-      // Exactly one participant speaks: the one chosen on page two, or the
-      // only participant of the scene. Everyone else stays and only reacts.
-      const { data: peopleRows } = await supabase
-        .from("pvg_people")
-        .select("id, name, position, voice_id")
-        .eq("project_id", project.id)
-        .order("position", { ascending: true });
-      const people = (peopleRows ?? []) as PersonLite[];
       const named = (p: PersonLite, i: number) =>
         p.name?.trim() ? p.name.trim() : `Person ${i + 1}`;
-      const speaker =
-        people.find((p) => p.id === project.single_speaker_person_id) ?? people[0] ?? null;
 
       const { buildVideoPrompt } = await import("./generator/video-prompt");
       const prompt = buildVideoPrompt({
         actionDescription: project.action_description ?? "",
         occasion: project.occasion ?? "",
-        speakerName: speaker ? named(speaker, people.indexOf(speaker)) : "",
-        speakerIndex: speaker ? people.indexOf(speaker) : -1,
-        totalPeople: people.length,
-        silentNames: people
-          .filter((p) => p.id !== speaker?.id)
-          .map((p) => named(p, people.indexOf(p))),
+        speakerName: named(speaker, addedPersons.indexOf(speaker)),
+        speakerIndex: addedPersons.indexOf(speaker),
+        totalPeople: addedPersons.length,
+        silentNames: [],
       });
 
       const variantIndex =
