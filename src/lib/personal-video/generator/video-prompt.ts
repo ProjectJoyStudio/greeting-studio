@@ -59,20 +59,17 @@ export function buildVideoPrompt(input: PvgVideoPromptInput): string {
   const action = motionOnly(input.actionDescription.trim()) || PVG_DEFAULT_ACTION_DESCRIPTION;
   const total = input.totalPeople ?? input.silentNames.length + 1;
   const where = positionPhrase(input.speakerIndex ?? -1, total);
-  const name = input.speakerName.trim();
-  const speaker = name
-    ? where
-      ? `${name} (${where})`
-      : name
-    : where || "the person in the foreground";
+  // A personal name can be interpreted as a request to render that name.
+  // Position alone identifies the speaker without introducing printable text.
+  const speaker = where || "the person in the foreground";
   const others = list(input.silentNames);
   return [
     action,
-    `Only ${speaker} speaks. ${speaker} delivers the entire spoken greeting, with lip movement matching the given audio exactly.`,
+    `Only ${speaker} moves their lips. Their lip movement matches the given audio exactly from beginning to end.`,
     others
       ? `${others} remain completely silent: their mouths stay naturally closed apart from a natural smile, they never mouth or repeat the spoken words, and they never speak. They may smile, blink, breathe, move their heads and bodies naturally and react warmly to the greeting.`
       : "",
-    "The greeting is addressed to the viewer watching the video: the participants look toward the camera and never treat another person inside the picture as the person receiving the greeting, unless the described scene requires otherwise.",
+    "The performance is directed toward the viewer watching the video: the participants look toward the camera and never treat another person inside the picture as the audience, unless the described scene requires otherwise.",
     "Preserve every visual element of the approved source picture exactly. Animate only natural lip movement, facial expression, breathing, small body gestures, and subtle camera or background motion. The frame remains a faithful moving version of the source picture from beginning to end, with no new visual elements.",
     "No added music.",
   ]
