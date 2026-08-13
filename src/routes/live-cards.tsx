@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Sparkles, Upload, Wand2, Coins, Wallet, Play } from "lucide-react";
+import { Check, Loader2, Sparkles, Wand2, Coins, Wallet, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -13,9 +13,17 @@ import {
   generateLiveCardImage,
   listOwnLiveCards,
   selectLiveCardImage,
-  uploadLiveCardImage,
   discardLiveCardImage,
 } from "@/lib/live-cards/live-cards.functions";
+import {
+  buyLiveCardAttemptPack,
+  getLiveCardAttempts,
+} from "@/lib/live-cards/attempts.functions";
+import {
+  LIVE_CARD_ATTEMPTS_PER_PACK,
+  LIVE_CARD_PACK_CREDITS,
+} from "@/lib/live-cards/attempts";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   LIVE_CARD_RATIOS,
   type LiveCardAsset,
@@ -32,12 +40,12 @@ export const Route = createFileRoute("/live-cards")({
       {
         name: "description",
         content:
-          "Create the picture for your live greeting card: describe it in your own words or upload your own photo, and keep it in your Project Joy account.",
+          "Create the picture for your live greeting card: describe it in your own words and keep it in your Project Joy account.",
       },
       { property: "og:title", content: "Live greeting cards — Project Joy" },
       {
         property: "og:description",
-        content: "Describe or upload the picture for your living greeting and preview it instantly.",
+        content: "Describe the picture for your living greeting and preview it instantly.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
