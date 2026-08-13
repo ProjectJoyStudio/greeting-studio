@@ -315,9 +315,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       });
 
       const variantIndex =
-        ready.length > 0
-          ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1
-          : 1;
+        ready.length > 0 ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1 : 1;
       // A fresh seed makes every further film a genuinely new variation.
       const seed = Math.floor(Math.random() * 2_147_483_647);
 

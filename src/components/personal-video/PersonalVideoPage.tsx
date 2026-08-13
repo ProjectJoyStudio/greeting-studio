@@ -292,7 +292,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     }
   }
 
-
   async function handleExtraFile(file: File) {
     if (!project || !extraFor.current) return;
     setBusy("extra");

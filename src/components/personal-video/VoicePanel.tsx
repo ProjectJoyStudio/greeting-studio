@@ -721,54 +721,54 @@ export function VoicePanel({
           </p>
         </div>
       ) : (
-      <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("pvv_single_title")}
-        </p>
-        <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_single_hint")}</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {participants.map((person, index) => {
-            const isSpeaker = speaker?.id === person.id;
-            return (
-              <button
-                key={person.id}
-                type="button"
-                disabled={disabled}
-                onClick={() => selectSpeaker(person)}
-                className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
-                  isSpeaker
-                    ? "border-primary bg-primary/10"
-                    : "border-border/60 hover:border-primary/40"
-                }`}
-              >
-                <ParticipantAvatar
-                  photoUrl={person.photoUrl}
-                  label={participantLabel(person, index)}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">
-                    {participantLabel(person, index)}
-                  </span>
-                  <span
-                    className={`block text-[11px] ${
-                      isSpeaker ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {isSpeaker ? t("pvv_single_speaks") : t("pvv_single_pick")}
-                  </span>
-                </span>
-                {isSpeaker && <Check className="h-4 w-4 shrink-0 text-primary" />}
-              </button>
-            );
-          })}
-        </div>
-        {!speaker && (
-          <p className="mt-3 flex items-center gap-2 text-[11px] text-destructive">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {t("pvv_err_no_speaker")}
+        <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("pvv_single_title")}
           </p>
-        )}
-      </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">{t("pvv_single_hint")}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {participants.map((person, index) => {
+              const isSpeaker = speaker?.id === person.id;
+              return (
+                <button
+                  key={person.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => selectSpeaker(person)}
+                  className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
+                    isSpeaker
+                      ? "border-primary bg-primary/10"
+                      : "border-border/60 hover:border-primary/40"
+                  }`}
+                >
+                  <ParticipantAvatar
+                    photoUrl={person.photoUrl}
+                    label={participantLabel(person, index)}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">
+                      {participantLabel(person, index)}
+                    </span>
+                    <span
+                      className={`block text-[11px] ${
+                        isSpeaker ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {isSpeaker ? t("pvv_single_speaks") : t("pvv_single_pick")}
+                    </span>
+                  </span>
+                  {isSpeaker && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+          {!speaker && (
+            <p className="mt-3 flex items-center gap-2 text-[11px] text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t("pvv_err_no_speaker")}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Where the voice comes from --------------------------------------- */}
