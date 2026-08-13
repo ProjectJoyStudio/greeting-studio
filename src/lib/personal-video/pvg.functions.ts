@@ -686,7 +686,9 @@ export const refreshPvgProject = createServerFn({ method: "POST" })
       .select("id")
       .eq("project_id", data.projectId)
       .in("status", ["pending", "processing"]);
-    for (const row of (running ?? []) as { id: string }[]) await reconcileScene(row.id);
+    await Promise.all(
+      ((running ?? []) as { id: string }[]).map((row) => reconcileScene(row.id)),
+    );
     let project = await loadProject(supabase, data.projectId);
     if (project) {
       const used = successfulScenes(project);
