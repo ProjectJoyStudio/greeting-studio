@@ -116,7 +116,6 @@ export function ShareDialog({
           <button
             type="button"
             onClick={() => {
-              onShared?.("download");
               onDownload();
             }}
             className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm hover:bg-secondary"
