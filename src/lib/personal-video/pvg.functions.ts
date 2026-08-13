@@ -360,6 +360,109 @@ export const renamePvgPerson = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * The second way of adding the one main person: the customer describes them
+ * in words instead of uploading a photo. Project Joy then creates that person
+ * inside the starting scene.
+ */
+export const savePvgPersonDescription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      projectId: string;
+      personId?: string | undefined;
+      name?: string | undefined;
+      appearanceDescription: string;
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: owned } = await supabase
+      .from("pvg_projects")
+      .select("id")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    if (!owned) throw new Error("project_not_found");
+
+    const description = data.appearanceDescription.slice(0, 600);
+    if (data.personId) {
+      const { error } = await supabase
+        .from("pvg_people")
+        .update({
+          appearance_description: description,
+          ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
+        })
+        .eq("id", data.personId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { count } = await supabase
+        .from("pvg_people")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", data.projectId)
+        .eq("role", "speaker");
+      if ((count ?? 0) >= PVG_MAX_ADDED_PEOPLE) throw new Error("people_limit");
+      const { error } = await supabase.from("pvg_people").insert({
+        project_id: data.projectId,
+        user_id: userId,
+        position: 0,
+        role: "speaker",
+        source: "individual",
+        face_quality: "good",
+        appearance_description: description,
+        ...(data.name === undefined ? {} : { name: data.name.slice(0, 80) }),
+      });
+      if (error) throw new Error(error.message);
+    }
+    return { project: await loadProject(supabase, data.projectId) };
+  });
+
+/**
+ * A scene without a specially added person still needs one voice for the
+ * greeting. It is kept on an invisible carrier row so the voice tools of page
+ * two keep working unchanged. It is never a speaking character.
+ */
+export const ensurePvgVoiceCarrier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: owned } = await supabase
+      .from("pvg_projects")
+      .select("id, user_id")
+      .eq("id", data.projectId)
+      .maybeSingle();
+    const row = owned as { id: string; user_id: string } | null;
+    if (!row || row.user_id !== userId) throw new Error("project_not_found");
+
+    const { data: existing } = await supabase
+      .from("pvg_people")
+      .select("id, role")
+      .eq("project_id", data.projectId);
+    const rows = (existing ?? []) as { id: string; role: string | null }[];
+    if (rows.length === 0) {
+      await supabase.from("pvg_people").insert({
+        project_id: data.projectId,
+        user_id: userId,
+        position: 0,
+        role: "narrator",
+        source: "individual",
+        face_quality: "unknown",
+      });
+    }
+    return { project: await loadProject(supabase, data.projectId) };
+  });
+
+const renamePvgPersonLegacy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; personId: string; name: string }) => input)
+  .handler(async ({ data, context }) => {
+    await context.supabase
+      .from("pvg_people")
+      .update({ name: data.name.slice(0, 80) })
+      .eq("id", data.personId);
+    return { ok: true as const };
+  });
+
 export const removePvgPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string }) => input)
