@@ -76,7 +76,10 @@ export function CardLightbox({
           <img
             src={card.imageUrl}
             alt=""
-            className="block max-h-[80vh] w-auto max-w-[min(92vw,720px)]"
+            className="block max-h-[80vh] w-auto max-w-[min(92vw,720px)] select-none [-webkit-touch-callout:none]"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
           />
         ) : (
           <div

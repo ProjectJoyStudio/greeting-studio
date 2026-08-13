@@ -20,7 +20,15 @@ export function CardPreview({
       style={{ containerType: "inline-size" }}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={alt} className="h-full w-full object-cover" crossOrigin="anonymous" />
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="h-full w-full object-cover select-none [-webkit-touch-callout:none]"
+          crossOrigin="anonymous"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
+          onContextMenu={(e) => e.preventDefault()}
+        />
       ) : null}
       {text.trim() ? (
         <div
