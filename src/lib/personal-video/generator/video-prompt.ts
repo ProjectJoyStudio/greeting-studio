@@ -14,6 +14,10 @@ export interface PvgVideoPromptInput {
   speakerName: string;
   /** Everyone else in the picture; they never speak. */
   silentNames: string[];
+  /** Where the speaker stands, counted from the left, starting at 0. */
+  speakerIndex?: number;
+  /** How many participants are visible in the approved picture. */
+  totalPeople?: number;
 }
 
 /** The natural way a greeting film behaves unless the customer says otherwise. */
@@ -27,11 +31,27 @@ function list(names: string[]): string {
   return `${clean.slice(0, -1).join(", ")} and ${clean[clean.length - 1]}`;
 }
 
+/** Where the chosen participant is standing, in plain English. */
+export function positionPhrase(index: number, total: number): string {
+  if (total <= 1 || index < 0 || index >= total) return "";
+  if (index === 0) return "the person on the left";
+  if (index === total - 1) return "the person on the right";
+  if (total === 3) return "the person in the centre";
+  return `the ${index + 1}${index + 1 === 2 ? "nd" : index + 1 === 3 ? "rd" : "th"} person from the left`;
+}
+
 /** One plain English instruction, built from the customer's own words. */
 export function buildVideoPrompt(input: PvgVideoPromptInput): string {
   const action = input.actionDescription.trim() || PVG_DEFAULT_ACTION_DESCRIPTION;
   const occasion = input.occasion.trim();
-  const speaker = input.speakerName.trim() || "the person in the foreground";
+  const total = input.totalPeople ?? input.silentNames.length + 1;
+  const where = positionPhrase(input.speakerIndex ?? -1, total);
+  const name = input.speakerName.trim();
+  const speaker = name
+    ? where
+      ? `${name} (${where})`
+      : name
+    : where || "the person in the foreground";
   const others = list(input.silentNames);
   return [
     action,
