@@ -23,6 +23,21 @@ export interface PvgVideoPromptInput {
 export const PVG_DEFAULT_ACTION_DESCRIPTION =
   "The participants look toward the camera and warmly congratulate the viewer. They smile and make natural small gestures. They are speaking to the viewer, not to each other.";
 
+// Kling documents `prompt` as a positive prompt. Mentioning captions, letters,
+// logos or other writing there — even to negate them — can make those visual
+// concepts appear in the generated frames. Keep writing-related requests out
+// of this field; the approved source image remains the visual source of truth.
+const WRITING_DIRECTION =
+  /\b(text|caption|subtitle|translation|title|lettering|letters?|words?|writing|inscription|sign|banner|poster|label|logo|watermark)\b|текст|надпис|подпис|букв|слова|плакат|баннер|банер|вывеск|вивіск|літер|логотип|schrift|beschriftung|aufschrift|buchstaben|texte|lettres|affiche|pancarte|tekst|napis|litery/i;
+
+function motionOnly(description: string): string {
+  return description
+    .split(/(?<=[.!?;])\s+|\s*[,;]\s*/u)
+    .filter((part) => !WRITING_DIRECTION.test(part))
+    .join(". ")
+    .trim();
+}
+
 function list(names: string[]): string {
   const clean = names.map((n) => n.trim()).filter(Boolean);
   if (clean.length === 0) return "";
@@ -41,7 +56,7 @@ export function positionPhrase(index: number, total: number): string {
 
 /** One plain English instruction, built from the customer's own words. */
 export function buildVideoPrompt(input: PvgVideoPromptInput): string {
-  const action = input.actionDescription.trim() || PVG_DEFAULT_ACTION_DESCRIPTION;
+  const action = motionOnly(input.actionDescription.trim()) || PVG_DEFAULT_ACTION_DESCRIPTION;
   const total = input.totalPeople ?? input.silentNames.length + 1;
   const where = positionPhrase(input.speakerIndex ?? -1, total);
   const name = input.speakerName.trim();
