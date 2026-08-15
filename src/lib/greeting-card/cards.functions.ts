@@ -81,6 +81,9 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const enginePrompt = await toEnglishImagePrompt(data.prompt);
 
     let imageSource: string | null = null;
+    let imageBytes: Uint8Array | null = null;
+    let imageContentType = "image/webp";
+    let imageExtension = "webp";
     let lastError = { code: "generation_failed", message: "Image generation failed." };
 
     // The administrator decides in the Admin Panel which engine leads and
@@ -92,10 +95,42 @@ export const generateCardImage = createServerFn({ method: "POST" })
       flux_dev: FALLBACK_MODEL,
       flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
     };
-    const order = await generatorOrder("greeting_cards.image", Object.keys(MODEL_BY_KEY));
+    // OpenAI image engines run through the shared gateway adapter, not Replicate.
+    const GPT_BY_KEY: Record<string, { model: string; quality: "low" | "medium" | "high" }> = {
+      gpt_image_1_mini: { model: "openai/gpt-image-1-mini", quality: "medium" },
+    };
+    const order = await generatorOrder("greeting_cards.image", [
+      ...Object.keys(MODEL_BY_KEY),
+      ...Object.keys(GPT_BY_KEY),
+    ]);
     const chosen = order.length ? order : ["flux_schnell"];
 
     for (const key of chosen) {
+      const gpt = GPT_BY_KEY[key];
+      if (gpt) {
+        try {
+          const { renderGptImage } = await import("@/lib/ai/gpt-image.server");
+          const rendered = await withGeneratorSlot(key, () =>
+            renderGptImage({ model: gpt.model, quality: gpt.quality, prompt: enginePrompt }),
+          );
+          imageBytes = rendered.bytes;
+          imageContentType = rendered.contentType;
+          imageExtension = rendered.fileExtension;
+          break;
+        } catch (err) {
+          const { GptImageError, isTerminalGptImageCode } = await import("@/lib/ai/gpt-image.server");
+          if (err instanceof GptImageError) {
+            lastError = { code: err.code, message: err.message };
+            if (isTerminalGptImageCode(err.code)) break;
+          } else {
+            lastError = {
+              code: "unknown",
+              message: err instanceof Error ? err.message : "Unexpected error.",
+            };
+          }
+          continue;
+        }
+      }
       const model = MODEL_BY_KEY[key];
       if (!model) continue;
       try {
@@ -121,24 +156,29 @@ export const generateCardImage = createServerFn({ method: "POST" })
       }
     }
 
-    if (!imageSource)
+    if (!imageSource && !imageBytes)
       return { ok: false, errorCode: lastError.code, errorMessage: lastError.message };
 
-    const res = await fetch(imageSource);
-    if (!res.ok) {
-      return {
-        ok: false,
-        errorCode: "download_failed",
-        errorMessage: `Could not download the artwork (${res.status}).`,
-      };
+    let bytes: Uint8Array;
+    if (imageBytes) {
+      bytes = imageBytes;
+    } else {
+      const res = await fetch(imageSource!);
+      if (!res.ok) {
+        return {
+          ok: false,
+          errorCode: "download_failed",
+          errorMessage: `Could not download the artwork (${res.status}).`,
+        };
+      }
+      bytes = new Uint8Array(await res.arrayBuffer());
     }
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    const storagePath = `${context.userId}/${crypto.randomUUID()}.webp`;
+    const storagePath = `${context.userId}/${crypto.randomUUID()}.${imageExtension}`;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upload = await supabaseAdmin.storage
       .from(USER_CARD_BUCKET)
-      .upload(storagePath, bytes, { contentType: "image/webp", upsert: false });
+      .upload(storagePath, bytes, { contentType: imageContentType, upsert: false });
     if (upload.error) {
       return { ok: false, errorCode: "storage_failed", errorMessage: upload.error.message };
     }

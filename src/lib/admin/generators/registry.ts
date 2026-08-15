@@ -11,6 +11,9 @@
 /** How a lightweight availability check is performed for one engine. */
 export type CheckKind = "replicate" | "elevenlabs" | "lovable_ai" | "deepl" | "none";
 
+/** Rendering quality an image engine is configured with, when it has one. */
+export type GeneratorQuality = "low" | "medium" | "high";
+
 export interface GeneratorDef {
   /** Stable key stored in the settings and used by the routing layer. */
   key: string;
@@ -19,6 +22,8 @@ export interface GeneratorDef {
   /** Real model identifier used by the code. */
   model: string;
   check: CheckKind;
+  /** Fixed quality setting sent to the provider, when the model has one. */
+  quality?: GeneratorQuality;
   /** Environment variable holding the credential (name only, never a value). */
   credential: string | null;
 }
@@ -62,6 +67,16 @@ const LOVABLE = (key: string, model: string): GeneratorDef => ({
   credential: "LOVABLE_API_KEY",
 });
 
+/** OpenAI image models served through the Lovable AI gateway. */
+const OPENAI_IMAGE = (key: string, model: string, quality: GeneratorQuality): GeneratorDef => ({
+  key,
+  provider: "OpenAI",
+  model,
+  check: "lovable_ai",
+  quality,
+  credential: "LOVABLE_API_KEY",
+});
+
 export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
   {
     id: "greeting_cards",
@@ -74,6 +89,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_schnell", "black-forest-labs/flux-schnell"),
           REPLICATE("flux_dev", "black-forest-labs/flux-dev"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
+          OPENAI_IMAGE("gpt_image_1_mini", "openai/gpt-image-1-mini", "medium"),
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: "flux_dev",

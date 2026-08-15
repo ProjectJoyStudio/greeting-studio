@@ -474,7 +474,7 @@ export function GeneratorsPanel() {
   function engineLabel(key: string | null): string {
     if (!key) return t("gc_not_selected");
     const gen = findGenerator(key);
-    return gen ? `${gen.provider} · ${gen.model}` : key;
+    return gen ? `${gen.provider} · ${gen.model}${gen.quality ? ` · ${gen.quality}` : ""}` : key;
   }
 
   function statusPill(key: string) {
@@ -577,6 +577,7 @@ export function GeneratorsPanel() {
                             {fn.candidates.map((c) => (
                               <option key={c.key} value={c.key}>
                                 {c.provider} · {c.model}
+                                {c.quality ? ` · ${c.quality}` : ""}
                               </option>
                             ))}
                           </select>
@@ -596,6 +597,7 @@ export function GeneratorsPanel() {
                               .map((c) => (
                                 <option key={c.key} value={c.key}>
                                   {c.provider} · {c.model}
+                                  {c.quality ? ` · ${c.quality}` : ""}
                                 </option>
                               ))}
                           </select>
@@ -668,7 +670,10 @@ export function GeneratorsPanel() {
                 return (
                   <tr key={gen.key} className="border-b border-border/40 align-top">
                     <td className="px-2 py-2 font-medium text-foreground">{gen.provider}</td>
-                    <td className="px-2 py-2 font-mono text-[11px]">{gen.model}</td>
+                    <td className="px-2 py-2 font-mono text-[11px]">
+                      {gen.model}
+                      {gen.quality ? ` · ${gen.quality}` : ""}
+                    </td>
                     <td className="px-2 py-2 text-muted-foreground">{gen.usedBy.join(", ")}</td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
