@@ -35,12 +35,11 @@ async function orderByAdmin<T extends { key: string }>(
       functionId,
       engines.map((e) => e.key),
     );
-    const ordered = order
-      .map((key) => engines.find((e) => e.key === key))
-      .filter((e): e is T => Boolean(e));
-    return ordered.length ? ordered : [];
+    return order.map((key) => engines.find((e) => e.key === key)).filter((e): e is T => Boolean(e));
   } catch {
-    return engines;
+    // The saved configuration is the source of truth. If it cannot be read,
+    // nothing is started implicitly.
+    return [];
   }
 }
 

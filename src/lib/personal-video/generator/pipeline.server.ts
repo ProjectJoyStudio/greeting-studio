@@ -81,10 +81,9 @@ export async function finalVideoOrder(): Promise<string[]> {
   const keys = Object.keys(FINAL_VIDEO_ENGINES);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    const order = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, keys);
-    return order.length ? order : keys;
+    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, keys);
   } catch {
-    return keys;
+    return [];
   }
 }
 

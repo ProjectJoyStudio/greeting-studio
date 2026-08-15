@@ -80,14 +80,17 @@ const MODEL_BY_KEY: Record<string, string> = {
  * selected another primary engine in the Generator Control Centre.
  */
 async function adminPrimaryModel(): Promise<string> {
-  try {
-    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
-    const key = await primaryGenerator("live_cards.start_image", Object.keys(MODEL_BY_KEY));
-    if (key && MODEL_BY_KEY[key]) return MODEL_BY_KEY[key]!;
-  } catch {
-    // fall back to the environment configuration
+  const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+  const key = await primaryGenerator("live_cards.start_image", Object.keys(MODEL_BY_KEY));
+  if (key && MODEL_BY_KEY[key]) return MODEL_BY_KEY[key]!;
+  if (key) {
+    throw new LiveImageError(
+      "api_error",
+      "The selected start-image generator cannot render this request.",
+    );
   }
-  return primaryModel();
+  // No engine of this group is selected and switched on in the Admin Panel.
+  throw new LiveImageError("api_error", "No start-image generator is configured right now.");
 }
 
 /** Renders one picture with the low-cost primary engine of this section. */
