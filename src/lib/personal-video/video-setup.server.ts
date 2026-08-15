@@ -66,8 +66,6 @@ export async function writeGreeting(args: ComposeArgs): Promise<string> {
   const duration = clampDuration(args.durationSeconds);
   const fit = greetingFit(args.text, duration);
   const language = languageName(args.language);
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) return capLength(localFallback(args));
 
   const system =
     "You are the writer of Project Joy. You write greetings that are spoken aloud in a personal video. " +
@@ -87,20 +85,17 @@ export async function writeGreeting(args: ComposeArgs): Promise<string> {
     .join("\n");
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: `${system}\n${INSTRUCTION[args.task]}` },
-          { role: "user", content: details || "Write a warm general greeting." },
-        ],
-      }),
-    });
-    if (!res.ok) return capLength(localFallback(args));
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const out = json.choices?.[0]?.message?.content?.trim();
+    const { completeText } = await import("@/lib/ai/text-engine.server");
+    const out = (
+      await completeText(
+        {
+          functionId: "personal_video.greeting_text",
+          system: `${system}\n${INSTRUCTION[args.task]}`,
+          user: details || "Write a warm general greeting.",
+        },
+        ["gemini_25_flash", "replicate_gemini_25_flash"],
+      )
+    ).trim();
     return capLength(out && out.length > 0 ? out : localFallback(args));
   } catch {
     return capLength(localFallback(args));
