@@ -757,7 +757,8 @@ export function GeneratorsPanel() {
                       <div className="inline-flex gap-1">
                         <button
                           className={btnBase}
-                          onClick={() => patchGenerator(gen.key, { enabled: !enabled })}
+                          disabled={saving}
+                          onClick={() => toggleEngine(gen.key, !enabled)}
                         >
                           <Power className="h-3.5 w-3.5" />
                           {enabled ? t("gc_disable") : t("gc_enable")}
