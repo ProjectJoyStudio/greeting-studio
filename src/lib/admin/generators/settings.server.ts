@@ -160,7 +160,7 @@ async function checkLovableChat(model: string): Promise<ConnectionResult> {
 }
 
 /** A one-second silent WAV, used to exercise the real listening endpoint. */
-function silentWav(): Uint8Array {
+function silentWav(): ArrayBuffer {
   const samples = 8000;
   const dataBytes = samples * 2;
   const buffer = new ArrayBuffer(44 + dataBytes);
@@ -180,7 +180,7 @@ function silentWav(): Uint8Array {
   view.setUint16(34, 16, true);
   ascii(36, "data");
   view.setUint32(40, dataBytes, true);
-  return new Uint8Array(buffer);
+  return buffer;
 }
 
 /** Sends a real, tiny sample through the same endpoint the product uses. */
