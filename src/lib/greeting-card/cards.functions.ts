@@ -118,7 +118,8 @@ export const generateCardImage = createServerFn({ method: "POST" })
           imageExtension = rendered.fileExtension;
           break;
         } catch (err) {
-          const { GptImageError, isTerminalGptImageCode } = await import("@/lib/ai/gpt-image.server");
+          const { GptImageError, isTerminalGptImageCode } =
+            await import("@/lib/ai/gpt-image.server");
           if (err instanceof GptImageError) {
             lastError = { code: err.code, message: err.message };
             if (isTerminalGptImageCode(err.code)) break;

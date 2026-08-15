@@ -118,11 +118,16 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
       };
     }
 
-    const res = await fetch(routed.url);
-    if (!res.ok) {
-      return { ok: false, errorCode: "download_failed", errorMessage: `Could not fetch the picture (${res.status}).` };
+    let bytes: Uint8Array;
+    if (routed.bytes) {
+      bytes = routed.bytes;
+    } else {
+      const res = await fetch(routed.url);
+      if (!res.ok) {
+        return { ok: false, errorCode: "download_failed", errorMessage: `Could not fetch the picture (${res.status}).` };
+      }
+      bytes = new Uint8Array(await res.arrayBuffer());
     }
-    const bytes = new Uint8Array(await res.arrayBuffer());
     const bucket = liveCardsImageBucket();
     const storagePath = `${context.userId}/${crypto.randomUUID()}.${routed.fileExtension}`;
 
