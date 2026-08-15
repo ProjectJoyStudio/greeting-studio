@@ -116,6 +116,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_schnell", "black-forest-labs/flux-schnell"),
           REPLICATE("flux_ultra", "black-forest-labs/flux-1.1-pro-ultra"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
+          OPENAI_IMAGE("gpt_image_1_mini_low", "openai/gpt-image-1-mini", "low"),
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: null,
