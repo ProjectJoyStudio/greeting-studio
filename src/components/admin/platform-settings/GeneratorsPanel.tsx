@@ -620,6 +620,7 @@ export function GeneratorsPanel() {
                               patchFunction(fn.id, { primary: e.target.value || null })
                             }
                           >
+                            <option value="">{t("gc_not_selected")}</option>
                             {fn.candidates.map((c) => (
                               <option key={c.key} value={c.key}>
                                 {c.provider} · {c.model}
