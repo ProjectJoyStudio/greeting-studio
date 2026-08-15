@@ -2,7 +2,7 @@
 // integration: it shares no state, no client and no error handling with the
 // greeting-card generator, even though it renders with the same model.
 
-import { pollIntervalMs, primaryModel, renderTimeoutMs } from "./config.server";
+import { pollIntervalMs, renderTimeoutMs } from "./config.server";
 import { logError, logInfo } from "./log.server";
 
 const API_BASE = "https://api.replicate.com/v1";
