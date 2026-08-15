@@ -15,6 +15,8 @@ import { queueStats, QueueFullError, QueueTimeoutError, withImageSlot } from "./
 
 export type LiveCardImageResult = {
   url: string;
+  /** Set when the engine returned the picture inline instead of by URL. */
+  bytes?: Uint8Array;
   contentType: string;
   fileExtension: string;
   generatorKey: string;
@@ -38,6 +40,31 @@ export class LiveCardImageServiceError extends Error {
 }
 
 /**
+ * OpenAI start-image engines, served through the shared gateway adapter.
+ * Whether one of them runs is decided solely by Admin → Generators; they are
+ * never connected to the animation stage.
+ */
+const OPENAI_START_IMAGE: Record<string, { model: string; quality: "low" | "medium" | "high" }> = {
+  gpt_image_1_mini_low: { model: "openai/gpt-image-1-mini", quality: "low" },
+};
+
+/** The OpenAI engine the administrator selected for the start image, if any. */
+async function selectedOpenAiEngine(): Promise<string | null> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const key = await primaryGenerator("live_cards.start_image", [
+      "flux_schnell",
+      "flux_ultra",
+      "flux_1_1_pro",
+      ...Object.keys(OPENAI_START_IMAGE),
+    ]);
+    return key && OPENAI_START_IMAGE[key] ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Creates one starting picture for a live greeting card.
  * The request is admitted by this service's own queue, rendered by the
  * primary engine and — only on a confirmed engine error — retried once on the
@@ -55,6 +82,50 @@ export async function createLiveCardImage(input: {
   try {
     return await withImageSlot(async () => {
       logInfo("request_started", { ...base, ratio: input.aspectRatio, ...queueStats() });
+
+      // Administrator's choice first: when an OpenAI start-image engine leads,
+      // it renders the picture through the shared provider adapter.
+      const openAiKey = await selectedOpenAiEngine();
+      if (openAiKey) {
+        const engine = OPENAI_START_IMAGE[openAiKey]!;
+        const { renderGptImage, GptImageError } = await import("@/lib/ai/gpt-image.server");
+        try {
+          const rendered = await renderGptImage({
+            model: engine.model,
+            quality: engine.quality,
+            prompt: input.prompt,
+            aspectRatio: input.aspectRatio,
+          });
+          logInfo("request_completed", {
+            ...base,
+            engine: "primary",
+            model: rendered.model,
+            status: "succeeded",
+          });
+          return {
+            url: "",
+            bytes: rendered.bytes,
+            contentType: rendered.contentType,
+            fileExtension: rendered.fileExtension,
+            generatorKey: openAiKey,
+            generatorModel: rendered.model,
+            usedBackup: false,
+          };
+        } catch (err) {
+          const code = err instanceof GptImageError ? err.code : "generation_failed";
+          const message = err instanceof Error ? err.message : "The picture could not be created.";
+          logError("request_failed", {
+            ...base,
+            engine: "primary",
+            model: engine.model,
+            status: "failed",
+            code,
+            error: message,
+            fallback: "off",
+          });
+          throw new LiveCardImageServiceError(code, message);
+        }
+      }
 
       let primaryError: LiveImageError | null = null;
       try {
