@@ -2,7 +2,12 @@
 // what was said. It is used for one purpose: to be sure the person really read
 // the whole prepared sentence.
 
+import { generatorOrder, withGeneratorSlot } from "@/lib/admin/generators/runtime.server";
+import { findGenerator } from "@/lib/admin/generators/registry";
+
 const ENDPOINT = "https://ai.gateway.lovable.dev/v1/audio/transcriptions";
+
+const CANDIDATES = ["gpt_4o_transcribe", "replicate_gpt_4o_transcribe"];
 
 const EXTENSIONS: Record<string, string> = {
   "audio/webm": "webm",
@@ -22,19 +27,20 @@ function bytesOf(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-/** The words heard in a short sample, or null when listening was not possible. */
-export async function transcribeSample(input: {
+interface Sample {
   base64: string;
   mimeType: string;
   language?: string | null;
-}): Promise<string | null> {
+}
+
+async function viaLovable(model: string, input: Sample): Promise<string | null> {
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) return null;
+  if (!key) throw new Error("No listening credential configured.");
 
   const type = (input.mimeType || "audio/webm").split(";")[0]!.toLowerCase();
   const extension = EXTENSIONS[type] ?? "webm";
   const form = new FormData();
-  form.append("model", "openai/gpt-4o-transcribe");
+  form.append("model", model);
   form.append("file", new Blob([bytesOf(input.base64)], { type }), `sample.${extension}`);
   if (input.language && /^[a-z]{2}$/.test(input.language)) {
     form.append("language", input.language);
@@ -46,9 +52,42 @@ export async function transcribeSample(input: {
     body: form,
   });
   if (!response.ok) {
-    console.error(`Sample transcription failed [${response.status}]:`, await response.text());
-    return null;
+    throw new Error(
+      `Sample transcription failed [${response.status}]: ${(await response.text()).slice(0, 300)}`,
+    );
   }
   const data = (await response.json()) as { text?: string };
   return typeof data.text === "string" ? data.text : null;
+}
+
+/** Same interface, served by Replicate. The token stays on the server. */
+async function viaReplicate(model: string, input: Sample): Promise<string | null> {
+  const { runReplicate, joinOutput } = await import("@/lib/replicate/run.server");
+  const type = (input.mimeType || "audio/webm").split(";")[0]!.toLowerCase();
+  const payload: Record<string, unknown> = {
+    audio_file: `data:${type};base64,${input.base64}`,
+    temperature: 0,
+  };
+  if (input.language && /^[a-z]{2}$/.test(input.language)) payload["language"] = input.language;
+  const text = joinOutput(await runReplicate(model, payload)).trim();
+  return text || null;
+}
+
+/** The words heard in a short sample, or null when listening was not possible. */
+export async function transcribeSample(input: Sample): Promise<string | null> {
+  const order = await generatorOrder("personal_video.transcription", CANDIDATES);
+  for (const key of order) {
+    const generator = findGenerator(key);
+    if (!generator) continue;
+    try {
+      return await withGeneratorSlot(key, () =>
+        generator.provider === "Replicate"
+          ? viaReplicate(generator.model, input)
+          : viaLovable(generator.model, input),
+      );
+    } catch (err) {
+      console.error(`Listening engine "${key}" failed:`, err);
+    }
+  }
+  return null;
 }
