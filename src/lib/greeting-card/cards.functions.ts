@@ -109,9 +109,7 @@ export const generateCardImage = createServerFn({ method: "POST" })
       const gpt = GPT_BY_KEY[key];
       if (gpt) {
         try {
-          const { renderGptImage, GptImageError, isTerminalGptImageCode } = await import(
-            "@/lib/ai/gpt-image.server"
-          );
+          const { renderGptImage } = await import("@/lib/ai/gpt-image.server");
           const rendered = await withGeneratorSlot(key, () =>
             renderGptImage({ model: gpt.model, quality: gpt.quality, prompt: enginePrompt }),
           );
