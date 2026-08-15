@@ -117,14 +117,108 @@ async function checkElevenLabs(): Promise<ConnectionResult> {
   return { state: "error", detail: `Voice studio responded ${res.status}.` };
 }
 
-async function checkLovableAi(): Promise<ConnectionResult> {
-  const key = process.env["LOVABLE_API_KEY"];
+const GATEWAY = "https://ai.gateway.lovable.dev/v1";
+
+function gatewayKey(): string | null {
+  return process.env["LOVABLE_API_KEY"] || null;
+}
+
+/** Short, non-secret summary of a provider error body. */
+async function providerDetail(res: Response): Promise<string> {
+  const raw = await res.text().catch(() => "");
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const err = parsed["error"] as { message?: unknown } | undefined;
+    const message = err?.message ?? parsed["message"] ?? parsed["title"];
+    if (typeof message === "string" && message.trim()) {
+      return `[${res.status}] ${message.slice(0, 200)}`;
+    }
+  } catch {
+    // fall through to the raw text
+  }
+  return `[${res.status}] ${raw.slice(0, 200) || "no details returned"}`;
+}
+
+/**
+ * Real chat request against the exact model the application uses, kept to a
+ * single token so the check stays cheap.
+ */
+async function checkLovableChat(model: string): Promise<ConnectionResult> {
+  const key = gatewayKey();
   if (!key) return { state: "error", detail: "No credential configured." };
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/models", {
-    headers: { Authorization: `Bearer ${key}` },
+  const res = await fetch(`${GATEWAY}/chat/completions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: "ping" }],
+      max_tokens: 1,
+    }),
   });
-  if (res.ok) return { state: "working", detail: "Service reachable." };
-  return { state: "error", detail: `Service responded ${res.status}.` };
+  if (res.ok) return { state: "working", detail: "Model answered a real request." };
+  return { state: "error", detail: await providerDetail(res) };
+}
+
+/** A one-second silent WAV, used to exercise the real listening endpoint. */
+function silentWav(): ArrayBuffer {
+  const samples = 8000;
+  const dataBytes = samples * 2;
+  const buffer = new ArrayBuffer(44 + dataBytes);
+  const view = new DataView(buffer);
+  const ascii = (offset: number, text: string) => {
+    for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  ascii(0, "RIFF");
+  view.setUint32(4, 36 + dataBytes, true);
+  ascii(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, 16000, true);
+  view.setUint32(28, 32000, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  ascii(36, "data");
+  view.setUint32(40, dataBytes, true);
+  return buffer;
+}
+
+/** Sends a real, tiny sample through the same endpoint the product uses. */
+async function checkLovableTranscribe(model: string): Promise<ConnectionResult> {
+  const key = gatewayKey();
+  if (!key) return { state: "error", detail: "No credential configured." };
+  const form = new FormData();
+  form.append("model", model);
+  form.append("file", new Blob([silentWav()], { type: "audio/wav" }), "check.wav");
+  const res = await fetch(`${GATEWAY}/audio/transcriptions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  });
+  if (res.ok) return { state: "working", detail: "Listening model accepted a real sample." };
+  return { state: "error", detail: await providerDetail(res) };
+}
+
+/**
+ * Image models are checked through the same image endpoint the product uses.
+ * A deliberately unsupported size is sent, so the model and the credential are
+ * validated end to end without paying for a picture: the model rejects the
+ * size only after it has accepted the request.
+ */
+async function checkLovableImage(model: string): Promise<ConnectionResult> {
+  const key = gatewayKey();
+  if (!key) return { state: "error", detail: "No credential configured." };
+  const res = await fetch(`${GATEWAY}/images/generations`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, prompt: "connection check", size: "1x1" }),
+  });
+  if (res.ok) return { state: "working", detail: "Image model reachable." };
+  const detail = await providerDetail(res);
+  if (res.status === 400 && /size/i.test(detail) && !/invalid model/i.test(detail)) {
+    return { state: "working", detail: "Image model and credential accepted." };
+  }
+  return { state: "error", detail };
 }
 
 async function checkDeepl(): Promise<ConnectionResult> {
@@ -146,7 +240,12 @@ async function runCheck(kind: CheckKind, model: string): Promise<ConnectionResul
     case "elevenlabs":
       return checkElevenLabs();
     case "lovable_ai":
-      return checkLovableAi();
+    case "lovable_chat":
+      return checkLovableChat(model);
+    case "lovable_transcribe":
+      return checkLovableTranscribe(model);
+    case "lovable_image":
+      return checkLovableImage(model);
     case "deepl":
       return checkDeepl();
     default:
