@@ -9,7 +9,16 @@
 // ---------------------------------------------------------------------------
 
 /** How a lightweight availability check is performed for one engine. */
-export type CheckKind = "replicate" | "elevenlabs" | "lovable_ai" | "deepl" | "none";
+export type CheckKind =
+  | "replicate"
+  | "elevenlabs"
+  /** Kept for compatibility; treated as a chat check. */
+  | "lovable_ai"
+  | "lovable_chat"
+  | "lovable_transcribe"
+  | "lovable_image"
+  | "deepl"
+  | "none";
 
 /** Rendering quality an image engine is configured with, when it has one. */
 export type GeneratorQuality = "low" | "medium" | "high";
@@ -63,7 +72,16 @@ const LOVABLE = (key: string, model: string): GeneratorDef => ({
   key,
   provider: "Lovable AI",
   model,
-  check: "lovable_ai",
+  check: "lovable_chat",
+  credential: "LOVABLE_API_KEY",
+});
+
+/** Listening models served through the Lovable AI gateway. */
+const LOVABLE_AUDIO = (key: string, model: string): GeneratorDef => ({
+  key,
+  provider: "Lovable AI",
+  model,
+  check: "lovable_transcribe",
   credential: "LOVABLE_API_KEY",
 });
 
@@ -81,7 +99,7 @@ const OPENAI_IMAGE = (key: string, model: string, quality: GeneratorQuality): Ge
   key,
   provider: "OpenAI",
   model,
-  check: "lovable_ai",
+  check: "lovable_image",
   quality,
   credential: "LOVABLE_API_KEY",
 });
@@ -191,7 +209,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         id: "personal_video.transcription",
         titleKey: "gc_fn_transcription",
         candidates: [
-          LOVABLE("gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
+          LOVABLE_AUDIO("gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
           REPLICATE_BACKUP("replicate_gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
         ],
         defaultPrimary: "gpt_4o_transcribe",
