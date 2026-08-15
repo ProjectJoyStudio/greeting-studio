@@ -246,6 +246,14 @@ const T: Dict = {
     fr: "Désactiver un générateur conserve sa configuration et ne concerne que les nouvelles tâches.",
     pl: "Wyłączenie generatora zachowuje konfigurację i dotyczy tylko nowych zadań.",
   },
+  gc_unsaved: {
+    en: "Unsaved changes — press Save to apply them to new jobs.",
+    ru: "Есть несохранённые изменения — нажмите «Сохранить», чтобы они применились к новым задачам.",
+    de: "Nicht gespeicherte Änderungen — bitte speichern, damit sie für neue Aufträge gelten.",
+    uk: "Є незбережені зміни — натисніть «Зберегти», щоб вони діяли для нових завдань.",
+    fr: "Modifications non enregistrées — cliquez sur Enregistrer pour les appliquer.",
+    pl: "Niezapisane zmiany — kliknij Zapisz, aby je zastosować.",
+  },
   // features
   gc_feature_cards: {
     en: "Greeting Cards",
