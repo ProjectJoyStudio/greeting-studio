@@ -409,6 +409,7 @@ export function GeneratorsPanel() {
   const [savedAt, setSavedAt] = useState(false);
   const [checks, setChecks] = useState<Record<string, CheckState>>({});
   const [checking, setChecking] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
 
   const engines = useMemo(() => allGenerators(), []);
 
@@ -416,6 +417,9 @@ export function GeneratorsPanel() {
     setLoading(true);
     try {
       setSettings(await loadGeneratorSettings());
+      setProblem(null);
+    } catch (err) {
+      setProblem(err instanceof Error ? err.message : "The saved configuration could not be read.");
     } finally {
       setLoading(false);
     }
@@ -454,6 +458,10 @@ export function GeneratorsPanel() {
     try {
       setSettings(await saveGeneratorSettings({ data: { settings } }));
       setSavedAt(true);
+      setProblem(null);
+    } catch (err) {
+      setSavedAt(false);
+      setProblem(err instanceof Error ? err.message : "The configuration could not be saved.");
     } finally {
       setSaving(false);
     }
@@ -534,6 +542,11 @@ export function GeneratorsPanel() {
             </button>
           </div>
         </div>
+        {problem && (
+          <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {problem}
+          </p>
+        )}
       </div>
 
       {GENERATOR_FEATURES.map((feature) => (
