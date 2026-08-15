@@ -418,6 +418,7 @@ export function GeneratorsPanel() {
   const [checks, setChecks] = useState<Record<string, CheckState>>({});
   const [checking, setChecking] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const engines = useMemo(() => allGenerators(), []);
 
@@ -425,6 +426,7 @@ export function GeneratorsPanel() {
     setLoading(true);
     try {
       setSettings(await loadGeneratorSettings());
+      setDirty(false);
       setProblem(null);
     } catch (err) {
       setProblem(err instanceof Error ? err.message : "The saved configuration could not be read.");
@@ -447,6 +449,7 @@ export function GeneratorsPanel() {
       return { ...prev, functions: { ...prev.functions, [id]: { ...current, ...patch } } };
     });
     setSavedAt(false);
+    setDirty(true);
   }
 
   function patchGenerator(
@@ -459,13 +462,15 @@ export function GeneratorsPanel() {
       return { ...prev, generators: { ...prev.generators, [key]: { ...current, ...patch } } };
     });
     setSavedAt(false);
+    setDirty(true);
   }
 
-  async function save() {
+  async function save(override?: GeneratorControlSettings) {
     setSaving(true);
     try {
-      setSettings(await saveGeneratorSettings({ data: { settings } }));
+      setSettings(await saveGeneratorSettings({ data: { settings: override ?? settings } }));
       setSavedAt(true);
+      setDirty(false);
       setProblem(null);
     } catch (err) {
       setSavedAt(false);
@@ -473,6 +478,21 @@ export function GeneratorsPanel() {
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Switching an engine on or off is stored at once: the on/off state must
+   * never differ between the panel and the running product.
+   */
+  function toggleEngine(key: string, enabled: boolean) {
+    const current = settings.generators[key];
+    if (!current) return;
+    const next: GeneratorControlSettings = {
+      ...settings,
+      generators: { ...settings.generators, [key]: { ...current, enabled } },
+    };
+    setSettings(next);
+    void save(next);
   }
 
   async function check(key: string) {
