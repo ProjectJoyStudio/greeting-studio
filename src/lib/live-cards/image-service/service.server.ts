@@ -9,7 +9,12 @@
 //            later use and is guarded by two explicit switches.
 
 import { backupHandoverAllowed, primaryCostUsd, primaryModel } from "./config.server";
-import { isConfirmedFailure, LiveImageError, renderPrimaryImage, type LiveImageRender } from "./client.server";
+import {
+  isConfirmedFailure,
+  LiveImageError,
+  renderPrimaryImage,
+  type LiveImageRender,
+} from "./client.server";
 import { logError, logInfo, logWarn } from "./log.server";
 import { queueStats, QueueFullError, QueueTimeoutError, withImageSlot } from "./queue.server";
 
@@ -149,7 +154,10 @@ export async function createLiveCardImage(input: {
         primaryError =
           err instanceof LiveImageError
             ? err
-            : new LiveImageError("generation_failed", err instanceof Error ? err.message : "Unknown failure.");
+            : new LiveImageError(
+                "generation_failed",
+                err instanceof Error ? err.message : "Unknown failure.",
+              );
       }
 
       // Backup hand-over is switched off: every failure — slow render,
@@ -175,7 +183,10 @@ export async function createLiveCardImage(input: {
       const { routeImageRequest } = await import("../generators/router.server");
       const { GeneratorError } = await import("../generators/contracts.server");
       try {
-        const routed = await routeImageRequest({ prompt: input.prompt, aspectRatio: input.aspectRatio });
+        const routed = await routeImageRequest({
+          prompt: input.prompt,
+          aspectRatio: input.aspectRatio,
+        });
         logInfo("request_completed", {
           ...base,
           engine: "backup",
@@ -193,7 +204,13 @@ export async function createLiveCardImage(input: {
       } catch (err) {
         const code = err instanceof GeneratorError ? err.code : "generation_failed";
         const message = err instanceof Error ? err.message : "The picture could not be created.";
-        logError("request_failed", { ...base, engine: "backup", status: "failed", code, error: message });
+        logError("request_failed", {
+          ...base,
+          engine: "backup",
+          status: "failed",
+          code,
+          error: message,
+        });
         throw new LiveCardImageServiceError(code, message);
       }
     });

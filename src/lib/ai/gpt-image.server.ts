@@ -100,9 +100,9 @@ export async function renderGptImage(input: {
     );
   }
 
-  const payload = (await res.json().catch(() => null)) as
-    | { data?: Array<{ b64_json?: string; url?: string }> }
-    | null;
+  const payload = (await res.json().catch(() => null)) as {
+    data?: Array<{ b64_json?: string; url?: string }>;
+  } | null;
   const first = payload?.data?.[0];
 
   if (first?.b64_json) {
@@ -117,7 +117,10 @@ export async function renderGptImage(input: {
   if (first?.url) {
     const download = await fetch(first.url);
     if (!download.ok) {
-      throw new GptImageError("generation_failed", `Could not download the picture (${download.status}).`);
+      throw new GptImageError(
+        "generation_failed",
+        `Could not download the picture (${download.status}).`,
+      );
     }
     return {
       bytes: new Uint8Array(await download.arrayBuffer()),
