@@ -103,7 +103,16 @@ export const generateCardImage = createServerFn({ method: "POST" })
       ...Object.keys(MODEL_BY_KEY),
       ...Object.keys(GPT_BY_KEY),
     ]);
-    const chosen = order.length ? order : ["flux_schnell"];
+    // Only the engines of the saved routing configuration may run. When none
+    // is usable the customer receives a normal generation error.
+    if (!order.length) {
+      return {
+        ok: false,
+        errorCode: "no_generator",
+        errorMessage: "No image generator is configured for greeting cards right now.",
+      };
+    }
+    const chosen = order;
 
     for (const key of chosen) {
       const gpt = GPT_BY_KEY[key];

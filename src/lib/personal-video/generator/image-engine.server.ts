@@ -79,26 +79,22 @@ const ENGINE_BY_ADMIN_KEY: Record<string, string> = {
 };
 
 /**
- * The engine used for one NEW scene: the administrator's choice when one is
- * stored, otherwise the environment configuration.
+ * The engine used for one NEW scene. The administrator's saved routing
+ * configuration decides; an engine that is not selected is never used.
  */
 async function activeEngine(): Promise<EngineDefinition> {
-  try {
-    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
-    const key = await primaryGenerator(
-      "personal_video.start_scene",
-      Object.keys(ENGINE_BY_ADMIN_KEY),
-    );
-    const name = key ? ENGINE_BY_ADMIN_KEY[key] : undefined;
-    const chosen = name ? ENGINES[name] : undefined;
-    if (chosen) {
-      const override = process.env["PVG_IMAGE_MODEL"];
-      return override ? { ...chosen, model: override } : chosen;
-    }
-  } catch {
-    // fall back to the environment configuration
+  const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+  const key = await primaryGenerator(
+    "personal_video.start_scene",
+    Object.keys(ENGINE_BY_ADMIN_KEY),
+  );
+  const name = key ? ENGINE_BY_ADMIN_KEY[key] : undefined;
+  const chosen = name ? ENGINES[name] : undefined;
+  if (!chosen) {
+    throw new Error("No scene generator is configured right now.");
   }
-  return engine();
+  const override = process.env["PVG_IMAGE_MODEL"];
+  return override ? { ...chosen, model: override } : chosen;
 }
 
 /** Key of the engine currently in use, stored with every generated scene. */

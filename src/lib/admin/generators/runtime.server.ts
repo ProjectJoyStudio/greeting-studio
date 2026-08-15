@@ -41,31 +41,40 @@ function rotate(functionId: string, keys: string[]): string[] {
  * Ordered engine keys for ONE new job of one function.
  *
  *  • disabled engines are skipped;
- *  • the primary engine leads;
- *  • the backup follows only when automatic failover is on;
- *  • with load distribution on, different jobs start on different engines.
+ *  • only the primary engine is used;
+ *  • the backup follows only when it is selected AND automatic failover is on;
+ *  • with load distribution on, the enabled engines of the group share the load.
  *
- * One job is always served by one engine at a time — the list is walked in
- * order and only after a genuine technical failure of the previous engine.
+ * The saved configuration is the source of truth: an engine that is not part
+ * of the active routing configuration is NEVER used implicitly. When the
+ * configured engine cannot serve the job, the list is empty and the caller
+ * must report a generation failure instead of trying something else.
  */
 export async function generatorOrder(functionId: string, available: string[]): Promise<string[]> {
   const fn = findFunction(functionId);
   const settings = await generatorSettings().catch(() => defaultGeneratorSettings());
-  const config = settings.functions[functionId];
-  if (!fn || !config) return available;
+  if (!fn) return [];
 
-  const enabled = available.filter((key) => settings.generators[key]?.enabled !== false);
-  if (!enabled.length) return [];
+  const config = settings.functions[functionId] ?? {
+    primary: fn.defaultPrimary,
+    backup: fn.defaultBackup,
+    autoFailover: fn.defaultAutoFailover,
+    loadDistribution: false,
+  };
 
-  const primary = config.primary && enabled.includes(config.primary) ? config.primary : enabled[0]!;
-  const backup =
-    config.autoFailover && config.backup && enabled.includes(config.backup) ? config.backup : null;
+  const usable = (key: string | null): key is string =>
+    Boolean(key) && available.includes(key!) && settings.generators[key!]?.enabled !== false;
+
+  const backup = config.autoFailover && usable(config.backup) ? config.backup : null;
 
   if (config.loadDistribution) {
-    const pool = rotate(functionId, enabled);
-    return [...new Set([...pool, ...(backup ? [backup] : [])])];
+    const pool = fn.candidates.map((c) => c.key).filter((key) => usable(key));
+    if (!pool.length) return [];
+    return [...new Set([...rotate(functionId, pool), ...(backup ? [backup] : [])])];
   }
-  return [...new Set([primary, ...(backup ? [backup] : [])])];
+
+  const primary = usable(config.primary) ? config.primary : null;
+  return [...new Set([...(primary ? [primary] : []), ...(backup ? [backup] : [])])];
 }
 
 /** The engine an administrator chose as primary, when it is switched on. */
