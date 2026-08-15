@@ -67,6 +67,15 @@ const LOVABLE = (key: string, model: string): GeneratorDef => ({
   credential: "LOVABLE_API_KEY",
 });
 
+/** The same model served through Replicate, used as an independent backup. */
+const REPLICATE_BACKUP = (key: string, model: string): GeneratorDef => ({
+  key,
+  provider: "Replicate",
+  model,
+  check: "replicate",
+  credential: "REPLICATE_API_TOKEN",
+});
+
 /** OpenAI image models served through the Lovable AI gateway. */
 const OPENAI_IMAGE = (key: string, model: string, quality: GeneratorQuality): GeneratorDef => ({
   key,
@@ -98,9 +107,12 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "greeting_cards.prompt_translation",
         titleKey: "gc_fn_prompt_translation",
-        candidates: [LOVABLE("gemini_25_flash", "google/gemini-2.5-flash")],
+        candidates: [
+          LOVABLE("gemini_25_flash", "google/gemini-2.5-flash"),
+          REPLICATE_BACKUP("replicate_gemini_25_flash", "google/gemini-2.5-flash"),
+        ],
         defaultPrimary: "gemini_25_flash",
-        defaultBackup: null,
+        defaultBackup: "replicate_gemini_25_flash",
         defaultAutoFailover: false,
       },
     ],
@@ -167,17 +179,23 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "personal_video.greeting_text",
         titleKey: "gc_fn_greeting_text",
-        candidates: [LOVABLE("gemini_25_flash", "google/gemini-2.5-flash")],
+        candidates: [
+          LOVABLE("gemini_25_flash", "google/gemini-2.5-flash"),
+          REPLICATE_BACKUP("replicate_gemini_25_flash", "google/gemini-2.5-flash"),
+        ],
         defaultPrimary: "gemini_25_flash",
-        defaultBackup: null,
+        defaultBackup: "replicate_gemini_25_flash",
         defaultAutoFailover: false,
       },
       {
         id: "personal_video.transcription",
         titleKey: "gc_fn_transcription",
-        candidates: [LOVABLE("gpt_4o_transcribe", "openai/gpt-4o-transcribe")],
+        candidates: [
+          LOVABLE("gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
+          REPLICATE_BACKUP("replicate_gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
+        ],
         defaultPrimary: "gpt_4o_transcribe",
-        defaultBackup: null,
+        defaultBackup: "replicate_gpt_4o_transcribe",
         defaultAutoFailover: false,
       },
       {
