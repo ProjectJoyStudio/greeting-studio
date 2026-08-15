@@ -115,6 +115,7 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const chosen = order;
 
     for (const key of chosen) {
+      console.log(`[cards.image] routing: order=${chosen.join(",")} trying=${key}`);
       const gpt = GPT_BY_KEY[key];
       if (gpt) {
         try {
