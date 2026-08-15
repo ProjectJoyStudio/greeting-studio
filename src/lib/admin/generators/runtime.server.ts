@@ -15,8 +15,8 @@ const TTL_MS = 15_000;
 /** Current settings, cached briefly so hot paths stay fast. */
 export async function generatorSettings(): Promise<GeneratorControlSettings> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
-  const { readGeneratorSettings } = await import("./settings.server");
-  const value = await readGeneratorSettings();
+  const { readGeneratorSettingsSafe } = await import("./settings.server");
+  const value = await readGeneratorSettingsSafe();
   cache = { at: Date.now(), value };
   return value;
 }
