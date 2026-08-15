@@ -49,24 +49,18 @@ export async function translatePromptToEnglish(
   if (!original) return { original, english: original, translated: false };
   if (looksEnglish(original)) return { original, english: original, translated: false };
 
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return { original, english: original, translated: false };
-
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM[kind] },
-          { role: "user", content: original },
-        ],
-      }),
-    });
-    if (!res.ok) return { original, english: original, translated: false };
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const text = json.choices?.[0]?.message?.content?.trim();
+    const { completeText } = await import("./text-engine.server");
+    const text = (
+      await completeText(
+        {
+          functionId: "greeting_cards.prompt_translation",
+          system: SYSTEM[kind],
+          user: original,
+        },
+        ["gemini_25_flash", "replicate_gemini_25_flash"],
+      )
+    ).trim();
     if (!text) return { original, english: original, translated: false };
     return {
       original,
