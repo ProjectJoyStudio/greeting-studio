@@ -246,6 +246,14 @@ const T: Dict = {
     fr: "Désactiver un générateur conserve sa configuration et ne concerne que les nouvelles tâches.",
     pl: "Wyłączenie generatora zachowuje konfigurację i dotyczy tylko nowych zadań.",
   },
+  gc_unsaved: {
+    en: "Unsaved changes — press Save to apply them to new jobs.",
+    ru: "Есть несохранённые изменения — нажмите «Сохранить», чтобы они применились к новым задачам.",
+    de: "Nicht gespeicherte Änderungen — bitte speichern, damit sie für neue Aufträge gelten.",
+    uk: "Є незбережені зміни — натисніть «Зберегти», щоб вони діяли для нових завдань.",
+    fr: "Modifications non enregistrées — cliquez sur Enregistrer pour les appliquer.",
+    pl: "Niezapisane zmiany — kliknij Zapisz, aby je zastosować.",
+  },
   // features
   gc_feature_cards: {
     en: "Greeting Cards",
@@ -410,6 +418,7 @@ export function GeneratorsPanel() {
   const [checks, setChecks] = useState<Record<string, CheckState>>({});
   const [checking, setChecking] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const engines = useMemo(() => allGenerators(), []);
 
@@ -417,6 +426,7 @@ export function GeneratorsPanel() {
     setLoading(true);
     try {
       setSettings(await loadGeneratorSettings());
+      setDirty(false);
       setProblem(null);
     } catch (err) {
       setProblem(err instanceof Error ? err.message : "The saved configuration could not be read.");
@@ -439,6 +449,7 @@ export function GeneratorsPanel() {
       return { ...prev, functions: { ...prev.functions, [id]: { ...current, ...patch } } };
     });
     setSavedAt(false);
+    setDirty(true);
   }
 
   function patchGenerator(
@@ -451,13 +462,15 @@ export function GeneratorsPanel() {
       return { ...prev, generators: { ...prev.generators, [key]: { ...current, ...patch } } };
     });
     setSavedAt(false);
+    setDirty(true);
   }
 
-  async function save() {
+  async function save(override?: GeneratorControlSettings) {
     setSaving(true);
     try {
-      setSettings(await saveGeneratorSettings({ data: { settings } }));
+      setSettings(await saveGeneratorSettings({ data: { settings: override ?? settings } }));
       setSavedAt(true);
+      setDirty(false);
       setProblem(null);
     } catch (err) {
       setSavedAt(false);
@@ -465,6 +478,21 @@ export function GeneratorsPanel() {
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Switching an engine on or off is stored at once: the on/off state must
+   * never differ between the panel and the running product.
+   */
+  function toggleEngine(key: string, enabled: boolean) {
+    const current = settings.generators[key];
+    if (!current) return;
+    const next: GeneratorControlSettings = {
+      ...settings,
+      generators: { ...settings.generators, [key]: { ...current, enabled } },
+    };
+    setSettings(next);
+    void save(next);
   }
 
   async function check(key: string) {
@@ -547,6 +575,11 @@ export function GeneratorsPanel() {
             {problem}
           </p>
         )}
+        {dirty && !problem && (
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            {t("gc_unsaved")}
+          </p>
+        )}
       </div>
 
       {GENERATOR_FEATURES.map((feature) => (
@@ -587,6 +620,7 @@ export function GeneratorsPanel() {
                               patchFunction(fn.id, { primary: e.target.value || null })
                             }
                           >
+                            <option value="">{t("gc_not_selected")}</option>
                             {fn.candidates.map((c) => (
                               <option key={c.key} value={c.key}>
                                 {c.provider} · {c.model}
@@ -723,7 +757,8 @@ export function GeneratorsPanel() {
                       <div className="inline-flex gap-1">
                         <button
                           className={btnBase}
-                          onClick={() => patchGenerator(gen.key, { enabled: !enabled })}
+                          disabled={saving}
+                          onClick={() => toggleEngine(gen.key, !enabled)}
                         >
                           <Power className="h-3.5 w-3.5" />
                           {enabled ? t("gc_disable") : t("gc_enable")}

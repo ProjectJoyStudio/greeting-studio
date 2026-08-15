@@ -10,7 +10,8 @@ import { findFunction } from "./registry";
 import { defaultGeneratorSettings, type GeneratorControlSettings } from "./settings";
 
 let cache: { at: number; value: GeneratorControlSettings } | null = null;
-const TTL_MS = 15_000;
+// Kept short so an administrator change reaches every server instance quickly.
+const TTL_MS = 3_000;
 
 /** Current settings, cached briefly so hot paths stay fast. */
 export async function generatorSettings(): Promise<GeneratorControlSettings> {

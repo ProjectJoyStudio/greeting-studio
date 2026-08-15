@@ -70,7 +70,14 @@ export function mergeGeneratorSettings(stored: unknown): GeneratorControlSetting
     if (!fn || !current) continue;
     const valid = (key: unknown): string | null =>
       typeof key === "string" && fn.candidates.some((c) => c.key === key) ? key : null;
-    const primary = valid((entry as FunctionSettings)?.primary) ?? current.primary;
+    // The stored configuration is the source of truth: when the entry exists,
+    // an explicit "Not selected" stays "Not selected" and is never replaced by
+    // the registry default.
+    const storedPrimary = (entry as FunctionSettings)?.primary;
+    const primary =
+      storedPrimary === null || storedPrimary === undefined || typeof storedPrimary === "string"
+        ? valid(storedPrimary)
+        : current.primary;
     let backup = valid((entry as FunctionSettings)?.backup);
     if (backup === primary) backup = null;
     base.functions[id] = {
