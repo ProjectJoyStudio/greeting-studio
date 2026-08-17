@@ -199,28 +199,6 @@ async function checkLovableTranscribe(model: string): Promise<ConnectionResult> 
   return { state: "error", detail: await providerDetail(res) };
 }
 
-/**
- * Image models are checked through the same image endpoint the product uses.
- * A deliberately unsupported size is sent, so the model and the credential are
- * validated end to end without paying for a picture: the model rejects the
- * size only after it has accepted the request.
- */
-async function checkLovableImage(model: string): Promise<ConnectionResult> {
-  const key = gatewayKey();
-  if (!key) return { state: "error", detail: "No credential configured." };
-  const res = await fetch(`${GATEWAY}/images/generations`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt: "connection check", size: "1x1" }),
-  });
-  if (res.ok) return { state: "working", detail: "Image model reachable." };
-  const detail = await providerDetail(res);
-  if (res.status === 400 && /size/i.test(detail) && !/invalid model/i.test(detail)) {
-    return { state: "working", detail: "Image model and credential accepted." };
-  }
-  return { state: "error", detail };
-}
-
 async function checkDeepl(): Promise<ConnectionResult> {
   const key = process.env["DEEPL_API_KEY"];
   if (!key) return { state: "error", detail: "No credential configured." };
@@ -244,8 +222,6 @@ async function runCheck(kind: CheckKind, model: string): Promise<ConnectionResul
       return checkLovableChat(model);
     case "lovable_transcribe":
       return checkLovableTranscribe(model);
-    case "lovable_image":
-      return checkLovableImage(model);
     case "deepl":
       return checkDeepl();
     default:
