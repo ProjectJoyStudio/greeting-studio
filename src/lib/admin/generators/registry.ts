@@ -16,7 +16,6 @@ export type CheckKind =
   | "lovable_ai"
   | "lovable_chat"
   | "lovable_transcribe"
-  | "lovable_image"
   | "deepl"
   | "none";
 
@@ -94,14 +93,14 @@ const REPLICATE_BACKUP = (key: string, model: string): GeneratorDef => ({
   credential: "REPLICATE_API_TOKEN",
 });
 
-/** OpenAI image models served through the Lovable AI gateway. */
-const OPENAI_IMAGE = (key: string, model: string, quality: GeneratorQuality): GeneratorDef => ({
+/** OpenAI image models served through the Replicate API. */
+const REPLICATE_IMAGE = (key: string, model: string, quality: GeneratorQuality): GeneratorDef => ({
   key,
-  provider: "OpenAI",
+  provider: "Replicate",
   model,
-  check: "lovable_image",
+  check: "replicate",
   quality,
-  credential: "LOVABLE_API_KEY",
+  credential: "REPLICATE_API_TOKEN",
 });
 
 export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
@@ -116,7 +115,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_schnell", "black-forest-labs/flux-schnell"),
           REPLICATE("flux_dev", "black-forest-labs/flux-dev"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
-          OPENAI_IMAGE("gpt_image_1_mini", "openai/gpt-image-1-mini", "medium"),
+          REPLICATE_IMAGE("gpt_image_15_low", "openai/gpt-image-1.5", "low"),
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: "flux_dev",
@@ -146,7 +145,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_schnell", "black-forest-labs/flux-schnell"),
           REPLICATE("flux_ultra", "black-forest-labs/flux-1.1-pro-ultra"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
-          OPENAI_IMAGE("gpt_image_1_mini_low", "openai/gpt-image-1-mini", "low"),
+          REPLICATE_IMAGE("gpt_image_15_medium", "openai/gpt-image-1.5", "medium"),
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: null,

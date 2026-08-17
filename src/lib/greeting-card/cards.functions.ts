@@ -95,9 +95,9 @@ export const generateCardImage = createServerFn({ method: "POST" })
       flux_dev: FALLBACK_MODEL,
       flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
     };
-    // OpenAI image engines run through the shared gateway adapter, not Replicate.
-    const GPT_BY_KEY: Record<string, { model: string; quality: "low" | "medium" | "high" }> = {
-      gpt_image_1_mini: { model: "openai/gpt-image-1-mini", quality: "medium" },
+    // GPT Image 1.5 runs through the server-side Replicate adapter.
+    const GPT_BY_KEY: Record<string, { quality: "low" | "medium" | "high" }> = {
+      gpt_image_15_low: { quality: "low" },
     };
     const order = await generatorOrder("greeting_cards.image", [
       ...Object.keys(MODEL_BY_KEY),
@@ -119,9 +119,9 @@ export const generateCardImage = createServerFn({ method: "POST" })
       const gpt = GPT_BY_KEY[key];
       if (gpt) {
         try {
-          const { renderGptImage } = await import("@/lib/ai/gpt-image.server");
+          const { renderGptImage } = await import("@/lib/replicate/gpt-image.server");
           const rendered = await withGeneratorSlot(key, () =>
-            renderGptImage({ model: gpt.model, quality: gpt.quality, prompt: enginePrompt }),
+            renderGptImage({ quality: gpt.quality, prompt: enginePrompt }),
           );
           imageBytes = rendered.bytes;
           imageContentType = rendered.contentType;
@@ -129,7 +129,7 @@ export const generateCardImage = createServerFn({ method: "POST" })
           break;
         } catch (err) {
           const { GptImageError, isTerminalGptImageCode } =
-            await import("@/lib/ai/gpt-image.server");
+            await import("@/lib/replicate/gpt-image.server");
           if (err instanceof GptImageError) {
             lastError = { code: err.code, message: err.message };
             if (isTerminalGptImageCode(err.code)) break;

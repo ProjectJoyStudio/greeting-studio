@@ -45,12 +45,12 @@ export class LiveCardImageServiceError extends Error {
 }
 
 /**
- * OpenAI start-image engines, served through the shared gateway adapter.
- * Whether one of them runs is decided solely by Admin → Generators; they are
- * never connected to the animation stage.
+ * OpenAI start-image engines, served through the server-side Replicate
+ * adapter. Whether one of them runs is decided solely by Admin → Generators;
+ * they are never connected to the animation stage.
  */
 const OPENAI_START_IMAGE: Record<string, { model: string; quality: "low" | "medium" | "high" }> = {
-  gpt_image_1_mini_low: { model: "openai/gpt-image-1-mini", quality: "low" },
+  gpt_image_15_medium: { model: "openai/gpt-image-1.5", quality: "medium" },
 };
 
 /** The OpenAI engine the administrator selected for the start image, if any. */
@@ -93,10 +93,11 @@ export async function createLiveCardImage(input: {
       const openAiKey = await selectedOpenAiEngine();
       if (openAiKey) {
         const engine = OPENAI_START_IMAGE[openAiKey]!;
-        const { renderGptImage, GptImageError } = await import("@/lib/ai/gpt-image.server");
+        const { renderGptImage, GptImageError } = await import(
+          "@/lib/replicate/gpt-image.server"
+        );
         try {
           const rendered = await renderGptImage({
-            model: engine.model,
             quality: engine.quality,
             prompt: input.prompt,
             aspectRatio: input.aspectRatio,
