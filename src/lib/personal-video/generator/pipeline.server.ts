@@ -31,6 +31,8 @@ export interface FinalVideoEngine {
   /** Key as it appears in the Generator Control Centre. */
   key: string;
   model: string;
+  /** Which provider runs this engine. */
+  provider?: "replicate" | "runware";
   /** Longest greeting voice this engine accepts, in seconds. */
   maxAudioSeconds: number;
   /** Provider price of one second of finished film, in US dollars. */
@@ -49,6 +51,7 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
   kling_avatar_v2: {
     key: "kling_avatar_v2",
     model: "kwaivgi/kling-avatar-v2",
+    provider: "replicate",
     variant: klingMode(),
     // The film lasts as long as the greeting voice; the engine accepts a
     // voice of at most one minute.
@@ -65,7 +68,28 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
       mode: klingMode(),
     }),
   },
+  // --- Runware engines (official Runware API, never through Replicate) ------
+  rw_wan26_flash: {
+    key: "rw_wan26_flash",
+    model: "alibaba:wan@2.6-flash",
+    provider: "runware",
+    // The film is as long as the greeting voice; the model accepts 15 seconds.
+    maxAudioSeconds: Number(process.env["PVG_RUNWARE_MAX_AUDIO_SECONDS"] || 15),
+    usdPerSecond: Number(process.env["PVG_RUNWARE_WAN_USD_PER_SECOND"] || 0.05),
+    buildInput: () => ({}),
+  },
+  rw_kling3_standard: {
+    key: "rw_kling3_standard",
+    model: "klingai:kling-video@3-standard",
+    provider: "runware",
+    maxAudioSeconds: Number(process.env["PVG_RUNWARE_MAX_AUDIO_SECONDS"] || 15),
+    usdPerSecond: Number(process.env["PVG_RUNWARE_KLING_USD_PER_SECOND"] || 0.09),
+    buildInput: () => ({}),
+  },
 };
+
+/** Prefix of a film that runs at Runware instead of Replicate. */
+const RUNWARE_PREFIX = "runware:";
 
 /** The longest greeting voice the active engines can speak. */
 export function maxGreetingAudioSeconds(): number {
@@ -166,9 +190,24 @@ export async function startFinalVideo(
     }
     try {
       const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
-      const predictionId = await withGeneratorSlot(engine.key, () =>
-        createPrediction(engine.model, engine.buildInput(input)),
-      );
+      const predictionId = await withGeneratorSlot(engine.key, async () => {
+        if (engine.provider === "runware") {
+          const { runwareStartVideo } = await import("@/lib/runware/runware.server");
+          const taskUUID = await runwareStartVideo({
+            generatorKey: engine.key,
+            prompt: input.prompt,
+            imageUrl: input.imageUrl,
+            // The film lasts exactly as long as the finished greeting voice.
+            durationSeconds: Math.ceil(input.audioSeconds),
+            aspectRatio: "16:9",
+            // Engines that accept a voice track receive the ElevenLabs
+            // greeting; no engine ever speaks the greeting a second time.
+            audioUrl: input.audioUrl,
+          });
+          return `${RUNWARE_PREFIX}${taskUUID}`;
+        }
+        return createPrediction(engine.model, engine.buildInput(input));
+      });
       return {
         predictionId,
         engineKey: engine.key,
@@ -207,6 +246,21 @@ function extractUrl(output: unknown): string | null {
 
 /** Asks one running film how it is doing. Never throws. */
 export async function pollStage(predictionId: string): Promise<StageProgress> {
+  if (predictionId.startsWith(RUNWARE_PREFIX)) {
+    const { runwareProgress } = await import("@/lib/runware/runware.server");
+    const state = await runwareProgress(predictionId.slice(RUNWARE_PREFIX.length));
+    if (state.state === "processing") return { state: "processing" };
+    if (state.state === "failed") {
+      return { state: "failed", errorCode: state.errorCode, errorMessage: state.errorMessage };
+    }
+    return {
+      state: "ready",
+      url: state.url,
+      contentType: "video/mp4",
+      fileExtension: "mp4",
+      predictSeconds: 0,
+    };
+  }
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}`, {
       headers: { Authorization: `Bearer ${token()}` },
@@ -255,6 +309,8 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
 
 /** Stops one running film, for example when its order is removed. */
 export async function cancelStage(predictionId: string): Promise<boolean> {
+  // Runware jobs cannot be recalled; their result is dropped instead.
+  if (predictionId.startsWith(RUNWARE_PREFIX)) return false;
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}/cancel`, {
       method: "POST",
