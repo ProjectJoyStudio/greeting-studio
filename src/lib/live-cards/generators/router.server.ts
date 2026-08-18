@@ -19,6 +19,7 @@ import {
 } from "./contracts.server";
 import { fluxProGenerator, fluxUltraGenerator } from "./replicate-image.server";
 import { wanImageToVideoGenerator } from "./replicate-video.server";
+import { RUNWARE_VIDEO_GENERATORS } from "./runware-video.server";
 
 /**
  * Applies the administrator's Generator Control Centre settings to one new
@@ -56,7 +57,10 @@ async function withSlot<T>(key: string, run: () => Promise<T>): Promise<T> {
 const IMAGE_GENERATORS: ImageGenerator[] = [fluxUltraGenerator, fluxProGenerator];
 
 /** Registered animation engines. Add, remove or replace entries here only. */
-const VIDEO_GENERATORS: VideoGenerator[] = [wanImageToVideoGenerator];
+const VIDEO_GENERATORS: VideoGenerator[] = [
+  wanImageToVideoGenerator,
+  ...RUNWARE_VIDEO_GENERATORS,
+];
 
 export function listVideoGenerators(): VideoGenerator[] {
   return VIDEO_GENERATORS.filter((g) => !disabledGenerators().includes(g.key) && g.isAvailable());
