@@ -78,15 +78,19 @@ const ENGINE_BY_ADMIN_KEY: Record<string, string> = {
   flux2_dev: "FLUX_2_DEV",
 };
 
+/** Prefix of a render that runs at Runware instead of Replicate. */
+const RUNWARE_PREFIX = "runware:";
+
 /**
  * The engine used for one NEW scene. The administrator's saved routing
  * configuration decides; an engine that is not selected is never used.
  */
 async function activeEngine(): Promise<EngineDefinition> {
   const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+  const { RUNWARE_SCENE_IMAGE_KEYS } = await import("@/lib/runware/catalog");
   const key = await primaryGenerator(
     "personal_video.start_scene",
-    Object.keys(ENGINE_BY_ADMIN_KEY),
+    [...Object.keys(ENGINE_BY_ADMIN_KEY), ...RUNWARE_SCENE_IMAGE_KEYS],
   );
   const name = key ? ENGINE_BY_ADMIN_KEY[key] : undefined;
   const chosen = name ? ENGINES[name] : undefined;
@@ -95,6 +99,21 @@ async function activeEngine(): Promise<EngineDefinition> {
   }
   const override = process.env["PVG_IMAGE_MODEL"];
   return override ? { ...chosen, model: override } : chosen;
+}
+
+/** The Runware scene engine the administrator selected, if any. */
+async function activeRunwareEngine(): Promise<string | null> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const { RUNWARE_SCENE_IMAGE_KEYS, isRunwareImageKey } = await import("@/lib/runware/catalog");
+    const key = await primaryGenerator("personal_video.start_scene", [
+      ...Object.keys(ENGINE_BY_ADMIN_KEY),
+      ...RUNWARE_SCENE_IMAGE_KEYS,
+    ]);
+    return key && isRunwareImageKey(key) ? key : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Key of the engine currently in use, stored with every generated scene. */
@@ -153,6 +172,33 @@ export async function startSceneRender(input: {
   prompt: string;
   referenceUrls: string[];
 }): Promise<PvgStartResult> {
+  // Runware engines keep the identity of the reference photographs through
+  // their own reference-image input.
+  const runwareKey = await activeRunwareEngine();
+  if (runwareKey) {
+    const { runwareStartImage, RunwareError } = await import("@/lib/runware/runware.server");
+    const { RUNWARE_IMAGE_MODELS } = await import("@/lib/runware/catalog");
+    try {
+      const taskUUID = await runwareStartImage({
+        generatorKey: runwareKey,
+        prompt: input.prompt,
+        aspectRatio: "16:9",
+        referenceImages: input.referenceUrls,
+      });
+      return {
+        predictionId: `${RUNWARE_PREFIX}${taskUUID}`,
+        model: RUNWARE_IMAGE_MODELS[runwareKey]!.air,
+        engineKey: runwareKey,
+      };
+    } catch (err) {
+      const code = err instanceof RunwareError ? err.code : "api_error";
+      throw new PvgEngineError(
+        code as PvgEngineErrorCode,
+        err instanceof Error ? err.message : "The scene engine could not be reached.",
+      );
+    }
+  }
+
   const active = await activeEngine();
   const res = await fetch(`${API_BASE}/models/${active.model}/predictions`, {
     method: "POST",
@@ -183,6 +229,8 @@ export type PvgProgress =
  * can no longer be stopped we simply drop its result later.
  */
 export async function cancelSceneRender(predictionId: string): Promise<boolean> {
+  // Runware jobs cannot be recalled; their result is simply dropped later.
+  if (predictionId.startsWith(RUNWARE_PREFIX)) return false;
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}/cancel`, {
       method: "POST",
@@ -209,6 +257,15 @@ function extractUrl(output: unknown): string | null {
 
 /** Asks the engine how one running render is doing. Never throws. */
 export async function pollSceneRender(predictionId: string): Promise<PvgProgress> {
+  if (predictionId.startsWith(RUNWARE_PREFIX)) {
+    const { runwareProgress } = await import("@/lib/runware/runware.server");
+    const state = await runwareProgress(predictionId.slice(RUNWARE_PREFIX.length));
+    if (state.state === "processing") return { state: "processing" };
+    if (state.state === "failed") {
+      return { state: "failed", errorCode: state.errorCode, errorMessage: state.errorMessage };
+    }
+    return { state: "ready", url: state.url, contentType: "image/jpeg", fileExtension: "jpg" };
+  }
   try {
     const res = await fetch(`${API_BASE}/predictions/${predictionId}`, {
       headers: { Authorization: `Bearer ${token()}` },
