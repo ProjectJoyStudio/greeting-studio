@@ -46,7 +46,54 @@ export const generateTestImage = createServerFn({ method: "POST" })
       flux_dev: FALLBACK_MODEL,
       flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
     };
-    const order = await generatorOrder("greeting_cards.image", Object.keys(MODEL_BY_KEY));
+    const { RUNWARE_CARD_IMAGE_KEYS, RUNWARE_IMAGE_MODELS } = await import(
+      "@/lib/runware/catalog"
+    );
+    const order = await generatorOrder("greeting_cards.image", [
+      ...Object.keys(MODEL_BY_KEY),
+      ...RUNWARE_CARD_IMAGE_KEYS,
+    ]);
+
+    // A Runware engine leads: the diagnostic runs on the real Runware API.
+    const runwareKey = order.find((key) => RUNWARE_CARD_IMAGE_KEYS.includes(key));
+    if (runwareKey && order[0] === runwareKey) {
+      const { runwareRenderImage, RunwareError } = await import("@/lib/runware/runware.server");
+      const air = RUNWARE_IMAGE_MODELS[runwareKey]!.air;
+      try {
+        const rendered = await withGeneratorSlot(runwareKey, () =>
+          runwareRenderImage({ generatorKey: runwareKey, prompt: data.prompt }),
+        );
+        return {
+          ok: true,
+          imageUrl: rendered.url,
+          model: air,
+          attempts: [
+            {
+              model: air,
+              ok: true,
+              httpStatus: 200,
+              predictionId: rendered.taskUUID,
+              predictionStatus: "succeeded",
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          ok: false,
+          attempts: [
+            {
+              model: air,
+              ok: false,
+              httpStatus: null,
+              predictionId: null,
+              predictionStatus: null,
+              errorCode: err instanceof RunwareError ? err.code : "unknown",
+              errorMessage: err instanceof Error ? err.message : "Unexpected error.",
+            },
+          ],
+        };
+      }
+    }
     const models = order.map((key) => MODEL_BY_KEY[key]!).filter(Boolean);
     if (!models.length) {
       return {

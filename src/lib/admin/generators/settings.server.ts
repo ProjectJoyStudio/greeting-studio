@@ -211,10 +211,26 @@ async function checkDeepl(): Promise<ConnectionResult> {
   return { state: "error", detail: `Translation service responded ${res.status}.` };
 }
 
+/**
+ * Runware is checked against its own API with a non-generative model lookup,
+ * so the credential and the exact model are verified without paying for a
+ * render.
+ */
+async function checkRunware(air: string): Promise<ConnectionResult> {
+  if (!process.env["RUNWARE_API_KEY"]) {
+    return { state: "error", detail: "No credential configured." };
+  }
+  const { checkRunwareModel } = await import("@/lib/runware/runware.server");
+  const result = await checkRunwareModel(air);
+  return { state: result.ok ? "working" : "error", detail: result.detail };
+}
+
 async function runCheck(kind: CheckKind, model: string): Promise<ConnectionResult> {
   switch (kind) {
     case "replicate":
       return checkReplicate(model);
+    case "runware":
+      return checkRunware(model);
     case "elevenlabs":
       return checkElevenLabs();
     case "lovable_ai":

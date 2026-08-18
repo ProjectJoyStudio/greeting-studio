@@ -1,0 +1,103 @@
+// ---------------------------------------------------------------------------
+// Runware engine catalogue. Client-safe: model identifiers only, no keys.
+//
+// Runware is an independent provider. Nothing here goes through the Lovable AI
+// gateway or through Replicate.
+// ---------------------------------------------------------------------------
+
+export interface RunwareImageModel {
+  /** Stable generator key used by Admin → Generators. */
+  key: string;
+  /** Runware AIR identifier. */
+  air: string;
+  /** Human model name shown in the admin panel. */
+  label: string;
+  /** True when the model accepts reference images for identity keeping. */
+  supportsReferenceImages: boolean;
+}
+
+export interface RunwareVideoModel {
+  key: string;
+  air: string;
+  label: string;
+  /** True when the model accepts a prepared voice track as input. */
+  supportsAudioInput: boolean;
+  /** Shortest / longest length the model accepts, in seconds. */
+  minDuration: number;
+  maxDuration: number;
+}
+
+export const RUNWARE_IMAGE_MODELS: Record<string, RunwareImageModel> = {
+  rw_z_image_turbo: {
+    key: "rw_z_image_turbo",
+    air: "runware:z-image@turbo",
+    label: "Z-Image-Turbo",
+    supportsReferenceImages: false,
+  },
+  rw_flux2_dev: {
+    key: "rw_flux2_dev",
+    air: "runware:400@1",
+    label: "FLUX.2 [dev]",
+    supportsReferenceImages: true,
+  },
+  rw_krea2_medium_turbo: {
+    key: "rw_krea2_medium_turbo",
+    air: "krea:krea@2-medium-turbo",
+    label: "Krea 2 Medium Turbo",
+    supportsReferenceImages: true,
+  },
+  rw_flux2_pro: {
+    key: "rw_flux2_pro",
+    air: "bfl:5@1",
+    label: "FLUX.2 [pro]",
+    supportsReferenceImages: true,
+  },
+};
+
+export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
+  rw_wan26_flash: {
+    key: "rw_wan26_flash",
+    air: "alibaba:wan@2.6-flash",
+    label: "Wan 2.6 Flash",
+    supportsAudioInput: true,
+    minDuration: 2,
+    maxDuration: 15,
+  },
+  rw_pixverse_v6: {
+    key: "rw_pixverse_v6",
+    air: "pixverse:1@8",
+    label: "PixVerse V6",
+    supportsAudioInput: false,
+    minDuration: 1,
+    maxDuration: 15,
+  },
+  rw_kling3_standard: {
+    key: "rw_kling3_standard",
+    air: "klingai:kling-video@3-standard",
+    label: "Kling Video 3.0 Standard",
+    supportsAudioInput: false,
+    minDuration: 3,
+    maxDuration: 15,
+  },
+};
+
+/** Engines offered for the Live Cards start picture and greeting-card artwork. */
+export const RUNWARE_CARD_IMAGE_KEYS = Object.keys(RUNWARE_IMAGE_MODELS);
+
+/** Personal Video start scenes need reference images, so Z-Image is excluded. */
+export const RUNWARE_SCENE_IMAGE_KEYS = Object.values(RUNWARE_IMAGE_MODELS)
+  .filter((m) => m.supportsReferenceImages)
+  .map((m) => m.key);
+
+export const RUNWARE_ANIMATION_KEYS = Object.keys(RUNWARE_VIDEO_MODELS);
+
+/** The final Personal Video film never uses PixVerse V6. */
+export const RUNWARE_FINAL_VIDEO_KEYS = ["rw_wan26_flash", "rw_kling3_standard"];
+
+export function isRunwareImageKey(key: string): boolean {
+  return Boolean(RUNWARE_IMAGE_MODELS[key]);
+}
+
+export function isRunwareVideoKey(key: string): boolean {
+  return Boolean(RUNWARE_VIDEO_MODELS[key]);
+}

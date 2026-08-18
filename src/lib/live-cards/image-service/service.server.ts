@@ -57,13 +57,33 @@ const OPENAI_START_IMAGE: Record<string, { model: string; quality: "low" | "medi
 async function selectedOpenAiEngine(): Promise<string | null> {
   try {
     const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const { RUNWARE_CARD_IMAGE_KEYS } = await import("@/lib/runware/catalog");
     const key = await primaryGenerator("live_cards.start_image", [
       "flux_schnell",
       "flux_ultra",
       "flux_1_1_pro",
       ...Object.keys(OPENAI_START_IMAGE),
+      ...RUNWARE_CARD_IMAGE_KEYS,
     ]);
     return key && OPENAI_START_IMAGE[key] ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The Runware engine the administrator selected for the start image, if any. */
+async function selectedRunwareEngine(): Promise<string | null> {
+  try {
+    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
+    const { RUNWARE_CARD_IMAGE_KEYS, isRunwareImageKey } = await import("@/lib/runware/catalog");
+    const key = await primaryGenerator("live_cards.start_image", [
+      "flux_schnell",
+      "flux_ultra",
+      "flux_1_1_pro",
+      ...Object.keys(OPENAI_START_IMAGE),
+      ...RUNWARE_CARD_IMAGE_KEYS,
+    ]);
+    return key && isRunwareImageKey(key) ? key : null;
   } catch {
     return null;
   }
@@ -87,6 +107,49 @@ export async function createLiveCardImage(input: {
   try {
     return await withImageSlot(async () => {
       logInfo("request_started", { ...base, ratio: input.aspectRatio, ...queueStats() });
+
+      // Runware leads when the administrator selected one of its engines.
+      const runwareKey = await selectedRunwareEngine();
+      if (runwareKey) {
+        const { runwareRenderImage, RunwareError } = await import(
+          "@/lib/runware/runware.server"
+        );
+        try {
+          const rendered = await runwareRenderImage({
+            generatorKey: runwareKey,
+            prompt: input.prompt,
+            aspectRatio: input.aspectRatio,
+          });
+          logInfo("request_completed", {
+            ...base,
+            engine: "primary",
+            model: rendered.model,
+            status: "succeeded",
+            costUsd: rendered.costUsd,
+          });
+          return {
+            url: rendered.url,
+            contentType: rendered.contentType,
+            fileExtension: rendered.fileExtension,
+            generatorKey: runwareKey,
+            generatorModel: rendered.model,
+            usedBackup: false,
+          };
+        } catch (err) {
+          const code = err instanceof RunwareError ? err.code : "generation_failed";
+          const message = err instanceof Error ? err.message : "The picture could not be created.";
+          logError("request_failed", {
+            ...base,
+            engine: "primary",
+            model: runwareKey,
+            status: "failed",
+            code,
+            error: message,
+            fallback: "off",
+          });
+          throw new LiveCardImageServiceError(code, message);
+        }
+      }
 
       // Administrator's choice first: when an OpenAI start-image engine leads,
       // it renders the picture through the shared provider adapter.

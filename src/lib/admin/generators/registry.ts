@@ -12,6 +12,7 @@
 export type CheckKind =
   | "replicate"
   | "elevenlabs"
+  | "runware"
   /** Kept for compatibility; treated as a chat check. */
   | "lovable_ai"
   | "lovable_chat"
@@ -103,6 +104,41 @@ const REPLICATE_IMAGE = (key: string, model: string, quality: GeneratorQuality):
   credential: "REPLICATE_API_TOKEN",
 });
 
+/** Engines served by the official Runware API (independent provider). */
+const RUNWARE = (key: string, air: string): GeneratorDef => ({
+  key,
+  provider: "Runware",
+  model: air,
+  check: "runware",
+  credential: "RUNWARE_API_KEY",
+});
+
+const RUNWARE_CARD_IMAGES: GeneratorDef[] = [
+  RUNWARE("rw_z_image_turbo", "runware:z-image@turbo"),
+  RUNWARE("rw_flux2_dev", "runware:400@1"),
+  RUNWARE("rw_krea2_medium_turbo", "krea:krea@2-medium-turbo"),
+  RUNWARE("rw_flux2_pro", "bfl:5@1"),
+];
+
+/** Start scenes need reference pictures, so Z-Image-Turbo is not offered. */
+const RUNWARE_SCENE_IMAGES: GeneratorDef[] = [
+  RUNWARE("rw_krea2_medium_turbo", "krea:krea@2-medium-turbo"),
+  RUNWARE("rw_flux2_dev", "runware:400@1"),
+  RUNWARE("rw_flux2_pro", "bfl:5@1"),
+];
+
+const RUNWARE_ANIMATIONS: GeneratorDef[] = [
+  RUNWARE("rw_wan26_flash", "alibaba:wan@2.6-flash"),
+  RUNWARE("rw_pixverse_v6", "pixverse:1@8"),
+  RUNWARE("rw_kling3_standard", "klingai:kling-video@3-standard"),
+];
+
+/** The final Personal Video film never uses PixVerse V6. */
+const RUNWARE_FINAL_VIDEOS: GeneratorDef[] = [
+  RUNWARE("rw_wan26_flash", "alibaba:wan@2.6-flash"),
+  RUNWARE("rw_kling3_standard", "klingai:kling-video@3-standard"),
+];
+
 export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
   {
     id: "greeting_cards",
@@ -116,6 +152,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_dev", "black-forest-labs/flux-dev"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
           REPLICATE_IMAGE("gpt_image_15_low", "openai/gpt-image-1.5", "low"),
+          ...RUNWARE_CARD_IMAGES,
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: "flux_dev",
@@ -146,6 +183,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux_ultra", "black-forest-labs/flux-1.1-pro-ultra"),
           REPLICATE("flux_1_1_pro", "black-forest-labs/flux-1.1-pro"),
           REPLICATE_IMAGE("gpt_image_15_medium", "openai/gpt-image-1.5", "medium"),
+          ...RUNWARE_CARD_IMAGES,
         ],
         defaultPrimary: "flux_schnell",
         defaultBackup: null,
@@ -154,7 +192,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "live_cards.animation",
         titleKey: "gc_fn_animation",
-        candidates: [REPLICATE("wan_i2v", "wan-video/wan-2.7-i2v")],
+        candidates: [REPLICATE("wan_i2v", "wan-video/wan-2.7-i2v"), ...RUNWARE_ANIMATIONS],
         defaultPrimary: "wan_i2v",
         defaultBackup: null,
         defaultAutoFailover: false,
@@ -172,6 +210,7 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
           REPLICATE("flux2_max", "black-forest-labs/flux-2-max"),
           REPLICATE("flux2_pro", "black-forest-labs/flux-2-pro"),
           REPLICATE("flux2_dev", "black-forest-labs/flux-2-dev"),
+          ...RUNWARE_SCENE_IMAGES,
         ],
         defaultPrimary: "flux2_max",
         defaultBackup: null,
@@ -218,7 +257,10 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
       {
         id: "personal_video.final_video",
         titleKey: "gc_fn_final_video",
-        candidates: [REPLICATE("kling_avatar_v2", "kwaivgi/kling-avatar-v2")],
+        candidates: [
+          REPLICATE("kling_avatar_v2", "kwaivgi/kling-avatar-v2"),
+          ...RUNWARE_FINAL_VIDEOS,
+        ],
         defaultPrimary: "kling_avatar_v2",
         defaultBackup: null,
         defaultAutoFailover: false,

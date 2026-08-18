@@ -99,9 +99,12 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const GPT_BY_KEY: Record<string, { quality: "low" | "medium" | "high" }> = {
       gpt_image_15_low: { quality: "low" },
     };
+    // Runware engines run through the official Runware API, server-side only.
+    const { RUNWARE_CARD_IMAGE_KEYS, isRunwareImageKey } = await import("@/lib/runware/catalog");
     const order = await generatorOrder("greeting_cards.image", [
       ...Object.keys(MODEL_BY_KEY),
       ...Object.keys(GPT_BY_KEY),
+      ...RUNWARE_CARD_IMAGE_KEYS,
     ]);
     // Only the engines of the saved routing configuration may run. When none
     // is usable the customer receives a normal generation error.
@@ -116,6 +119,32 @@ export const generateCardImage = createServerFn({ method: "POST" })
 
     for (const key of chosen) {
       console.log(`[cards.image] routing: order=${chosen.join(",")} trying=${key}`);
+      if (isRunwareImageKey(key)) {
+        try {
+          const { runwareRenderImageBytes } = await import("@/lib/runware/runware.server");
+          const rendered = await withGeneratorSlot(key, () =>
+            runwareRenderImageBytes({ generatorKey: key, prompt: enginePrompt, aspectRatio: "1:1" }),
+          );
+          imageBytes = rendered.bytes;
+          imageContentType = rendered.contentType;
+          imageExtension = rendered.fileExtension;
+          break;
+        } catch (err) {
+          const { RunwareError, isTerminalRunwareCode } = await import(
+            "@/lib/runware/runware.server"
+          );
+          if (err instanceof RunwareError) {
+            lastError = { code: err.code, message: err.message };
+            if (isTerminalRunwareCode(err.code)) break;
+          } else {
+            lastError = {
+              code: "unknown",
+              message: err instanceof Error ? err.message : "Unexpected error.",
+            };
+          }
+          continue;
+        }
+      }
       const gpt = GPT_BY_KEY[key];
       if (gpt) {
         try {
