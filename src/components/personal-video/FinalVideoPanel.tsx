@@ -13,6 +13,8 @@ import type { PvgMusicSettings } from "@/lib/music/types";
 import {
   getPvgVideo,
   markPvgVideoDelivered,
+  attachPvgVideoMix,
+  preparePvgVideoMix,
   retryPvgVideo,
   selectPvgVideoVariant,
   startPvgVideo,
@@ -23,6 +25,13 @@ import {
   pvgVideoStatusKey,
 } from "@/lib/personal-video/video-render";
 import { DeliveryDialog } from "./DeliveryDialog";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  canMixInBrowser,
+  hasMusicChoice,
+  mixMusicIntoVideo,
+  musicMixSignature,
+} from "@/lib/personal-video/mix/music-mix";
 
 /**
  * The film itself: the one button that confirms the order, the calm progress
@@ -47,6 +56,8 @@ export function FinalVideoPanel({
   const retry = useServerFn(retryPvgVideo);
   const choose = useServerFn(selectPvgVideoVariant);
   const deliver = useServerFn(markPvgVideoDelivered);
+  const prepareMix = useServerFn(preparePvgVideoMix);
+  const attachMix = useServerFn(attachPvgVideoMix);
   const { isTest } = useCreditBalance();
   const refreshCredits = useRefreshCreditBalance();
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
@@ -55,6 +66,8 @@ export function FinalVideoPanel({
   const [playing, setPlaying] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [delivering, setDelivering] = useState(false);
+  const [mixing, setMixing] = useState(false);
+  const mixAttempts = useRef<Set<string>>(new Set());
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -90,6 +103,51 @@ export function FinalVideoPanel({
   });
   const trackUrl = musicQuery.data ?? null;
 
+  // One authoritative file: the music the customer chose is written into the
+  // film itself, so the page and the downloaded copy sound exactly alike.
+  const signature = musicMixSignature(music);
+  const musicInside = (selected?.mixSignature ?? "none") === signature;
+  const needsMix = Boolean(selected?.videoUrl) && !musicInside;
+
+  useEffect(() => {
+    if (!needsMix || mixing || !selected) return;
+    const key = `${selected.id}:${signature}`;
+    if (mixAttempts.current.has(key)) return;
+    if (!canMixInBrowser()) return;
+    mixAttempts.current.add(key);
+    let cancelled = false;
+    void (async () => {
+      setMixing(true);
+      try {
+        const slot = await prepareMix({ data: { projectId, videoId: selected.id } });
+        if (!slot.ok || !slot.sourceUrl || !slot.bucket || !slot.path || !slot.token) {
+          throw new Error("mix_slot_failed");
+        }
+        const original = await (await fetch(slot.sourceUrl)).blob();
+        const track =
+          hasMusicChoice(music) && trackUrl ? await (await fetch(trackUrl)).blob() : null;
+        if (hasMusicChoice(music) && !track) throw new Error("music_missing");
+        const mixed = await mixMusicIntoVideo(original, track, music);
+        const up = await supabase.storage
+          .from(slot.bucket)
+          .uploadToSignedUrl(slot.path, slot.token, mixed, { contentType: "video/mp4" });
+        if (up.error) throw new Error(up.error.message);
+        await attachMix({
+          data: { projectId, videoId: selected.id, path: slot.path, signature },
+        });
+        if (!cancelled) await query.refetch();
+      } catch {
+        if (!cancelled) toast.error(t("pvr_mix_failed"));
+      } finally {
+        if (!cancelled) setMixing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsMix, selected?.id, signature, trackUrl]);
+
   /** The music steps back while the greeting inside the film is speaking. */
   const backgroundGain = useCallback(
     (isSpeaking: boolean) => (isSpeaking && music.ducking.enabled ? music.ducking.duckedGain : 1),
@@ -97,9 +155,9 @@ export function FinalVideoPanel({
   );
 
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = music.voiceVolume;
+    if (videoRef.current) videoRef.current.volume = musicInside ? 1 : music.voiceVolume;
     if (musicRef.current) musicRef.current.volume = music.musicVolume * backgroundGain(playing);
-  }, [music.voiceVolume, music.musicVolume, playing, backgroundGain]);
+  }, [music.voiceVolume, music.musicVolume, playing, backgroundGain, musicInside]);
 
   function stopAll() {
     videoRef.current?.pause();
@@ -116,10 +174,11 @@ export function FinalVideoPanel({
     const track = musicRef.current;
     if (v) {
       v.currentTime = 0;
-      v.volume = music.voiceVolume;
+      v.volume = musicInside ? 1 : music.voiceVolume;
       void v.play().catch(() => undefined);
     }
-    if (track) {
+    // Once the music lives inside the file, the second player stays silent.
+    if (track && !musicInside) {
       track.currentTime = 0;
       track.loop = true;
       track.volume = music.musicVolume * backgroundGain(true);
