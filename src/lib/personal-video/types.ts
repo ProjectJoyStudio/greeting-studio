@@ -172,6 +172,7 @@ export function validatePvgProject(
     generationsUsed: number;
     generationsLimit: number;
     creditsCharged: number;
+    scenePacks?: number;
     people: {
       name: string;
       photoUrl: string | null;
@@ -201,13 +202,14 @@ export function validatePvgProject(
   if (people.some((p) => p.photoUrl && p.faceQuality === "low")) {
     issues.push({ field: "people", key: "pvg_err_people_quality" });
   }
-  const included = pvgIncludedGenerations(people.length);
-  const needsExtra = project.generationsUsed >= included;
-  const price =
-    (project.creditsCharged === 0 ? pvgPriceCredits(people.length) : 0) +
-    (needsExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
-  if (price > 0 && balance < price) {
-    issues.push({ field: "credits", key: "pvg_err_credits" });
+  // Starting scenes are paid for in packages of three. A generation itself is
+  // free while the current package still holds an attempt.
+  const attempts = pvgSceneAttempts(project.generationsUsed, project.scenePacks ?? 0);
+  if (attempts.remaining <= 0) {
+    issues.push({ field: "generations", key: "pvg_attempts_empty" });
+    if (balance < PVG_SCENE_PACK_CREDITS) {
+      issues.push({ field: "credits", key: "pvg_err_credits" });
+    }
   }
   return issues;
 }
