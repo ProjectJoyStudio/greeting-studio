@@ -25,13 +25,35 @@ const MIME_CANDIDATES = [
   "video/webm",
 ];
 
-function pickMime(): string {
+/** Same list, but every option also carries a sound track for the music. */
+const MIME_CANDIDATES_WITH_AUDIO = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=h264,aac",
+  "video/mp4",
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm",
+];
+
+function pickMime(withAudio = false): string {
   const supported = typeof MediaRecorder !== "undefined";
   if (!supported) throw new Error("recording_unsupported");
-  for (const mime of MIME_CANDIDATES) {
+  for (const mime of withAudio ? MIME_CANDIDATES_WITH_AUDIO : MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
   throw new Error("recording_unsupported");
+}
+
+/** The background music a person chose, exactly as it must sound in the file. */
+export interface BurnMusic {
+  /** Playable link of the chosen track. */
+  url: string;
+  /** 0…1, the level the person set. */
+  volume: number;
+  /** A shorter track may repeat softly until the animation ends. */
+  loop: boolean;
+  fadeInSeconds: number;
+  fadeOutSeconds: number;
 }
 
 function loadVideo(url: string): Promise<HTMLVideoElement> {
@@ -58,6 +80,55 @@ function seek(video: HTMLVideoElement, time: number): Promise<void> {
   });
 }
 
+/** Loads the music and feeds it into the recording at the chosen level. */
+async function prepareMusic(
+  music: BurnMusic,
+  seconds: number,
+  stream: MediaStream,
+): Promise<{ context: AudioContext; source: AudioBufferSourceNode; stop: () => Promise<void> }> {
+  const response = await fetch(music.url);
+  const bytes = await response.arrayBuffer();
+  const context = new AudioContext();
+  if (context.state === "suspended") await context.resume();
+  const buffer = await context.decodeAudioData(bytes);
+
+  const length = seconds > 0 ? seconds : buffer.duration;
+  const level = Math.max(0.0001, Math.min(1, music.volume));
+  const fadeIn = Math.min(music.fadeInSeconds, length / 4);
+  const fadeOut = Math.min(music.fadeOutSeconds, length / 4);
+
+  const gain = context.createGain();
+  const now = context.currentTime;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(level, now + Math.max(0.05, fadeIn));
+  gain.gain.setValueAtTime(level, now + Math.max(fadeIn, length - fadeOut));
+  gain.gain.linearRampToValueAtTime(0.0001, now + length);
+
+  const destination = context.createMediaStreamDestination();
+  gain.connect(destination);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.loop = music.loop && buffer.duration < length;
+  source.connect(gain);
+  source.stop(now + length);
+
+  for (const track of destination.stream.getAudioTracks()) stream.addTrack(track);
+
+  return {
+    context,
+    source,
+    stop: async () => {
+      try {
+        source.stop();
+      } catch {
+        /* already finished */
+      }
+      for (const track of destination.stream.getAudioTracks()) track.stop();
+      await context.close().catch(() => undefined);
+    },
+  };
+}
+
 export interface RenderResult {
   blob: Blob;
   mime: string;
@@ -77,8 +148,9 @@ export async function renderFinalVideo(
   text: string,
   design: CardTextDesign,
   onProgress?: (ratio: number) => void,
+  music?: BurnMusic | null,
 ): Promise<RenderResult> {
-  const mime = pickMime();
+  const mime = pickMime(Boolean(music));
   // Wait for the exact editor font before measuring. Without this, a fallback
   // font can produce different line breaks during the first export frame.
   if (typeof document !== "undefined" && "fonts" in document) {
@@ -124,6 +196,20 @@ export async function renderFinalVideo(
   paint();
 
   const stream = canvas.captureStream(30);
+  // The chosen music is played into the very same recording, so it becomes a
+  // real sound track of the finished file — not a second player on the page.
+  let audio: {
+    context: AudioContext;
+    source: AudioBufferSourceNode;
+    stop: () => Promise<void>;
+  } | null = null;
+  if (music) {
+    try {
+      audio = await prepareMusic(music, video.duration || 0, stream);
+    } catch {
+      throw new Error("music_load_failed");
+    }
+  }
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => {
@@ -135,6 +221,7 @@ export async function renderFinalVideo(
   });
 
   recorder.start(200);
+  audio?.source.start(0);
   await video.play();
 
   await new Promise<void>((resolve) => {
@@ -155,9 +242,13 @@ export async function renderFinalVideo(
   await new Promise((r) => setTimeout(r, 250));
   recorder.stop();
   const blob = await finished;
+  await audio?.stop();
   onProgress?.(1);
 
-  const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
+  // Some browsers accept an MP4 request but write a WebM file. The real type
+  // of the recording decides the name, so the stored file is never mislabelled.
+  const actualMime = recorder.mimeType || blob.type || mime;
+  const extension = actualMime.startsWith("video/mp4") ? "mp4" : "webm";
   let verified = true;
   let duplicate = false;
   if (finalText.trim()) {
@@ -168,7 +259,7 @@ export async function renderFinalVideo(
   video.pause();
   video.removeAttribute("src");
   video.load();
-  return { blob, mime, extension, verified, duplicate };
+  return { blob, mime: actualMime, extension, verified, duplicate };
 }
 
 /**

@@ -5,10 +5,11 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeTextDesign } from "@/lib/greeting-card/types";
+import { normalizeLiveCardMusic } from "./types";
 import type { LiveGreetingRecord } from "./types";
 
 const COLUMNS =
-  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, error_code, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
+  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, error_code, greeting_text, greeting_mode, greeting_keywords, text_design, music_settings, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
 
 type Row = {
   id: string;
@@ -33,6 +34,7 @@ type Row = {
   greeting_mode?: string | null;
   greeting_keywords?: string[] | null;
   text_design?: unknown;
+  music_settings?: unknown;
   sound_enabled: boolean | null;
   is_shared: boolean | null;
   share_slug: string | null;
@@ -86,6 +88,7 @@ export async function buildLiveGreeting(
     hasBurnedText: finalized && row.final_has_text === true,
     // Prepared for later phases — not offered in the interface yet.
     soundEnabled: row.sound_enabled ?? false,
+    music: normalizeLiveCardMusic(row.music_settings),
     isShared: row.is_shared ?? false,
     shareSlug: row.share_slug,
     scheduledSendAt: row.scheduled_send_at,
@@ -230,6 +233,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
     title?: string;
     greetingText?: string;
     textDesign?: unknown;
+    music?: unknown;
   }) => {
     const animationId = String(input?.animationId ?? "");
     const storagePath = String(input?.storagePath ?? "");
@@ -243,6 +247,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       title: String(input?.title ?? "").slice(0, 160),
       greetingText: String(input?.greetingText ?? "").slice(0, 2000),
       textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
+      music: normalizeLiveCardMusic(input?.music),
     };
   })
   .handler(async ({ data, context }): Promise<{ ok: boolean; videoUrl: string | null }> => {
@@ -269,6 +274,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
         // clears any older autosaved draft text instead of restoring it later.
         greeting_text: data.greetingText,
         text_design: data.textDesign as never,
+        music_settings: data.music as never,
         finalized_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)
@@ -364,6 +370,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
     greetingMode?: string;
     keywords?: string[];
     textDesign?: unknown;
+    music?: unknown;
   }) => {
     const animationId = String(input?.animationId ?? "");
     if (!animationId) throw new Error("animation_required");
@@ -377,6 +384,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
         .filter(Boolean)
         .slice(0, 20),
       textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
+      music: normalizeLiveCardMusic(input?.music),
     };
   })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
@@ -388,6 +396,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode,
         greeting_keywords: data.keywords,
         text_design: data.textDesign as never,
+        music_settings: data.music as never,
         text_saved_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)

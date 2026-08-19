@@ -1,0 +1,1 @@
+ALTER TABLE public.live_card_animations ADD COLUMN IF NOT EXISTS music_settings jsonb NOT NULL DEFAULT '{}'::jsonb;

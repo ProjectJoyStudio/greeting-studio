@@ -1,5 +1,52 @@
 // Client-safe types shared by the Live Greeting Cards section.
 
+import { MUSIC_VOLUME_GAIN, type MusicVolume } from "@/lib/music/types";
+
+/**
+ * The optional background music of one live greeting card. Live cards never
+ * speak, so only the music itself and its level are kept here.
+ */
+export interface LiveCardMusic {
+  mode: "none" | "library";
+  trackId: string | null;
+  trackTitle: string;
+  trackBucket: string | null;
+  trackPath: string | null;
+  volume: MusicVolume;
+  /** 0…1 level used when the music is written into the finished file. */
+  gain: number;
+}
+
+export const DEFAULT_LIVE_CARD_MUSIC: LiveCardMusic = {
+  mode: "none",
+  trackId: null,
+  trackTitle: "",
+  trackBucket: null,
+  trackPath: null,
+  volume: "medium",
+  gain: MUSIC_VOLUME_GAIN.medium,
+};
+
+/** Reads whatever is stored with a card back into complete music settings. */
+export function normalizeLiveCardMusic(value: unknown): LiveCardMusic {
+  const raw = (value ?? {}) as Partial<LiveCardMusic>;
+  const volume: MusicVolume =
+    raw.volume === "quiet" || raw.volume === "louder" || raw.volume === "medium"
+      ? raw.volume
+      : "medium";
+  const mode = raw.mode === "library" && raw.trackBucket && raw.trackPath ? "library" : "none";
+  const gain = Number(raw.gain);
+  return {
+    mode,
+    trackId: typeof raw.trackId === "string" ? raw.trackId : null,
+    trackTitle: typeof raw.trackTitle === "string" ? raw.trackTitle : "",
+    trackBucket: typeof raw.trackBucket === "string" ? raw.trackBucket : null,
+    trackPath: typeof raw.trackPath === "string" ? raw.trackPath : null,
+    volume,
+    gain: Number.isFinite(gain) && gain > 0 && gain <= 1 ? gain : MUSIC_VOLUME_GAIN[volume],
+  };
+}
+
 export type LiveCardSource = "generated" | "upload";
 
 export interface LiveCardAsset {
@@ -99,6 +146,8 @@ export interface LiveGreetingRecord {
   /** True when the finished file already carries the greeting in its frames. */
   hasBurnedText: boolean;
   soundEnabled: boolean;
+  /** Optional background music chosen for this card. */
+  music: LiveCardMusic;
   isShared: boolean;
   shareSlug: string | null;
   scheduledSendAt: string | null;

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
 import { LiveCardViewer } from "./LiveCardViewer";
+import { LiveMusicPanel } from "./LiveMusicPanel";
 import { composeGreetingFromKeywords } from "@/lib/greeting-card/cards.functions";
 import {
   DEFAULT_TEXT_DESIGN,
@@ -30,6 +31,13 @@ import {
 } from "@/lib/live-cards/library.functions";
 import { renderFinalVideo, uploadFinalVideo } from "@/lib/live-cards/burn";
 import { clampPosition } from "@/lib/live-cards/text-render";
+import {
+  DEFAULT_LIVE_CARD_MUSIC,
+  normalizeLiveCardMusic,
+  type LiveCardMusic,
+} from "@/lib/live-cards/types";
+import { musicUrl } from "@/lib/music/library";
+import { MUSIC_FADE_IN_SECONDS, MUSIC_FADE_OUT_SECONDS } from "@/lib/music/types";
 import { useI18n } from "@/lib/i18n";
 
 const RATIO_CLASS: Record<string, string> = {
@@ -45,6 +53,7 @@ type EditorState = {
   keywords: string;
   title: string;
   design: CardTextDesign;
+  music: LiveCardMusic;
 };
 
 const EMPTY: EditorState = {
@@ -53,6 +62,7 @@ const EMPTY: EditorState = {
   keywords: "",
   title: "",
   design: { ...DEFAULT_TEXT_DESIGN },
+  music: { ...DEFAULT_LIVE_CARD_MUSIC },
 };
 
 /**
@@ -120,6 +130,7 @@ export function LiveGreetingEditor({
             keywords: draft.greetingKeywords.join(", "),
             title: draft.title ?? "",
             design: normalizeTextDesign(draft.textDesign),
+            music: normalizeLiveCardMusic(draft.music),
           });
         }
         if (draft.isFinalized && draft.videoUrl) setFinalUrl(draft.videoUrl);
@@ -150,6 +161,7 @@ export function LiveGreetingEditor({
             greetingMode: state.mode,
             keywords: state.keywords.split(",").map((k) => k.trim()).filter(Boolean),
             textDesign: state.design as unknown as Record<string, unknown>,
+            music: state.music as unknown as Record<string, unknown>,
           },
         });
       } catch {
@@ -200,7 +212,28 @@ export function LiveGreetingEditor({
       const text = state.text;
       const design = { ...state.design };
       note("render_started");
-      const rendered = await renderFinalVideo(clean, text, design, setProgress);
+      // The chosen music is written into the file itself while it is recorded,
+      // so downloading or sharing the card carries the same sound as here.
+      const music = state.music;
+      const trackUrl =
+        music.mode === "library"
+          ? await musicUrl(music.trackBucket, music.trackPath)
+          : null;
+      const rendered = await renderFinalVideo(
+        clean,
+        text,
+        design,
+        setProgress,
+        trackUrl
+          ? {
+              url: trackUrl,
+              volume: music.gain,
+              loop: true,
+              fadeInSeconds: MUSIC_FADE_IN_SECONDS,
+              fadeOutSeconds: MUSIC_FADE_OUT_SECONDS,
+            }
+          : null,
+      );
       const imperfect = Boolean(text.trim()) && (!rendered.verified || rendered.duplicate);
       note("render_completed", true, imperfect ? "text_verification_uncertain" : "");
 
@@ -223,6 +256,7 @@ export function LiveGreetingEditor({
           title: state.title,
           greetingText: text,
           textDesign: design as unknown as Record<string, unknown>,
+          music: music as unknown as Record<string, unknown>,
         },
       });
       setFinalUrl(result.videoUrl);
@@ -393,6 +427,8 @@ export function LiveGreetingEditor({
               patchDesign({ ...p, ...clampPosition(merged.x, merged.y, merged.width) });
             }}
           />
+
+          <LiveMusicPanel music={state.music} onChange={(music) => patch({ music })} />
         </div>
       </div>
 
