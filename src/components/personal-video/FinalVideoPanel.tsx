@@ -347,7 +347,9 @@ export function FinalVideoPanel({
             </div>
           )}
 
-          {trackUrl && <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />}
+          {trackUrl && (
+            <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
+          )}
 
           {delivering && selected.videoUrl && (
             <DeliveryDialog

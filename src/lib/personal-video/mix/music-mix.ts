@@ -139,7 +139,12 @@ export async function mixMusicIntoVideo(
   if (!codec) throw new Error("no_audio_encoder");
 
   const seconds = await input.computeDuration();
-  const audio = await mixedAudio(input, musicBlob ? await musicBlob.arrayBuffer() : null, music, seconds);
+  const audio = await mixedAudio(
+    input,
+    musicBlob ? await musicBlob.arrayBuffer() : null,
+    music,
+    seconds,
+  );
 
   const output = new Output({
     format: new Mp4OutputFormat({ fastStart: "in-memory" }),

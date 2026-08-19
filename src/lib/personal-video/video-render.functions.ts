@@ -506,7 +506,9 @@ export const preparePvgVideoMix = createServerFn({ method: "POST" })
 /** Records the mixed film as the one the page and the download must use. */
 export const attachPvgVideoMix = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; videoId: string; path: string; signature: string }) => input)
+  .inputValidator(
+    (input: { projectId: string; videoId: string; path: string; signature: string }) => input,
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row } = await supabase
