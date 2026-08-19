@@ -353,11 +353,24 @@ export const startPvgVideo = createServerFn({ method: "POST" })
 
       try {
         // Picture + finished greeting voice in, speaking film out.
+        // The sound handed over always lasts the full chosen length: the
+        // greeting exactly as it was spoken, followed by silence. The engine
+        // then keeps the same scene alive, calm and speechless, to the end.
+        let renderAudioUrl = audioUrl;
+        if (duration > spokenSeconds + 0.25) {
+          const { padAudioToDuration } = await import("./generator/audio-tail.server");
+          const { storeRenderAudio } = await import("./voice/voice.server");
+          const padded = await padAudioToDuration(audioUrl, spokenSeconds, duration);
+          if (padded) {
+            const stored = await storeRenderAudio(project.id, userId, padded);
+            if (stored) renderAudioUrl = stored;
+          }
+        }
         const { startFinalVideo } = await import("./generator/pipeline.server");
         const started = await startFinalVideo({
           prompt,
           imageUrl,
-          audioUrl,
+          audioUrl: renderAudioUrl,
           audioSeconds,
           seed,
         });
