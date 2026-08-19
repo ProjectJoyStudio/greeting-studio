@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { musicUrl } from "@/lib/music/library";
 import type { PvgMusicSettings } from "@/lib/music/types";
 import { getPvgVoiceover } from "@/lib/personal-video/voice.functions";
+import { pvgMixSources, pvgVoiceQueryKey } from "@/lib/personal-video/voice/voice-asset";
 
 /**
  * The balance between the greeting voice and the background music. Moving a
@@ -34,10 +35,9 @@ export function SoundPanel({
   const rampRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const voiceQuery = useQuery({
-    queryKey: ["pvg", "voice", projectId],
+    queryKey: pvgVoiceQueryKey(projectId),
     queryFn: () => loadVoice({ data: { projectId } }),
   });
-  const voiceUrl = voiceQuery.data?.voiceover?.audioUrl ?? null;
 
   const bucket = settings.mode === "upload" ? settings.uploadBucket : settings.trackBucket;
   const path = settings.mode === "upload" ? settings.uploadPath : settings.trackPath;
@@ -47,6 +47,7 @@ export function SoundPanel({
     enabled: Boolean(bucket && path),
   });
   const trackUrl = musicQuery.data ?? null;
+  const { voiceUrl } = pvgMixSources(voiceQuery.data?.voiceover, trackUrl);
 
   /** Music sits under the voice while somebody is speaking. */
   const musicTarget = useCallback(

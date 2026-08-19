@@ -5,32 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { PvgVoiceover } from "./voice/catalog";
 import type { PvgVoiceRecording } from "./voice/recordings";
 
-async function assertOwner(
-  supabase: {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: string) => { maybeSingle: () => Promise<{ data: unknown }> };
-      };
-    };
-  },
-  projectId: string,
-  userId: string,
-): Promise<void> {
-  const { data } = await supabase
-    .from("pvg_projects")
-    .select("id, user_id")
-    .eq("id", projectId)
-    .maybeSingle();
-  if (!data || (data as { user_id: string }).user_id !== userId)
-    throw new Error("project_not_found");
-}
-
 /** The saved voice of the order, so a returning person hears it again at once. */
 export const getPvgVoiceover = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
   .handler(async ({ data, context }): Promise<{ voiceover: PvgVoiceover | null }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { readVoiceover } = await import("./voice/voice.server");
     return { voiceover: await readVoiceover(data.projectId) };
   });
@@ -42,7 +23,8 @@ export const generatePvgVoiceover = createServerFn({ method: "POST" })
     (input: { projectId: string; text: string; voiceId: string; language: string }) => input,
   )
   .handler(async ({ data, context }): Promise<{ voiceover: PvgVoiceover }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { generateVoiceover } = await import("./voice/voice.server");
     const voiceover = await generateVoiceover({
       projectId: data.projectId,
@@ -80,23 +62,9 @@ export const assignPvgPersonVoice = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const { error } = await context.supabase
-      .from("pvg_people")
-      .update({
-        voice_id: data.voiceId,
-        // A Project Joy voice always replaces a personal one, so a participant
-        // never carries two voices at the same time.
-        personal_voice_id: null,
-        voice_name: data.voiceId ? (data.voiceName ?? null) : null,
-        voice_provider: data.voiceId ? (data.provider ?? null) : null,
-        voice_source: data.voiceId ? "library" : null,
-        ...(data.category !== undefined ? { voice_category: data.category } : {}),
-        voice_confirmed: data.voiceId ? Boolean(data.confirmed) : false,
-      })
-      .eq("id", data.personId)
-      .eq("project_id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, assignLibraryVoice } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await assignLibraryVoice(context.supabase, data);
     return { saved: true as const };
   });
 
@@ -115,17 +83,9 @@ export const savePvgPersonVoiceChoice = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const patch: { voice_category?: string | null; voice_confirmed?: boolean } = {};
-    if (data.category !== undefined) patch.voice_category = data.category;
-    if (data.confirmed !== undefined) patch.voice_confirmed = data.confirmed;
-    if (Object.keys(patch).length === 0) return { saved: true as const };
-    const { error } = await context.supabase
-      .from("pvg_people")
-      .update(patch)
-      .eq("id", data.personId)
-      .eq("project_id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, saveVoiceChoice } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await saveVoiceChoice(context.supabase, data);
     return { saved: true as const };
   });
 
@@ -143,19 +103,9 @@ export const savePvgSpeechSettings = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const { error } = await context.supabase
-      .from("pvg_projects")
-      .update({
-        speech_mode: data.speechMode,
-        sync_mode: data.syncMode,
-        chorus_voice_ids: data.chorusVoiceIds.slice(0, 5),
-        ...(data.speakerPersonId !== undefined
-          ? { single_speaker_person_id: data.speakerPersonId }
-          : {}),
-      })
-      .eq("id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, saveSpeechSettings } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await saveSpeechSettings(context.supabase, data);
     return { saved: true as const };
   });
 
@@ -164,13 +114,9 @@ export const savePvgPersonPart = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string; partText: string }) => input)
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
-    const { error } = await context.supabase
-      .from("pvg_people")
-      .update({ part_text: data.partText })
-      .eq("id", data.personId)
-      .eq("project_id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, savePersonPart } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await savePersonPart(context.supabase, data.projectId, data.personId, data.partText);
     return { saved: true as const };
   });
 
@@ -187,7 +133,8 @@ export const synthesizePvgTrack = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { synthesizeTrack } = await import("./voice/voice.server");
     return synthesizeTrack({
       projectId: data.projectId,
@@ -209,7 +156,8 @@ export const fitPvgGreetingToSpeech = createServerFn({ method: "POST" })
     (input: { projectId: string; text: string; budgetSeconds: number; language: string }) => input,
   )
   .handler(async ({ data, context }): Promise<{ text: string }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { shortenToBudget } = await import("./voice/fit.server");
     return { text: await shortenToBudget(data.text, data.budgetSeconds, data.language) };
   });
@@ -235,7 +183,8 @@ export const savePvgMergedVoiceover = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ voiceover: PvgVoiceover }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { saveMergedVoiceover } = await import("./voice/voice.server");
     return {
       voiceover: await saveMergedVoiceover({ ...data, userId: context.userId }),
@@ -263,7 +212,8 @@ export const savePvgPersonRecording = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ recording: PvgVoiceRecording }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { savePersonRecording } = await import("./voice/recordings.server");
     return { recording: await savePersonRecording({ ...data, userId: context.userId }) };
   });
@@ -273,7 +223,8 @@ export const listPvgPersonRecordings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
   .handler(async ({ data, context }): Promise<{ recordings: PvgVoiceRecording[] }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { listRecordings } = await import("./voice/recordings.server");
     return { recordings: await listRecordings(data.projectId) };
   });
@@ -283,7 +234,8 @@ export const confirmPvgRecordingPermission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string; confirmed: boolean }) => input)
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { confirmRecordingPermission } = await import("./voice/recordings.server");
     await confirmRecordingPermission(data.projectId, data.personId, data.confirmed);
     return { saved: true as const };
@@ -294,7 +246,8 @@ export const deletePvgPersonRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string }) => input)
   .handler(async ({ data, context }): Promise<{ removed: true }> => {
-    await assertOwner(context.supabase as never, data.projectId, context.userId);
+    const { assertPvgOwner } = await import("./voice/voice-actions.server");
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
     const { deletePersonRecording } = await import("./voice/recordings.server");
     await deletePersonRecording(data.projectId, data.personId);
     return { removed: true as const };

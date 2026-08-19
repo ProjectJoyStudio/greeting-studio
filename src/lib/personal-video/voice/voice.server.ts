@@ -5,6 +5,7 @@ import { lookupVoice } from "./catalog";
 import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "./providers.server";
 import { isPersonalVoiceRef, personalVoiceIdOf } from "./personal-voices";
 import type { PvgVoiceover } from "./catalog";
+import { isPlayablePvgVoiceover } from "./voice-asset";
 
 const BUCKET = "generated-audio";
 const SIGNED_TTL = 60 * 60 * 12;
@@ -232,7 +233,20 @@ export async function saveMergedVoiceover(args: {
   const upload = await db.storage
     .from(BUCKET)
     .upload(path, audio, { contentType: args.mimeType, upsert: true });
-  if (upload.error) throw new Error(upload.error.message);
+  if (upload.error) {
+    await logVoiceRequest({
+      projectId: args.projectId,
+      userId: args.userId,
+      provider,
+      voiceId: voice.id,
+      language: args.language,
+      characterCount: text.length,
+      generationMs: Date.now() - started,
+      success: false,
+      errorMessage: `voice_storage_failed:${upload.error.message}`,
+    });
+    throw new Error(`voice_storage_failed:${upload.error.message}`);
+  }
 
   const generatedAt = new Date().toISOString();
   const { error } = await db.from("pvg_voiceovers").upsert(
@@ -259,14 +273,28 @@ export async function saveMergedVoiceover(args: {
     },
     { onConflict: "project_id" },
   );
-  if (error) throw new Error(error.message);
+  if (error) {
+    await db.storage.from(BUCKET).remove([path]);
+    await logVoiceRequest({
+      projectId: args.projectId,
+      userId: args.userId,
+      provider,
+      voiceId: voice.id,
+      language: args.language,
+      characterCount: text.length,
+      generationMs: Date.now() - started,
+      success: false,
+      errorMessage: `voice_persistence_failed:${error.message}`,
+    });
+    throw new Error(`voice_persistence_failed:${error.message}`);
+  }
 
   const old = previous as { storage_bucket?: string; storage_path?: string } | null;
   if (old?.storage_path && old.storage_path !== path) {
     await db.storage.from(old.storage_bucket ?? BUCKET).remove([old.storage_path]);
   }
 
-  return {
+  const voiceover: PvgVoiceover = {
     voiceId: args.voiceId,
     voiceName: args.voiceName,
     provider: args.provider,
@@ -283,6 +311,8 @@ export async function saveMergedVoiceover(args: {
     syncMode: args.syncMode,
     trackSummary: args.trackSummary,
   };
+  if (!isPlayablePvgVoiceover(voiceover)) throw new Error("voice_empty_response");
+  return voiceover;
 }
 
 /**

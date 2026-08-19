@@ -30,6 +30,10 @@ import type { PvgPerson } from "@/lib/personal-video/types";
 import { ParticipantAvatar } from "./ParticipantAvatar";
 import { validateVoiceSetup, voiceIssueText } from "@/lib/personal-video/voice/recordings";
 import { voiceFailureKey, voiceFailureOf } from "@/lib/personal-video/voice/errors";
+import {
+  isPlayablePvgVoiceover,
+  pvgVoiceQueryKey,
+} from "@/lib/personal-video/voice/voice-asset";
 import { ensureVoicePreview, listStudioVoices } from "@/lib/voice-library/library.functions";
 import {
   previewFor,
@@ -211,7 +215,7 @@ export function VoicePanel({
     participants.length === 1 && (participants[0]?.role ?? "speaker") === "narrator";
 
   const saved = useQuery({
-    queryKey: ["pvg", "voice", projectId],
+    queryKey: pvgVoiceQueryKey(projectId),
     queryFn: () => load({ data: { projectId } }),
   });
   const queryClient = useQueryClient();
@@ -627,7 +631,7 @@ export function VoicePanel({
       // A greeting counts as spoken only when a real, playable recording came
       // back. Anything else is a failure, never a success.
       const made = res.voiceover;
-      if (!made?.audioUrl || !(made.durationSeconds > 0)) {
+      if (!isPlayablePvgVoiceover(made)) {
         throw new Error("voice_empty_response");
       }
       audioRef.current?.pause();
@@ -635,7 +639,7 @@ export function VoicePanel({
       setVoiceover(made);
       // The sound page reads the same saved greeting: it must learn about the
       // fresh recording at once, otherwise its check plays music only.
-      queryClient.setQueryData(["pvg", "voice", projectId], { voiceover: made });
+      queryClient.setQueryData(pvgVoiceQueryKey(projectId), { voiceover: made });
       toast.success(t("pvv_success"));
     } catch (error) {
       toast.error(t(voiceFailureKey(error)));
