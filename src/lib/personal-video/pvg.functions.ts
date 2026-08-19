@@ -542,6 +542,59 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       return { ok: false as const, issues, project, balance };
     }
 
+    return generateScene(supabase, userId, project, balance);
+  });
+
+/**
+ * Buys one package of three starting-scene attempts for a single credit. The
+ * wallet and the order are locked inside the database, so a double click, a
+ * refresh or a repeated request can never take a second credit, and a package
+ * that still holds unused attempts is never paid for twice.
+ */
+export const buyPvgScenePack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc("buy_pvg_scene_pack", {
+      _user_id: userId,
+      _project_id: data.projectId,
+      _price: PVG_SCENE_PACK_CREDITS,
+    });
+    const payload = (result ?? {}) as { ok?: boolean; error?: string; balance?: number };
+    const project = await loadProject(supabase, data.projectId);
+    if (error || !payload.ok) {
+      return {
+        ok: false as const,
+        issues: [{ field: "credits", key: "pvg_err_credits" }],
+        project,
+        balance: payload.balance ?? (await walletBalance(supabase, userId)),
+      };
+    }
+    return {
+      ok: true as const,
+      issues: [] as { field: string; key: string }[],
+      project,
+      balance: payload.balance ?? (await walletBalance(supabase, userId)),
+    };
+  });
+
+const generateSceneLegacy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const project = await loadProject(supabase, data.projectId);
+    if (!project) throw new Error("project_not_found");
+
+    const balance = await walletBalance(supabase, userId);
+    const issues = validatePvgProject(project, balance);
+    if (issues.length > 0) {
+      // A paid request is never sent when anything is still missing.
+      return { ok: false as const, issues, project, balance };
+    }
+
     const used = successfulScenes(project);
     const added = addedPeople(project.people);
     const included = pvgIncludedGenerations(added.length);
