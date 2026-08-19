@@ -278,17 +278,20 @@ export function FinalVideoPanel({
             </button>
             <button
               type="button"
+              disabled={mixing}
               onClick={() => {
                 stopAll();
                 setDelivering(true);
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50"
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
             >
-              <Send className="h-4 w-4" />
+              {mixing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {t("pvr_deliver_open")}
             </button>
           </div>
-          <p className="text-xs text-primary">{t("pvr_status_ready")}</p>
+          <p className="text-xs text-primary">
+            {mixing ? t("pvr_mixing_music") : t("pvr_status_ready")}
+          </p>
 
           {readyVariants.length > 1 && (
             <div>
