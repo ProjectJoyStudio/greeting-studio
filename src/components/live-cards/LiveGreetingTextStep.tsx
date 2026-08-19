@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
 import { LiveCardViewer } from "./LiveCardViewer";
+import { LiveMusicPanel } from "./LiveMusicPanel";
 import { composeGreetingFromKeywords } from "@/lib/greeting-card/cards.functions";
 import {
   DEFAULT_TEXT_DESIGN,
@@ -30,6 +31,13 @@ import {
 } from "@/lib/live-cards/library.functions";
 import { renderFinalVideo, uploadFinalVideo } from "@/lib/live-cards/burn";
 import { clampPosition } from "@/lib/live-cards/text-render";
+import {
+  DEFAULT_LIVE_CARD_MUSIC,
+  normalizeLiveCardMusic,
+  type LiveCardMusic,
+} from "@/lib/live-cards/types";
+import { musicUrl } from "@/lib/music/library";
+import { MUSIC_FADE_IN_SECONDS, MUSIC_FADE_OUT_SECONDS } from "@/lib/music/types";
 import { useI18n } from "@/lib/i18n";
 
 const RATIO_CLASS: Record<string, string> = {
@@ -45,6 +53,7 @@ type EditorState = {
   keywords: string;
   title: string;
   design: CardTextDesign;
+  music: LiveCardMusic;
 };
 
 const EMPTY: EditorState = {
@@ -53,6 +62,7 @@ const EMPTY: EditorState = {
   keywords: "",
   title: "",
   design: { ...DEFAULT_TEXT_DESIGN },
+  music: { ...DEFAULT_LIVE_CARD_MUSIC },
 };
 
 /**
