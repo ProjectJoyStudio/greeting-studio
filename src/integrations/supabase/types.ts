@@ -2956,6 +2956,8 @@ export type Database = {
           lipsync_generator_model: string | null
           lipsync_predict_seconds: number | null
           lipsync_prediction_id: string | null
+          mix_signature: string | null
+          mix_storage_path: string | null
           prediction_id: string | null
           project_id: string
           scene_sounds: boolean
@@ -2999,6 +3001,8 @@ export type Database = {
           lipsync_generator_model?: string | null
           lipsync_predict_seconds?: number | null
           lipsync_prediction_id?: string | null
+          mix_signature?: string | null
+          mix_storage_path?: string | null
           prediction_id?: string | null
           project_id: string
           scene_sounds?: boolean
@@ -3042,6 +3046,8 @@ export type Database = {
           lipsync_generator_model?: string | null
           lipsync_predict_seconds?: number | null
           lipsync_prediction_id?: string | null
+          mix_signature?: string | null
+          mix_storage_path?: string | null
           prediction_id?: string | null
           project_id?: string
           scene_sounds?: boolean
