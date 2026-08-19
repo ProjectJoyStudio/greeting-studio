@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Check,
@@ -214,6 +214,7 @@ export function VoicePanel({
     queryKey: ["pvg", "voice", projectId],
     queryFn: () => load({ data: { projectId } }),
   });
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const found = saved.data?.voiceover ?? null;
@@ -632,6 +633,9 @@ export function VoicePanel({
       audioRef.current?.pause();
       setPlaying(false);
       setVoiceover(made);
+      // The sound page reads the same saved greeting: it must learn about the
+      // fresh recording at once, otherwise its check plays music only.
+      queryClient.setQueryData(["pvg", "voice", projectId], { voiceover: made });
       toast.success(t("pvv_success"));
     } catch (error) {
       toast.error(t(voiceFailureKey(error)));

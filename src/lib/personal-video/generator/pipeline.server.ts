@@ -39,6 +39,12 @@ export interface FinalVideoEngine {
   usdPerSecond: number;
   /** How the engine ran, recorded for the administrator. */
   variant?: string;
+  /**
+   * True when the engine really keeps the prepared ElevenLabs greeting in the
+   * finished film. An engine that cannot is never used here: a film with
+   * moving lips and no greeting is a failure, not a result.
+   */
+  keepsPreparedVoice: boolean;
   buildInput: (input: FinalVideoInput) => Record<string, unknown>;
 }
 
@@ -53,6 +59,7 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     model: "kwaivgi/kling-avatar-v2",
     provider: "replicate",
     variant: klingMode(),
+    keepsPreparedVoice: true,
     // The film lasts as long as the greeting voice; the engine accepts a
     // voice of at most one minute.
     maxAudioSeconds: Number(process.env["PVG_KLING_AVATAR_MAX_AUDIO_SECONDS"] || 60),
@@ -76,6 +83,7 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     // The film is as long as the greeting voice; the model accepts 15 seconds.
     maxAudioSeconds: Number(process.env["PVG_RUNWARE_MAX_AUDIO_SECONDS"] || 15),
     usdPerSecond: Number(process.env["PVG_RUNWARE_WAN_USD_PER_SECOND"] || 0.05),
+    keepsPreparedVoice: true,
     buildInput: () => ({}),
   },
   rw_kling3_standard: {
@@ -84,6 +92,9 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     provider: "runware",
     maxAudioSeconds: Number(process.env["PVG_RUNWARE_MAX_AUDIO_SECONDS"] || 15),
     usdPerSecond: Number(process.env["PVG_RUNWARE_KLING_USD_PER_SECOND"] || 0.09),
+    // The provider refuses a prepared voice track for this model, so it can
+    // only produce a silent film. It stays listed but is never used here.
+    keepsPreparedVoice: false,
     buildInput: () => ({}),
   },
 };
@@ -93,7 +104,9 @@ const RUNWARE_PREFIX = "runware:";
 
 /** The longest greeting voice the active engines can speak. */
 export function maxGreetingAudioSeconds(): number {
-  const values = Object.values(FINAL_VIDEO_ENGINES).map((e) => e.maxAudioSeconds);
+  const values = Object.values(FINAL_VIDEO_ENGINES)
+    .filter((e) => e.keepsPreparedVoice)
+    .map((e) => e.maxAudioSeconds);
   return values.length ? Math.max(...values) : 0;
 }
 
@@ -119,6 +132,7 @@ export type PvgStageErrorCode =
   | "insufficient_credit"
   | "rate_limited"
   | "audio_too_long"
+  | "engine_incompatible"
   | "api_error";
 
 export class PvgStageError extends Error {
@@ -181,6 +195,13 @@ export async function startFinalVideo(
   for (const key of await finalVideoOrder()) {
     const engine = FINAL_VIDEO_ENGINES[key];
     if (!engine) continue;
+    if (!engine.keepsPreparedVoice) {
+      lastError = new PvgStageError(
+        "engine_incompatible",
+        `${engine.model} cannot carry the prepared greeting voice, so it is not used for personal video greetings.`,
+      );
+      continue;
+    }
     if (input.audioSeconds > engine.maxAudioSeconds) {
       lastError = new PvgStageError(
         "audio_too_long",

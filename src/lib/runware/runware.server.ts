@@ -276,7 +276,8 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
   const taskUUID = crypto.randomUUID();
   const { width, height } = runwareVideoSize(input.aspectRatio);
   const inputs: Record<string, unknown> = { frameImages: [input.imageUrl] };
-  if (model.supportsAudioInput && input.audioUrl) inputs["audio"] = input.audioUrl;
+  const preparedAudio = Boolean(model.supportsAudioInput && input.audioUrl);
+  if (preparedAudio) inputs["audio"] = input.audioUrl;
 
   const task: RunwareTask = {
     taskType: "videoInference",
@@ -294,10 +295,14 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     includeCost: true,
   };
 
-  // Native audio is switched off model by model.
-  if (model.key === "rw_wan26_flash") task["providerSettings"] = { alibaba: { audio: false } };
-  if (model.key === "rw_kling3_standard") task["providerSettings"] = { klingai: { sound: false } };
-  if (model.key === "rw_pixverse_v6") task["settings"] = { audio: false };
+  // Native audio is switched off model by model — but never when a prepared
+  // voice track was handed in: switching audio off would silence that voice
+  // too and the film would show moving lips without a greeting.
+  if (!preparedAudio) {
+    if (model.key === "rw_wan26_flash") task["providerSettings"] = { alibaba: { audio: false } };
+    if (model.key === "rw_kling3_standard") task["providerSettings"] = { klingai: { sound: false } };
+    if (model.key === "rw_pixverse_v6") task["settings"] = { audio: false };
+  }
 
   await runwareTasks([task]);
   return taskUUID;
