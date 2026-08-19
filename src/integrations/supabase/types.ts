@@ -2759,6 +2759,7 @@ export type Database = {
           restored_at: string | null
           restored_by: string | null
           scene_description: string | null
+          scene_packs: number
           scene_sounds: boolean
           selected_scene_id: string | null
           single_speaker_person_id: string | null
@@ -2799,6 +2800,7 @@ export type Database = {
           restored_at?: string | null
           restored_by?: string | null
           scene_description?: string | null
+          scene_packs?: number
           scene_sounds?: boolean
           selected_scene_id?: string | null
           single_speaker_person_id?: string | null
@@ -2839,6 +2841,7 @@ export type Database = {
           restored_at?: string | null
           restored_by?: string | null
           scene_description?: string | null
+          scene_packs?: number
           scene_sounds?: boolean
           selected_scene_id?: string | null
           single_speaker_person_id?: string | null
@@ -4106,6 +4109,10 @@ export type Database = {
           _session_key: string
           _user_id: string
         }
+        Returns: Json
+      }
+      buy_pvg_scene_pack: {
+        Args: { _price: number; _project_id: string; _user_id: string }
         Returns: Json
       }
       charge_live_card_animation: {
