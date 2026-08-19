@@ -61,34 +61,62 @@ const RATIO_CLASS: Record<LiveCardRatio, string> = {
   "16:9": "aspect-[16/9]",
 };
 
+const SESSION_KEY = "joy.live-cards.session";
+const DRAFT_KEY = "joy.live-cards.draft";
+const MOTION_KEY = "joy.live-cards.motion";
+
 /**
- * Every visit to the creation page starts its own private session, so the
- * page always opens clean. Finished work and drafts stay safe in the personal
- * account and are opened from there on purpose.
+ * One live greeting project keeps its own session for as long as it is being
+ * worked on. Reloading the page, or returning to it later, continues exactly
+ * the same project — the pictures, the paid attempts and the description all
+ * come back. A finished project starts a completely new session.
  */
 function useLiveCardSession(): [string | null, () => void] {
   const [sessionId, setSessionId] = useState<string | null>(null);
   useEffect(() => {
-    // Any leftovers of an earlier visit are cleared here.
+    let saved: string | null = null;
     try {
-      window.localStorage.removeItem("joy.live-cards.session");
-      window.localStorage.removeItem("joy.live-cards.motion");
+      saved = window.localStorage.getItem(SESSION_KEY);
     } catch {
-      /* nothing to clean up */
+      /* private mode — the session simply starts fresh */
     }
-    setSessionId(crypto.randomUUID());
+    const id = saved ?? crypto.randomUUID();
+    try {
+      window.localStorage.setItem(SESSION_KEY, id);
+    } catch {
+      /* nothing to store */
+    }
+    setSessionId(id);
   }, []);
+
   // A finished live greeting card is kept in the account; the next project
   // always starts from a completely new, independent session.
   const reset = () => {
+    const id = crypto.randomUUID();
     try {
-      window.localStorage.removeItem("joy.live-cards.motion");
+      window.localStorage.removeItem(MOTION_KEY);
+      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.setItem(SESSION_KEY, id);
     } catch {
       /* nothing to clean up */
     }
-    setSessionId(crypto.randomUUID());
+    setSessionId(id);
   };
   return [sessionId, reset];
+}
+
+type LocalDraft = { sessionId: string; prompt: string; ratio: LiveCardRatio };
+
+/** The typed description and format survive a reload of the creation page. */
+function readLocalDraft(sessionId: string): LocalDraft | null {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LocalDraft;
+    return parsed?.sessionId === sessionId ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function LiveCardsPage() {
@@ -134,7 +162,18 @@ function LiveCardsPage() {
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
   useEffect(() => {
-    if (restored || !recent.data?.length) return;
+    if (restored || !sessionId || recent.isLoading) return;
+
+    if (!recent.data?.length) {
+      // No picture yet — the description typed before the reload returns.
+      const draft = readLocalDraft(sessionId);
+      if (draft) {
+        if (draft.prompt) setPrompt(draft.prompt);
+        if ((LIVE_CARD_RATIOS as readonly string[]).includes(draft.ratio)) setRatio(draft.ratio);
+      }
+      setRestored(true);
+      return;
+    }
     const chosen = recent.data.find((card) => card.selected) ?? recent.data[0];
     setCurrent(chosen);
     setSelectedId(chosen.selected ? chosen.id : null);
@@ -144,7 +183,17 @@ function LiveCardsPage() {
       setRatio(chosen.aspectRatio as LiveCardRatio);
     }
     setRestored(true);
-  }, [recent.data, restored]);
+  }, [recent.data, recent.isLoading, restored, sessionId]);
+
+  // Whatever is being typed stays available after a reload of the page.
+  useEffect(() => {
+    if (!sessionId || !restored) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ sessionId, prompt, ratio }));
+    } catch {
+      /* nothing to store */
+    }
+  }, [sessionId, restored, prompt, ratio]);
 
   async function runGenerate() {
     if (prompt.trim().length < 3) return;
