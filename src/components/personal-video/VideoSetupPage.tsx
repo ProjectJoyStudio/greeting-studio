@@ -95,6 +95,13 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const sessionId = useRef<string>(getPvgEditSessionId());
 
   // One writer at a time: another open device is told instead of overwritten.
+  const takeOver = useCallback(() => {
+    if (!project) return;
+    void claim({ data: { projectId: project.id, sessionId: sessionId.current, takeOver: true } })
+      .then((res) => setReadOnly(!res.editable))
+      .catch(() => undefined);
+  }, [project, claim]);
+
   useEffect(() => {
     if (!project) return;
     let stop = false;
