@@ -698,6 +698,13 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             <p className="mt-2 text-xs text-muted-foreground">
               {t("pvg_balance")}: {balance} {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("pvg_scene_spent")}: {sceneSpent}{" "}
+              {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("pvg_attempts_left")}: {generationsLeft}
+            </p>
             {issueFor("credits") && (
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
             )}
