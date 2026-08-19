@@ -23,6 +23,7 @@ import { creditWord } from "@/lib/credits/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   addPvgPersonPhoto,
+  buyPvgScenePack,
   generatePvgScene,
   openPvgProject,
   refreshPvgProject,
@@ -40,9 +41,11 @@ import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
 import {
   PVG_MAX_ADDED_PEOPLE,
+  PVG_SCENE_ATTEMPTS_PER_PACK,
+  PVG_SCENE_PACK_CREDITS,
   addedPeople,
   pvgIncludedGenerations,
-  pvgPriceCredits,
+  pvgSceneAttempts,
   validatePvgProject,
   type PvgIssueField,
   type PvgProject,
@@ -62,6 +65,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const rename = useServerFn(renamePvgPerson);
   const removePerson = useServerFn(removePvgPerson);
   const generate = useServerFn(generatePvgScene);
+  const buyPack = useServerFn(buyPvgScenePack);
   const refresh = useServerFn(refreshPvgProject);
   const chooseScene = useServerFn(selectPvgScene);
   const claim = useServerFn(claimPvgEditSession);
@@ -204,7 +208,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   /** The one specially added person of this order, if the customer added one. */
   const main = useMemo(() => addedPeople(project?.people ?? [])[0] ?? null, [project]);
   const addedCount = main ? 1 : 0;
-  const price = pvgPriceCredits(addedCount || 1);
+  const price = PVG_SCENE_PACK_CREDITS;
   const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
 
   // A gentle, short note whenever one more included scene becomes available.
@@ -221,7 +225,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
   const includedCount = pvgIncludedGenerations(addedCount);
-  const generationsLeft = includedCount - usedCount;
+  // Attempts are sold in packages of three; one credit unlocks one package.
+  const attempts = pvgSceneAttempts(usedCount, project?.scenePacks ?? 0);
+  const generationsLeft = attempts.remaining;
   const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
     const scenes = project?.scenes ?? [];
