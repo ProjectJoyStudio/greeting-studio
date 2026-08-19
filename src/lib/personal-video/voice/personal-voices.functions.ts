@@ -98,38 +98,11 @@ export const assignPersonalVoice = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    const { data: project } = await context.supabase
-      .from("pvg_projects")
-      .select("id, user_id")
-      .eq("id", data.projectId)
-      .maybeSingle();
-    if (!project || (project as { user_id: string }).user_id !== context.userId) {
-      throw new Error("project_not_found");
-    }
-    if (data.voiceId) {
-      const { data: owned } = await context.supabase
-        .from("pvg_personal_voices")
-        .select("id")
-        .eq("id", data.voiceId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      if (!owned) throw new Error("voice_not_found");
-    }
-    const { error } = await context.supabase
-      .from("pvg_people")
-      .update({
-        personal_voice_id: data.voiceId,
-        // A personal voice always replaces a Project Joy voice, never the
-        // other way around: nothing is ever swapped back automatically.
-        voice_id: null,
-        voice_name: data.voiceId ? (data.voiceName ?? null) : null,
-        voice_source: data.voiceId ? "recording" : null,
-        voice_confirmed: Boolean(data.voiceId),
-        speaking_style: data.voiceId ? (data.style ?? "natural") : null,
-      })
-      .eq("id", data.personId)
-      .eq("project_id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, assignPersonalVoiceToPerson } = await import(
+      "./voice-actions.server"
+    );
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await assignPersonalVoiceToPerson(context.supabase, context.userId, data);
     return { saved: true as const };
   });
 
@@ -138,11 +111,15 @@ export const savePersonalVoiceStyle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string; personId: string; style: string }) => input)
   .handler(async ({ data, context }): Promise<{ saved: true }> => {
-    const { error } = await context.supabase
-      .from("pvg_people")
-      .update({ speaking_style: data.style })
-      .eq("id", data.personId)
-      .eq("project_id", data.projectId);
-    if (error) throw new Error(error.message);
+    const { assertPvgOwner, savePersonalVoiceStyleForPerson } = await import(
+      "./voice-actions.server"
+    );
+    await assertPvgOwner(context.supabase, data.projectId, context.userId);
+    await savePersonalVoiceStyleForPerson(
+      context.supabase,
+      data.projectId,
+      data.personId,
+      data.style,
+    );
     return { saved: true as const };
   });
