@@ -22,6 +22,12 @@ export interface RunwareVideoModel {
   label: string;
   /** True when the model accepts a prepared voice track as input. */
   supportsAudioInput: boolean;
+  /**
+   * True when the model keeps a prepared voice track in the finished film,
+   * verified against the provider. Only such a model may serve the Personal
+   * Video final film, whose greeting voice must be heard.
+   */
+  supportsPreparedAudio: boolean;
   /** Shortest / longest length the model accepts, in seconds. */
   minDuration: number;
   maxDuration: number;
@@ -60,6 +66,7 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
     air: "alibaba:wan@2.6-flash",
     label: "Wan 2.6 Flash",
     supportsAudioInput: true,
+    supportsPreparedAudio: true,
     minDuration: 2,
     maxDuration: 15,
   },
@@ -68,6 +75,7 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
     air: "pixverse:1@8",
     label: "PixVerse V6",
     supportsAudioInput: false,
+    supportsPreparedAudio: false,
     minDuration: 1,
     maxDuration: 15,
   },
@@ -76,6 +84,9 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
     air: "klingai:kling-video@3-standard",
     label: "Kling Video 3.0 Standard",
     supportsAudioInput: false,
+    // The provider rejects inputs.audio for this model, so a prepared
+    // greeting voice cannot travel into the film.
+    supportsPreparedAudio: false,
     minDuration: 3,
     maxDuration: 15,
   },
