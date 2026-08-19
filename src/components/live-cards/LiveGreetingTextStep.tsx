@@ -427,6 +427,8 @@ export function LiveGreetingEditor({
               patchDesign({ ...p, ...clampPosition(merged.x, merged.y, merged.width) });
             }}
           />
+
+          <LiveMusicPanel music={state.music} onChange={(music) => patch({ music })} />
         </div>
       </div>
 
