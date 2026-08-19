@@ -3,9 +3,12 @@
 // greeting-card generator, even though it renders with the same model.
 
 import { pollIntervalMs, renderTimeoutMs } from "./config.server";
-import { logError, logInfo } from "./log.server";
+import { logError, logInfo, logWarn } from "./log.server";
 
 const API_BASE = "https://api.replicate.com/v1";
+
+/** Consecutive unreachable status reads before an attempt is given up. */
+const MAX_POLL_FAILURES = 6;
 
 export type LiveImageErrorCode =
   | "missing_token"
