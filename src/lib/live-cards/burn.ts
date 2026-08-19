@@ -80,7 +80,6 @@ function seek(video: HTMLVideoElement, time: number): Promise<void> {
   });
 }
 
-export interface RenderResult {
 /** Loads the music and feeds it into the recording at the chosen level. */
 async function prepareMusic(
   music: BurnMusic,
