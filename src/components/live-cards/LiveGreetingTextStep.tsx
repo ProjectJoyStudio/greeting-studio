@@ -130,6 +130,7 @@ export function LiveGreetingEditor({
             keywords: draft.greetingKeywords.join(", "),
             title: draft.title ?? "",
             design: normalizeTextDesign(draft.textDesign),
+            music: normalizeLiveCardMusic(draft.music),
           });
         }
         if (draft.isFinalized && draft.videoUrl) setFinalUrl(draft.videoUrl);
@@ -160,6 +161,7 @@ export function LiveGreetingEditor({
             greetingMode: state.mode,
             keywords: state.keywords.split(",").map((k) => k.trim()).filter(Boolean),
             textDesign: state.design as unknown as Record<string, unknown>,
+            music: state.music as unknown as Record<string, unknown>,
           },
         });
       } catch {
@@ -210,7 +212,28 @@ export function LiveGreetingEditor({
       const text = state.text;
       const design = { ...state.design };
       note("render_started");
-      const rendered = await renderFinalVideo(clean, text, design, setProgress);
+      // The chosen music is written into the file itself while it is recorded,
+      // so downloading or sharing the card carries the same sound as here.
+      const music = state.music;
+      const trackUrl =
+        music.mode === "library"
+          ? await musicUrl(music.trackBucket, music.trackPath)
+          : null;
+      const rendered = await renderFinalVideo(
+        clean,
+        text,
+        design,
+        setProgress,
+        trackUrl
+          ? {
+              url: trackUrl,
+              volume: music.gain,
+              loop: true,
+              fadeInSeconds: MUSIC_FADE_IN_SECONDS,
+              fadeOutSeconds: MUSIC_FADE_OUT_SECONDS,
+            }
+          : null,
+      );
       const imperfect = Boolean(text.trim()) && (!rendered.verified || rendered.duplicate);
       note("render_completed", true, imperfect ? "text_verification_uncertain" : "");
 
@@ -233,6 +256,7 @@ export function LiveGreetingEditor({
           title: state.title,
           greetingText: text,
           textDesign: design as unknown as Record<string, unknown>,
+          music: music as unknown as Record<string, unknown>,
         },
       });
       setFinalUrl(result.videoUrl);
