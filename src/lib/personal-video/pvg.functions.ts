@@ -136,6 +136,30 @@ export const openPvgProject = createServerFn({ method: "POST" })
       if (existing) return { project: existing, balance: await walletBalance(supabase, userId) };
       throw new Error("project_not_found");
     }
+    // One personal video is ONE project. An untouched draft of this person is
+    // reopened instead of adding another empty record — two calls arriving at
+    // the same moment (a remount, a refresh) therefore share one project.
+    const { data: emptyRows } = await supabase
+      .from("pvg_projects")
+      .select(PROJECT_COLUMNS)
+      .eq("user_id", userId)
+      .eq("status", "draft")
+      .is("deleted_at", null)
+      .is("delivered_at", null)
+      .order("created_at", { ascending: true })
+      .limit(10);
+    for (const row of (emptyRows ?? []) as ProjectRow[]) {
+      const candidate = await loadProject(supabase, row.id);
+      if (
+        candidate &&
+        !candidate.scenes.length &&
+        !candidate.people.length &&
+        !(candidate.sceneDescription ?? "").trim() &&
+        (candidate.creditsCharged ?? 0) === 0
+      ) {
+        return { project: candidate, balance: await walletBalance(supabase, userId) };
+      }
+    }
     const { data: created, error } = await supabase
       .from("pvg_projects")
       .insert({ user_id: userId, generations_limit: pvgIncludedGenerations(0) })
