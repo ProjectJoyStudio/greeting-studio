@@ -15,6 +15,7 @@ import {
   BufferTarget,
   EncodedPacketSink,
   EncodedVideoPacketSource,
+  getFirstEncodableAudioCodec,
   Input,
   Mp4OutputFormat,
   Output,
@@ -129,6 +130,13 @@ export async function mixMusicIntoVideo(
   const input = new Input({ source: new BlobSource(videoBlob), formats: ALL_FORMATS });
   const videoTrack = await input.getPrimaryVideoTrack();
   if (!videoTrack) throw new Error("no_video_track");
+  const voiceTrack = await input.getPrimaryAudioTrack();
+  if (voiceTrack && !(await voiceTrack.canDecode())) throw new Error("voice_not_decodable");
+  const codec = await getFirstEncodableAudioCodec(["aac", "opus"], {
+    numberOfChannels: 2,
+    sampleRate: SAMPLE_RATE,
+  });
+  if (!codec) throw new Error("no_audio_encoder");
 
   const seconds = await input.computeDuration();
   const audio = await mixedAudio(input, musicBlob ? await musicBlob.arrayBuffer() : null, music, seconds);
@@ -140,7 +148,7 @@ export async function mixMusicIntoVideo(
 
   const picture = new EncodedVideoPacketSource(videoTrack.codec!);
   output.addVideoTrack(picture, { rotation: videoTrack.rotation });
-  const sound = new AudioBufferSource({ codec: "aac", quality: QUALITY_HIGH });
+  const sound = new AudioBufferSource({ codec, quality: QUALITY_HIGH });
   output.addAudioTrack(sound);
   await output.start();
 
