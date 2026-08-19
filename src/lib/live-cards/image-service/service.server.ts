@@ -8,13 +8,8 @@
 //            person, who may try again. The integration stays in place for
 //            later use and is guarded by two explicit switches.
 
-import { backupHandoverAllowed, primaryCostUsd, primaryModel } from "./config.server";
-import {
-  isConfirmedFailure,
-  LiveImageError,
-  renderPrimaryImage,
-  type LiveImageRender,
-} from "./client.server";
+import { primaryCostUsd } from "./config.server";
+import { LiveImageError, MODEL_BY_KEY, renderPrimaryImage } from "./client.server";
 import { logError, logInfo, logWarn } from "./log.server";
 import { queueStats, QueueFullError, QueueTimeoutError, withImageSlot } from "./queue.server";
 
@@ -53,40 +48,97 @@ const OPENAI_START_IMAGE: Record<string, { model: string; quality: "low" | "medi
   gpt_image_15_medium: { model: "openai/gpt-image-1.5", quality: "medium" },
 };
 
-/** The OpenAI engine the administrator selected for the start image, if any. */
-async function selectedOpenAiEngine(): Promise<string | null> {
-  try {
-    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
-    const { RUNWARE_CARD_IMAGE_KEYS } = await import("@/lib/runware/catalog");
-    const key = await primaryGenerator("live_cards.start_image", [
-      "flux_schnell",
-      "flux_ultra",
-      "flux_1_1_pro",
-      ...Object.keys(OPENAI_START_IMAGE),
-      ...RUNWARE_CARD_IMAGE_KEYS,
-    ]);
-    return key && OPENAI_START_IMAGE[key] ? key : null;
-  } catch {
-    return null;
-  }
+/**
+ * Every start-image engine an administrator may route to this section, in one
+ * list. The saved Admin → Generators configuration decides which of them runs
+ * and in which order — nothing here is chosen implicitly.
+ */
+async function engineKeys(): Promise<string[]> {
+  const { RUNWARE_CARD_IMAGE_KEYS } = await import("@/lib/runware/catalog");
+  return [
+    ...Object.keys(MODEL_BY_KEY),
+    ...Object.keys(OPENAI_START_IMAGE),
+    ...RUNWARE_CARD_IMAGE_KEYS,
+  ];
 }
 
-/** The Runware engine the administrator selected for the start image, if any. */
-async function selectedRunwareEngine(): Promise<string | null> {
-  try {
-    const { primaryGenerator } = await import("@/lib/admin/generators/runtime.server");
-    const { RUNWARE_CARD_IMAGE_KEYS, isRunwareImageKey } = await import("@/lib/runware/catalog");
-    const key = await primaryGenerator("live_cards.start_image", [
-      "flux_schnell",
-      "flux_ultra",
-      "flux_1_1_pro",
-      ...Object.keys(OPENAI_START_IMAGE),
-      ...RUNWARE_CARD_IMAGE_KEYS,
-    ]);
-    return key && isRunwareImageKey(key) ? key : null;
-  } catch {
-    return null;
+type EngineRender = {
+  url: string;
+  bytes?: Uint8Array;
+  contentType: string;
+  fileExtension: string;
+  model: string;
+  costUsd?: number;
+};
+
+type EngineFailure = { code: string; message: string };
+
+/** Runs exactly one engine, whichever provider it belongs to. */
+async function renderWithEngine(
+  key: string,
+  input: { prompt: string; aspectRatio: string },
+): Promise<EngineRender> {
+  const { isRunwareImageKey } = await import("@/lib/runware/catalog");
+
+  if (isRunwareImageKey(key)) {
+    const { runwareRenderImage } = await import("@/lib/runware/runware.server");
+    const rendered = await runwareRenderImage({
+      generatorKey: key,
+      prompt: input.prompt,
+      aspectRatio: input.aspectRatio,
+    });
+    return {
+      url: rendered.url,
+      contentType: rendered.contentType,
+      fileExtension: rendered.fileExtension,
+      model: rendered.model,
+      costUsd: rendered.costUsd,
+    };
   }
+
+  const openAi = OPENAI_START_IMAGE[key];
+  if (openAi) {
+    const { renderGptImage } = await import("@/lib/replicate/gpt-image.server");
+    const rendered = await renderGptImage({
+      quality: openAi.quality,
+      prompt: input.prompt,
+      aspectRatio: input.aspectRatio,
+    });
+    return {
+      url: "",
+      bytes: rendered.bytes,
+      contentType: rendered.contentType,
+      fileExtension: rendered.fileExtension,
+      model: rendered.model,
+    };
+  }
+
+  const model = MODEL_BY_KEY[key];
+  if (!model) throw new LiveImageError("api_error", "This engine cannot render a start picture.");
+  const rendered = await renderPrimaryImage(input.prompt, input.aspectRatio, model);
+  return {
+    url: rendered.url,
+    contentType: rendered.contentType,
+    fileExtension: rendered.fileExtension,
+    model: rendered.model,
+    costUsd: primaryCostUsd(),
+  };
+}
+
+/** Turns any provider error into one shape, keeping the provider's own code. */
+async function toFailure(err: unknown): Promise<EngineFailure> {
+  const message = err instanceof Error ? err.message : "The picture could not be created.";
+  if (err instanceof LiveImageError) return { code: err.code, message };
+  const { RunwareError } = await import("@/lib/runware/runware.server");
+  if (err instanceof RunwareError) return { code: err.code, message };
+  const { GptImageError } = await import("@/lib/replicate/gpt-image.server");
+  if (err instanceof GptImageError) return { code: err.code, message };
+  return { code: "generation_failed", message };
+}
+
+/** Credential and billing problems that no other engine can repair. */
+function isTerminal(code: string): boolean {
+  return code === "missing_token" || code === "invalid_token" || code === "insufficient_credit";
 }
 
 /**
@@ -108,175 +160,61 @@ export async function createLiveCardImage(input: {
     return await withImageSlot(async () => {
       logInfo("request_started", { ...base, ratio: input.aspectRatio, ...queueStats() });
 
-      // Runware leads when the administrator selected one of its engines.
-      const runwareKey = await selectedRunwareEngine();
-      if (runwareKey) {
-        const { runwareRenderImage, RunwareError } = await import(
-          "@/lib/runware/runware.server"
-        );
+      // The saved administrator configuration is the only source of truth:
+      // it returns the chosen engine first and, when automatic failover is
+      // switched on, the selected backup right after it.
+      const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
+      const order = await generatorOrder("live_cards.start_image", await engineKeys());
+
+      if (!order.length) {
+        const message = "No start-image engine is selected and switched on for Live Cards.";
+        logError("request_failed", { ...base, status: "failed", code: "no_generator" });
+        throw new LiveCardImageServiceError("no_generator", message);
+      }
+
+      let failure: EngineFailure | null = null;
+      for (const [index, key] of order.entries()) {
+        const role = index === 0 ? "primary" : "backup";
         try {
-          const rendered = await runwareRenderImage({
-            generatorKey: runwareKey,
-            prompt: input.prompt,
-            aspectRatio: input.aspectRatio,
-          });
+          const rendered = await renderWithEngine(key, input);
           logInfo("request_completed", {
             ...base,
-            engine: "primary",
+            engine: role,
+            generator: key,
             model: rendered.model,
             status: "succeeded",
-            costUsd: rendered.costUsd,
+            costUsd: rendered.costUsd ?? null,
           });
           return {
             url: rendered.url,
+            ...(rendered.bytes ? { bytes: rendered.bytes } : {}),
             contentType: rendered.contentType,
             fileExtension: rendered.fileExtension,
-            generatorKey: runwareKey,
+            generatorKey: key,
             generatorModel: rendered.model,
-            usedBackup: false,
+            usedBackup: index > 0,
           };
         } catch (err) {
-          const code = err instanceof RunwareError ? err.code : "generation_failed";
-          const message = err instanceof Error ? err.message : "The picture could not be created.";
-          logError("request_failed", {
+          failure = await toFailure(err);
+          const nextKey = order[index + 1];
+          logWarn("engine_failed", {
             ...base,
-            engine: "primary",
-            model: runwareKey,
-            status: "failed",
-            code,
-            error: message,
-            fallback: "off",
+            engine: role,
+            generator: key,
+            code: failure.code,
+            error: failure.message,
+            handover: nextKey && !isTerminal(failure.code) ? nextKey : "none",
           });
-          throw new LiveCardImageServiceError(code, message);
+          if (isTerminal(failure.code)) break;
         }
       }
 
-      // Administrator's choice first: when an OpenAI start-image engine leads,
-      // it renders the picture through the shared provider adapter.
-      const openAiKey = await selectedOpenAiEngine();
-      if (openAiKey) {
-        const engine = OPENAI_START_IMAGE[openAiKey]!;
-        const { renderGptImage, GptImageError } = await import(
-          "@/lib/replicate/gpt-image.server"
-        );
-        try {
-          const rendered = await renderGptImage({
-            quality: engine.quality,
-            prompt: input.prompt,
-            aspectRatio: input.aspectRatio,
-          });
-          logInfo("request_completed", {
-            ...base,
-            engine: "primary",
-            model: rendered.model,
-            status: "succeeded",
-          });
-          return {
-            url: "",
-            bytes: rendered.bytes,
-            contentType: rendered.contentType,
-            fileExtension: rendered.fileExtension,
-            generatorKey: openAiKey,
-            generatorModel: rendered.model,
-            usedBackup: false,
-          };
-        } catch (err) {
-          const code = err instanceof GptImageError ? err.code : "generation_failed";
-          const message = err instanceof Error ? err.message : "The picture could not be created.";
-          logError("request_failed", {
-            ...base,
-            engine: "primary",
-            model: engine.model,
-            status: "failed",
-            code,
-            error: message,
-            fallback: "off",
-          });
-          throw new LiveCardImageServiceError(code, message);
-        }
-      }
-
-      let primaryError: LiveImageError | null = null;
-      try {
-        const render: LiveImageRender = await renderPrimaryImage(input.prompt, input.aspectRatio);
-        logInfo("request_completed", {
-          ...base,
-          engine: "primary",
-          model: render.model,
-          status: "succeeded",
-          costUsd: primaryCostUsd(),
-        });
-        return {
-          url: render.url,
-          contentType: render.contentType,
-          fileExtension: render.fileExtension,
-          generatorKey: "live_primary",
-          generatorModel: render.model,
-          usedBackup: false,
-        };
-      } catch (err) {
-        primaryError =
-          err instanceof LiveImageError
-            ? err
-            : new LiveImageError(
-                "generation_failed",
-                err instanceof Error ? err.message : "Unknown failure.",
-              );
-      }
-
-      // Backup hand-over is switched off: every failure — slow render,
-      // timeout, temporary unavailability or a confirmed engine error —
-      // stops here and is reported. The higher-cost engine never starts.
-      if (!backupHandoverAllowed() || !isConfirmedFailure(primaryError.code)) {
-        logError("request_failed", {
-          ...base,
-          engine: "primary",
-          model: primaryModel(),
-          status: "failed",
-          code: primaryError.code,
-          error: primaryError.message,
-          fallback: "off",
-        });
-        throw new LiveCardImageServiceError(primaryError.code, primaryError.message);
-      }
-
-      logWarn("primary_failed_switching_to_backup", { ...base, code: primaryError.code });
-
-      // The backup runs strictly after the primary has finished with a
-      // confirmed error — never in parallel with it.
-      const { routeImageRequest } = await import("../generators/router.server");
-      const { GeneratorError } = await import("../generators/contracts.server");
-      try {
-        const routed = await routeImageRequest({
-          prompt: input.prompt,
-          aspectRatio: input.aspectRatio,
-        });
-        logInfo("request_completed", {
-          ...base,
-          engine: "backup",
-          model: routed.generatorModel,
-          status: "succeeded",
-        });
-        return {
-          url: routed.url,
-          contentType: routed.contentType,
-          fileExtension: routed.fileExtension,
-          generatorKey: routed.generatorKey,
-          generatorModel: routed.generatorModel,
-          usedBackup: true,
-        };
-      } catch (err) {
-        const code = err instanceof GeneratorError ? err.code : "generation_failed";
-        const message = err instanceof Error ? err.message : "The picture could not be created.";
-        logError("request_failed", {
-          ...base,
-          engine: "backup",
-          status: "failed",
-          code,
-          error: message,
-        });
-        throw new LiveCardImageServiceError(code, message);
-      }
+      const final = failure ?? {
+        code: "generation_failed",
+        message: "The picture could not be created.",
+      };
+      logError("request_failed", { ...base, status: "failed", code: final.code, error: final.message });
+      throw new LiveCardImageServiceError(final.code, final.message);
     });
   } catch (err) {
     if (err instanceof QueueFullError || err instanceof QueueTimeoutError) {
