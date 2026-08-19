@@ -95,9 +95,15 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
 /** Engines offered for the Live Cards start picture and greeting-card artwork. */
 export const RUNWARE_CARD_IMAGE_KEYS = Object.keys(RUNWARE_IMAGE_MODELS);
 
-/** Personal Video start scenes need reference images, so Z-Image is excluded. */
+/**
+ * Personal Video start scenes need reference images, so Z-Image is excluded.
+ * Krea 2 Medium Turbo and FLUX.2 [pro] are also excluded: they are unsuitable
+ * for start scenes and may never be routed there.
+ */
+const SCENE_IMAGE_EXCLUDED = new Set(["rw_krea2_medium_turbo", "rw_flux2_pro"]);
+
 export const RUNWARE_SCENE_IMAGE_KEYS = Object.values(RUNWARE_IMAGE_MODELS)
-  .filter((m) => m.supportsReferenceImages)
+  .filter((m) => m.supportsReferenceImages && !SCENE_IMAGE_EXCLUDED.has(m.key))
   .map((m) => m.key);
 
 export const RUNWARE_ANIMATION_KEYS = Object.keys(RUNWARE_VIDEO_MODELS);
