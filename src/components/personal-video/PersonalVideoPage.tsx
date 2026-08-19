@@ -232,7 +232,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const includedCount = pvgIncludedGenerations(addedCount);
   // Attempts are sold in packages of three; one credit unlocks one package.
   const attempts = pvgSceneAttempts(usedCount, project?.scenePacks ?? 0);
   const generationsLeft = attempts.remaining;
@@ -692,7 +691,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {t("pvg_price")}
               </span>
               <span className="font-display text-2xl">
-                {project?.creditsCharged || price}{" "}
+                {price}{" "}
                 <span className="text-sm text-muted-foreground">{t("pvg_credits_word")}</span>
               </span>
             </div>
