@@ -65,7 +65,7 @@ export function buildVideoPrompt(input: PvgVideoPromptInput): string {
   const others = list(input.silentNames);
   return [
     action,
-    `Only ${speaker} moves their lips. Their lip movement matches the given audio exactly from beginning to end.`,
+    `Only ${speaker} moves their lips, and only while the given audio contains speech. Their lip movement matches that speech exactly. When the speech ends, they close their mouth and stop speaking, while the same scene continues naturally and calmly to the very end of the video: they keep smiling, blinking, breathing, looking toward the camera and making small natural head and body movements. The video never freezes, never cuts and never ends early.`,
     others
       ? `${others} remain completely silent: their mouths stay naturally closed apart from a natural smile, they never mouth or repeat the spoken words, and they never speak. They may smile, blink, breathe, move their heads and bodies naturally and react warmly to the greeting.`
       : "",
