@@ -245,10 +245,11 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       if (!audioUrl) {
         return { ok: false, error: "pvr_err_no_voice", video: null, balance: await balanceOf() };
       }
-      // The film lasts exactly as long as the greeting voice. A voice that is
-      // longer than the engine accepts is refused openly, before any credit
-      // is taken — the greeting is never cut short in the middle.
-      const audioSeconds = Number(voiceover?.durationSeconds ?? 0);
+      // The greeting itself is never stretched or slowed: the chosen slider
+      // length is the length of the finished film, and a greeting that is
+      // shorter simply leaves a quiet, naturally animated ending.
+      const spokenSeconds = Number(voiceover?.durationSeconds ?? 0);
+      const audioSeconds = Math.max(spokenSeconds, duration);
       const { maxGreetingAudioSeconds } = await import("./generator/pipeline.server");
       const maxAudio = maxGreetingAudioSeconds();
       if (audioSeconds > maxAudio) {
