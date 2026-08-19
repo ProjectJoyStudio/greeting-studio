@@ -218,7 +218,8 @@ export async function startFinalVideo(
             generatorKey: engine.key,
             prompt: input.prompt,
             imageUrl: input.imageUrl,
-            // The film lasts exactly as long as the finished greeting voice.
+            // The film lasts as long as the sound it receives: the greeting
+            // plus the silence that carries the scene to the chosen length.
             durationSeconds: Math.ceil(input.audioSeconds),
             aspectRatio: "16:9",
             // Engines that accept a voice track receive the ElevenLabs

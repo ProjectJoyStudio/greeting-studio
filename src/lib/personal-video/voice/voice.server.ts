@@ -433,3 +433,22 @@ export async function previewVoice(args: {
     mimeType: result.mimeType,
   };
 }
+
+/**
+ * Stores the sound one film is built from: the greeting exactly as it was
+ * spoken, followed by the silence that carries the scene to the chosen
+ * length. It never replaces the saved greeting of the order.
+ */
+export async function storeRenderAudio(
+  projectId: string,
+  userId: string,
+  audio: { bytes: Uint8Array; mimeType: string; extension: string },
+): Promise<string | null> {
+  const db = await admin();
+  const path = `${userId}/${projectId}/render-${Date.now()}.${audio.extension}`;
+  const upload = await db.storage
+    .from(BUCKET)
+    .upload(path, audio.bytes, { contentType: audio.mimeType, upsert: true });
+  if (upload.error) return null;
+  return signed(BUCKET, path);
+}

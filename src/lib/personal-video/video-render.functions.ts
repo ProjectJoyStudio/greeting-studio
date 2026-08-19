@@ -245,10 +245,11 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       if (!audioUrl) {
         return { ok: false, error: "pvr_err_no_voice", video: null, balance: await balanceOf() };
       }
-      // The film lasts exactly as long as the greeting voice. A voice that is
-      // longer than the engine accepts is refused openly, before any credit
-      // is taken — the greeting is never cut short in the middle.
-      const audioSeconds = Number(voiceover?.durationSeconds ?? 0);
+      // The greeting itself is never stretched or slowed: the chosen slider
+      // length is the length of the finished film, and a greeting that is
+      // shorter simply leaves a quiet, naturally animated ending.
+      const spokenSeconds = Number(voiceover?.durationSeconds ?? 0);
+      const audioSeconds = Math.max(spokenSeconds, duration);
       const { maxGreetingAudioSeconds } = await import("./generator/pipeline.server");
       const maxAudio = maxGreetingAudioSeconds();
       if (audioSeconds > maxAudio) {
@@ -352,11 +353,24 @@ export const startPvgVideo = createServerFn({ method: "POST" })
 
       try {
         // Picture + finished greeting voice in, speaking film out.
+        // The sound handed over always lasts the full chosen length: the
+        // greeting exactly as it was spoken, followed by silence. The engine
+        // then keeps the same scene alive, calm and speechless, to the end.
+        let renderAudioUrl = audioUrl;
+        if (duration > spokenSeconds + 0.25) {
+          const { padAudioToDuration } = await import("./generator/audio-tail.server");
+          const { storeRenderAudio } = await import("./voice/voice.server");
+          const padded = await padAudioToDuration(audioUrl, spokenSeconds, duration);
+          if (padded) {
+            const stored = await storeRenderAudio(project.id, userId, padded);
+            if (stored) renderAudioUrl = stored;
+          }
+        }
         const { startFinalVideo } = await import("./generator/pipeline.server");
         const started = await startFinalVideo({
           prompt,
           imageUrl,
-          audioUrl,
+          audioUrl: renderAudioUrl,
           audioSeconds,
           seed,
         });
