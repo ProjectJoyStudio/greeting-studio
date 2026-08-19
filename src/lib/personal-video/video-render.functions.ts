@@ -455,6 +455,7 @@ export const preparePvgVideoMix = createServerFn({ method: "POST" })
     }): Promise<{
       ok: boolean;
       sourceUrl: string | null;
+      bucket: string | null;
       path: string | null;
       token: string | null;
     }> => {
@@ -476,7 +477,7 @@ export const preparePvgVideoMix = createServerFn({ method: "POST" })
         throw new Error("video_not_found");
       }
       if (video.status !== "ready" || !video.storage_bucket || !video.storage_path) {
-        return { ok: false, sourceUrl: null, path: null, token: null };
+        return { ok: false, sourceUrl: null, bucket: null, path: null, token: null };
       }
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { pvgSignedUrlTtl } = await import("./env.server");
@@ -490,11 +491,12 @@ export const preparePvgVideoMix = createServerFn({ method: "POST" })
         .from(video.storage_bucket)
         .createSignedUploadUrl(path);
       if (upload.error || !source.data?.signedUrl) {
-        return { ok: false, sourceUrl: null, path: null, token: null };
+        return { ok: false, sourceUrl: null, bucket: null, path: null, token: null };
       }
       return {
         ok: true,
         sourceUrl: source.data.signedUrl,
+        bucket: video.storage_bucket,
         path,
         token: upload.data.token,
       };
