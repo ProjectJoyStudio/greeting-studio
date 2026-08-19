@@ -527,24 +527,6 @@ export const removePvgPerson = createServerFn({ method: "POST" })
  * single payment is taken on the first creation, and the render then runs in
  * the background so the page is free again immediately.
  */
-export const generatePvgScene = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const project = await loadProject(supabase, data.projectId);
-    if (!project) throw new Error("project_not_found");
-
-    const balance = await walletBalance(supabase, userId);
-    const issues = validatePvgProject(project, balance);
-    if (issues.length > 0) {
-      // A paid request is never sent when anything is still missing.
-      return { ok: false as const, issues, project, balance };
-    }
-
-    return generateScene(supabase, userId, project, balance);
-  });
-
 /**
  * Buys one package of three starting-scene attempts for a single credit. The
  * wallet and the order are locked inside the database, so a double click, a
@@ -580,7 +562,7 @@ export const buyPvgScenePack = createServerFn({ method: "POST" })
     };
   });
 
-const generateSceneLegacy = createServerFn({ method: "POST" })
+export const generatePvgScene = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
   .handler(async ({ data, context }) => {
