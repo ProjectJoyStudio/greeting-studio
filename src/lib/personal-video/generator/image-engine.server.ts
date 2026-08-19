@@ -6,7 +6,7 @@
 //   image_generator = FLUX_2_MAX   (current setting, best identity keeping)
 //
 // Override with the environment variable PVG_IMAGE_GENERATOR, for example:
-//   PVG_IMAGE_GENERATOR=FLUX_2_DEV
+//   PVG_IMAGE_GENERATOR=FLUX_2_PRO
 // A specific Replicate model may still be forced with PVG_IMAGE_MODEL.
 //
 // This module shares no state, no client and no configuration with the
@@ -51,17 +51,6 @@ const ENGINES: Record<string, EngineDefinition> = {
       safety_tolerance: 2,
     }),
   },
-  FLUX_2_DEV: {
-    key: "flux2_dev",
-    model: "black-forest-labs/flux-2-dev",
-    buildInput: ({ prompt, referenceUrls }) => ({
-      prompt,
-      image_input: referenceUrls,
-      aspect_ratio: "16:9",
-      output_format: "jpg",
-      num_outputs: 1,
-    }),
-  },
 };
 
 function engine(): EngineDefinition {
@@ -75,7 +64,6 @@ function engine(): EngineDefinition {
 const ENGINE_BY_ADMIN_KEY: Record<string, string> = {
   flux2_max: "FLUX_2_MAX",
   flux2_pro: "FLUX_2_PRO",
-  flux2_dev: "FLUX_2_DEV",
 };
 
 /** Prefix of a render that runs at Runware instead of Replicate. */
