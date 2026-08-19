@@ -523,11 +523,6 @@ export const removePvgPerson = createServerFn({ method: "POST" })
   });
 
 /**
- * Starts one starting-scene creation. The project is checked again here, the
- * single payment is taken on the first creation, and the render then runs in
- * the background so the page is free again immediately.
- */
-/**
  * Buys one package of three starting-scene attempts for a single credit. The
  * wallet and the order are locked inside the database, so a double click, a
  * refresh or a repeated request can never take a second credit, and a package
@@ -562,6 +557,11 @@ export const buyPvgScenePack = createServerFn({ method: "POST" })
     };
   });
 
+/**
+ * Starts one starting-scene creation. It uses one attempt of the package the
+ * customer already paid for; the render then runs in the background so the
+ * page is free again immediately.
+ */
 export const generatePvgScene = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { projectId: string }) => input)
