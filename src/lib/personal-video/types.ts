@@ -108,6 +108,8 @@ export interface PvgProject {
   generationsUsed: number;
   generationsLimit: number;
   creditsCharged: number;
+  /** Paid packages of three starting-scene attempts bought for this order. */
+  scenePacks: number;
   selectedSceneId: string | null;
   updatedAt: string;
   createdAt: string;
