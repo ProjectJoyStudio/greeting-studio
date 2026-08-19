@@ -6,7 +6,7 @@
 //   image_generator = FLUX_2_MAX   (current setting, best identity keeping)
 //
 // Override with the environment variable PVG_IMAGE_GENERATOR, for example:
-//   PVG_IMAGE_GENERATOR=FLUX_2_DEV
+//   PVG_IMAGE_GENERATOR=FLUX_2_PRO
 // A specific Replicate model may still be forced with PVG_IMAGE_MODEL.
 //
 // This module shares no state, no client and no configuration with the
