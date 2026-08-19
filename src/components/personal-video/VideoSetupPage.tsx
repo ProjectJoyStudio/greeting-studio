@@ -221,7 +221,18 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
       <PageHeader title={t("pvs_title")} subtitle={t("pvs_sub")} />
 
       <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
-        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
+        {readOnly && (
+          <>
+            <span className="text-xs text-destructive">{t("pvo_readonly")}</span>
+            <button
+              type="button"
+              onClick={takeOver}
+              className="rounded-full border border-border/60 px-3 py-1 text-xs font-semibold transition hover:border-primary/60"
+            >
+              {t("pvo_takeover")}
+            </button>
+          </>
+        )}
         <SaveIndicator state={saveState} onRetry={persist} />
       </div>
 
