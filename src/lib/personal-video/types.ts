@@ -17,6 +17,24 @@ export const PVG_MAX_GENERATIONS = 5;
 /** Cost of one additional starting scene beyond the included ones. */
 export const PVG_EXTRA_SCENE_CREDITS = 1;
 
+/** One paid package of starting-scene attempts unlocks three generations. */
+export const PVG_SCENE_ATTEMPTS_PER_PACK = 3;
+/** Price of one package of starting-scene attempts, in credits. */
+export const PVG_SCENE_PACK_CREDITS = 1;
+
+export interface PvgSceneAttempts {
+  used: number;
+  packs: number;
+  allowed: number;
+  remaining: number;
+}
+
+/** How many starting-scene attempts of the current package are still left. */
+export function pvgSceneAttempts(used: number, packs: number): PvgSceneAttempts {
+  const allowed = Math.max(0, packs) * PVG_SCENE_ATTEMPTS_PER_PACK;
+  return { used, packs, allowed, remaining: Math.max(0, allowed - used) };
+}
+
 /**
  * Included starting scenes: one more than the number of people, never more
  * than five.
