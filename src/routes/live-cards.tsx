@@ -162,7 +162,18 @@ function LiveCardsPage() {
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
   useEffect(() => {
-    if (restored || !recent.data?.length) return;
+    if (restored || !sessionId || recent.isLoading) return;
+
+    if (!recent.data?.length) {
+      // No picture yet — the description typed before the reload returns.
+      const draft = readLocalDraft(sessionId);
+      if (draft) {
+        if (draft.prompt) setPrompt(draft.prompt);
+        if ((LIVE_CARD_RATIOS as readonly string[]).includes(draft.ratio)) setRatio(draft.ratio);
+      }
+      setRestored(true);
+      return;
+    }
     const chosen = recent.data.find((card) => card.selected) ?? recent.data[0];
     setCurrent(chosen);
     setSelectedId(chosen.selected ? chosen.id : null);
@@ -172,7 +183,17 @@ function LiveCardsPage() {
       setRatio(chosen.aspectRatio as LiveCardRatio);
     }
     setRestored(true);
-  }, [recent.data, restored]);
+  }, [recent.data, recent.isLoading, restored, sessionId]);
+
+  // Whatever is being typed stays available after a reload of the page.
+  useEffect(() => {
+    if (!sessionId || !restored) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ sessionId, prompt, ratio }));
+    } catch {
+      /* nothing to store */
+    }
+  }, [sessionId, restored, prompt, ratio]);
 
   async function runGenerate() {
     if (prompt.trim().length < 3) return;
