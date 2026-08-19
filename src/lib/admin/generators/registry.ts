@@ -211,7 +211,6 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         candidates: [
           REPLICATE("flux2_max", "black-forest-labs/flux-2-max"),
           REPLICATE("flux2_pro", "black-forest-labs/flux-2-pro"),
-          REPLICATE("flux2_dev", "black-forest-labs/flux-2-dev"),
           ...RUNWARE_SCENE_IMAGES,
         ],
         defaultPrimary: "flux2_max",
