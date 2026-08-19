@@ -245,7 +245,10 @@ export async function renderFinalVideo(
   await audio?.stop();
   onProgress?.(1);
 
-  const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
+  // Some browsers accept an MP4 request but write a WebM file. The real type
+  // of the recording decides the name, so the stored file is never mislabelled.
+  const actualMime = recorder.mimeType || blob.type || mime;
+  const extension = actualMime.startsWith("video/mp4") ? "mp4" : "webm";
   let verified = true;
   let duplicate = false;
   if (finalText.trim()) {
@@ -256,7 +259,7 @@ export async function renderFinalVideo(
   video.pause();
   video.removeAttribute("src");
   video.load();
-  return { blob, mime, extension, verified, duplicate };
+  return { blob, mime: actualMime, extension, verified, duplicate };
 }
 
 /**
