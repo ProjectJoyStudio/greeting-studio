@@ -69,7 +69,7 @@ export type LiveImageRender = {
 };
 
 /** Engines the administrator may pick for the Live Cards starting picture. */
-const MODEL_BY_KEY: Record<string, string> = {
+export const MODEL_BY_KEY: Record<string, string> = {
   flux_schnell: "black-forest-labs/flux-schnell",
   flux_ultra: "black-forest-labs/flux-1.1-pro-ultra",
   flux_1_1_pro: "black-forest-labs/flux-1.1-pro",
@@ -93,16 +93,21 @@ async function adminPrimaryModel(): Promise<string> {
   throw new LiveImageError("api_error", "No start-image generator is configured right now.");
 }
 
-/** Renders one picture with the low-cost primary engine of this section. */
+/**
+ * Renders one picture with a Replicate engine of this section. The model may
+ * be given directly by the routing layer; without it the engine selected in
+ * Admin → Generators is used.
+ */
 export async function renderPrimaryImage(
   prompt: string,
   aspectRatio: string,
+  explicitModel?: string,
 ): Promise<LiveImageRender> {
   const token = process.env.LIVE_CARDS_IMAGE_API_TOKEN || process.env.REPLICATE_API_TOKEN;
   if (!token) {
     throw new LiveImageError("missing_token", "The Live Cards image service is not configured.");
   }
-  const model = await adminPrimaryModel();
+  const model = explicitModel ?? (await adminPrimaryModel());
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   const startedAt = Date.now();
 
@@ -132,16 +137,43 @@ export async function renderPrimaryImage(
 
   let prediction = (await createRes.json()) as Prediction;
   const timeout = renderTimeoutMs();
+  // A single unhappy poll is never treated as a failed render: the picture is
+  // already being made and the provider's status endpoint is occasionally
+  // unavailable. Only a persistent problem, or a credential/billing problem,
+  // ends the attempt.
+  let pollFailures = 0;
   while (prediction.status === "starting" || prediction.status === "processing") {
     if (Date.now() - startedAt > timeout) {
       logError("primary_timeout", { model, predictionId: prediction.id ?? null });
       throw new LiveImageError("timeout", "The picture took too long to render.");
     }
-    await new Promise((r) => setTimeout(r, pollIntervalMs()));
-    const pollRes = await fetch(`${API_BASE}/predictions/${prediction.id}`, { headers });
+    await new Promise((r) => setTimeout(r, pollIntervalMs() * Math.min(1 + pollFailures, 5)));
+
+    let pollRes: Response;
+    try {
+      pollRes = await fetch(`${API_BASE}/predictions/${prediction.id}`, { headers });
+    } catch (err) {
+      pollFailures += 1;
+      logWarn("primary_poll_retry", {
+        model,
+        attempt: pollFailures,
+        error: err instanceof Error ? err.message : "network error",
+      });
+      if (pollFailures >= MAX_POLL_FAILURES) {
+        throw new LiveImageError("api_error", "The picture service could not be reached.");
+      }
+      continue;
+    }
+
     if (!pollRes.ok) {
       const body = await pollRes.text().catch(() => "");
       const code = codeForStatus(pollRes.status);
+      const recoverable = pollRes.status === 429 || pollRes.status >= 500;
+      if (recoverable) {
+        pollFailures += 1;
+        logWarn("primary_poll_retry", { model, status: pollRes.status, attempt: pollFailures });
+        if (pollFailures < MAX_POLL_FAILURES) continue;
+      }
       logError("primary_poll_failed", { model, status: pollRes.status, code });
       throw new LiveImageError(
         code,
@@ -149,6 +181,8 @@ export async function renderPrimaryImage(
         pollRes.status,
       );
     }
+
+    pollFailures = 0;
     prediction = (await pollRes.json()) as Prediction;
   }
 
