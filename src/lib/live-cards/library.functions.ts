@@ -367,6 +367,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
     greetingMode?: string;
     keywords?: string[];
     textDesign?: unknown;
+    music?: unknown;
   }) => {
     const animationId = String(input?.animationId ?? "");
     if (!animationId) throw new Error("animation_required");
@@ -380,6 +381,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
         .filter(Boolean)
         .slice(0, 20),
       textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
+      music: normalizeLiveCardMusic(input?.music),
     };
   })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
@@ -391,6 +393,7 @@ export const saveLiveGreetingText = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode,
         greeting_keywords: data.keywords,
         text_design: data.textDesign as never,
+        music_settings: data.music as never,
         text_saved_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)
