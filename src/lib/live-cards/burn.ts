@@ -81,6 +81,56 @@ function seek(video: HTMLVideoElement, time: number): Promise<void> {
 }
 
 export interface RenderResult {
+/** Loads the music and feeds it into the recording at the chosen level. */
+async function prepareMusic(
+  music: BurnMusic,
+  seconds: number,
+  stream: MediaStream,
+): Promise<{ context: AudioContext; source: AudioBufferSourceNode; stop: () => Promise<void> }> {
+  const response = await fetch(music.url);
+  const bytes = await response.arrayBuffer();
+  const context = new AudioContext();
+  if (context.state === "suspended") await context.resume();
+  const buffer = await context.decodeAudioData(bytes);
+
+  const length = seconds > 0 ? seconds : buffer.duration;
+  const level = Math.max(0.0001, Math.min(1, music.volume));
+  const fadeIn = Math.min(music.fadeInSeconds, length / 4);
+  const fadeOut = Math.min(music.fadeOutSeconds, length / 4);
+
+  const gain = context.createGain();
+  const now = context.currentTime;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(level, now + Math.max(0.05, fadeIn));
+  gain.gain.setValueAtTime(level, now + Math.max(fadeIn, length - fadeOut));
+  gain.gain.linearRampToValueAtTime(0.0001, now + length);
+
+  const destination = context.createMediaStreamDestination();
+  gain.connect(destination);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.loop = music.loop && buffer.duration < length;
+  source.connect(gain);
+  source.stop(now + length);
+
+  for (const track of destination.stream.getAudioTracks()) stream.addTrack(track);
+
+  return {
+    context,
+    source,
+    stop: async () => {
+      try {
+        source.stop();
+      } catch {
+        /* already finished */
+      }
+      for (const track of destination.stream.getAudioTracks()) track.stop();
+      await context.close().catch(() => undefined);
+    },
+  };
+}
+
+export interface RenderResult {
   blob: Blob;
   mime: string;
   extension: string;
