@@ -633,6 +633,9 @@ export function VoicePanel({
       audioRef.current?.pause();
       setPlaying(false);
       setVoiceover(made);
+      // The sound page reads the same saved greeting: it must learn about the
+      // fresh recording at once, otherwise its check plays music only.
+      queryClient.setQueryData(["pvg", "voice", projectId], { voiceover: made });
       toast.success(t("pvv_success"));
     } catch (error) {
       toast.error(t(voiceFailureKey(error)));
