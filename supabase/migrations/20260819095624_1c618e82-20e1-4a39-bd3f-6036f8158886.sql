@@ -1,0 +1,1 @@
+UPDATE public.pvg_projects SET generations_used = 3 WHERE id = '47f29f4d-6f79-4770-b775-590c27cdc7e7';

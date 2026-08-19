@@ -16,11 +16,11 @@ import {
 } from "./pvg.server";
 import { NO_TEXT_INSTRUCTION, wantsVisibleText } from "./generator/text-policy";
 import {
-  PVG_EXTRA_SCENE_CREDITS,
   PVG_MAX_ADDED_PEOPLE,
+  PVG_SCENE_PACK_CREDITS,
   addedPeople,
   pvgIncludedGenerations,
-  pvgPriceCredits,
+  pvgSceneAttempts,
   validatePvgProject,
 } from "./types";
 import type { PvgProject } from "./types";
@@ -523,9 +523,44 @@ export const removePvgPerson = createServerFn({ method: "POST" })
   });
 
 /**
- * Starts one starting-scene creation. The project is checked again here, the
- * single payment is taken on the first creation, and the render then runs in
- * the background so the page is free again immediately.
+ * Buys one package of three starting-scene attempts for a single credit. The
+ * wallet and the order are locked inside the database, so a double click, a
+ * refresh or a repeated request can never take a second credit, and a package
+ * that still holds unused attempts is never paid for twice.
+ */
+export const buyPvgScenePack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc("buy_pvg_scene_pack", {
+      _user_id: userId,
+      _project_id: data.projectId,
+      _price: PVG_SCENE_PACK_CREDITS,
+    });
+    const payload = (result ?? {}) as { ok?: boolean; error?: string; balance?: number };
+    const project = await loadProject(supabase, data.projectId);
+    if (error || !payload.ok) {
+      return {
+        ok: false as const,
+        issues: [{ field: "credits", key: "pvg_err_credits" }],
+        project,
+        balance: payload.balance ?? (await walletBalance(supabase, userId)),
+      };
+    }
+    return {
+      ok: true as const,
+      issues: [] as { field: string; key: string }[],
+      project,
+      balance: payload.balance ?? (await walletBalance(supabase, userId)),
+    };
+  });
+
+/**
+ * Starts one starting-scene creation. It uses one attempt of the package the
+ * customer already paid for; the render then runs in the background so the
+ * page is free again immediately.
  */
 export const generatePvgScene = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -546,8 +581,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
     const added = addedPeople(project.people);
     const included = pvgIncludedGenerations(added.length);
 
-    // One request at a time: repeated clicks never start a second render and
-    // never take a second credit.
+    // One request at a time: repeated clicks never start a second render.
     if (project.scenes.some((s) => s.status === "pending" || s.status === "processing")) {
       return {
         ok: true as const,
@@ -557,70 +591,16 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       };
     }
 
-    // Beyond the included scenes every further scene costs exactly one credit.
-    const isExtra = used >= included;
-    // The one-off order price is taken only with the very first scene of the
-    // project — reopening or refreshing the page never charges it again.
-    const packagePrice = project.creditsCharged > 0 ? 0 : pvgPriceCredits(added.length);
-    const extraPrice = isExtra ? PVG_EXTRA_SCENE_CREDITS : 0;
-    const price = packagePrice + extraPrice;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // How many credits were really taken — the refund below returns exactly this.
-    let chargedAmount = 0;
-    if (price > 0) {
-      const { data: wallet } = await supabaseAdmin
-        .from("credit_wallets")
-        .select("id, balance, lifetime_spent")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-      if (!w || w.balance < price) {
-        return {
-          ok: false as const,
-          issues: [{ field: "credits", key: "pvg_err_credits" }],
-          project,
-          balance: w?.balance ?? 0,
-        };
-      }
-      const charge = price;
-      {
-        // Conditional write: a second click cannot take the same credit twice,
-        // because the row must still hold the balance we just read.
-        const { data: charged } = await supabaseAdmin
-          .from("credit_wallets")
-          .update({ balance: w.balance - charge, lifetime_spent: w.lifetime_spent + charge })
-          .eq("id", w.id)
-          .eq("balance", w.balance)
-          .select("id")
-          .maybeSingle();
-        if (!charged) {
-          return {
-            ok: false as const,
-            issues: [{ field: "credits", key: "pvg_err_credits" }],
-            project,
-            balance: await walletBalance(supabase, userId),
-          };
-        }
-        {
-          chargedAmount = charge;
-          await supabaseAdmin.from("credit_transactions").insert({
-            wallet_id: w.id,
-            user_id: userId,
-            txn_type: "order_charge",
-            amount: -charge,
-            balance_after: w.balance - charge,
-            description: isExtra
-              ? "Personal video greeting — one additional starting scene"
-              : "Personal video greeting — starting scene package",
-            metadata: { project_id: project.id, people: added.length, extra_scene: isExtra },
-          });
-          await supabase
-            .from("pvg_projects")
-            .update({ credits_charged: project.creditsCharged + charge })
-            .eq("id", project.id);
-        }
-      }
+    // Attempts are bought in packages of three. Nothing is charged here, so a
+    // refresh, a retry or a double click can never take a credit twice.
+    const attempts = pvgSceneAttempts(used, project.scenePacks);
+    if (attempts.remaining <= 0) {
+      return {
+        ok: false as const,
+        issues: [{ field: "generations", key: "pvg_attempts_empty" }],
+        project,
+        balance,
+      };
     }
 
     // The stored index stays unique per project, also across failed attempts.
@@ -695,36 +675,6 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .eq("id", (sceneRow as SceneRow).id);
       // A technical failure uses up neither an included nor a paid scene.
       await syncGenerationsUsed(supabase, project.id, used);
-      if (chargedAmount > 0) {
-        const { data: wallet } = await supabaseAdmin
-          .from("credit_wallets")
-          .select("id, balance, lifetime_spent")
-          .eq("user_id", userId)
-          .maybeSingle();
-        const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-        if (w) {
-          await supabaseAdmin
-            .from("credit_wallets")
-            .update({
-              balance: w.balance + chargedAmount,
-              lifetime_spent: Math.max(0, w.lifetime_spent - chargedAmount),
-            })
-            .eq("id", w.id);
-          await supabaseAdmin.from("credit_transactions").insert({
-            wallet_id: w.id,
-            user_id: userId,
-            txn_type: "refund",
-            amount: chargedAmount,
-            balance_after: w.balance + chargedAmount,
-            description: "Personal video greeting — refund for a failed starting scene",
-            metadata: { project_id: project.id, scene_id: (sceneRow as SceneRow).id },
-          });
-          await supabase
-            .from("pvg_projects")
-            .update({ credits_charged: Math.max(0, project.creditsCharged) })
-            .eq("id", project.id);
-        }
-      }
     }
 
     const refreshed = await loadProject(supabase, project.id);

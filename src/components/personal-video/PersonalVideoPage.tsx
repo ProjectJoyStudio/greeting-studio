@@ -23,6 +23,7 @@ import { creditWord } from "@/lib/credits/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   addPvgPersonPhoto,
+  buyPvgScenePack,
   generatePvgScene,
   openPvgProject,
   refreshPvgProject,
@@ -40,9 +41,11 @@ import { SaveIndicator } from "@/components/personal-video/SaveIndicator";
 import type { SaveState } from "@/lib/personal-video/order";
 import {
   PVG_MAX_ADDED_PEOPLE,
+  PVG_SCENE_ATTEMPTS_PER_PACK,
+  PVG_SCENE_PACK_CREDITS,
   addedPeople,
   pvgIncludedGenerations,
-  pvgPriceCredits,
+  pvgSceneAttempts,
   validatePvgProject,
   type PvgIssueField,
   type PvgProject,
@@ -62,6 +65,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   const rename = useServerFn(renamePvgPerson);
   const removePerson = useServerFn(removePvgPerson);
   const generate = useServerFn(generatePvgScene);
+  const buyPack = useServerFn(buyPvgScenePack);
   const refresh = useServerFn(refreshPvgProject);
   const chooseScene = useServerFn(selectPvgScene);
   const claim = useServerFn(claimPvgEditSession);
@@ -190,8 +194,15 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
 
   const issues = useMemo(() => {
     if (!project) return [];
+    const used = project.scenes.filter((sc) => sc.status !== "failed").length;
     return validatePvgProject(
-      { ...project, recipientName, occasion, sceneDescription: description },
+      {
+        ...project,
+        recipientName,
+        occasion,
+        sceneDescription: description,
+        generationsUsed: used,
+      },
       balance,
     );
   }, [project, recipientName, occasion, description, balance]);
@@ -204,8 +215,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   /** The one specially added person of this order, if the customer added one. */
   const main = useMemo(() => addedPeople(project?.people ?? [])[0] ?? null, [project]);
   const addedCount = main ? 1 : 0;
-  const price = pvgPriceCredits(addedCount || 1);
-  const canGenerate = Boolean(project) && issues.length === 0 && busy === null && !hasRunning;
+  const price = PVG_SCENE_PACK_CREDITS;
+  const blocking = issues.filter((i) => i.field !== "generations" && i.field !== "credits");
+  const canGenerate = Boolean(project) && blocking.length === 0 && busy === null && !hasRunning;
 
   // A gentle, short note whenever one more included scene becomes available.
   const includedRef = useRef<number | null>(null);
@@ -220,8 +232,9 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // --- preview selection ---------------------------------------------------
   /** Technical failures never count against the five generations. */
   const usedCount = (project?.scenes ?? []).filter((s) => s.status !== "failed").length;
-  const includedCount = pvgIncludedGenerations(addedCount);
-  const generationsLeft = includedCount - usedCount;
+  // Attempts are sold in packages of three; one credit unlocks one package.
+  const attempts = pvgSceneAttempts(usedCount, project?.scenePacks ?? 0);
+  const generationsLeft = attempts.remaining;
   const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
     const scenes = project?.scenes ?? [];
@@ -314,6 +327,26 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       extraFor.current = null;
       setBusy(null);
       if (extraInput.current) extraInput.current.value = "";
+    }
+  }
+
+  /** Pays one credit for three more starting-scene attempts, never twice. */
+  async function runBuyPack() {
+    if (!project || busy !== null) return;
+    setBusy("pack");
+    try {
+      const res = await buyPack({ data: { projectId: project.id } });
+      if (res.project) setProject(res.project);
+      if (typeof res.balance === "number") {
+        setBalance(res.balance);
+        pushBalance(res.balance);
+      }
+      if (!res.ok) toast.error(t("pvg_err_credits"));
+      else toast.success(t("pvg_attempts_bought"));
+    } catch {
+      toast.error(t("pvg_scene_failed"));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -658,7 +691,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {t("pvg_price")}
               </span>
               <span className="font-display text-2xl">
-                {project?.creditsCharged || price}{" "}
+                {price}{" "}
                 <span className="text-sm text-muted-foreground">{t("pvg_credits_word")}</span>
               </span>
             </div>
@@ -671,7 +704,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
 
             <button
               type="button"
-              disabled={!canGenerate}
+              disabled={busy !== null || hasRunning || (!needsExtraCredit && !canGenerate)}
               onClick={() => (needsExtraCredit ? setConfirmExtra(true) : void runGenerate())}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -680,25 +713,27 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
               ) : (
                 <Wand2 className="h-4 w-4" />
               )}
-              {busy === "generate" || hasRunning
+              {busy === "generate" || busy === "pack" || hasRunning
                 ? t("pvg_generating")
                 : needsExtraCredit
-                  ? t("pvg_extra_scene")
+                  ? t("pvg_attempts_buy")
                   : usedCount > 0
                     ? t("pvg_another_scene")
                     : t("pvg_generate")}
             </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {t("pvg_included_label")}: {includedCount}
-            </p>
-            <p className="mt-0.5 text-center text-xs text-muted-foreground">
-              {t("pvg_used_label")}: {usedCount} {t("pvg_of")} {includedCount}
-            </p>
-            {needsExtraCredit && (
-              <p className="mt-1 text-center text-xs text-muted-foreground">
-                {t("pvg_extra_note")}
+            {needsExtraCredit ? (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {t("pvg_attempts_empty")}
+              </p>
+            ) : (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {t("pvg_attempts_left")}: {generationsLeft} {t("pvg_of")}{" "}
+                {PVG_SCENE_ATTEMPTS_PER_PACK}
               </p>
             )}
+            <p className="mt-0.5 text-center text-xs text-muted-foreground">
+              {t("pvg_attempts_pack_note")}
+            </p>
           </div>
 
           {(project?.scenes.length ?? 0) > 0 && (
@@ -875,7 +910,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-6 shadow-warm"
           >
-            <p className="text-sm leading-relaxed">{t("pvg_extra_confirm")}</p>
+            <p className="text-sm leading-relaxed">{t("pvg_attempts_confirm")}</p>
             <div className="mt-5 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
@@ -888,11 +923,11 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 type="button"
                 onClick={() => {
                   setConfirmExtra(false);
-                  void runGenerate();
+                  void runBuyPack();
                 }}
                 className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
               >
-                {t("pvg_extra_scene")}
+                {t("pvg_attempts_buy")}
               </button>
             </div>
           </div>

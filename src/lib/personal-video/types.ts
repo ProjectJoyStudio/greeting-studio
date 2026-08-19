@@ -17,6 +17,24 @@ export const PVG_MAX_GENERATIONS = 5;
 /** Cost of one additional starting scene beyond the included ones. */
 export const PVG_EXTRA_SCENE_CREDITS = 1;
 
+/** One paid package of starting-scene attempts unlocks three generations. */
+export const PVG_SCENE_ATTEMPTS_PER_PACK = 3;
+/** Price of one package of starting-scene attempts, in credits. */
+export const PVG_SCENE_PACK_CREDITS = 1;
+
+export interface PvgSceneAttempts {
+  used: number;
+  packs: number;
+  allowed: number;
+  remaining: number;
+}
+
+/** How many starting-scene attempts of the current package are still left. */
+export function pvgSceneAttempts(used: number, packs: number): PvgSceneAttempts {
+  const allowed = Math.max(0, packs) * PVG_SCENE_ATTEMPTS_PER_PACK;
+  return { used, packs, allowed, remaining: Math.max(0, allowed - used) };
+}
+
 /**
  * Included starting scenes: one more than the number of people, never more
  * than five.
@@ -90,6 +108,8 @@ export interface PvgProject {
   generationsUsed: number;
   generationsLimit: number;
   creditsCharged: number;
+  /** Paid packages of three starting-scene attempts bought for this order. */
+  scenePacks: number;
   selectedSceneId: string | null;
   updatedAt: string;
   createdAt: string;
@@ -152,6 +172,7 @@ export function validatePvgProject(
     generationsUsed: number;
     generationsLimit: number;
     creditsCharged: number;
+    scenePacks?: number;
     people: {
       name: string;
       photoUrl: string | null;
@@ -181,13 +202,14 @@ export function validatePvgProject(
   if (people.some((p) => p.photoUrl && p.faceQuality === "low")) {
     issues.push({ field: "people", key: "pvg_err_people_quality" });
   }
-  const included = pvgIncludedGenerations(people.length);
-  const needsExtra = project.generationsUsed >= included;
-  const price =
-    (project.creditsCharged === 0 ? pvgPriceCredits(people.length) : 0) +
-    (needsExtra ? PVG_EXTRA_SCENE_CREDITS : 0);
-  if (price > 0 && balance < price) {
-    issues.push({ field: "credits", key: "pvg_err_credits" });
+  // Starting scenes are paid for in packages of three. A generation itself is
+  // free while the current package still holds an attempt.
+  const attempts = pvgSceneAttempts(project.generationsUsed, project.scenePacks ?? 0);
+  if (attempts.remaining <= 0) {
+    issues.push({ field: "generations", key: "pvg_attempts_empty" });
+    if (balance < PVG_SCENE_PACK_CREDITS) {
+      issues.push({ field: "credits", key: "pvg_err_credits" });
+    }
   }
   return issues;
 }
