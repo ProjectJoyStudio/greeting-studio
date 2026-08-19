@@ -149,6 +149,13 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   }, [recipientName, occasion, description, project, readOnly, save]);
 
   // One writer at a time, so two devices never overwrite each other.
+  const takeOver = () => {
+    if (!project) return;
+    void claim({ data: { projectId: project.id, sessionId: sessionId.current, takeOver: true } })
+      .then((res) => setReadOnly(!res.editable))
+      .catch(() => undefined);
+  };
+
   useEffect(() => {
     if (!project) return;
     let stop = false;
@@ -346,7 +353,18 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
       <PageHeader title={t("pvg_title")} subtitle={t("pvg_sub")} />
 
       <div className="mx-auto flex w-full max-w-7xl items-center justify-end gap-3 px-4 lg:px-6">
-        {readOnly && <span className="text-xs text-destructive">{t("pvo_readonly")}</span>}
+        {readOnly && (
+          <>
+            <span className="text-xs text-destructive">{t("pvo_readonly")}</span>
+            <button
+              type="button"
+              onClick={takeOver}
+              className="rounded-full border border-border/60 px-3 py-1 text-xs font-semibold transition hover:border-primary/60"
+            >
+              {t("pvo_takeover")}
+            </button>
+          </>
+        )}
         <SaveIndicator state={saveState} />
       </div>
 
