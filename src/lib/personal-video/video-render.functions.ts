@@ -441,6 +441,94 @@ export const selectPvgVideoVariant = createServerFn({ method: "POST" })
   });
 
 /**
+ * Everything the page needs to write the finished sound into the film: the
+ * original speech-only film, and a place to put the mixed result. The mix is
+ * always built from the untouched original, never from an earlier mix.
+ */
+export const preparePvgVideoMix = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { projectId: string; videoId: string }) => input)
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      sourceUrl: string | null;
+      bucket: string | null;
+      path: string | null;
+      token: string | null;
+    }> => {
+      const { supabase, userId } = context;
+      const { data: row } = await supabase
+        .from("pvg_videos")
+        .select("id, project_id, user_id, status, storage_bucket, storage_path")
+        .eq("id", data.videoId)
+        .maybeSingle();
+      const video = row as {
+        id: string;
+        project_id: string;
+        user_id: string;
+        status: string;
+        storage_bucket: string | null;
+        storage_path: string | null;
+      } | null;
+      if (!video || video.user_id !== userId || video.project_id !== data.projectId) {
+        throw new Error("video_not_found");
+      }
+      if (video.status !== "ready" || !video.storage_bucket || !video.storage_path) {
+        return { ok: false, sourceUrl: null, bucket: null, path: null, token: null };
+      }
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { pvgSignedUrlTtl } = await import("./env.server");
+      const source = await supabaseAdmin.storage
+        .from(video.storage_bucket)
+        .createSignedUrl(video.storage_path, pvgSignedUrlTtl());
+      const path = `${userId}/${video.project_id}/mix-${video.id}.mp4`;
+      // A new mix always replaces the previous one for this film.
+      await supabaseAdmin.storage.from(video.storage_bucket).remove([path]);
+      const upload = await supabaseAdmin.storage
+        .from(video.storage_bucket)
+        .createSignedUploadUrl(path);
+      if (upload.error || !source.data?.signedUrl) {
+        return { ok: false, sourceUrl: null, bucket: null, path: null, token: null };
+      }
+      return {
+        ok: true,
+        sourceUrl: source.data.signedUrl,
+        bucket: video.storage_bucket,
+        path,
+        token: upload.data.token,
+      };
+    },
+  );
+
+/** Records the mixed film as the one the page and the download must use. */
+export const attachPvgVideoMix = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { projectId: string; videoId: string; path: string; signature: string }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("pvg_videos")
+      .select("id, project_id, user_id")
+      .eq("id", data.videoId)
+      .maybeSingle();
+    const video = row as { id: string; project_id: string; user_id: string } | null;
+    if (!video || video.user_id !== userId || video.project_id !== data.projectId) {
+      throw new Error("video_not_found");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("pvg_videos")
+      .update({ mix_storage_path: data.path, mix_signature: data.signature } as never)
+      .eq("id", video.id);
+    return { mixed: true as const };
+  });
+
+/**
  * The customer has taken the film home — downloaded it or handed it to the
  * device's own sharing. The film stays safely stored; it simply leaves the
  * active page. Nothing is deleted and no credit is touched.

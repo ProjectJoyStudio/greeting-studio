@@ -9,7 +9,7 @@
 import type { PvgVideoJob, PvgVideoStatus } from "./video-render";
 
 export const VIDEO_COLUMNS =
-  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at";
+  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at, mix_storage_path, mix_signature";
 
 export interface VideoRow {
   id: string;
@@ -40,6 +40,9 @@ export interface VideoRow {
   speaker_person_id?: string | null;
   /** Set once the customer downloaded or shared this film. */
   delivered_at?: string | null;
+  /** The very same film, but with the chosen music already inside it. */
+  mix_storage_path?: string | null;
+  mix_signature?: string | null;
 }
 
 export function pvgVideoBucket(): string {
@@ -60,9 +63,12 @@ export async function toVideoJob(row: VideoRow): Promise<PvgVideoJob> {
   if (status === "ready" && row.storage_bucket && row.storage_path) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { pvgSignedUrlTtl } = await import("./env.server");
+    // The mixed film — voice and music together — is the authoritative asset
+    // as soon as it exists; the page and the download both play this one.
+    const path = row.mix_storage_path ?? row.storage_path;
     const signed = await supabaseAdmin.storage
       .from(row.storage_bucket)
-      .createSignedUrl(row.storage_path, pvgSignedUrlTtl());
+      .createSignedUrl(path, pvgSignedUrlTtl());
     videoUrl = signed.data?.signedUrl ?? null;
   }
   return {
@@ -78,6 +84,7 @@ export async function toVideoJob(row: VideoRow): Promise<PvgVideoJob> {
     variantIndex: row.variant_index ?? 1,
     isSelected: Boolean(row.is_selected),
     actionDescription: row.action_description ?? "",
+    mixSignature: row.mix_storage_path ? (row.mix_signature ?? null) : null,
     tech: {
       generator: row.video_generator_key ?? row.generator_key ?? null,
       model: row.video_generator_model ?? row.generator_model ?? null,

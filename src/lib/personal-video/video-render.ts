@@ -33,6 +33,11 @@ export interface PvgVideoJob {
   isSelected: boolean;
   /** The "what happens in the video?" words this variant was made from. */
   actionDescription: string;
+  /**
+   * Fingerprint of the music and volumes already mixed into this very file.
+   * Empty when the film still carries only the greeting voice.
+   */
+  mixSignature: string | null;
   /** Only for administrators and technical testing. */
   tech: PvgVideoTech;
 }

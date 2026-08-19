@@ -2,6 +2,8 @@ import type { Dict, Lang } from "../types";
 
 export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
   en: {
+    pvr_mixing_music: "Adding your music to the film…",
+    pvr_mix_failed: "The music could not be added to the file. The video contains the greeting voice only.",
     pvr_sounds_title: "Scene sounds",
     pvr_sounds_hint:
       "The quiet life of the picture: wind, water, a room, a street. Never speech, singing or music.",
@@ -49,6 +51,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_err_generic: "The film could not be started. Please try again.",
   },
   ru: {
+    pvr_mixing_music: "Добавляем вашу музыку в фильм…",
+    pvr_mix_failed: "Музыку не удалось встроить в файл. В видео есть только голос поздравления.",
     pvr_sounds_title: "Звуки сцены",
     pvr_sounds_hint:
       "Тихая жизнь кадра: ветер, вода, комната, улица. Никакой речи, пения и музыки.",
@@ -96,6 +100,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_err_generic: "Не удалось начать создание видео. Попробуйте ещё раз.",
   },
   de: {
+    pvr_mixing_music: "Ihre Musik wird in den Film eingefügt…",
+    pvr_mix_failed: "Die Musik konnte nicht in die Datei eingefügt werden. Das Video enthält nur die Grußstimme.",
     pvr_sounds_title: "Szenengeräusche",
     pvr_sounds_hint:
       "Das leise Leben des Bildes: Wind, Wasser, ein Raum, eine Straße. Keine Sprache, kein Gesang, keine Musik.",
@@ -144,6 +150,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_err_generic: "Der Film konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
   },
   uk: {
+    pvr_mixing_music: "Додаємо вашу музику у фільм…",
+    pvr_mix_failed: "Музику не вдалося вбудувати у файл. У відео лише голос привітання.",
     pvr_sounds_title: "Звуки сцени",
     pvr_sounds_hint:
       "Тихе життя кадру: вітер, вода, кімната, вулиця. Жодної мови, співу чи музики.",
@@ -191,6 +199,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_err_generic: "Не вдалося розпочати створення відео. Спробуйте ще раз.",
   },
   fr: {
+    pvr_mixing_music: "Ajout de votre musique au film…",
+    pvr_mix_failed: "La musique n’a pas pu être intégrée au fichier. La vidéo ne contient que la voix.",
     pvr_sounds_title: "Sons de la scène",
     pvr_sounds_hint:
       "La vie discrète de l'image : le vent, l'eau, une pièce, une rue. Jamais de parole, de chant ni de musique.",
@@ -239,6 +249,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_err_generic: "Le film n'a pas pu démarrer. Veuillez réessayer.",
   },
   pl: {
+    pvr_mixing_music: "Dodajemy Twoją muzykę do filmu…",
+    pvr_mix_failed: "Nie udało się wbudować muzyki w plik. Wideo zawiera tylko głos życzeń.",
     pvr_sounds_title: "Dźwięki sceny",
     pvr_sounds_hint:
       "Ciche życie obrazu: wiatr, woda, pokój, ulica. Nigdy mowa, śpiew ani muzyka.",
