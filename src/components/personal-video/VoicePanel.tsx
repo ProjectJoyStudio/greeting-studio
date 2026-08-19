@@ -214,6 +214,7 @@ export function VoicePanel({
     queryKey: ["pvg", "voice", projectId],
     queryFn: () => load({ data: { projectId } }),
   });
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const found = saved.data?.voiceover ?? null;
