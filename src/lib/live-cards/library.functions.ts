@@ -5,10 +5,11 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeTextDesign } from "@/lib/greeting-card/types";
+import { normalizeLiveCardMusic } from "./types";
 import type { LiveGreetingRecord } from "./types";
 
 const COLUMNS =
-  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, error_code, greeting_text, greeting_mode, greeting_keywords, text_design, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
+  "id, status, title, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, final_bucket, final_path, final_mime, final_has_text, finalized_at, error_code, greeting_text, greeting_mode, greeting_keywords, text_design, music_settings, sound_enabled, is_shared, share_slug, scheduled_send_at, price_credits, created_at, completed_at";
 
 type Row = {
   id: string;
@@ -33,6 +34,7 @@ type Row = {
   greeting_mode?: string | null;
   greeting_keywords?: string[] | null;
   text_design?: unknown;
+  music_settings?: unknown;
   sound_enabled: boolean | null;
   is_shared: boolean | null;
   share_slug: string | null;
@@ -86,6 +88,7 @@ export async function buildLiveGreeting(
     hasBurnedText: finalized && row.final_has_text === true,
     // Prepared for later phases — not offered in the interface yet.
     soundEnabled: row.sound_enabled ?? false,
+    music: normalizeLiveCardMusic(row.music_settings),
     isShared: row.is_shared ?? false,
     shareSlug: row.share_slug,
     scheduledSendAt: row.scheduled_send_at,
