@@ -106,3 +106,58 @@ export async function savePersonPart(
     .eq("project_id", projectId);
   if (error) throw new Error(error.message);
 }
+
+export async function assignPersonalVoiceToPerson(
+  supabase: UserSupabase,
+  userId: string,
+  data: {
+    projectId: string;
+    personId: string;
+    voiceId: string | null;
+    voiceName?: string | null;
+    style?: string | null;
+  },
+): Promise<void> {
+  if (data.voiceId) {
+    const { data: owned } = await supabase
+      .from("pvg_personal_voices")
+      .select("id, processing_status, provider_voice_id")
+      .eq("id", data.voiceId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    const voice = owned as
+      | { processing_status?: string; provider_voice_id?: string | null }
+      | null;
+    if (!voice) throw new Error("voice_not_found");
+    if (voice.processing_status !== "ready" || !voice.provider_voice_id) {
+      throw new Error("voice_not_ready");
+    }
+  }
+  const { error } = await supabase
+    .from("pvg_people")
+    .update({
+      personal_voice_id: data.voiceId,
+      ...(data.voiceId ? { voice_id: null } : {}),
+      voice_name: data.voiceId ? (data.voiceName ?? null) : null,
+      voice_source: data.voiceId ? "recording" : null,
+      voice_confirmed: Boolean(data.voiceId),
+      speaking_style: data.voiceId ? (data.style ?? "natural") : null,
+    })
+    .eq("id", data.personId)
+    .eq("project_id", data.projectId);
+  if (error) throw new Error(error.message);
+}
+
+export async function savePersonalVoiceStyleForPerson(
+  supabase: UserSupabase,
+  projectId: string,
+  personId: string,
+  style: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("pvg_people")
+    .update({ speaking_style: style })
+    .eq("id", personId)
+    .eq("project_id", projectId);
+  if (error) throw new Error(error.message);
+}
