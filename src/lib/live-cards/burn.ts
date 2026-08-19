@@ -25,13 +25,35 @@ const MIME_CANDIDATES = [
   "video/webm",
 ];
 
-function pickMime(): string {
+/** Same list, but every option also carries a sound track for the music. */
+const MIME_CANDIDATES_WITH_AUDIO = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=h264,aac",
+  "video/mp4",
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm",
+];
+
+function pickMime(withAudio = false): string {
   const supported = typeof MediaRecorder !== "undefined";
   if (!supported) throw new Error("recording_unsupported");
-  for (const mime of MIME_CANDIDATES) {
+  for (const mime of withAudio ? MIME_CANDIDATES_WITH_AUDIO : MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
   throw new Error("recording_unsupported");
+}
+
+/** The background music a person chose, exactly as it must sound in the file. */
+export interface BurnMusic {
+  /** Playable link of the chosen track. */
+  url: string;
+  /** 0…1, the level the person set. */
+  volume: number;
+  /** A shorter track may repeat softly until the animation ends. */
+  loop: boolean;
+  fadeInSeconds: number;
+  fadeOutSeconds: number;
 }
 
 function loadVideo(url: string): Promise<HTMLVideoElement> {
@@ -77,8 +99,9 @@ export async function renderFinalVideo(
   text: string,
   design: CardTextDesign,
   onProgress?: (ratio: number) => void,
+  music?: BurnMusic | null,
 ): Promise<RenderResult> {
-  const mime = pickMime();
+  const mime = pickMime(Boolean(music));
   // Wait for the exact editor font before measuring. Without this, a fallback
   // font can produce different line breaks during the first export frame.
   if (typeof document !== "undefined" && "fonts" in document) {
