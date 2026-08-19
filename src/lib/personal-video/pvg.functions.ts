@@ -166,8 +166,42 @@ export const openPvgProject = createServerFn({ method: "POST" })
       .select(PROJECT_COLUMNS)
       .single();
     if (error) throw new Error(error.message);
+    const mine = created as ProjectRow;
+
+    // Two calls can pass the check above at the very same moment and each add
+    // an empty draft — twins. Both then agree on the oldest of the two, so the
+    // greeting, the voice and the film always belong to ONE project. The extra
+    // record is put aside at once, never left behind for the person to find.
+    const { data: twins } = await supabase
+      .from("pvg_projects")
+      .select(PROJECT_COLUMNS)
+      .eq("user_id", userId)
+      .eq("status", "draft")
+      .is("deleted_at", null)
+      .is("delivered_at", null)
+      .order("created_at", { ascending: true })
+      .limit(10);
+    const blanks = ((twins ?? []) as ProjectRow[]).filter(
+      (row) => !((row as { scene_description?: string | null }).scene_description ?? "").trim(),
+    );
+    const winner =
+      [...blanks].sort((a, b) =>
+        a.created_at === b.created_at
+          ? a.id.localeCompare(b.id)
+          : String(a.created_at).localeCompare(String(b.created_at)),
+      )[0] ?? mine;
+    if (winner.id !== mine.id) {
+      const kept = await loadProject(supabase, winner.id);
+      if (kept && !kept.scenes.length && !kept.people.length && (kept.creditsCharged ?? 0) === 0) {
+        await supabase
+          .from("pvg_projects")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("id", mine.id);
+        return { project: kept, balance: await walletBalance(supabase, userId) };
+      }
+    }
     return {
-      project: { ...toProjectShell(created as ProjectRow), people: [], scenes: [] } as PvgProject,
+      project: { ...toProjectShell(mine), people: [], scenes: [] } as PvgProject,
       balance: await walletBalance(supabase, userId),
     };
   });

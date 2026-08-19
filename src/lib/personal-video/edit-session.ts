@@ -1,7 +1,7 @@
-// One browser tab is the writer of a personal video greeting draft. The
-// identifier is kept for the lifetime of the tab, so a simple page refresh
-// reclaims the same writing session immediately instead of waiting for the
-// previous one to expire.
+// One browser is the writer of a personal video greeting draft. The identifier
+// is kept for the whole browser, not for a single tab, so a refresh, a second
+// tab or a reopened page continues as the same writer instead of locking the
+// person out of their own draft.
 const KEY = "joy.pvg.edit-session";
 
 function newId(): string {
@@ -13,10 +13,10 @@ function newId(): string {
 export function getPvgEditSessionId(): string {
   if (typeof window === "undefined") return newId();
   try {
-    const stored = window.sessionStorage.getItem(KEY);
+    const stored = window.localStorage.getItem(KEY) ?? window.sessionStorage.getItem(KEY);
     if (stored) return stored;
     const fresh = newId();
-    window.sessionStorage.setItem(KEY, fresh);
+    window.localStorage.setItem(KEY, fresh);
     return fresh;
   } catch {
     return newId();
