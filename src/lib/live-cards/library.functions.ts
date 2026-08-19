@@ -233,6 +233,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
     title?: string;
     greetingText?: string;
     textDesign?: unknown;
+    music?: unknown;
   }) => {
     const animationId = String(input?.animationId ?? "");
     const storagePath = String(input?.storagePath ?? "");
@@ -246,6 +247,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       title: String(input?.title ?? "").slice(0, 160),
       greetingText: String(input?.greetingText ?? "").slice(0, 2000),
       textDesign: (input?.textDesign ?? {}) as Record<string, unknown>,
+      music: normalizeLiveCardMusic(input?.music),
     };
   })
   .handler(async ({ data, context }): Promise<{ ok: boolean; videoUrl: string | null }> => {
@@ -272,6 +274,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
         // clears any older autosaved draft text instead of restoring it later.
         greeting_text: data.greetingText,
         text_design: data.textDesign as never,
+        music_settings: data.music as never,
         finalized_at: new Date().toISOString(),
       })
       .eq("id", data.animationId)
