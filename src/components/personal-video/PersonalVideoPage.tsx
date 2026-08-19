@@ -235,6 +235,8 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
   // Attempts are sold in packages of three; one credit unlocks one package.
   const attempts = pvgSceneAttempts(usedCount, project?.scenePacks ?? 0);
   const generationsLeft = attempts.remaining;
+  // Cumulative credits paid for attempt packages of THIS order (packs never reset).
+  const sceneSpent = Math.max(0, project?.scenePacks ?? 0) * PVG_SCENE_PACK_CREDITS;
   const needsExtraCredit = generationsLeft <= 0;
   const mainScene = useMemo(() => {
     const scenes = project?.scenes ?? [];
@@ -697,6 +699,13 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {t("pvg_balance")}: {balance} {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("pvg_scene_spent")}: {sceneSpent}{" "}
+              {creditWord(lang, isTestWallet, t("pvg_credits_word"))}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("pvg_attempts_left")}: {generationsLeft}
             </p>
             {issueFor("credits") && (
               <p className="mt-2 text-xs text-destructive">{t("pvg_err_credits")}</p>
