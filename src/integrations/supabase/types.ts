@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      _pvg_pack_check: {
+        Row: {
+          at: string | null
+          id: number
+          result: Json | null
+          step: string | null
+        }
+        Insert: {
+          at?: string | null
+          id?: number
+          result?: Json | null
+          step?: string | null
+        }
+        Update: {
+          at?: string | null
+          id?: number
+          result?: Json | null
+          step?: string | null
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
