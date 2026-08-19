@@ -1756,6 +1756,7 @@ export type Database = {
           id: string
           is_shared: boolean
           metadata: Json
+          music_settings: Json
           music_storage_bucket: string | null
           music_storage_path: string | null
           prediction_id: string | null
@@ -1806,6 +1807,7 @@ export type Database = {
           id?: string
           is_shared?: boolean
           metadata?: Json
+          music_settings?: Json
           music_storage_bucket?: string | null
           music_storage_path?: string | null
           prediction_id?: string | null
@@ -1856,6 +1858,7 @@ export type Database = {
           id?: string
           is_shared?: boolean
           metadata?: Json
+          music_settings?: Json
           music_storage_bucket?: string | null
           music_storage_path?: string | null
           prediction_id?: string | null
