@@ -120,11 +120,13 @@ const RUNWARE_CARD_IMAGES: GeneratorDef[] = [
   RUNWARE("rw_flux2_pro", "bfl:5@1"),
 ];
 
-/** Start scenes need reference pictures, so Z-Image-Turbo is not offered. */
+/**
+ * Start scenes need reference pictures, so Z-Image-Turbo is not offered.
+ * Krea 2 Medium Turbo and FLUX.2 [pro] are unsuitable here and are excluded
+ * from every route: primary, backup, failover and load distribution.
+ */
 const RUNWARE_SCENE_IMAGES: GeneratorDef[] = [
-  RUNWARE("rw_krea2_medium_turbo", "krea:krea@2-medium-turbo"),
   RUNWARE("rw_flux2_dev", "runware:400@1"),
-  RUNWARE("rw_flux2_pro", "bfl:5@1"),
 ];
 
 const RUNWARE_ANIMATIONS: GeneratorDef[] = [
