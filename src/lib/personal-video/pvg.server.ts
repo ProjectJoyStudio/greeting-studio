@@ -13,7 +13,7 @@ import { normalizeMusicSettings } from "@/lib/music/types";
 import { clampDuration, PVS_DEFAULT_SECONDS } from "./video-setup";
 
 export const PROJECT_COLUMNS =
-  "id, recipient_name, occasion, scene_description, action_description, status, generations_used, generations_limit, credits_charged, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id, music_settings, scene_sounds";
+  "id, recipient_name, occasion, scene_description, action_description, status, generations_used, generations_limit, credits_charged, scene_packs, selected_scene_id, updated_at, created_at, video_duration_seconds, greeting_mode, greeting_text, greeting_keywords, workflow_step, order_cost, version, last_saved_at, credit_history, deleted_at, purge_after, speech_mode, sync_mode, chorus_voice_ids, single_speaker_person_id, music_settings, scene_sounds";
 export const PERSON_COLUMNS =
   "id, project_id, name, position, role, appearance_description, optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, face_quality, source, voice_id, voice_name, voice_source, voice_category, voice_confirmed, personal_voice_id, part_text, recording_bucket, recording_path, recording_duration_seconds";
 export const SCENE_COLUMNS =
@@ -29,6 +29,7 @@ export interface ProjectRow {
   generations_used: number;
   generations_limit: number;
   credits_charged: number;
+  scene_packs?: number | null;
   selected_scene_id: string | null;
   updated_at: string;
   created_at?: string | null;
@@ -162,6 +163,7 @@ export function toProjectShell(row: ProjectRow): Omit<PvgProject, "people" | "sc
     generationsUsed: row.generations_used,
     generationsLimit: row.generations_limit,
     creditsCharged: row.credits_charged,
+    scenePacks: Number(row.scene_packs ?? 0),
     selectedSceneId: row.selected_scene_id,
     updatedAt: row.updated_at,
     createdAt: row.created_at ?? row.updated_at,
