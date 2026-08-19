@@ -147,6 +147,20 @@ export async function renderFinalVideo(
   paint();
 
   const stream = canvas.captureStream(30);
+  // The chosen music is played into the very same recording, so it becomes a
+  // real sound track of the finished file — not a second player on the page.
+  let audio: {
+    context: AudioContext;
+    source: AudioBufferSourceNode;
+    stop: () => Promise<void>;
+  } | null = null;
+  if (music) {
+    try {
+      audio = await prepareMusic(music, video.duration || 0, stream);
+    } catch {
+      throw new Error("music_load_failed");
+    }
+  }
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => {
@@ -158,6 +172,7 @@ export async function renderFinalVideo(
   });
 
   recorder.start(200);
+  audio?.source.start(0);
   await video.play();
 
   await new Promise<void>((resolve) => {
@@ -178,6 +193,7 @@ export async function renderFinalVideo(
   await new Promise((r) => setTimeout(r, 250));
   recorder.stop();
   const blob = await finished;
+  await audio?.stop();
   onProgress?.(1);
 
   const extension = mime.startsWith("video/mp4") ? "mp4" : "webm";
