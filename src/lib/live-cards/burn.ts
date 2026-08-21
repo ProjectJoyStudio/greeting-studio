@@ -85,12 +85,19 @@ async function prepareMusic(
   music: BurnMusic,
   seconds: number,
   stream: MediaStream,
-): Promise<{ context: AudioContext; source: AudioBufferSourceNode; stop: () => Promise<void> }> {
+): Promise<{ context: AudioContext; start: () => void; stop: () => Promise<void> }> {
   const response = await fetch(music.url);
+  if (!response.ok) throw new Error("music_fetch_failed");
   const bytes = await response.arrayBuffer();
   const context = new AudioContext();
   if (context.state === "suspended") await context.resume();
-  const buffer = await context.decodeAudioData(bytes);
+  // Some browsers only expose the callback form; both are handled here.
+  const buffer = await new Promise<AudioBuffer>((resolve, reject) => {
+    const promise = context.decodeAudioData(bytes.slice(0), resolve, reject) as unknown;
+    if (promise && typeof (promise as Promise<AudioBuffer>).then === "function") {
+      (promise as Promise<AudioBuffer>).then(resolve, reject);
+    }
+  });
 
   const length = seconds > 0 ? seconds : buffer.duration;
   const level = Math.max(0.0001, Math.min(1, music.volume));
@@ -98,28 +105,35 @@ async function prepareMusic(
   const fadeOut = Math.min(music.fadeOutSeconds, length / 4);
 
   const gain = context.createGain();
-  const now = context.currentTime;
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(level, now + Math.max(0.05, fadeIn));
-  gain.gain.setValueAtTime(level, now + Math.max(fadeIn, length - fadeOut));
-  gain.gain.linearRampToValueAtTime(0.0001, now + length);
-
   const destination = context.createMediaStreamDestination();
   gain.connect(destination);
   const source = context.createBufferSource();
   source.buffer = buffer;
   source.loop = music.loop && buffer.duration < length;
   source.connect(gain);
-  source.stop(now + length);
 
   for (const track of destination.stream.getAudioTracks()) stream.addTrack(track);
 
+  let started = false;
   return {
     context,
-    source,
+    // The fades and the end of the track are scheduled from the moment the
+    // recording really begins. Scheduling a stop before the source has been
+    // started is invalid, which is why both happen together here.
+    start: () => {
+      if (started) return;
+      started = true;
+      const now = context.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(level, now + Math.max(0.05, fadeIn));
+      gain.gain.setValueAtTime(level, now + Math.max(Math.max(0.05, fadeIn), length - fadeOut));
+      gain.gain.linearRampToValueAtTime(0.0001, now + length);
+      source.start(now);
+      source.stop(now + length);
+    },
     stop: async () => {
       try {
-        source.stop();
+        if (started) source.stop();
       } catch {
         /* already finished */
       }
