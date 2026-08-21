@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   generateLiveCardImage,
+  getLiveCardSessionStatus,
   listOwnLiveCards,
   selectLiveCardImage,
   discardLiveCardImage,
@@ -141,11 +142,39 @@ function LiveCardsPage() {
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [sessionId, resetSession] = useLiveCardSession();
+  const readSessionStatus = useServerFn(getLiveCardSessionStatus);
+  // A session whose card was already delivered is closed; the page must not
+  // restore it. Nothing is deleted — only the active reference moves on.
+  const [sessionChecked, setSessionChecked] = useState(false);
+  useEffect(() => {
+    if (!sessionId || sessionChecked) return;
+    if (!isAuthenticated) {
+      setSessionChecked(true);
+      return;
+    }
+    let cancelled = false;
+    void readSessionStatus({ data: { sessionId } })
+      .then((status) => {
+        if (cancelled) return;
+        if (status?.closed) {
+          resetSession();
+          return; // the new session id runs this check again and passes
+        }
+        setSessionChecked(true);
+      })
+      .catch(() => {
+        if (!cancelled) setSessionChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, isAuthenticated]);
 
   const recent = useQuery({
     queryKey: ["live-cards", "session", sessionId],
     queryFn: () => listOwnLiveCards({ data: { sessionId: sessionId ?? undefined } }),
-    enabled: isAuthenticated && Boolean(sessionId),
+    enabled: isAuthenticated && Boolean(sessionId) && sessionChecked,
   });
 
   // One credit buys a package of three start-image attempts; the counter is
@@ -162,7 +191,7 @@ function LiveCardsPage() {
   // The database is the source of truth: after a refresh the session is
   // rebuilt from the stored pictures and their statuses.
   useEffect(() => {
-    if (restored || !sessionId || recent.isLoading) return;
+    if (restored || !sessionId || !sessionChecked || recent.isLoading) return;
 
     if (!recent.data?.length) {
       // No picture yet — the description typed before the reload returns.
@@ -183,7 +212,7 @@ function LiveCardsPage() {
       setRatio(chosen.aspectRatio as LiveCardRatio);
     }
     setRestored(true);
-  }, [recent.data, recent.isLoading, restored, sessionId]);
+  }, [recent.data, recent.isLoading, restored, sessionId, sessionChecked]);
 
   // Whatever is being typed stays available after a reload of the page.
   useEffect(() => {
