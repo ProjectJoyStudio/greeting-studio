@@ -261,7 +261,7 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       stage: "upload_completed",
       detail: { path: data.storagePath, mime: data.mime, has_text: data.hasText },
     });
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("live_card_animations")
       .update({
         title: data.title || null,
@@ -279,7 +279,11 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
       })
       .eq("id", data.animationId)
       .eq("user_id", context.userId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      // A card that was already delivered is closed: it can never receive a
+      // new final file, so a stale editor cannot report a false success.
+      .is("delivered_at", null)
+      .select("id");
     if (error) {
       await logLiveCardEvent({
         actorUserId: context.userId,
@@ -289,6 +293,16 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
         detail: { step: "database_save", error: error.message },
       });
       throw new Error(`database_save_failed: ${error.message}`);
+    }
+    if (!updated?.length) {
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        animationId: data.animationId,
+        stage: "failed",
+        ok: false,
+        detail: { step: "database_save", error: "card_closed" },
+      });
+      throw new Error("card_closed");
     }
     await logLiveCardEvent({
       actorUserId: context.userId,
