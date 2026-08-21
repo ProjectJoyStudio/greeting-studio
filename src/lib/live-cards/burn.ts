@@ -214,14 +214,15 @@ export async function renderFinalVideo(
   // real sound track of the finished file — not a second player on the page.
   let audio: {
     context: AudioContext;
-    source: AudioBufferSourceNode;
+    start: () => void;
     stop: () => Promise<void>;
   } | null = null;
   if (music) {
     try {
       audio = await prepareMusic(music, video.duration || 0, stream);
-    } catch {
-      throw new Error("music_load_failed");
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "unknown";
+      throw new Error(`music_load_failed: ${detail}`);
     }
   }
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
