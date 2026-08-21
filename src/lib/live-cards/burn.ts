@@ -236,7 +236,7 @@ export async function renderFinalVideo(
   });
 
   recorder.start(200);
-  audio?.source.start(0);
+  audio?.start();
   await video.play();
 
   await new Promise<void>((resolve) => {
