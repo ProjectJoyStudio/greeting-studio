@@ -335,3 +335,26 @@ export const discardLiveCardImage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Tells the creation page whether its active session is already closed: the
+ * live greeting card of that session was finalized and successfully delivered
+ * (downloaded or shared). Nothing is deleted — the session reference is simply
+ * no longer an editable workspace, so the page starts a new one.
+ */
+export const getLiveCardSessionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { sessionId?: string }) => ({
+    sessionId: String(input?.sessionId ?? "").slice(0, 64) || null,
+  }))
+  .handler(async ({ data, context }): Promise<{ closed: boolean }> => {
+    if (!data.sessionId) return { closed: false };
+    const { data: rows } = await context.supabase
+      .from("live_card_animations")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("session_id", data.sessionId)
+      .not("delivered_at", "is", null)
+      .limit(1);
+    return { closed: Boolean(rows?.length) };
+  });

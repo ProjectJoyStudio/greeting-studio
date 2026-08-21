@@ -26,6 +26,7 @@ import {
 import {
   getLiveGreetingDraft,
   finalizeLiveGreeting,
+  markLiveGreetingDelivered,
   recordLiveCardStage,
   saveLiveGreetingText,
 } from "@/lib/live-cards/library.functions";
@@ -90,6 +91,7 @@ export function LiveGreetingEditor({
   const loadDraft = useServerFn(getLiveGreetingDraft);
   const compose = useServerFn(composeGreetingFromKeywords);
   const logStage = useServerFn(recordLiveCardStage);
+  const markDelivered = useServerFn(markLiveGreetingDelivered);
 
   const [state, setState] = useState<EditorState>(EMPTY);
   const [ready, setReady] = useState(false);
@@ -259,6 +261,9 @@ export function LiveGreetingEditor({
           music: music as unknown as Record<string, unknown>,
         },
       });
+      // Success is reported only when the new final file was really attached
+      // to this card; anything else is a real error and keeps the work here.
+      if (!result?.ok || !result.videoUrl) throw new Error("save_not_confirmed");
       setFinalUrl(result.videoUrl);
       // The card is saved in the account either way; an uncertain text check
       // is only a warning, never a reason to lose the finished card.
@@ -322,6 +327,16 @@ export function LiveGreetingEditor({
             videoUrl={finalUrl}
             title={state.title || null}
             onClose={() => setViewerOpen(false)}
+            onDelivered={(method) => {
+              // Downloaded or shared: this card has completed its life. The
+              // workspace closes and the next card starts from a clean session.
+              void markDelivered({ data: { animationId, method } })
+                .catch(() => undefined)
+                .finally(() => {
+                  setViewerOpen(false);
+                  onNewProject?.();
+                });
+            }}
           />
         )}
       </div>

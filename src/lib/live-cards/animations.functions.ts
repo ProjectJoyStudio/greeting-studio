@@ -365,7 +365,10 @@ export const listLiveCardAnimations = createServerFn({ method: "POST" })
     let query = context.supabase
       .from("live_card_animations")
       .select(COLUMNS)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      // A delivered card has finished its life; it is never restored into the
+      // creation page as an editable animation again.
+      .is("delivered_at", null);
     if (data.sessionId) query = query.eq("session_id", data.sessionId);
     const { data: rows, error } = await query.order("created_at", { ascending: false }).limit(20);
     if (error || !rows) return [];
