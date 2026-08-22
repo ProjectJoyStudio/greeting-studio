@@ -46,6 +46,13 @@ function MyCardsPage() {
     queryFn: () => fetchCards({ data: { status: "saved" } }),
   });
 
+  /** Unfinished card orders: they can only be continued, never sent. */
+  const { data: drafts } = useQuery({
+    queryKey: ["my-greeting-cards", "preview"],
+    queryFn: () => fetchCards({ data: { status: "preview" } }),
+  });
+
+
   const del = useMutation({
     mutationFn: (cardId: string) => removeCard({ data: { cardId } }),
     onSuccess: () => {
