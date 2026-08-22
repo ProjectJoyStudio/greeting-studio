@@ -93,6 +93,7 @@ function CreateCardPage() {
   const trackEvent = useServerFn(logCardEvent);
   const runAttempts = useServerFn(getCardAttempts);
   const runBuyPack = useServerFn(buyCardAttemptPack);
+  const runSessionStatus = useServerFn(getCardSessionStatus);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
 
