@@ -59,10 +59,12 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
 
       const { data: session } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs")
+        .select("id, attempts_used, extra_packs, closed_at")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
+      // A completed card order can never be topped up again.
+      if (session?.closed_at) return { ok: false, errorCode: "session_closed", balance: 0 };
       const current = session ?? { id: null, attempts_used: 0, extra_packs: 0 };
 
       const { data: wallet } = await supabaseAdmin
