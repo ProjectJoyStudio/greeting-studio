@@ -390,6 +390,10 @@ function CreateCardPage() {
       });
       if (finalize) {
         setStage("done");
+        // The card is finished: its editing session stops being the active one,
+        // so a later entry always opens a clean new card. Nothing is deleted.
+        setRestoreCardId(null);
+        setSessionKey(resetCardSession());
         toast.success(t("gc_saved_toast"));
       }
       const url = res.shareSlug ? `${window.location.origin}/c/${res.shareSlug}` : null;
