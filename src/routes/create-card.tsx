@@ -137,6 +137,8 @@ function CreateCardPage() {
   // "create a new card". Only an explicit Continue (cardId) or a real browser
   // refresh of this page keeps working on the existing card order.
   const enteredFresh = useRef(false);
+  /** Session of a card that was just saved, kept only to close it on delivery. */
+  const finishedSessionKey = useRef("");
   if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
     enteredFresh.current = true;
     resetCardSession();
@@ -312,7 +314,9 @@ function CreateCardPage() {
   async function finishDelivery(channel: string) {
     if (!card) return;
     try {
-      await runDelivered({ data: { cardId: card.id, channel, sessionKey } });
+      await runDelivered({
+        data: { cardId: card.id, channel, sessionKey: finishedSessionKey.current || sessionKey },
+      });
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
@@ -392,6 +396,7 @@ function CreateCardPage() {
         setStage("done");
         // The card is finished: its editing session stops being the active one,
         // so a later entry always opens a clean new card. Nothing is deleted.
+        finishedSessionKey.current = sessionKey;
         setRestoreCardId(null);
         setSessionKey(resetCardSession());
         toast.success(t("gc_saved_toast"));
