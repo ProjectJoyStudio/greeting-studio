@@ -97,6 +97,7 @@ function CreateCardPage() {
   const runSessionStatus = useServerFn(getCardSessionStatus);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
+  const { balance } = useCreditBalance();
 
   const [stage, setStage] = useState<Stage>("edit");
   const [prompt, setPrompt] = useState(search.prompt ?? "");
