@@ -2,6 +2,24 @@
 // attempts are counted per card and not per page visit.
 const STORAGE_KEY = "pj.card-session";
 
+/**
+ * True only when the browser itself loaded the card editor (first load or a
+ * refresh). Arriving from Studio, the cabinet or any in-app link is a new card,
+ * so an active session is never silently restored there.
+ */
+export function isEditorPageReload(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const bootUrl = nav?.name ?? window.location.href;
+    return new URL(bootUrl, window.location.origin).pathname.startsWith("/create-card");
+  } catch {
+    return true;
+  }
+}
+
 export function currentCardSession(): string {
   if (typeof window === "undefined") return "";
   const existing = window.sessionStorage.getItem(STORAGE_KEY);

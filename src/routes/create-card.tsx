@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -36,6 +36,7 @@ import {
 import {
   adoptCardSession,
   currentCardSession,
+  isEditorPageReload,
   resetCardSession,
 } from "@/lib/greeting-card/card-session";
 
@@ -132,6 +133,17 @@ function CreateCardPage() {
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
 
+  // Entering the editor from Studio, the cabinet or any other page always means
+  // "create a new card". Only an explicit Continue (cardId) or a real browser
+  // refresh of this page keeps working on the existing card order.
+  const enteredFresh = useRef(false);
+  /** Session of a card that was just saved, kept only to close it on delivery. */
+  const finishedSessionKey = useRef("");
+  if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
+    enteredFresh.current = true;
+    resetCardSession();
+  }
+
   // "Create new card" from anywhere in Project Joy: a clean, independent order.
   useEffect(() => {
     if (search.fresh !== "1") return;
@@ -224,6 +236,7 @@ function CreateCardPage() {
     setTitle("");
     setMode("manual");
     setDesign({ ...DEFAULT_TEXT_DESIGN });
+    finishedSessionKey.current = "";
     setSessionKey(resetCardSession());
     setAttempts(attemptState(0, 0));
     setStage("edit");
@@ -302,7 +315,9 @@ function CreateCardPage() {
   async function finishDelivery(channel: string) {
     if (!card) return;
     try {
-      await runDelivered({ data: { cardId: card.id, channel, sessionKey } });
+      await runDelivered({
+        data: { cardId: card.id, channel, sessionKey: finishedSessionKey.current || sessionKey },
+      });
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
@@ -380,6 +395,11 @@ function CreateCardPage() {
       });
       if (finalize) {
         setStage("done");
+        // The card is finished: its editing session stops being the active one,
+        // so a later entry always opens a clean new card. Nothing is deleted.
+        finishedSessionKey.current = sessionKey;
+        setRestoreCardId(null);
+        setSessionKey(resetCardSession());
         toast.success(t("gc_saved_toast"));
       }
       const url = res.shareSlug ? `${window.location.origin}/c/${res.shareSlug}` : null;
