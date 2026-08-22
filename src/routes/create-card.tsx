@@ -29,10 +29,11 @@ import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
   attemptState,
+  spentCredits,
   type CardAttemptState,
 } from "@/lib/greeting-card/attempts";
 import { currentCardSession, resetCardSession } from "@/lib/greeting-card/card-session";
-import { useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   DEFAULT_TEXT_DESIGN,
   normalizeTextDesign,
@@ -96,6 +97,7 @@ function CreateCardPage() {
   const runSessionStatus = useServerFn(getCardSessionStatus);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
+  const { balance } = useCreditBalance();
 
   const [stage, setStage] = useState<Stage>("edit");
   const [prompt, setPrompt] = useState(search.prompt ?? "");
@@ -426,16 +428,20 @@ function CreateCardPage() {
 
               {stage === "edit" && (
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
+                  <div className="space-y-1 rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
                     <p className="text-sm font-medium text-foreground">
+                      {t("gc_wallet_balance").replace("{n}", String(balance))}
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {t("gc_spent_card").replace("{n}", String(spentCredits(attempts)))}
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {t("gc_attempts_remaining").replace("{n}", String(attempts.remaining))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {t("gc_attempts_used")
                         .replace("{n}", String(attempts.used))
                         .replace("{total}", String(attempts.allowed))}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {attempts.remaining > 0
-                        ? t("gc_attempts_left").replace("{n}", String(attempts.remaining))
-                        : t("gc_attempts_none")}
                     </p>
                   </div>
                   {attempts.remaining > 0 ? (

@@ -18,3 +18,8 @@ export function attemptState(used: number, packs: number): CardAttemptState {
   const allowed = FREE_CARD_ATTEMPTS + packs * ATTEMPTS_PER_PACK;
   return { used, allowed, remaining: Math.max(0, allowed - used), packs };
 }
+
+/** Credits spent on attempt packages for this card order — never a wallet diff. */
+export function spentCredits(state: CardAttemptState): number {
+  return state.packs * ATTEMPT_PACK_CREDITS;
+}
