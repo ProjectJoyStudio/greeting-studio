@@ -111,9 +111,24 @@ function CreateCardPage() {
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
 
+  // A refresh keeps the unfinished order alive; a finished one is replaced by a
+  // brand new, clean card order.
   useEffect(() => {
-    setSessionKey(currentCardSession());
-  }, []);
+    let active = true;
+    const key = currentCardSession();
+    if (!key) return;
+    void runSessionStatus({ data: { sessionKey: key } })
+      .then((res) => {
+        if (!active) return;
+        setSessionKey(res.closed ? resetCardSession() : key);
+      })
+      .catch(() => {
+        if (active) setSessionKey(key);
+      });
+    return () => {
+      active = false;
+    };
+  }, [runSessionStatus]);
 
   useEffect(() => {
     if (!user || !sessionKey) return;
