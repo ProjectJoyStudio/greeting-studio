@@ -132,6 +132,15 @@ function CreateCardPage() {
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
 
+  // Entering the editor from Studio, the cabinet or any other page always means
+  // "create a new card". Only an explicit Continue (cardId) or a real browser
+  // refresh of this page keeps working on the existing card order.
+  const enteredFresh = useRef(false);
+  if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
+    enteredFresh.current = true;
+    resetCardSession();
+  }
+
   // "Create new card" from anywhere in Project Joy: a clean, independent order.
   useEffect(() => {
     if (search.fresh !== "1") return;
