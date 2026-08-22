@@ -214,7 +214,7 @@ function CreateCardPage() {
     }
   }
 
-  /** Buys five more generation attempts for a single credit. */
+  /** Buys three more generation attempts for this card order, for one credit. */
   async function handleBuyPack() {
     if (!sessionKey) return;
     setBuying(true);
@@ -238,7 +238,7 @@ function CreateCardPage() {
   async function finishDelivery(channel: string) {
     if (!card) return;
     try {
-      await runDelivered({ data: { cardId: card.id, channel } });
+      await runDelivered({ data: { cardId: card.id, channel, sessionKey } });
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
@@ -428,8 +428,8 @@ function CreateCardPage() {
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
                     <p className="text-sm font-medium text-foreground">
-                      {t("gc_attempt_of")
-                        .replace("{n}", String(Math.min(attempts.used + 1, attempts.allowed)))
+                      {t("gc_attempts_used")
+                        .replace("{n}", String(attempts.used))
                         .replace("{total}", String(attempts.allowed))}
                     </p>
                     <p className="text-xs text-muted-foreground">
