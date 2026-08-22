@@ -19,10 +19,12 @@ export const getCardAttempts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<CardAttemptState> => {
     const { data: row } = await context.supabase
       .from("user_card_attempt_sessions")
-      .select("attempts_used, extra_packs")
+      .select("attempts_used, extra_packs, closed_at")
       .eq("user_id", context.userId)
       .eq("session_key", data.sessionKey)
       .maybeSingle();
+    // A finished card order keeps its history, but never funds a new card.
+    if (row?.closed_at) return attemptState(0, 0);
     if (!row) {
       await context.supabase
         .from("user_card_attempt_sessions")
