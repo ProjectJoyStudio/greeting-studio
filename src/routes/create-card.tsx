@@ -22,6 +22,7 @@ import {
 } from "@/lib/greeting-card/cards.functions";
 import {
   buyCardAttemptPack,
+  getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
 } from "@/lib/greeting-card/attempts.functions";
@@ -32,7 +33,12 @@ import {
   spentCredits,
   type CardAttemptState,
 } from "@/lib/greeting-card/attempts";
-import { currentCardSession, resetCardSession } from "@/lib/greeting-card/card-session";
+import {
+  adoptCardSession,
+  currentCardSession,
+  resetCardSession,
+} from "@/lib/greeting-card/card-session";
+
 import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   DEFAULT_TEXT_DESIGN,
