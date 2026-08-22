@@ -3503,6 +3503,7 @@ export type Database = {
       user_card_attempt_sessions: {
         Row: {
           attempts_used: number
+          closed_at: string | null
           created_at: string
           extra_packs: number
           id: string
@@ -3512,6 +3513,7 @@ export type Database = {
         }
         Insert: {
           attempts_used?: number
+          closed_at?: string | null
           created_at?: string
           extra_packs?: number
           id?: string
@@ -3521,6 +3523,7 @@ export type Database = {
         }
         Update: {
           attempts_used?: number
+          closed_at?: string | null
           created_at?: string
           extra_packs?: number
           id?: string

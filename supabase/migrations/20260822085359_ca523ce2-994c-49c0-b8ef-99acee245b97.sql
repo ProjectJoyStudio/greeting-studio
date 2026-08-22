@@ -1,0 +1,1 @@
+ALTER TABLE public.user_card_attempt_sessions ADD COLUMN IF NOT EXISTS closed_at timestamptz;
