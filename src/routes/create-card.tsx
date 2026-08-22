@@ -56,6 +56,8 @@ interface CreateCardSearch {
   text?: string;
   keywords?: string;
   cardId?: string;
+  /** "1" deliberately starts a brand new, independent card order. */
+  fresh?: string;
 }
 
 export const Route = createFileRoute("/create-card")({
@@ -65,8 +67,10 @@ export const Route = createFileRoute("/create-card")({
     if (typeof search.text === "string") out.text = search.text.slice(0, 2000);
     if (typeof search.keywords === "string") out.keywords = search.keywords.slice(0, 500);
     if (typeof search.cardId === "string") out.cardId = search.cardId.slice(0, 60);
+    if (search.fresh === "1") out.fresh = "1";
     return out;
   },
+
   head: () => ({
     meta: [
       { title: "Create a greeting card — Project Joy" },
