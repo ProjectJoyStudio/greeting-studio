@@ -125,11 +125,53 @@ function MyCardsPage() {
 
       <Link
         to="/create-card"
+        search={{ fresh: "1" }}
         className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
       >
         <Plus className="h-4 w-4" />
         {t("gc_new_card")}
       </Link>
+
+      {(drafts ?? []).length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
+            {t("gc_unfinished_title")}
+          </h2>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {(drafts ?? []).map((c) => (
+              <article
+                key={c.id}
+                className="overflow-hidden rounded-2xl border border-dashed border-border/70 bg-card/60 p-3"
+              >
+                <CardPreview
+                  imageUrl={c.image_url}
+                  text={c.greeting_text}
+                  design={normalizeTextDesign(c.text_design)}
+                  alt={c.prompt}
+                />
+                <div className="mt-3 flex items-center justify-between gap-2 px-1">
+                  <h3 className="truncate font-display text-base font-semibold text-foreground">
+                    {c.title || t("gc_untitled")}
+                  </h3>
+                  <span className="shrink-0 rounded-full border border-border/60 px-2.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t("gc_draft_badge")}
+                  </span>
+                </div>
+                <div className="mt-3 px-1">
+                  <Link
+                    to="/create-card"
+                    search={{ cardId: c.id }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground"
+                  >
+                    {t("gc_continue")}
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
