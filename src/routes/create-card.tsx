@@ -132,6 +132,14 @@ function CreateCardPage() {
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
 
+  // "Create new card" from anywhere in Project Joy: a clean, independent order.
+  useEffect(() => {
+    if (search.fresh !== "1") return;
+    startNewCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.fresh]);
+
+
   // Continuing a specific unfinished card from the personal cabinet: its own
   // attempt package becomes the active one, without any new charge.
   useEffect(() => {
