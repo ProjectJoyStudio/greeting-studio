@@ -19,10 +19,12 @@ export const getCardAttempts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<CardAttemptState> => {
     const { data: row } = await context.supabase
       .from("user_card_attempt_sessions")
-      .select("attempts_used, extra_packs")
+      .select("attempts_used, extra_packs, closed_at")
       .eq("user_id", context.userId)
       .eq("session_key", data.sessionKey)
       .maybeSingle();
+    // A finished card order keeps its history, but never funds a new card.
+    if (row?.closed_at) return attemptState(0, 0);
     if (!row) {
       await context.supabase
         .from("user_card_attempt_sessions")
@@ -57,10 +59,12 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
 
       const { data: session } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs")
+        .select("id, attempts_used, extra_packs, closed_at")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
+      // A completed card order can never be topped up again.
+      if (session?.closed_at) return { ok: false, errorCode: "session_closed", balance: 0 };
       const current = session ?? { id: null, attempts_used: 0, extra_packs: 0 };
 
       const { data: wallet } = await supabaseAdmin
@@ -116,3 +120,23 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
       };
     },
   );
+
+/**
+ * Tells the creation page whether its active card order is already finished.
+ * A closed order is history: the page starts a fresh session instead.
+ */
+export const getCardSessionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { sessionKey?: string }) => ({
+    sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }): Promise<{ closed: boolean }> => {
+    if (!data.sessionKey) return { closed: false };
+    const { data: row } = await context.supabase
+      .from("user_card_attempt_sessions")
+      .select("closed_at")
+      .eq("user_id", context.userId)
+      .eq("session_key", data.sessionKey)
+      .maybeSingle();
+    return { closed: Boolean(row?.closed_at) };
+  });

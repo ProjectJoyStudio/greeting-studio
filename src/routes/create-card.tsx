@@ -20,7 +20,11 @@ import {
   markCardDelivered,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
-import { buyCardAttemptPack, getCardAttempts } from "@/lib/greeting-card/attempts.functions";
+import {
+  buyCardAttemptPack,
+  getCardAttempts,
+  getCardSessionStatus,
+} from "@/lib/greeting-card/attempts.functions";
 import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
@@ -89,6 +93,7 @@ function CreateCardPage() {
   const trackEvent = useServerFn(logCardEvent);
   const runAttempts = useServerFn(getCardAttempts);
   const runBuyPack = useServerFn(buyCardAttemptPack);
+  const runSessionStatus = useServerFn(getCardSessionStatus);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
 
@@ -111,9 +116,24 @@ function CreateCardPage() {
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
 
+  // A refresh keeps the unfinished order alive; a finished one is replaced by a
+  // brand new, clean card order.
   useEffect(() => {
-    setSessionKey(currentCardSession());
-  }, []);
+    let active = true;
+    const key = currentCardSession();
+    if (!key) return;
+    void runSessionStatus({ data: { sessionKey: key } })
+      .then((res) => {
+        if (!active) return;
+        setSessionKey(res.closed ? resetCardSession() : key);
+      })
+      .catch(() => {
+        if (active) setSessionKey(key);
+      });
+    return () => {
+      active = false;
+    };
+  }, [runSessionStatus]);
 
   useEffect(() => {
     if (!user || !sessionKey) return;
@@ -194,7 +214,7 @@ function CreateCardPage() {
     }
   }
 
-  /** Buys five more generation attempts for a single credit. */
+  /** Buys three more generation attempts for this card order, for one credit. */
   async function handleBuyPack() {
     if (!sessionKey) return;
     setBuying(true);
@@ -218,7 +238,7 @@ function CreateCardPage() {
   async function finishDelivery(channel: string) {
     if (!card) return;
     try {
-      await runDelivered({ data: { cardId: card.id, channel } });
+      await runDelivered({ data: { cardId: card.id, channel, sessionKey } });
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
@@ -408,8 +428,8 @@ function CreateCardPage() {
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
                     <p className="text-sm font-medium text-foreground">
-                      {t("gc_attempt_of")
-                        .replace("{n}", String(Math.min(attempts.used + 1, attempts.allowed)))
+                      {t("gc_attempts_used")
+                        .replace("{n}", String(attempts.used))
                         .replace("{total}", String(attempts.allowed))}
                     </p>
                     <p className="text-xs text-muted-foreground">

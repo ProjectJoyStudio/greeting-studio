@@ -54,19 +54,19 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
     const { attemptState } = await import("./attempts");
 
-    // Every card creation carries its own attempt budget: five free ones, plus
-    // five for each package the person paid for.
+    // Every card creation carries its own attempt budget: three attempts for
+    // each package the person paid for, valid only for this card order.
     let attemptRowId: string | null = null;
     let attemptsUsed = 0;
     if (data.sessionKey) {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs")
+        .select("id, attempts_used, extra_packs, closed_at")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
       const state = attemptState(row?.attempts_used ?? 0, row?.extra_packs ?? 0);
-      if (state.remaining <= 0) {
+      if (row?.closed_at || state.remaining <= 0) {
         return {
           ok: false,
           errorCode: "attempt_limit",
@@ -296,11 +296,12 @@ export const generateCardImage = createServerFn({ method: "POST" })
  */
 export const markCardDelivered = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cardId: string; channel?: string }) => {
+  .inputValidator((input: { cardId: string; channel?: string; sessionKey?: string }) => {
     if (!input?.cardId) throw new Error("cardId is required");
     return {
       cardId: String(input.cardId).slice(0, 60),
       channel: String(input?.channel ?? "").slice(0, 40) || null,
+      sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
     };
   })
   .handler(async ({ data, context }) => {
@@ -311,6 +312,16 @@ export const markCardDelivered = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .is("delivered_at", null);
     if (error) throw new Error(error.message);
+    // The order is complete: its attempt package is closed and its unused
+    // attempts stay with this card instead of moving to the next one.
+    if (data.sessionKey) {
+      await context.supabase
+        .from("user_card_attempt_sessions")
+        .update({ closed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("user_id", context.userId)
+        .eq("session_key", data.sessionKey)
+        .is("closed_at", null);
+    }
     await context.supabase.from("user_card_events").insert({
       card_id: data.cardId,
       owner_user_id: context.userId,

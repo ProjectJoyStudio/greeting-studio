@@ -1,0 +1,1 @@
+UPDATE public.user_card_attempt_sessions SET closed_at = now() WHERE closed_at IS NULL;
