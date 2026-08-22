@@ -22,6 +22,7 @@ import {
 } from "@/lib/greeting-card/cards.functions";
 import {
   buyCardAttemptPack,
+  getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
 } from "@/lib/greeting-card/attempts.functions";
@@ -32,7 +33,12 @@ import {
   spentCredits,
   type CardAttemptState,
 } from "@/lib/greeting-card/attempts";
-import { currentCardSession, resetCardSession } from "@/lib/greeting-card/card-session";
+import {
+  adoptCardSession,
+  currentCardSession,
+  resetCardSession,
+} from "@/lib/greeting-card/card-session";
+
 import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   DEFAULT_TEXT_DESIGN,
@@ -50,6 +56,8 @@ interface CreateCardSearch {
   text?: string;
   keywords?: string;
   cardId?: string;
+  /** "1" deliberately starts a brand new, independent card order. */
+  fresh?: string;
 }
 
 export const Route = createFileRoute("/create-card")({
@@ -59,8 +67,10 @@ export const Route = createFileRoute("/create-card")({
     if (typeof search.text === "string") out.text = search.text.slice(0, 2000);
     if (typeof search.keywords === "string") out.keywords = search.keywords.slice(0, 500);
     if (typeof search.cardId === "string") out.cardId = search.cardId.slice(0, 60);
+    if (search.fresh === "1") out.fresh = "1";
     return out;
   },
+
   head: () => ({
     meta: [
       { title: "Create a greeting card — Project Joy" },
@@ -93,6 +103,8 @@ function CreateCardPage() {
   const runLoad = useServerFn(getOwnCard);
   const trackEvent = useServerFn(logCardEvent);
   const runAttempts = useServerFn(getCardAttempts);
+  const runAttemptsForCard = useServerFn(getAttemptsForCard);
+
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
   const runDelivered = useServerFn(markCardDelivered);
@@ -117,10 +129,38 @@ function CreateCardPage() {
   const [sessionKey, setSessionKey] = useState("");
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
+  /** The unfinished card this workspace belongs to, restored after a refresh. */
+  const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
+
+  // "Create new card" from anywhere in Project Joy: a clean, independent order.
+  useEffect(() => {
+    if (search.fresh !== "1") return;
+    startNewCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.fresh]);
+
+
+  // Continuing a specific unfinished card from the personal cabinet: its own
+  // attempt package becomes the active one, without any new charge.
+  useEffect(() => {
+    if (!user || !search.cardId) return;
+    let active = true;
+    void runAttemptsForCard({ data: { cardId: search.cardId } })
+      .then((res) => {
+        if (!active) return;
+        setSessionKey(adoptCardSession(res.sessionKey ?? resetCardSession()));
+        setAttempts(res.attempts);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user, search.cardId, runAttemptsForCard]);
 
   // A refresh keeps the unfinished order alive; a finished one is replaced by a
   // brand new, clean card order.
   useEffect(() => {
+    if (search.cardId) return;
     let active = true;
     const key = currentCardSession();
     if (!key) return;
@@ -135,26 +175,29 @@ function CreateCardPage() {
     return () => {
       active = false;
     };
-  }, [runSessionStatus]);
+  }, [runSessionStatus, search.cardId]);
 
   useEffect(() => {
-    if (!user || !sessionKey) return;
+    if (!user || !sessionKey || search.cardId) return;
     let active = true;
     void runAttempts({ data: { sessionKey } })
       .then((state) => {
-        if (active) setAttempts(state);
+        if (!active) return;
+        setAttempts(attemptState(state.used, state.packs));
+        setRestoreCardId(state.cardId);
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [user, sessionKey, runAttempts]);
+  }, [user, sessionKey, runAttempts, search.cardId]);
 
   /** Re-opening a saved postcard restores the whole project, not just the picture. */
+  const openCardId = search.cardId ?? restoreCardId ?? null;
   const { data: existing } = useQuery({
-    queryKey: ["own-card", search.cardId],
-    queryFn: () => runLoad({ data: { cardId: search.cardId! } }),
-    enabled: Boolean(search.cardId),
+    queryKey: ["own-card", openCardId],
+    queryFn: () => runLoad({ data: { cardId: openCardId! } }),
+    enabled: Boolean(openCardId),
   });
 
   useEffect(() => {
@@ -168,6 +211,25 @@ function CreateCardPage() {
     setTitle(existing.title ?? "");
     setStage("design");
   }, [existing]);
+
+  /** Deliberately starting a new card: nothing of the old one travels along. */
+  function startNewCard() {
+    setCard(null);
+    setRestoreCardId(null);
+    setShareUrl(null);
+    setShareOpen(false);
+    setPrompt("");
+    setGreeting("");
+    setKeywords("");
+    setTitle("");
+    setMode("manual");
+    setDesign({ ...DEFAULT_TEXT_DESIGN });
+    setSessionKey(resetCardSession());
+    setAttempts(attemptState(0, 0));
+    setStage("edit");
+    void navigate({ to: "/create-card", search: {}, replace: true });
+  }
+
 
   const keywordList = useMemo(
     () => keywords.split(",").map((k: string) => k.trim()).filter(Boolean),
@@ -244,21 +306,9 @@ function CreateCardPage() {
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
-    setShareOpen(false);
-    setCard(null);
-    setShareUrl(null);
-    setPrompt("");
-    setGreeting("");
-    setKeywords("");
-    setTitle("");
-    setMode("manual");
-    setDesign({ ...DEFAULT_TEXT_DESIGN });
-    const key = resetCardSession();
-    setSessionKey(key);
-    setAttempts(attemptState(0, 0));
-    setStage("edit");
+    startNewCard();
     toast.success(t("gc_delivered_toast"));
-    void navigate({ to: "/create-card", search: {}, replace: true });
+
   }
 
   /** Renders and downloads the final picture, then closes the order. */
@@ -444,6 +494,16 @@ function CreateCardPage() {
                         .replace("{total}", String(attempts.allowed))}
                     </p>
                   </div>
+                  {(card || attempts.packs > 0) && (
+                    <button
+                      type="button"
+                      onClick={startNewCard}
+                      className="w-full rounded-full border border-border/60 px-4 py-2 text-xs text-muted-foreground hover:bg-secondary"
+                    >
+                      {t("gc_start_new")}
+                    </button>
+                  )}
+
                   {attempts.remaining > 0 ? (
                     <button
                       type="button"
@@ -544,14 +604,12 @@ function CreateCardPage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCard(null);
-                    setStage("edit");
-                  }}
+                  onClick={startNewCard}
                   className="rounded-full border border-border/60 px-6 py-3 text-sm hover:bg-secondary"
                 >
                   {t("gc_start_new")}
                 </button>
+
               </div>
             </div>
           )}

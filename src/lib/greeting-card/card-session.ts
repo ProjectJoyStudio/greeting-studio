@@ -18,3 +18,14 @@ export function resetCardSession(): string {
   window.sessionStorage.setItem(STORAGE_KEY, key);
   return key;
 }
+
+/**
+ * Continuing an unfinished card from the personal cabinet makes that card's own
+ * package the active one, so a refresh keeps working on the same card.
+ */
+export function adoptCardSession(key: string): string {
+  if (typeof window === "undefined" || !key) return key;
+  window.sessionStorage.setItem(STORAGE_KEY, key);
+  return key;
+}
+

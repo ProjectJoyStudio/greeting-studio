@@ -16,25 +16,60 @@ export const getCardAttempts = createServerFn({ method: "POST" })
     if (!sessionKey) throw new Error("session_required");
     return { sessionKey };
   })
-  .handler(async ({ data, context }): Promise<CardAttemptState> => {
-    const { data: row } = await context.supabase
-      .from("user_card_attempt_sessions")
-      .select("attempts_used, extra_packs, closed_at")
-      .eq("user_id", context.userId)
-      .eq("session_key", data.sessionKey)
-      .maybeSingle();
-    // A finished card order keeps its history, but never funds a new card.
-    if (row?.closed_at) return attemptState(0, 0);
-    if (!row) {
-      await context.supabase
+  .handler(
+    async ({ data, context }): Promise<CardAttemptState & { cardId: string | null }> => {
+      const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .insert({ user_id: context.userId, session_key: data.sessionKey })
-        .select("id")
+        .select("attempts_used, extra_packs, closed_at, card_id")
+        .eq("user_id", context.userId)
+        .eq("session_key", data.sessionKey)
         .maybeSingle();
-      return attemptState(0, 0);
-    }
-    return attemptState(row.attempts_used, row.extra_packs);
-  });
+      // A finished card order keeps its history, but never funds a new card.
+      if (row?.closed_at) return { ...attemptState(0, 0), cardId: null };
+      if (!row) {
+        await context.supabase
+          .from("user_card_attempt_sessions")
+          .insert({ user_id: context.userId, session_key: data.sessionKey })
+          .select("id")
+          .maybeSingle();
+        return { ...attemptState(0, 0), cardId: null };
+      }
+      return { ...attemptState(row.attempts_used, row.extra_packs), cardId: row.card_id ?? null };
+    },
+  );
+
+/**
+ * Continue from the personal cabinet: finds the attempt package that belongs to
+ * one specific unfinished card, so its remaining attempts come back with it.
+ */
+export const getAttemptsForCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string }) => {
+    const cardId = String(input?.cardId ?? "").slice(0, 60);
+    if (!cardId) throw new Error("card_required");
+    return { cardId };
+  })
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ sessionKey: string | null; attempts: CardAttemptState }> => {
+      const { data: row } = await context.supabase
+        .from("user_card_attempt_sessions")
+        .select("session_key, attempts_used, extra_packs, closed_at")
+        .eq("user_id", context.userId)
+        .eq("card_id", data.cardId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!row || row.closed_at) return { sessionKey: null, attempts: attemptState(0, 0) };
+      return {
+        sessionKey: row.session_key,
+        attempts: attemptState(row.attempts_used, row.extra_packs),
+      };
+    },
+  );
+
 
 /**
  * Buys one more package of attempts for a single credit. The credit is taken

@@ -250,21 +250,28 @@ export const generateCardImage = createServerFn({ method: "POST" })
       .from(USER_CARD_BUCKET)
       .createSignedUrl(storagePath, 60 * 60 * 24);
 
-    // Only a genuinely successful generation costs an attempt.
+    // Only a genuinely successful generation costs an attempt. The package is
+    // bound to this card project, so its rest travels with the card itself.
     if (data.sessionKey) {
       if (attemptRowId) {
         await context.supabase
           .from("user_card_attempt_sessions")
-          .update({ attempts_used: attemptsUsed + 1, updated_at: new Date().toISOString() })
+          .update({
+            attempts_used: attemptsUsed + 1,
+            card_id: row.id,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", attemptRowId);
       } else {
         await context.supabase.from("user_card_attempt_sessions").insert({
           user_id: context.userId,
           session_key: data.sessionKey,
           attempts_used: 1,
+          card_id: row.id,
         });
       }
     }
+
 
     // The previous version leaves the account only now, once the new one is
     // safely stored, so a failed attempt never loses the current card.

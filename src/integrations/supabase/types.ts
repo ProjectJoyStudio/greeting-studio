@@ -3503,6 +3503,7 @@ export type Database = {
       user_card_attempt_sessions: {
         Row: {
           attempts_used: number
+          card_id: string | null
           closed_at: string | null
           created_at: string
           extra_packs: number
@@ -3513,6 +3514,7 @@ export type Database = {
         }
         Insert: {
           attempts_used?: number
+          card_id?: string | null
           closed_at?: string | null
           created_at?: string
           extra_packs?: number
@@ -3523,6 +3525,7 @@ export type Database = {
         }
         Update: {
           attempts_used?: number
+          card_id?: string | null
           closed_at?: string | null
           created_at?: string
           extra_packs?: number
@@ -3531,7 +3534,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_card_attempt_sessions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "user_greeting_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_card_drafts: {
         Row: {
