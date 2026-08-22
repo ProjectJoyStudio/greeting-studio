@@ -29,10 +29,11 @@ import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
   attemptState,
+  spentCredits,
   type CardAttemptState,
 } from "@/lib/greeting-card/attempts";
 import { currentCardSession, resetCardSession } from "@/lib/greeting-card/card-session";
-import { useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
+import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
   DEFAULT_TEXT_DESIGN,
   normalizeTextDesign,
