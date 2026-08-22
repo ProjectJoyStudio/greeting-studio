@@ -582,14 +582,12 @@ function CreateCardPage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCard(null);
-                    setStage("edit");
-                  }}
+                  onClick={startNewCard}
                   className="rounded-full border border-border/60 px-6 py-3 text-sm hover:bg-secondary"
                 >
                   {t("gc_start_new")}
                 </button>
+
               </div>
             </div>
           )}
