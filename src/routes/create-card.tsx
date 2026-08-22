@@ -117,10 +117,30 @@ function CreateCardPage() {
   const [sessionKey, setSessionKey] = useState("");
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
+  /** The unfinished card this workspace belongs to, restored after a refresh. */
+  const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
+
+  // Continuing a specific unfinished card from the personal cabinet: its own
+  // attempt package becomes the active one, without any new charge.
+  useEffect(() => {
+    if (!user || !search.cardId) return;
+    let active = true;
+    void runAttemptsForCard({ data: { cardId: search.cardId } })
+      .then((res) => {
+        if (!active) return;
+        setSessionKey(adoptCardSession(res.sessionKey ?? resetCardSession()));
+        setAttempts(res.attempts);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user, search.cardId, runAttemptsForCard]);
 
   // A refresh keeps the unfinished order alive; a finished one is replaced by a
   // brand new, clean card order.
   useEffect(() => {
+    if (search.cardId) return;
     let active = true;
     const key = currentCardSession();
     if (!key) return;
@@ -135,26 +155,29 @@ function CreateCardPage() {
     return () => {
       active = false;
     };
-  }, [runSessionStatus]);
+  }, [runSessionStatus, search.cardId]);
 
   useEffect(() => {
-    if (!user || !sessionKey) return;
+    if (!user || !sessionKey || search.cardId) return;
     let active = true;
     void runAttempts({ data: { sessionKey } })
       .then((state) => {
-        if (active) setAttempts(state);
+        if (!active) return;
+        setAttempts(attemptState(state.used, state.packs));
+        setRestoreCardId(state.cardId);
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [user, sessionKey, runAttempts]);
+  }, [user, sessionKey, runAttempts, search.cardId]);
 
   /** Re-opening a saved postcard restores the whole project, not just the picture. */
+  const openCardId = search.cardId ?? restoreCardId ?? null;
   const { data: existing } = useQuery({
-    queryKey: ["own-card", search.cardId],
-    queryFn: () => runLoad({ data: { cardId: search.cardId! } }),
-    enabled: Boolean(search.cardId),
+    queryKey: ["own-card", openCardId],
+    queryFn: () => runLoad({ data: { cardId: openCardId! } }),
+    enabled: Boolean(openCardId),
   });
 
   useEffect(() => {
@@ -168,6 +191,25 @@ function CreateCardPage() {
     setTitle(existing.title ?? "");
     setStage("design");
   }, [existing]);
+
+  /** Deliberately starting a new card: nothing of the old one travels along. */
+  function startNewCard() {
+    setCard(null);
+    setRestoreCardId(null);
+    setShareUrl(null);
+    setShareOpen(false);
+    setPrompt("");
+    setGreeting("");
+    setKeywords("");
+    setTitle("");
+    setMode("manual");
+    setDesign({ ...DEFAULT_TEXT_DESIGN });
+    setSessionKey(resetCardSession());
+    setAttempts(attemptState(0, 0));
+    setStage("edit");
+    void navigate({ to: "/create-card", search: {}, replace: true });
+  }
+
 
   const keywordList = useMemo(
     () => keywords.split(",").map((k: string) => k.trim()).filter(Boolean),
