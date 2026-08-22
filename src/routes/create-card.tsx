@@ -36,6 +36,7 @@ import {
 import {
   adoptCardSession,
   currentCardSession,
+  isEditorPageReload,
   resetCardSession,
 } from "@/lib/greeting-card/card-session";
 
