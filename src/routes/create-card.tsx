@@ -20,7 +20,11 @@ import {
   markCardDelivered,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
-import { buyCardAttemptPack, getCardAttempts } from "@/lib/greeting-card/attempts.functions";
+import {
+  buyCardAttemptPack,
+  getCardAttempts,
+  getCardSessionStatus,
+} from "@/lib/greeting-card/attempts.functions";
 import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
