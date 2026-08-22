@@ -296,11 +296,12 @@ export const generateCardImage = createServerFn({ method: "POST" })
  */
 export const markCardDelivered = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cardId: string; channel?: string }) => {
+  .inputValidator((input: { cardId: string; channel?: string; sessionKey?: string }) => {
     if (!input?.cardId) throw new Error("cardId is required");
     return {
       cardId: String(input.cardId).slice(0, 60),
       channel: String(input?.channel ?? "").slice(0, 40) || null,
+      sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
     };
   })
   .handler(async ({ data, context }) => {
@@ -311,6 +312,16 @@ export const markCardDelivered = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .is("delivered_at", null);
     if (error) throw new Error(error.message);
+    // The order is complete: its attempt package is closed and its unused
+    // attempts stay with this card instead of moving to the next one.
+    if (data.sessionKey) {
+      await context.supabase
+        .from("user_card_attempt_sessions")
+        .update({ closed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("user_id", context.userId)
+        .eq("session_key", data.sessionKey)
+        .is("closed_at", null);
+    }
     await context.supabase.from("user_card_events").insert({
       card_id: data.cardId,
       owner_user_id: context.userId,
