@@ -1,9 +1,9 @@
 // Client-safe rules for the generation attempts of one card creation.
 
-/** Every new card creation starts with this many free generation attempts. */
-export const FREE_CARD_ATTEMPTS = 5;
-/** How many extra attempts one paid package unlocks. */
-export const ATTEMPTS_PER_PACK = 5;
+/** A card creation starts without attempts; every attempt is bought in packages. */
+export const FREE_CARD_ATTEMPTS = 0;
+/** How many attempts one paid package unlocks. */
+export const ATTEMPTS_PER_PACK = 3;
 /** Price of one extra package, in credits. */
 export const ATTEMPT_PACK_CREDITS = 1;
 
