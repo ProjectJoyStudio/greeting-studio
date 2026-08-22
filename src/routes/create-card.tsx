@@ -236,6 +236,7 @@ function CreateCardPage() {
     setTitle("");
     setMode("manual");
     setDesign({ ...DEFAULT_TEXT_DESIGN });
+    finishedSessionKey.current = "";
     setSessionKey(resetCardSession());
     setAttempts(attemptState(0, 0));
     setStage("edit");
