@@ -294,21 +294,9 @@ function CreateCardPage() {
     } catch {
       // The delivery itself already happened; nothing to undo here.
     }
-    setShareOpen(false);
-    setCard(null);
-    setShareUrl(null);
-    setPrompt("");
-    setGreeting("");
-    setKeywords("");
-    setTitle("");
-    setMode("manual");
-    setDesign({ ...DEFAULT_TEXT_DESIGN });
-    const key = resetCardSession();
-    setSessionKey(key);
-    setAttempts(attemptState(0, 0));
-    setStage("edit");
+    startNewCard();
     toast.success(t("gc_delivered_toast"));
-    void navigate({ to: "/create-card", search: {}, replace: true });
+
   }
 
   /** Renders and downloads the final picture, then closes the order. */
