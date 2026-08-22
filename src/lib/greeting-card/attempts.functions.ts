@@ -120,3 +120,23 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
       };
     },
   );
+
+/**
+ * Tells the creation page whether its active card order is already finished.
+ * A closed order is history: the page starts a fresh session instead.
+ */
+export const getCardSessionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { sessionKey?: string }) => ({
+    sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }): Promise<{ closed: boolean }> => {
+    if (!data.sessionKey) return { closed: false };
+    const { data: row } = await context.supabase
+      .from("user_card_attempt_sessions")
+      .select("closed_at")
+      .eq("user_id", context.userId)
+      .eq("session_key", data.sessionKey)
+      .maybeSingle();
+    return { closed: Boolean(row?.closed_at) };
+  });
