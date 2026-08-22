@@ -224,7 +224,7 @@ function MyCardsPage() {
                     <Download className="h-3.5 w-3.5" /> {t("gc_download")}
                   </button>
                   <button
-                    onClick={() => navigate({ to: "/create-card" })}
+                    onClick={() => navigate({ to: "/create-card", search: { fresh: "1" } })}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 hover:bg-secondary"
                   >
                     <Plus className="h-3.5 w-3.5" /> {t("gc_new_card")}
