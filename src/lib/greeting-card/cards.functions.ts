@@ -54,19 +54,19 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
     const { attemptState } = await import("./attempts");
 
-    // Every card creation carries its own attempt budget: five free ones, plus
-    // five for each package the person paid for.
+    // Every card creation carries its own attempt budget: three attempts for
+    // each package the person paid for, valid only for this card order.
     let attemptRowId: string | null = null;
     let attemptsUsed = 0;
     if (data.sessionKey) {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs")
+        .select("id, attempts_used, extra_packs, closed_at")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
       const state = attemptState(row?.attempts_used ?? 0, row?.extra_packs ?? 0);
-      if (state.remaining <= 0) {
+      if (row?.closed_at || state.remaining <= 0) {
         return {
           ok: false,
           errorCode: "attempt_limit",
