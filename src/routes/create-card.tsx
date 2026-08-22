@@ -494,6 +494,16 @@ function CreateCardPage() {
                         .replace("{total}", String(attempts.allowed))}
                     </p>
                   </div>
+                  {(card || attempts.packs > 0) && (
+                    <button
+                      type="button"
+                      onClick={startNewCard}
+                      className="w-full rounded-full border border-border/60 px-4 py-2 text-xs text-muted-foreground hover:bg-secondary"
+                    >
+                      {t("gc_start_new")}
+                    </button>
+                  )}
+
                   {attempts.remaining > 0 ? (
                     <button
                       type="button"
