@@ -464,14 +464,16 @@ export async function previewVoice(args: {
   const { voiceSample } = await import("./catalog");
   const voice = await resolveVoice(args.voiceId, args.userId);
   const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
-  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
-  const result = await engine.synthesize({
-    text: voiceSample(args.language),
-    voiceId: voice.id,
-    language: args.language,
-    modelId: await getProductionVoiceModel(provider),
-    style: args.style,
+  const { speak } = await import("./tts-routing.server");
+  const result = await speak({
+    personal: voice.personal,
+    voiceProvider: provider,
+    request: {
+      text: voiceSample(args.language),
+      voiceId: voice.id,
+      language: args.language,
+      style: args.style,
+    },
   });
   return {
     audioBase64: Buffer.from(result.audio).toString("base64"),
