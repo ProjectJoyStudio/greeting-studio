@@ -172,7 +172,7 @@ export async function synthesizeTrack(args: {
       },
     });
     provider = result.providerId;
-
+    await logVoiceRequest({
       projectId: args.projectId,
       userId: args.userId,
       provider,
