@@ -345,3 +345,61 @@ export async function runwareProgress(taskUUID: string): Promise<RunwareProgress
     return { state: "processing" };
   }
 }
+// --- writing (Prompt Preparation) ------------------------------------------
+
+export interface RunwareTextInput {
+  /** Generator key of the Admin Panel. */
+  generatorKey: string;
+  system: string;
+  user: string;
+}
+
+/**
+ * Runs one text inference request and returns the produced text. Every call
+ * builds its own task with its own UUID, so simultaneous requests of different
+ * people never share state.
+ */
+export async function runwareGenerateText(input: RunwareTextInput): Promise<string> {
+  const { RUNWARE_TEXT_MODELS } = await import("./catalog");
+  const model = RUNWARE_TEXT_MODELS[input.generatorKey];
+  if (!model) {
+    throw new RunwareError("api_error", `Unknown Runware writing engine: ${input.generatorKey}.`);
+  }
+  const taskUUID = crypto.randomUUID();
+  await runwareTasks([
+    {
+      taskType: "textInference",
+      taskUUID,
+      model: model.air,
+      deliveryMethod: "async",
+      settings: {
+        systemPrompt: input.system,
+        maxTokens: 800,
+        temperature: 0.2,
+        thinkingLevel: "low",
+      },
+      messages: [{ role: "user", content: input.user }],
+      includeCost: true,
+    },
+  ]);
+
+  // The provider answers writing tasks in the background; this request waits
+  // for its own task only, so simultaneous requests never mix.
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const rows = await runwareTasks([{ taskType: "getResponse", taskUUID }]);
+    const row = rows[0];
+    if (!row) continue;
+    if (String(row["status"] ?? "") === "error") {
+      throw new RunwareError(
+        "generation_failed",
+        String(row["errorMessage"] ?? "Runware could not finish the writing task.").slice(0, 300),
+        taskUUID,
+      );
+    }
+    const text = typeof row["text"] === "string" ? (row["text"] as string).trim() : "";
+    if (text) return text;
+  }
+  throw new RunwareError("timeout", "Runware did not return the prepared text in time.", taskUUID);
+}

@@ -50,6 +50,13 @@ async function viaReplicate(model: string, req: TextRequest): Promise<string> {
   return text;
 }
 
+/** Runware writing engines receive the very same instructions. */
+async function viaRunware(generatorKey: string, req: TextRequest): Promise<string> {
+  const { runwareGenerateText } = await import("@/lib/runware/runware.server");
+  return runwareGenerateText({ generatorKey, system: req.system, user: req.user });
+}
+
+
 /**
  * Writes text with the engine an administrator selected. The backup is used
  * only after a real technical failure of the engine before it, and each engine
@@ -63,11 +70,12 @@ export async function completeText(req: TextRequest, candidates: string[]): Prom
     const generator = findGenerator(key);
     if (!generator) continue;
     try {
-      return await withGeneratorSlot(key, () =>
-        generator.provider === "Replicate"
-          ? viaReplicate(generator.model, req)
-          : viaLovable(generator.model, req),
-      );
+      return await withGeneratorSlot(key, () => {
+        if (generator.provider === "Runware") return viaRunware(key, req);
+        if (generator.provider === "Replicate") return viaReplicate(generator.model, req);
+        return viaLovable(generator.model, req);
+      });
+
     } catch (err) {
       lastError = err;
       console.error(`Text engine "${key}" failed for ${req.functionId}:`, err);
