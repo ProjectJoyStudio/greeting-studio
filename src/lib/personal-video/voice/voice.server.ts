@@ -441,8 +441,8 @@ export async function generateVoiceover(args: {
     characterCount: text.length,
     generatedAt,
     modelId: result.modelId,
-    modelLabel: model.label,
-    creditsUsed: result.creditsUsed ?? Math.round(text.length * model.creditMultiplier),
+    modelLabel: result.modelLabel,
+    creditsUsed: result.creditsUsed ?? Math.round(text.length * result.creditMultiplier),
     audioUrl: await signed(BUCKET, path),
     greetingText: text,
   };
