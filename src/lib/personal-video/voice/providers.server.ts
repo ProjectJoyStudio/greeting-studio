@@ -187,7 +187,61 @@ const elevenLabs: VoiceEngine = {
   },
 };
 
-const ENGINES: Record<string, VoiceEngine> = { [elevenLabs.id]: elevenLabs };
+/**
+ * Gemini speaks with its own named voices. A Project Joy voice keeps its
+ * character as closely as this studio allows: the same group of voices, and
+ * always the same name for the same chosen voice — never a pretended identity.
+ */
+const GEMINI_FEMALE = ["Zephyr", "Kore", "Aoede", "Leda", "Autonoe"];
+const GEMINI_MALE = ["Charon", "Puck", "Orus", "Fenrir", "Iapetus"];
+
+function geminiVoiceFor(voiceId: string): string {
+  const known = lookupVoice(voiceId);
+  const pool = known?.gender === "male" ? GEMINI_MALE : GEMINI_FEMALE;
+  let hash = 0;
+  for (const ch of voiceId) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return pool[hash % pool.length]!;
+}
+
+/** Fish Audio accepts only its own 32-character voice model ids. */
+function fishVoiceFor(voiceId: string): string | null {
+  return /^[0-9a-f]{32}$/i.test(voiceId) ? voiceId : null;
+}
+
+function runwareEngine(generatorKey: string, voiceOf: (id: string) => string | null): VoiceEngine {
+  return {
+    id: generatorKey,
+    isReady: () => Boolean(process.env["RUNWARE_API_KEY"]),
+    async synthesize({ text, voiceId, speed }) {
+      const { runwareSynthesizeSpeech } = await import("@/lib/runware/runware.server");
+      const { mp3DurationSeconds } = await import("./mp3-duration");
+      const result = await runwareSynthesizeSpeech({
+        generatorKey,
+        text: text.slice(0, PVG_VOICE_MAX_CHARS),
+        voice: voiceOf(voiceId),
+        speed,
+      });
+      const { RUNWARE_SPEECH_MODELS } = await import("@/lib/runware/catalog");
+      return {
+        audio: result.audio,
+        mimeType: result.mimeType,
+        extension: result.extension,
+        durationSeconds: mp3DurationSeconds(result.audio),
+        modelId: RUNWARE_SPEECH_MODELS[generatorKey]?.air ?? generatorKey,
+        creditsUsed: null,
+      };
+    },
+  };
+}
+
+const runwareGeminiTts = runwareEngine("rw_gemini_31_flash_tts", geminiVoiceFor);
+const runwareFishTts = runwareEngine("rw_fish_s21_pro", fishVoiceFor);
+
+const ENGINES: Record<string, VoiceEngine> = {
+  [elevenLabs.id]: elevenLabs,
+  [runwareGeminiTts.id]: runwareGeminiTts,
+  [runwareFishTts.id]: runwareFishTts,
+};
 
 export const DEFAULT_VOICE_PROVIDER = elevenLabs.id;
 
@@ -196,3 +250,4 @@ export function getVoiceEngine(provider: string = DEFAULT_VOICE_PROVIDER): Voice
   if (!engine) throw new Error("voice_service_unavailable");
   return engine;
 }
+
