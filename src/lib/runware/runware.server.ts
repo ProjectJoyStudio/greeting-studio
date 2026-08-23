@@ -403,3 +403,83 @@ export async function runwareGenerateText(input: RunwareTextInput): Promise<stri
   }
   throw new RunwareError("timeout", "Runware did not return the prepared text in time.", taskUUID);
 }
+
+// --- speech (Personal Video voice) -----------------------------------------
+
+export interface RunwareSpeechInput {
+  /** Generator key of the Admin Panel. */
+  generatorKey: string;
+  text: string;
+  /** Voice name or voice model id already validated for this studio. */
+  voice?: string | null;
+  /** Speaking pace, 1 = natural. */
+  speed?: number;
+}
+
+export interface RunwareSpeechOutput {
+  audio: Uint8Array;
+  mimeType: string;
+  extension: string;
+  air: string;
+  cost: number | null;
+}
+
+/**
+ * Speaks one text with a Runware speech model and returns the finished audio
+ * bytes. Every call carries its own task UUID, so simultaneous greetings of
+ * different people never mix.
+ */
+export async function runwareSynthesizeSpeech(
+  input: RunwareSpeechInput,
+): Promise<RunwareSpeechOutput> {
+  const { RUNWARE_SPEECH_MODELS } = await import("./catalog");
+  const model = RUNWARE_SPEECH_MODELS[input.generatorKey];
+  if (!model) {
+    throw new RunwareError("api_error", `Unknown Runware speech engine: ${input.generatorKey}.`);
+  }
+
+  const speech: Record<string, unknown> = { text: input.text };
+  if (input.voice) speech["voice"] = input.voice;
+  const pace = Number(input.speed);
+  if (Number.isFinite(pace) && pace > 0.5 && pace <= 2 && Math.abs(pace - 1) > 0.001) {
+    speech["speed"] = Math.round(pace * 100) / 100;
+  }
+
+  const taskUUID = crypto.randomUUID();
+  const rows = await runwareTasks([
+    {
+      taskType: "audioInference",
+      taskUUID,
+      model: model.air,
+      speech,
+      outputType: "URL",
+      outputFormat: "MP3",
+      deliveryMethod: "sync",
+      includeCost: true,
+    },
+  ]);
+
+  const row = rows.find((r) => r["taskUUID"] === taskUUID) ?? rows[0];
+  const url = typeof row?.["audioURL"] === "string" ? (row["audioURL"] as string) : "";
+  if (!url) {
+    throw new RunwareError("generation_failed", "Runware returned no speech audio.", taskUUID);
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new RunwareError("api_error", `Runware audio download failed [${res.status}].`, taskUUID);
+  }
+  const audio = new Uint8Array(await res.arrayBuffer());
+  if (audio.byteLength === 0) {
+    throw new RunwareError("generation_failed", "Runware returned empty speech audio.", taskUUID);
+  }
+
+  const cost = Number(row?.["cost"] ?? NaN);
+  return {
+    audio,
+    mimeType: "audio/mpeg",
+    extension: "mp3",
+    air: model.air,
+    cost: Number.isFinite(cost) ? cost : null,
+  };
+}
