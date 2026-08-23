@@ -153,23 +153,26 @@ export async function synthesizeTrack(args: {
   characterCount: number;
 }> {
   const voice = await resolveVoice(args.voiceId, args.userId);
-  const provider = voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
+  let provider = voice.provider || DEFAULT_VOICE_PROVIDER;
   const text = args.text.trim();
   if (!text) throw new Error("greeting_required");
   const started = Date.now();
-  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
+  const { speak } = await import("./tts-routing.server");
 
   try {
-    const result = await engine.synthesize({
-      text,
-      voiceId: voice.id,
-      language: args.language,
-      modelId: await getProductionVoiceModel(provider),
-      speed: args.speed ?? 1,
-      style: args.style,
+    const result = await speak({
+      personal: voice.personal,
+      voiceProvider: provider,
+      request: {
+        text,
+        voiceId: voice.id,
+        language: args.language,
+        speed: args.speed ?? 1,
+        style: args.style,
+      },
     });
-    await logVoiceRequest({
+    provider = result.providerId;
+
       projectId: args.projectId,
       userId: args.userId,
       provider,
