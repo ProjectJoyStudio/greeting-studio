@@ -93,7 +93,12 @@ export async function writeGreeting(args: ComposeArgs): Promise<string> {
           system: `${system}\n${INSTRUCTION[args.task]}`,
           user: details || "Write a warm general greeting.",
         },
-        ["gemini_25_flash", "replicate_gemini_25_flash"],
+        [
+          "gemini_25_flash",
+          "replicate_gemini_25_flash",
+          "rw_gemini_3_flash",
+          "rw_gemini_31_flash_lite",
+        ],
       )
     ).trim();
     return capLength(out && out.length > 0 ? out : localFallback(args));
