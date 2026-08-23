@@ -231,7 +231,10 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
             check: "elevenlabs",
             credential: "ELEVENLABS_API_KEY",
           },
+          RUNWARE("rw_gemini_31_flash_tts", "google:gemini@3.1-flash-tts"),
+          RUNWARE("rw_fish_s21_pro", "fishaudio:s2.1@pro"),
         ],
+
         defaultPrimary: "elevenlabs_tts",
         defaultBackup: null,
         defaultAutoFailover: false,

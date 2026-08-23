@@ -2,7 +2,7 @@
 // facts, and a testing record of every request that was made.
 
 import { lookupVoice } from "./catalog";
-import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "./providers.server";
+import { DEFAULT_VOICE_PROVIDER } from "./providers.server";
 import { isPersonalVoiceRef, personalVoiceIdOf } from "./personal-voices";
 import type { PvgVoiceover } from "./catalog";
 import { isPlayablePvgVoiceover } from "./voice-asset";
@@ -31,13 +31,18 @@ async function signed(bucket: string, path: string): Promise<string | null> {
 async function resolveVoice(
   voiceId: string,
   userId?: string,
-): Promise<{ id: string; name: string; provider: string }> {
+): Promise<{ id: string; name: string; provider: string; personal: boolean }> {
   if (isPersonalVoiceRef(voiceId)) {
     const personalId = personalVoiceIdOf(voiceId);
     if (!personalId || !userId) throw new Error("voice_not_available");
     const { resolvePersonalVoice } = await import("./personal-voices.server");
     const personal = await resolvePersonalVoice(userId, personalId);
-    return { id: personal.providerVoiceId, name: personal.name, provider: personal.provider };
+    return {
+      id: personal.providerVoiceId,
+      name: personal.name,
+      provider: personal.provider,
+      personal: true,
+    };
   }
 
   const db = await admin();
@@ -53,13 +58,14 @@ async function resolveVoice(
       id: row["external_voice_id"],
       name: row["display_name"] || row["name"],
       provider: row["provider"] || DEFAULT_VOICE_PROVIDER,
+      personal: false,
     };
   }
   // The exact voice the person chose, or nothing at all — Project Joy never
   // speaks a greeting with a voice the person did not select.
   const known = lookupVoice(voiceId);
   if (!known) throw new Error("voice_not_available");
-  return { id: known.id, name: known.name, provider: known.provider };
+  return { id: known.id, name: known.name, provider: known.provider, personal: false };
 }
 
 /** Testing record of one voice request — success or failure, always written. */
@@ -147,22 +153,25 @@ export async function synthesizeTrack(args: {
   characterCount: number;
 }> {
   const voice = await resolveVoice(args.voiceId, args.userId);
-  const provider = voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
+  let provider = voice.provider || DEFAULT_VOICE_PROVIDER;
   const text = args.text.trim();
   if (!text) throw new Error("greeting_required");
   const started = Date.now();
-  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
+  const { speak } = await import("./tts-routing.server");
 
   try {
-    const result = await engine.synthesize({
-      text,
-      voiceId: voice.id,
-      language: args.language,
-      modelId: await getProductionVoiceModel(provider),
-      speed: args.speed ?? 1,
-      style: args.style,
+    const result = await speak({
+      personal: voice.personal,
+      voiceProvider: provider,
+      request: {
+        text,
+        voiceId: voice.id,
+        language: args.language,
+        speed: args.speed ?? 1,
+        style: args.style,
+      },
     });
+    provider = result.providerId;
     await logVoiceRequest({
       projectId: args.projectId,
       userId: args.userId,
@@ -307,26 +316,27 @@ export async function generateVoiceover(args: {
 }): Promise<PvgVoiceover> {
   const db = await admin();
   const voice = await resolveVoice(args.voiceId, args.userId);
-  const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
+  let provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const text = args.text.trim();
   const started = Date.now();
 
   if (!text) throw new Error("greeting_required");
 
-  const { getProductionVoiceModelInfo } = await import("@/lib/admin/voice-settings/models.server");
-  const model = await getProductionVoiceModelInfo(provider);
-  const modelId = model.modelKey;
+  const { speak } = await import("./tts-routing.server");
 
   let result;
   try {
-    result = await engine.synthesize({
-      text,
-      voiceId: voice.id,
-      language: args.language,
-      modelId,
-      style: args.style,
+    result = await speak({
+      personal: voice.personal,
+      voiceProvider: provider,
+      request: {
+        text,
+        voiceId: voice.id,
+        language: args.language,
+        style: args.style,
+      },
     });
+    provider = result.providerId;
   } catch (error) {
     await logVoiceRequest({
       projectId: args.projectId,
@@ -377,8 +387,8 @@ export async function generateVoiceover(args: {
       voice_name: voice.name,
       language: args.language,
       model_id: result.modelId,
-      model_label: model.label,
-      credits_used: result.creditsUsed ?? Math.round(text.length * model.creditMultiplier),
+      model_label: result.modelLabel,
+      credits_used: result.creditsUsed ?? Math.round(text.length * result.creditMultiplier),
       storage_bucket: BUCKET,
       storage_path: path,
       mime_type: result.mimeType,
@@ -431,8 +441,8 @@ export async function generateVoiceover(args: {
     characterCount: text.length,
     generatedAt,
     modelId: result.modelId,
-    modelLabel: model.label,
-    creditsUsed: result.creditsUsed ?? Math.round(text.length * model.creditMultiplier),
+    modelLabel: result.modelLabel,
+    creditsUsed: result.creditsUsed ?? Math.round(text.length * result.creditMultiplier),
     audioUrl: await signed(BUCKET, path),
     greetingText: text,
   };
@@ -454,14 +464,16 @@ export async function previewVoice(args: {
   const { voiceSample } = await import("./catalog");
   const voice = await resolveVoice(args.voiceId, args.userId);
   const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
-  const { getProductionVoiceModel } = await import("@/lib/admin/voice-settings/models.server");
-  const result = await engine.synthesize({
-    text: voiceSample(args.language),
-    voiceId: voice.id,
-    language: args.language,
-    modelId: await getProductionVoiceModel(provider),
-    style: args.style,
+  const { speak } = await import("./tts-routing.server");
+  const result = await speak({
+    personal: voice.personal,
+    voiceProvider: provider,
+    request: {
+      text: voiceSample(args.language),
+      voiceId: voice.id,
+      language: args.language,
+      style: args.style,
+    },
   });
   return {
     audioBase64: Buffer.from(result.audio).toString("base64"),
