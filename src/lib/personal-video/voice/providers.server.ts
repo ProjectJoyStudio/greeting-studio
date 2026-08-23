@@ -1,7 +1,7 @@
 // Server-only voice engines. Every engine keeps the same shape, so another
 // voice studio can be registered here later and the pages stay unchanged.
 
-import { PVG_VOICE_MAX_CHARS } from "./catalog";
+import { PVG_VOICE_MAX_CHARS, lookupVoice } from "./catalog";
 import type { PersonalVoiceStyle } from "./personal-voices";
 
 export interface SynthesisRequest {
