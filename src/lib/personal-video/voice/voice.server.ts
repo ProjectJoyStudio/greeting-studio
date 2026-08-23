@@ -31,13 +31,18 @@ async function signed(bucket: string, path: string): Promise<string | null> {
 async function resolveVoice(
   voiceId: string,
   userId?: string,
-): Promise<{ id: string; name: string; provider: string }> {
+): Promise<{ id: string; name: string; provider: string; personal: boolean }> {
   if (isPersonalVoiceRef(voiceId)) {
     const personalId = personalVoiceIdOf(voiceId);
     if (!personalId || !userId) throw new Error("voice_not_available");
     const { resolvePersonalVoice } = await import("./personal-voices.server");
     const personal = await resolvePersonalVoice(userId, personalId);
-    return { id: personal.providerVoiceId, name: personal.name, provider: personal.provider };
+    return {
+      id: personal.providerVoiceId,
+      name: personal.name,
+      provider: personal.provider,
+      personal: true,
+    };
   }
 
   const db = await admin();
@@ -53,13 +58,14 @@ async function resolveVoice(
       id: row["external_voice_id"],
       name: row["display_name"] || row["name"],
       provider: row["provider"] || DEFAULT_VOICE_PROVIDER,
+      personal: false,
     };
   }
   // The exact voice the person chose, or nothing at all — Project Joy never
   // speaks a greeting with a voice the person did not select.
   const known = lookupVoice(voiceId);
   if (!known) throw new Error("voice_not_available");
-  return { id: known.id, name: known.name, provider: known.provider };
+  return { id: known.id, name: known.name, provider: known.provider, personal: false };
 }
 
 /** Testing record of one voice request — success or failure, always written. */
