@@ -366,19 +366,40 @@ export async function runwareGenerateText(input: RunwareTextInput): Promise<stri
     throw new RunwareError("api_error", `Unknown Runware writing engine: ${input.generatorKey}.`);
   }
   const taskUUID = crypto.randomUUID();
-  const rows = await runwareTasks([
+  await runwareTasks([
     {
       taskType: "textInference",
       taskUUID,
       model: model.air,
-      settings: { systemPrompt: input.system, maxTokens: 800, temperature: 0.2 },
+      deliveryMethod: "async",
+      settings: {
+        systemPrompt: input.system,
+        maxTokens: 800,
+        temperature: 0.2,
+        thinkingLevel: "low",
+      },
       messages: [{ role: "user", content: input.user }],
-      outputType: "TEXT",
       includeCost: true,
     },
   ]);
-  const row = rows[0];
-  const text = typeof row?.["text"] === "string" ? (row["text"] as string).trim() : "";
-  if (!text) throw new RunwareError("generation_failed", "Runware returned no text.", taskUUID);
-  return text;
+
+  // The provider answers writing tasks in the background; this request waits
+  // for its own task only, so simultaneous requests never mix.
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const rows = await runwareTasks([{ taskType: "getResponse", taskUUID }]);
+    const row = rows[0];
+    if (!row) continue;
+    if (String(row["status"] ?? "") === "error") {
+      throw new RunwareError(
+        "generation_failed",
+        String(row["errorMessage"] ?? "Runware could not finish the writing task.").slice(0, 300),
+        taskUUID,
+      );
+    }
+    const text = typeof row["text"] === "string" ? (row["text"] as string).trim() : "";
+    if (text) return text;
+  }
+  throw new RunwareError("timeout", "Runware did not return the prepared text in time.", taskUUID);
 }
