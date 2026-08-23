@@ -166,11 +166,14 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         candidates: [
           LOVABLE("gemini_25_flash", "google/gemini-2.5-flash"),
           REPLICATE_BACKUP("replicate_gemini_25_flash", "google/gemini-2.5-flash"),
+          RUNWARE("rw_gemini_3_flash", "google:gemini@3-flash"),
+          RUNWARE("rw_gemini_31_flash_lite", "google:gemini@3.1-flash-lite"),
         ],
         defaultPrimary: "gemini_25_flash",
         defaultBackup: "replicate_gemini_25_flash",
         defaultAutoFailover: false,
       },
+
     ],
   },
   {

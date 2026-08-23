@@ -345,3 +345,40 @@ export async function runwareProgress(taskUUID: string): Promise<RunwareProgress
     return { state: "processing" };
   }
 }
+// --- writing (Prompt Preparation) ------------------------------------------
+
+export interface RunwareTextInput {
+  /** Generator key of the Admin Panel. */
+  generatorKey: string;
+  system: string;
+  user: string;
+}
+
+/**
+ * Runs one text inference request and returns the produced text. Every call
+ * builds its own task with its own UUID, so simultaneous requests of different
+ * people never share state.
+ */
+export async function runwareGenerateText(input: RunwareTextInput): Promise<string> {
+  const { RUNWARE_TEXT_MODELS } = await import("./catalog");
+  const model = RUNWARE_TEXT_MODELS[input.generatorKey];
+  if (!model) {
+    throw new RunwareError("api_error", `Unknown Runware writing engine: ${input.generatorKey}.`);
+  }
+  const taskUUID = crypto.randomUUID();
+  const rows = await runwareTasks([
+    {
+      taskType: "textInference",
+      taskUUID,
+      model: model.air,
+      settings: { systemPrompt: input.system, maxTokens: 800, temperature: 0.2 },
+      messages: [{ role: "user", content: input.user }],
+      outputType: "TEXT",
+      includeCost: true,
+    },
+  ]);
+  const row = rows[0];
+  const text = typeof row?.["text"] === "string" ? (row["text"] as string).trim() : "";
+  if (!text) throw new RunwareError("generation_failed", "Runware returned no text.", taskUUID);
+  return text;
+}

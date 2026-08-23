@@ -118,3 +118,28 @@ export function isRunwareImageKey(key: string): boolean {
 export function isRunwareVideoKey(key: string): boolean {
   return Boolean(RUNWARE_VIDEO_MODELS[key]);
 }
+// --- writing engines (Prompt Preparation) ----------------------------------
+
+export interface RunwareTextModel {
+  key: string;
+  air: string;
+  label: string;
+}
+
+/** Runware writing models offered to the Prompt Preparation step. */
+export const RUNWARE_TEXT_MODELS: Record<string, RunwareTextModel> = {
+  rw_gemini_3_flash: {
+    key: "rw_gemini_3_flash",
+    air: "google:gemini@3-flash",
+    label: "Gemini 3 Flash",
+  },
+  rw_gemini_31_flash_lite: {
+    key: "rw_gemini_31_flash_lite",
+    air: "google:gemini@3.1-flash-lite",
+    label: "Gemini 3.1 Flash Lite",
+  },
+};
+
+export function isRunwareTextKey(key: string): boolean {
+  return Boolean(RUNWARE_TEXT_MODELS[key]);
+}

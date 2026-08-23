@@ -57,7 +57,13 @@ export async function translatePromptToEnglish(
           system: SYSTEM[kind],
           user: original,
         },
-        ["gemini_25_flash", "replicate_gemini_25_flash"],
+        [
+          "gemini_25_flash",
+          "replicate_gemini_25_flash",
+          "rw_gemini_3_flash",
+          "rw_gemini_31_flash_lite",
+        ],
+
       )
     ).trim();
     if (!text) return { original, english: original, translated: false };
