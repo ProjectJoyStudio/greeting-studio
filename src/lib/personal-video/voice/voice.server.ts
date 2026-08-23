@@ -316,26 +316,27 @@ export async function generateVoiceover(args: {
 }): Promise<PvgVoiceover> {
   const db = await admin();
   const voice = await resolveVoice(args.voiceId, args.userId);
-  const provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
-  const engine = getVoiceEngine(provider);
+  let provider = args.provider || voice.provider || DEFAULT_VOICE_PROVIDER;
   const text = args.text.trim();
   const started = Date.now();
 
   if (!text) throw new Error("greeting_required");
 
-  const { getProductionVoiceModelInfo } = await import("@/lib/admin/voice-settings/models.server");
-  const model = await getProductionVoiceModelInfo(provider);
-  const modelId = model.modelKey;
+  const { speak } = await import("./tts-routing.server");
 
   let result;
   try {
-    result = await engine.synthesize({
-      text,
-      voiceId: voice.id,
-      language: args.language,
-      modelId,
-      style: args.style,
+    result = await speak({
+      personal: voice.personal,
+      voiceProvider: provider,
+      request: {
+        text,
+        voiceId: voice.id,
+        language: args.language,
+        style: args.style,
+      },
     });
+    provider = result.providerId;
   } catch (error) {
     await logVoiceRequest({
       projectId: args.projectId,
