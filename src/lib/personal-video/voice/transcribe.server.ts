@@ -7,7 +7,11 @@ import { findGenerator } from "@/lib/admin/generators/registry";
 
 const ENDPOINT = "https://ai.gateway.lovable.dev/v1/audio/transcriptions";
 
-const CANDIDATES = ["gpt_4o_transcribe", "replicate_gpt_4o_transcribe"];
+const CANDIDATES = [
+  "gpt_4o_transcribe",
+  "replicate_gpt_4o_transcribe",
+  "rw_gemini_3_flash_stt",
+];
 
 const EXTENSIONS: Record<string, string> = {
   "audio/webm": "webm",
