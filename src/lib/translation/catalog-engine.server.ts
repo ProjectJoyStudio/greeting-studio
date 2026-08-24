@@ -16,7 +16,8 @@
 import { generatorOrder, withGeneratorSlot } from "@/lib/admin/generators/runtime.server";
 import { findGenerator } from "@/lib/admin/generators/registry";
 import type { Lang } from "@/lib/i18n";
-import { DEEPL_SOURCE, DEEPL_TARGET, TranslationError } from "./types-runtime";
+import { DEEPL_SOURCE, DEEPL_TARGET } from "./types";
+import { TranslationError } from "./deepl.server";
 
 /** Engines allowed to serve catalog text translation. */
 export const CATALOG_TRANSLATION_CANDIDATES = ["deepl", "rw_gemini_31_flash_lite"];
