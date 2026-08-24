@@ -257,6 +257,8 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         candidates: [
           LOVABLE_AUDIO("gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
           REPLICATE_BACKUP("replicate_gpt_4o_transcribe", "openai/gpt-4o-transcribe"),
+          // Listening only: it writes down the sample, it never speaks.
+          RUNWARE("rw_gemini_3_flash_stt", "google:gemini@3-flash"),
         ],
         defaultPrimary: "gpt_4o_transcribe",
         defaultBackup: "replicate_gpt_4o_transcribe",

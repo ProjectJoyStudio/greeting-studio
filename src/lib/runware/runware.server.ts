@@ -506,3 +506,66 @@ export async function runwareSynthesizeSpeech(
     cost: Number.isFinite(cost) ? cost : null,
   };
 }
+
+// --- listening (Voice Sample Verification) ---------------------------------
+
+export interface RunwareTranscribeInput {
+  /** Generator key of the Admin Panel. */
+  generatorKey: string;
+  /** The authorized recording, as raw base64 (never logged). */
+  base64: string;
+  mimeType: string;
+  /** Two-letter code of the language spoken, when it is known. */
+  language?: string | null;
+}
+
+const TRANSCRIBE_SYSTEM = [
+  "You write down speech exactly as it is heard.",
+  "Return only the spoken words, with no commentary, labels, quotes or timestamps.",
+  "Keep the language that is actually spoken; never translate.",
+  "Never rewrite, improve, correct, summarise, shorten or extend what was said.",
+  "Keep names and wording exactly as spoken.",
+  "If a part cannot be understood, leave it out instead of inventing words.",
+  "If no speech can be heard, return an empty answer.",
+].join(" ");
+
+/**
+ * Writes down the words heard in one authorized recording. The audio travels
+ * to the provider inside this request only; it is never logged or stored here.
+ */
+export async function runwareTranscribeAudio(
+  input: RunwareTranscribeInput,
+): Promise<string | null> {
+  const { RUNWARE_TRANSCRIBE_MODELS } = await import("./catalog");
+  const model = RUNWARE_TRANSCRIBE_MODELS[input.generatorKey];
+  if (!model) {
+    throw new RunwareError("api_error", `Unknown Runware listening engine: ${input.generatorKey}.`);
+  }
+
+  const type = (input.mimeType || "audio/webm").split(";")[0]!.toLowerCase();
+  const language = input.language && /^[a-z]{2}$/.test(input.language) ? input.language : null;
+  const taskUUID = crypto.randomUUID();
+
+  const rows = await runwareTasks([
+    {
+      taskType: "textInference",
+      taskUUID,
+      model: model.air,
+      inputs: { audios: [`data:${type};base64,${input.base64}`] },
+      settings: { systemPrompt: TRANSCRIBE_SYSTEM, temperature: 0, maxTokens: 800 },
+      messages: [
+        {
+          role: "user",
+          content: language
+            ? `Write down word for word what is said in the attached recording. The speech is in "${language}"; keep that language.`
+            : "Write down word for word what is said in the attached recording, in the language spoken.",
+        },
+      ],
+      includeCost: true,
+    },
+  ]);
+
+  const row = rows.find((r) => r["taskUUID"] === taskUUID) ?? rows[0];
+  const text = typeof row?.["text"] === "string" ? (row["text"] as string).trim() : "";
+  return text || null;
+}

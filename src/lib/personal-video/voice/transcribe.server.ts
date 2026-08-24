@@ -7,7 +7,11 @@ import { findGenerator } from "@/lib/admin/generators/registry";
 
 const ENDPOINT = "https://ai.gateway.lovable.dev/v1/audio/transcriptions";
 
-const CANDIDATES = ["gpt_4o_transcribe", "replicate_gpt_4o_transcribe"];
+const CANDIDATES = [
+  "gpt_4o_transcribe",
+  "replicate_gpt_4o_transcribe",
+  "rw_gemini_3_flash_stt",
+];
 
 const EXTENSIONS: Record<string, string> = {
   "audio/webm": "webm",
@@ -73,6 +77,17 @@ async function viaReplicate(model: string, input: Sample): Promise<string | null
   return text || null;
 }
 
+/** Same interface, served by a Runware listening model. */
+async function viaRunware(generatorKey: string, input: Sample): Promise<string | null> {
+  const { runwareTranscribeAudio } = await import("@/lib/runware/runware.server");
+  return runwareTranscribeAudio({
+    generatorKey,
+    base64: input.base64,
+    mimeType: input.mimeType,
+    language: input.language ?? null,
+  });
+}
+
 /** The words heard in a short sample, or null when listening was not possible. */
 export async function transcribeSample(input: Sample): Promise<string | null> {
   const order = await generatorOrder("personal_video.transcription", CANDIDATES);
@@ -81,9 +96,11 @@ export async function transcribeSample(input: Sample): Promise<string | null> {
     if (!generator) continue;
     try {
       return await withGeneratorSlot(key, () =>
-        generator.provider === "Replicate"
-          ? viaReplicate(generator.model, input)
-          : viaLovable(generator.model, input),
+        generator.provider === "Runware"
+          ? viaRunware(key, input)
+          : generator.provider === "Replicate"
+            ? viaReplicate(generator.model, input)
+            : viaLovable(generator.model, input),
       );
     } catch (err) {
       console.error(`Listening engine "${key}" failed:`, err);
