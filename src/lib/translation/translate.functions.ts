@@ -8,8 +8,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Lang } from "@/lib/i18n";
 import {
-  DEEPL_SOURCE,
-  DEEPL_TARGET,
   type TranslationLocaleResult,
   type TranslationRequestField,
 } from "./types";
@@ -54,10 +52,10 @@ export const translateFields = createServerFn({ method: "POST" })
       };
     }
 
-    const { deeplTranslate, TranslationError } = await import("./deepl.server");
+    const { translateCatalogTexts } = await import("./catalog-engine.server");
+    const { TranslationError } = await import("./deepl.server");
 
     const nonEmpty = data.fields.filter((f) => f.text.trim().length > 0);
-    const source = DEEPL_SOURCE[data.sourceLocale] ?? "RU";
 
     const results = await Promise.all(
       data.targetLocales.map(async (locale): Promise<TranslationLocaleResult> => {
@@ -68,16 +66,17 @@ export const translateFields = createServerFn({ method: "POST" })
           return { locale, ok: true, fields: [] };
         }
         try {
-          const translated = await deeplTranslate(
+          const translated = await translateCatalogTexts(
             nonEmpty.map((f) => f.text),
-            source,
-            DEEPL_TARGET[locale] ?? locale.toUpperCase(),
+            data.sourceLocale,
+            locale,
           );
           return {
             locale,
             ok: true,
             fields: nonEmpty.map((f, i) => ({ key: f.key, text: translated[i] })),
           };
+
         } catch (err) {
           const code =
             err instanceof TranslationError ? err.code : ("unknown" as const);

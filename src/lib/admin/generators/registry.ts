@@ -302,11 +302,13 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
             check: "deepl",
             credential: "DEEPL_API_KEY",
           },
+          RUNWARE("rw_gemini_31_flash_lite", "google:gemini@3.1-flash-lite"),
         ],
         defaultPrimary: "deepl",
-        defaultBackup: null,
-        defaultAutoFailover: false,
+        defaultBackup: "rw_gemini_31_flash_lite",
+        defaultAutoFailover: true,
       },
+
     ],
   },
   {
