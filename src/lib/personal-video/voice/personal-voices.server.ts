@@ -462,6 +462,27 @@ export async function previewPersonalVoice(args: {
   };
 }
 
+/**
+ * The authorized enrollment recording of one personal voice, together with the
+ * exact sentence that was read aloud. A studio that clones from a recording
+ * instead of holding a stored profile speaks with this and nothing else.
+ */
+export async function personalVoiceReference(
+  userId: string,
+  voiceId: string,
+): Promise<{ bytes: Uint8Array; mime: string; text: string } | null> {
+  const row = await readOwned(userId, voiceId);
+  const samples = samplesOf(row);
+  const sample = samples[0];
+  if (!sample) return null;
+  const { enrollmentText } = await import("./enrollment");
+  const language = row["language"] ?? "en";
+  const spoken = enrollmentText(language, sample.textId === "sample2" ? "sample2" : "sample1");
+  const bytes = await downloadSample(sample);
+  if (bytes.byteLength === 0) return null;
+  return { bytes, mime: sample.mime || "audio/webm", text: spoken.text };
+}
+
 /** The cloned studio voice behind one profile, ready to speak any greeting. */
 export async function resolvePersonalVoice(
   userId: string,
