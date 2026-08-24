@@ -8,8 +8,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Lang } from "@/lib/i18n";
 import {
-  DEEPL_SOURCE,
-  DEEPL_TARGET,
   type TranslationLocaleResult,
   type TranslationRequestField,
 } from "./types";
