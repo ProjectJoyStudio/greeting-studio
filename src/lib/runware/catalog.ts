@@ -150,18 +150,12 @@ export interface RunwareSpeechModel {
   key: string;
   air: string;
   label: string;
-  /** How this studio names the voice that speaks the greeting. */
-  voiceKind: "gemini_named" | "fish_model_id";
+  /** How this studio decides which voice speaks the greeting. */
+  voiceKind: "reference_clone" | "fish_model_id";
 }
 
 /** Runware speech models offered to the Personal Video voice step. */
 export const RUNWARE_SPEECH_MODELS: Record<string, RunwareSpeechModel> = {
-  rw_gemini_31_flash_tts: {
-    key: "rw_gemini_31_flash_tts",
-    air: "google:gemini@3.1-flash-tts",
-    label: "Gemini 3.1 Flash TTS",
-    voiceKind: "gemini_named",
-  },
   rw_fish_s21_pro: {
     key: "rw_fish_s21_pro",
     air: "fishaudio:s2.1@pro",

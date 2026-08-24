@@ -163,6 +163,8 @@ export async function synthesizeTrack(args: {
     const result = await speak({
       personal: voice.personal,
       voiceProvider: provider,
+      selection: args.voiceId,
+      userId: args.userId,
       request: {
         text,
         voiceId: voice.id,
@@ -329,6 +331,8 @@ export async function generateVoiceover(args: {
     result = await speak({
       personal: voice.personal,
       voiceProvider: provider,
+      selection: args.voiceId,
+      userId: args.userId,
       request: {
         text,
         voiceId: voice.id,
@@ -468,6 +472,8 @@ export async function previewVoice(args: {
   const result = await speak({
     personal: voice.personal,
     voiceProvider: provider,
+    selection: args.voiceId,
+    userId: args.userId,
     request: {
       text: voiceSample(args.language),
       voiceId: voice.id,

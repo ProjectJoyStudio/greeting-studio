@@ -414,6 +414,11 @@ export interface RunwareSpeechInput {
   voice?: string | null;
   /** Speaking pace, 1 = natural. */
   speed?: number;
+  /**
+   * Authorized recording of the chosen voice, used for real voice cloning.
+   * The transcript must match what is spoken in the recording.
+   */
+  referenceVoice?: { audio: string; text: string } | null;
 }
 
 export interface RunwareSpeechOutput {
@@ -439,7 +444,13 @@ export async function runwareSynthesizeSpeech(
   }
 
   const speech: Record<string, unknown> = { text: input.text };
-  if (input.voice) speech["voice"] = input.voice;
+  // A reference recording and a chosen voice name exclude each other: when the
+  // voice is cloned from a recording, only the recording decides how it sounds.
+  if (input.referenceVoice) {
+    // nothing else to set on `speech`
+  } else if (input.voice) {
+    speech["voice"] = input.voice;
+  }
   const pace = Number(input.speed);
   if (Number.isFinite(pace) && pace > 0.5 && pace <= 2 && Math.abs(pace - 1) > 0.001) {
     speech["speed"] = Math.round(pace * 100) / 100;
@@ -452,6 +463,18 @@ export async function runwareSynthesizeSpeech(
       taskUUID,
       model: model.air,
       speech,
+      ...(input.referenceVoice
+        ? {
+            inputs: {
+              referenceVoices: [
+                {
+                  audio: input.referenceVoice.audio,
+                  text: input.referenceVoice.text.slice(0, 1000),
+                },
+              ],
+            },
+          }
+        : {}),
       outputType: "URL",
       outputFormat: "MP3",
       deliveryMethod: "sync",

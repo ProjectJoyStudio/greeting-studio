@@ -7,7 +7,10 @@ import { getVoiceEngine, DEFAULT_VOICE_PROVIDER } from "./providers.server";
 import type { SynthesisRequest, SynthesisResult } from "./providers.server";
 
 /** Engines an administrator may choose for the Personal Video voice. */
-const VOICE_GENERATORS = ["elevenlabs_tts", "rw_gemini_31_flash_tts", "rw_fish_s21_pro"];
+const VOICE_GENERATORS = ["elevenlabs_tts", "rw_fish_s21_pro"];
+
+/** Engines that reproduce a voice from an authorized reference recording. */
+const REFERENCE_ENGINES = new Set(["rw_fish_s21_pro"]);
 
 /** The voice engine that serves one configured generator key. */
 function engineIdFor(generatorKey: string): string {
@@ -43,22 +46,42 @@ export async function speak(args: {
   personal: boolean;
   /** The studio the chosen voice belongs to. */
   voiceProvider: string;
+  /** The voice exactly as the customer chose it, used to find its recording. */
+  selection?: string;
+  /** Owner of a personal voice, needed to read their own recording. */
+  userId?: string;
 }): Promise<SpokenResult> {
   const order: string[] = [];
+  const cloneKey = args.voiceProvider === "elevenlabs" ? "elevenlabs_tts" : args.voiceProvider;
+
+  const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
+  const configured = await generatorOrder("personal_video.voice", VOICE_GENERATORS);
 
   if (args.personal) {
-    order.push(args.voiceProvider === "elevenlabs" ? "elevenlabs_tts" : args.voiceProvider);
+    // A cloned voice stays either with the studio that holds the clone, or with
+    // a studio that reproduces it from the customer's own recording.
+    order.push(...configured.filter((key) => REFERENCE_ENGINES.has(key) || key === cloneKey));
+    if (order.length === 0) order.push(cloneKey);
   } else {
-    const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    order.push(...(await generatorOrder("personal_video.voice", VOICE_GENERATORS)));
+    order.push(...configured);
     if (order.length === 0) {
-      order.push(
-        (args.voiceProvider || DEFAULT_VOICE_PROVIDER) === "elevenlabs"
-          ? "elevenlabs_tts"
-          : args.voiceProvider,
-      );
+      order.push((args.voiceProvider || DEFAULT_VOICE_PROVIDER) === "elevenlabs" ? "elevenlabs_tts" : cloneKey);
     }
   }
+
+  // The same recording is used by every engine in the route, so a backup never
+  // changes how the greeting sounds. It is read once and only when needed.
+  let reference: { audio: string; text: string } | null | undefined;
+  const referenceFor = async (): Promise<{ audio: string; text: string } | null> => {
+    if (reference !== undefined) return reference;
+    const { resolveVoiceReference } = await import("./voice-reference.server");
+    reference = await resolveVoiceReference({
+      selection: args.selection || args.request.voiceId,
+      userId: args.userId,
+      language: args.request.language,
+    }).catch(() => null);
+    return reference;
+  };
 
   let lastError: unknown = null;
   for (const key of order) {
@@ -74,7 +97,12 @@ export async function speak(args: {
             return { modelKey: entry?.air ?? key, label: entry?.label ?? key, multiplier: 1 };
           })();
 
-      const result = await engine.synthesize({ ...args.request, modelId: model.modelKey });
+      const needsReference = REFERENCE_ENGINES.has(key);
+      const result = await engine.synthesize({
+        ...args.request,
+        modelId: model.modelKey,
+        reference: needsReference ? await referenceFor() : null,
+      });
       if (!result.audio || result.audio.byteLength === 0) throw new Error("voice_empty_response");
       return {
         ...result,
