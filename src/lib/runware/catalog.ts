@@ -167,3 +167,27 @@ export const RUNWARE_SPEECH_MODELS: Record<string, RunwareSpeechModel> = {
 export function isRunwareSpeechKey(key: string): boolean {
   return Boolean(RUNWARE_SPEECH_MODELS[key]);
 }
+
+// --- listening engines (Personal Video voice sample verification) ----------
+
+export interface RunwareTranscribeModel {
+  key: string;
+  air: string;
+  label: string;
+}
+
+/**
+ * Runware models offered to Voice Sample Verification. They only write down
+ * what was said in an authorized recording; they never speak and never clone.
+ */
+export const RUNWARE_TRANSCRIBE_MODELS: Record<string, RunwareTranscribeModel> = {
+  rw_gemini_3_flash_stt: {
+    key: "rw_gemini_3_flash_stt",
+    air: "google:gemini@3-flash",
+    label: "Gemini 3 Flash (listening)",
+  },
+};
+
+export function isRunwareTranscribeKey(key: string): boolean {
+  return Boolean(RUNWARE_TRANSCRIBE_MODELS[key]);
+}
