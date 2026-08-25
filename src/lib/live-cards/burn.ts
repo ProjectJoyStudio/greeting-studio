@@ -232,6 +232,10 @@ export async function renderFinalVideo(
       throw new Error(`music_load_failed: ${detail}`);
     }
   }
+  // A card with chosen music is only recorded when the music really is part of
+  // the recording. Without this, a silent file could be reported as finished.
+  if (music && stream.getAudioTracks().length === 0) throw new Error("music_track_missing");
+
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => {
