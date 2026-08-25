@@ -355,3 +355,34 @@ export const getLiveCardSessionStatus = createServerFn({ method: "POST" })
       .limit(1);
     return { closed: Boolean(rows?.length) };
   });
+
+/**
+ * Removes one unfinished live greeting project that never reached the
+ * animation: every start-image variant of that creation session leaves the
+ * account together, exactly as one single project. Nothing is destroyed — the
+ * pictures stay in the recycle bin for the configured retention period.
+ */
+export const discardLiveCardSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionId: string }) => {
+    const sessionId = String(input?.sessionId ?? "").slice(0, 64);
+    if (!sessionId) throw new Error("session_required");
+    return { sessionId };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+    const days = await readRetentionDays();
+    const now = new Date();
+    const { error } = await context.supabase
+      .from("live_greeting_cards")
+      .update({
+        status: "discarded",
+        deleted_at: now.toISOString(),
+        purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
+      })
+      .eq("user_id", context.userId)
+      .eq("session_id", data.sessionId)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
