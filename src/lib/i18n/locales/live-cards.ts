@@ -15,7 +15,7 @@ export const LIVE_CARDS_I18N: Record<Lang, Dict> = {
     lc_upload: "Upload your own image",
     lc_upload_hint: "PNG, JPG or WebP, up to 10 MB",
     lc_uploading: "Uploading…",
-    lc_preview_empty: "Your picture will appear here.",
+    lc_variants: "Generated variants",
     lc_recent: "Your recent pictures",
     lc_buy_attempts: "Get 3 more attempts — 1 credit",
     lc_pack_price: "1 credit = 3 attempts",
