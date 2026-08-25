@@ -145,24 +145,115 @@ export const listMyLiveGreetings = createServerFn({ method: "GET" })
   });
 
 /**
- * Drafts: animations that still wait for their greeting. They exist only to
- * continue editing — they can never be downloaded or shared.
+ * Unfinished live greeting projects. One project — one entry: the pictures
+ * that were created before a choice was made, and the animation that follows
+ * them, always belong to the same creation session and are shown once.
  */
 export const listMyLiveDrafts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<LiveGreetingRecord[]> => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows } = await context.supabase
       .from("live_card_animations")
-      .select(COLUMNS)
+      .select(`${COLUMNS}, session_id`)
       .eq("user_id", context.userId)
       .in("status", ["preparing", "queued", "processing", "storing", "ready", "failed"])
       .is("finalized_at", null)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(100);
-    if (error || !rows) return [];
-    return hydrate(context as never, rows as Row[]);
+
+    // Only the newest animation of a session represents its project; earlier
+    // technical attempts of the same project never become a second entry.
+    const animations: (Row & { session_id: string | null })[] = [];
+    const seen = new Set<string>();
+    for (const row of (rows ?? []) as (Row & { session_id: string | null })[]) {
+      const key = row.session_id ?? `row:${row.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      animations.push(row);
+    }
+
+    const records = (await hydrate(context as never, animations as Row[])).map((record, index) => ({
+      ...record,
+      kind: "animation" as const,
+      sessionId: animations[index]?.session_id ?? null,
+    }));
+
+    // Projects that stopped before the animation: every start-image variant of
+    // the session stays, but the account shows one single unfinished project.
+    const { data: cards } = await context.supabase
+      .from("live_greeting_cards")
+      .select("id, session_id, prompt, aspect_ratio, storage_bucket, storage_path, created_at")
+      .eq("user_id", context.userId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const imageProjects: LiveGreetingRecord[] = [];
+    const covered = new Set(records.map((r) => r.sessionId).filter(Boolean) as string[]);
+    const grouped = new Map<
+      string,
+      { first: { id: string; prompt: string | null; aspect_ratio: string | null; storage_bucket: string; storage_path: string; created_at: string }; count: number }
+    >();
+    for (const card of (cards ?? []) as {
+      id: string;
+      session_id: string | null;
+      prompt: string | null;
+      aspect_ratio: string | null;
+      storage_bucket: string;
+      storage_path: string;
+      created_at: string;
+    }[]) {
+      if (!card.session_id || covered.has(card.session_id)) continue;
+      const entry = grouped.get(card.session_id);
+      if (entry) {
+        entry.count += 1;
+        // The oldest picture of the project is its representative thumbnail.
+        if (card.created_at < entry.first.created_at) entry.first = card;
+      } else {
+        grouped.set(card.session_id, { first: card, count: 1 });
+      }
+    }
+    for (const [sessionId, entry] of grouped) {
+      const signed = await supabaseAdmin.storage
+        .from(entry.first.storage_bucket)
+        .createSignedUrl(entry.first.storage_path, 60 * 60 * 12);
+      imageProjects.push({
+        id: sessionId,
+        status: "image_draft",
+        title: null,
+        imagePrompt: entry.first.prompt ?? "",
+        motionPrompt: entry.first.prompt ?? "",
+        motionPromptEnglish: null,
+        durationSeconds: 0,
+        aspectRatio: entry.first.aspect_ratio,
+        imageUrl: signed.data?.signedUrl ?? null,
+        videoUrl: null,
+        sourceVideoUrl: null,
+        greetingText: "",
+        greetingMode: "manual",
+        greetingKeywords: [],
+        textDesign: normalizeTextDesign(null),
+        isFinalized: false,
+        hasBurnedText: false,
+        soundEnabled: false,
+        music: normalizeLiveCardMusic(null),
+        isShared: false,
+        shareSlug: null,
+        scheduledSendAt: null,
+        priceCredits: null,
+        errorCode: null,
+        kind: "image",
+        sessionId,
+        variantCount: entry.count,
+        createdAt: entry.first.created_at,
+      });
+    }
+
+    return [...records, ...imageProjects].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   });
+
 
 /** One draft, used by the text editor to restore the exact editing state. */
 export const getLiveGreetingDraft = createServerFn({ method: "POST" })
