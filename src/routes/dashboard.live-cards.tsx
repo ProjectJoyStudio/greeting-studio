@@ -16,6 +16,7 @@ import {
   syncMyLiveCardAnimations,
 } from "@/lib/live-cards/library.functions";
 import { retryLiveCardAnimation } from "@/lib/live-cards/animations.functions";
+import { discardLiveCardSession } from "@/lib/live-cards/live-cards.functions";
 import type { LiveGreetingRecord } from "@/lib/live-cards/types";
 
 export const Route = createFileRoute("/dashboard/live-cards")({
@@ -285,7 +286,7 @@ function MyLiveCardsPage() {
               <button
                 type="button"
                 disabled={del.isPending}
-                onClick={() => del.mutate(confirmDelete.id)}
+                onClick={() => del.mutate(confirmDelete)}
                 className="rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
               >
                 {t("llc_delete")}
