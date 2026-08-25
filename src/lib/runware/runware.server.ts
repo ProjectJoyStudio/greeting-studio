@@ -141,14 +141,41 @@ const VIDEO_SIZES: Record<string, { width: number; height: number }> = {
   "1:1": { width: 960, height: 960 },
   "16:9": { width: 1280, height: 720 },
   "9:16": { width: 720, height: 1280 },
-  "4:5": { width: 864, height: 1080 },
-  "4:3": { width: 960, height: 720 },
-  "3:4": { width: 720, height: 960 },
+  "4:5": { width: 832, height: 1088 },
+  "4:3": { width: 1088, height: 832 },
+  "3:4": { width: 832, height: 1088 },
 };
 
-export function runwareVideoSize(aspectRatio?: string): { width: number; height: number } {
-  return VIDEO_SIZES[aspectRatio ?? "16:9"] ?? VIDEO_SIZES["16:9"]!;
+/**
+ * Every animation engine accepts its own list of picture sizes. Sending a size
+ * an engine does not know is refused before anything is generated, so each
+ * engine gets the size it really supports for the requested shape.
+ */
+const ENGINE_VIDEO_SIZES: Record<string, Record<string, { width: number; height: number }>> = {
+  // PixVerse V6 only accepts its own fixed grid of sizes.
+  rw_pixverse_v6: {
+    "1:1": { width: 720, height: 720 },
+    "16:9": { width: 1280, height: 720 },
+    "9:16": { width: 720, height: 1280 },
+    "4:5": { width: 720, height: 960 },
+    "4:3": { width: 960, height: 720 },
+    "3:4": { width: 720, height: 960 },
+  },
+};
+
+/** Engines that choose the shape from the picture and only take a quality. */
+const ENGINE_VIDEO_RESOLUTION: Record<string, string> = {
+  rw_kling3_standard: "720p",
+};
+
+export function runwareVideoSize(
+  aspectRatio?: string,
+  generatorKey?: string,
+): { width: number; height: number } {
+  const table = (generatorKey && ENGINE_VIDEO_SIZES[generatorKey]) || VIDEO_SIZES;
+  return table[aspectRatio ?? "16:9"] ?? table["16:9"] ?? VIDEO_SIZES["16:9"]!;
 }
+
 
 // --- pictures --------------------------------------------------------------
 
@@ -274,7 +301,8 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     throw new RunwareError("api_error", `Unknown Runware video engine: ${input.generatorKey}.`);
   }
   const taskUUID = crypto.randomUUID();
-  const { width, height } = runwareVideoSize(input.aspectRatio);
+  const resolution = ENGINE_VIDEO_RESOLUTION[model.key];
+  const size = resolution ? null : runwareVideoSize(input.aspectRatio, model.key);
   const inputs: Record<string, unknown> = { frameImages: [input.imageUrl] };
   const preparedAudio = Boolean(model.supportsAudioInput && input.audioUrl);
   if (preparedAudio) inputs["audio"] = input.audioUrl;
@@ -285,8 +313,9 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     model: model.air,
     positivePrompt: input.prompt,
     inputs,
-    width,
-    height,
+    // Kling takes a quality and keeps the shape of the starting picture; the
+    // other engines take an exact size from their own supported list.
+    ...(resolution ? { resolution } : { width: size!.width, height: size!.height }),
     duration: clampDuration(model, input.durationSeconds),
     numberResults: 1,
     outputType: "URL",
@@ -294,6 +323,7 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     deliveryMethod: "async",
     includeCost: true,
   };
+
 
   // Native audio is switched off model by model — but never when a prepared
   // voice track was handed in: switching audio off would silence that voice
