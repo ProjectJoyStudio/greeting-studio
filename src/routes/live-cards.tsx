@@ -614,56 +614,6 @@ function LiveCardsPage() {
               </button>
             )}
           </div>
-
-          {isAuthenticated && (recent.data?.length ?? 0) > 0 && (
-            <div className="rounded-3xl border border-border/60 bg-card/60 p-5">
-              <h2 className="font-display text-base font-semibold tracking-tight">
-                {t("lc_variants")}
-              </h2>
-              <div className="mt-4 -mx-2 overflow-x-auto px-2 pb-2">
-                <div className="flex gap-3">
-                  {recent.data!.map((card) => (
-                    <button
-                      key={card.id}
-                      type="button"
-                      onClick={() => {
-                        setCurrent(card);
-                        setSelectedId(card.selected ? card.id : null);
-                        if (card.prompt) setPrompt(card.prompt);
-                      }}
-                      className={`group w-20 shrink-0 overflow-hidden rounded-xl border transition sm:w-24 ${
-                        current?.id === card.id
-                          ? "border-primary ring-2 ring-primary/40"
-                          : "border-border/50 hover:border-primary/50"
-                      }`}
-                      title={
-                        card.source === "upload" ? t("lc_source_upload") : t("lc_source_generated")
-                      }
-                    >
-                      {card.imageUrl ? (
-                        <img
-                          src={card.imageUrl}
-                          alt={card.prompt || t("lc_title")}
-                          loading="lazy"
-                          className="aspect-square w-full object-cover"
-                        />
-                      ) : (
-                        <span className="block aspect-square w-full bg-muted/50" />
-                      )}
-                      <span
-                        className={`block truncate px-1 py-1 text-center text-[10px] font-medium leading-tight ${
-                          current?.id === card.id ? "text-primary" : "text-muted-foreground"
-                        }`}
-                      >
-                        {current?.id === card.id ? t("lc_status_selected") : t("lc_status_not_selected")}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
         </div>
         ) : null}
       </section>
