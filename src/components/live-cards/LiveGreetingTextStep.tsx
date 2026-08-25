@@ -221,6 +221,9 @@ export function LiveGreetingEditor({
         music.mode === "library"
           ? await musicUrl(music.trackBucket, music.trackPath)
           : null;
+      // Chosen music must never be lost silently: without a playable track the
+      // card is not finished at all, instead of finishing without its music.
+      if (music.mode === "library" && !trackUrl) throw new Error("music_unavailable");
       const rendered = await renderFinalVideo(
         clean,
         text,
@@ -229,13 +232,15 @@ export function LiveGreetingEditor({
         trackUrl
           ? {
               url: trackUrl,
-              volume: music.gain,
+              // The same loudness the person approved while listening here.
+              volume: Math.min(1, Math.max(0.05, music.gain * 3)),
               loop: true,
               fadeInSeconds: MUSIC_FADE_IN_SECONDS,
               fadeOutSeconds: MUSIC_FADE_OUT_SECONDS,
             }
           : null,
       );
+
       const imperfect = Boolean(text.trim()) && (!rendered.verified || rendered.duplicate);
       note("render_completed", true, imperfect ? "text_verification_uncertain" : "");
 
