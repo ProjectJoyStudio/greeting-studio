@@ -25,15 +25,22 @@ const MIME_CANDIDATES = [
   "video/webm",
 ];
 
-/** Same list, but every option also carries a sound track for the music. */
+/**
+ * Same list, but every option also carries a sound track for the music. The
+ * order matters: a format that names its sound codec is always preferred, so
+ * the finished file really carries the music. A plain "video/mp4" request is
+ * last, because some browsers accept it and then write a file whose sound
+ * cannot be played outside that browser.
+ */
 const MIME_CANDIDATES_WITH_AUDIO = [
   "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
   "video/mp4;codecs=h264,aac",
-  "video/mp4",
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
   "video/webm",
+  "video/mp4",
 ];
+
 
 function pickMime(withAudio = false): string {
   const supported = typeof MediaRecorder !== "undefined";
