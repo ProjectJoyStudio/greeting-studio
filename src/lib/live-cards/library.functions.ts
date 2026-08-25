@@ -192,6 +192,19 @@ export const listMyLiveDrafts = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const imageProjects: LiveGreetingRecord[] = [];
     const covered = new Set(records.map((r) => r.sessionId).filter(Boolean) as string[]);
+    // A project that already reached the animation — finished, delivered or
+    // still running — is represented by that animation alone. Its start
+    // pictures must never come back as a second, unfinished project.
+    const { data: animatedSessions } = await context.supabase
+      .from("live_card_animations")
+      .select("session_id")
+      .eq("user_id", context.userId)
+      .not("session_id", "is", null)
+      .limit(1000);
+    for (const row of (animatedSessions ?? []) as { session_id: string | null }[]) {
+      if (row.session_id) covered.add(row.session_id);
+    }
+
     const grouped = new Map<
       string,
       { first: { id: string; prompt: string | null; aspect_ratio: string | null; storage_bucket: string; storage_path: string; created_at: string }; count: number }
