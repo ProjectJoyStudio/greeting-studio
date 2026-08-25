@@ -111,11 +111,17 @@ function useLiveCardSession(): [string | null, () => void] {
       window.localStorage.removeItem(MOTION_KEY);
       window.localStorage.removeItem(DRAFT_KEY);
       window.localStorage.setItem(SESSION_KEY, id);
+      // The reopened project is finished with; its address must not bring it
+      // back on the next reload.
+      if (window.location.search.includes("session=")) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
     } catch {
       /* nothing to clean up */
     }
     setSessionId(id);
   };
+
   return [sessionId, reset];
 }
 
