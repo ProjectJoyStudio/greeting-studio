@@ -75,20 +75,33 @@ const MOTION_KEY = "joy.live-cards.motion";
 function useLiveCardSession(): [string | null, () => void] {
   const [sessionId, setSessionId] = useState<string | null>(null);
   useEffect(() => {
+    // "Continue" from the personal account names the exact project to reopen;
+    // it always wins over whatever the browser last worked on.
+    let asked: string | null = null;
+    try {
+      asked = new URLSearchParams(window.location.search).get("session");
+    } catch {
+      /* no address information available */
+    }
     let saved: string | null = null;
     try {
       saved = window.localStorage.getItem(SESSION_KEY);
     } catch {
       /* private mode — the session simply starts fresh */
     }
-    const id = saved ?? crypto.randomUUID();
+    const id = asked || saved || crypto.randomUUID();
     try {
+      if (asked && asked !== saved) {
+        window.localStorage.removeItem(MOTION_KEY);
+        window.localStorage.removeItem(DRAFT_KEY);
+      }
       window.localStorage.setItem(SESSION_KEY, id);
     } catch {
       /* nothing to store */
     }
     setSessionId(id);
   }, []);
+
 
   // A finished live greeting card is kept in the account; the next project
   // always starts from a completely new, independent session.
