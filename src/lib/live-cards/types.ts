@@ -154,8 +154,20 @@ export interface LiveGreetingRecord {
   priceCredits: number | null;
   /** Reason of a failed generation, if any. */
   errorCode?: string | null;
+  /**
+   * Which stage of one live greeting project this entry represents:
+   * "image" — start pictures only, the animation has not been ordered yet;
+   * "animation" — the animation of that same project.
+   * One project always produces exactly one entry.
+   */
+  kind?: "image" | "animation";
+  /** The creation session the project belongs to. */
+  sessionId?: string | null;
+  /** How many start-image variants the project currently keeps. */
+  variantCount?: number;
   createdAt: string;
 }
+
 
 /** Optional motion presets. The label text itself is localised in the UI. */
 export const MOTION_PRESET_KEYS = [

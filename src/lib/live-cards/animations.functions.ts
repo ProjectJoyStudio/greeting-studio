@@ -220,18 +220,28 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
         _price: price,
         _reason: errorCode,
       });
-      // The failure is recorded for administrators; nothing the person typed is lost.
-      await context.supabase
-        .from("live_card_animations")
-        .insert({ ...base, credits_charged: 0, status: "failed", error_code: errorCode, error_message: errorMessage });
+      // A refused engine request is a technical state of the same project, not
+      // a new creation of the person: no card is written, so nothing extra can
+      // ever appear in the personal cabinet. The attempt is kept in the
+      // administrator's activity log instead, with everything needed to trace it.
       const { logLiveCardEvent } = await import("./lifecycle.server");
       await logLiveCardEvent({
         actorUserId: context.userId,
+        ownerUserId: context.userId,
         animationId: null,
         stage: "failed",
         ok: false,
-        detail: { requestId, step: "generation", selectedDurationSeconds: duration, errorCode, errorMessage },
+        detail: {
+          requestId,
+          step: "generation",
+          sourceCardId: card.id,
+          sessionId: data.sessionId,
+          selectedDurationSeconds: duration,
+          errorCode,
+          errorMessage,
+        },
       });
+
       return { ok: false, errorCode, errorMessage };
     }
   });

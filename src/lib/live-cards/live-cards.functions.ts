@@ -168,25 +168,12 @@ export const generateLiveCardImage = createServerFn({ method: "POST" })
       _attempts_per_pack: LIVE_CARD_ATTEMPTS_PER_PACK,
     });
 
-    // Only the newest successful picture stays in the active flow. The older
-    // ones move to the recycle bin — after, never before, the new success.
-    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
-    const days = await readRetentionDays();
-    const now = new Date();
-    await context.supabase
-      .from("live_greeting_cards")
-      .update({
-        status: "discarded",
-        deleted_at: now.toISOString(),
-        purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
-      })
-      .eq("user_id", context.userId)
-      .eq("session_id", data.sessionId)
-      .neq("id", (row as Row).id)
-      .is("deleted_at", null);
-
+    // Every picture of the same creation session stays available side by side
+    // until the person picks one, so all variants can be compared. They belong
+    // to one project — the cabinet never shows them as separate creations.
     return { ok: true, card: await toAsset(row as Row) };
   });
+
 
 /** Stores a picture the person uploaded themselves in the same section storage. */
 export const uploadLiveCardImage = createServerFn({ method: "POST" })
@@ -284,20 +271,30 @@ export const selectLiveCardImage = createServerFn({ method: "POST" })
       .select(COLUMNS)
       .single();
 
-    // Only one picture of a creation session may stay selected.
+    // The choice is confirmed: every other picture of exactly this project
+    // leaves the active workflow. Nothing is destroyed — the variants move to
+    // the recycle bin for the configured retention period, so they can never
+    // show up as separate items in the personal cabinet.
     if (row) {
       const selectedRow = row as Row;
-      const reset = context.supabase
+      const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+      const days = await readRetentionDays();
+      const now = new Date();
+      const retire = context.supabase
         .from("live_greeting_cards")
-        .update({ status: "not_selected" })
+        .update({
+          status: "discarded",
+          deleted_at: now.toISOString(),
+          purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
+        })
         .eq("user_id", context.userId)
         .neq("id", selectedRow.id)
-        .in("status", ["selected", "image_selected"])
         .is("deleted_at", null);
       await (selectedRow.session_id
-        ? reset.eq("session_id", selectedRow.session_id)
-        : reset.is("session_id", null));
+        ? retire.eq("session_id", selectedRow.session_id)
+        : retire.is("session_id", null));
     }
+
     if (error || !row) {
       return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not select the picture." };
     }
@@ -357,4 +354,35 @@ export const getLiveCardSessionStatus = createServerFn({ method: "POST" })
       .not("delivered_at", "is", null)
       .limit(1);
     return { closed: Boolean(rows?.length) };
+  });
+
+/**
+ * Removes one unfinished live greeting project that never reached the
+ * animation: every start-image variant of that creation session leaves the
+ * account together, exactly as one single project. Nothing is destroyed — the
+ * pictures stay in the recycle bin for the configured retention period.
+ */
+export const discardLiveCardSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionId: string }) => {
+    const sessionId = String(input?.sessionId ?? "").slice(0, 64);
+    if (!sessionId) throw new Error("session_required");
+    return { sessionId };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { readRetentionDays } = await import("@/lib/admin/deleted-cards.server");
+    const days = await readRetentionDays();
+    const now = new Date();
+    const { error } = await context.supabase
+      .from("live_greeting_cards")
+      .update({
+        status: "discarded",
+        deleted_at: now.toISOString(),
+        purge_after: new Date(now.getTime() + days * 86_400_000).toISOString(),
+      })
+      .eq("user_id", context.userId)
+      .eq("session_id", data.sessionId)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

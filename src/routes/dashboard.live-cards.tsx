@@ -16,6 +16,7 @@ import {
   syncMyLiveCardAnimations,
 } from "@/lib/live-cards/library.functions";
 import { retryLiveCardAnimation } from "@/lib/live-cards/animations.functions";
+import { discardLiveCardSession } from "@/lib/live-cards/live-cards.functions";
 import type { LiveGreetingRecord } from "@/lib/live-cards/types";
 
 export const Route = createFileRoute("/dashboard/live-cards")({
@@ -77,8 +78,12 @@ function MyLiveCardsPage() {
     },
   });
 
+  const removeProject = useServerFn(discardLiveCardSession);
   const del = useMutation({
-    mutationFn: (animationId: string) => remove({ data: { animationId } }),
+    mutationFn: (item: LiveGreetingRecord) =>
+      item.kind === "image"
+        ? removeProject({ data: { sessionId: item.sessionId ?? item.id } })
+        : remove({ data: { animationId: item.id } }),
     onSuccess: () => {
       toast.success(t("llc_deleted"));
       setConfirmDelete(null);
@@ -88,6 +93,7 @@ function MyLiveCardsPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
   });
+
 
   const items = data ?? [];
   const unfinished = drafts.data ?? [];
@@ -110,8 +116,10 @@ function MyLiveCardsPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("llc_unfinished_sub")}</p>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {unfinished.map((item) => {
-              const pending = ["preparing", "queued", "processing", "storing"].includes(item.status);
-              const failed = item.status === "failed";
+              const imageOnly = item.kind === "image";
+              const pending =
+                !imageOnly && ["preparing", "queued", "processing", "storing"].includes(item.status);
+              const failed = !imageOnly && item.status === "failed";
               return (
                 <article
                   key={item.id}
@@ -124,7 +132,13 @@ function MyLiveCardsPage() {
                       <Film className="absolute inset-0 m-auto h-8 w-8 text-muted-foreground" />
                     )}
                     <span className="absolute left-2 top-2 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-medium">
-                      {pending ? t("llc_state_working") : failed ? t("llc_state_failed") : t("llc_state_ready_text")}
+                      {imageOnly
+                        ? `${t("lc_recent")} · ${item.variantCount ?? 1}`
+                        : pending
+                          ? t("llc_state_working")
+                          : failed
+                            ? t("llc_state_failed")
+                            : t("llc_state_ready_text")}
                     </span>
                   </div>
                   <div className="space-y-2 p-4">
@@ -150,7 +164,17 @@ function MyLiveCardsPage() {
                           {t("llc_retry")}
                         </button>
                       )}
-                      {item.status === "ready" && (
+                      {imageOnly && (
+                        <Link
+                          to="/live-cards"
+                          search={{ session: item.sessionId ?? item.id }}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          {t("llc_continue")}
+                        </Link>
+                      )}
+                      {!imageOnly && item.status === "ready" && (
                         <Link
                           to="/live-editor/$animationId"
                           params={{ animationId: item.id }}
@@ -173,6 +197,7 @@ function MyLiveCardsPage() {
                 </article>
               );
             })}
+
           </div>
         </section>
       )}
@@ -261,7 +286,7 @@ function MyLiveCardsPage() {
               <button
                 type="button"
                 disabled={del.isPending}
-                onClick={() => del.mutate(confirmDelete.id)}
+                onClick={() => del.mutate(confirmDelete)}
                 className="rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
               >
                 {t("llc_delete")}
