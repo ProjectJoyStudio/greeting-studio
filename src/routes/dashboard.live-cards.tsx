@@ -77,8 +77,12 @@ function MyLiveCardsPage() {
     },
   });
 
+  const removeProject = useServerFn(discardLiveCardSession);
   const del = useMutation({
-    mutationFn: (animationId: string) => remove({ data: { animationId } }),
+    mutationFn: (item: LiveGreetingRecord) =>
+      item.kind === "image"
+        ? removeProject({ data: { sessionId: item.sessionId ?? item.id } })
+        : remove({ data: { animationId: item.id } }),
     onSuccess: () => {
       toast.success(t("llc_deleted"));
       setConfirmDelete(null);
@@ -88,6 +92,7 @@ function MyLiveCardsPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
   });
+
 
   const items = data ?? [];
   const unfinished = drafts.data ?? [];
