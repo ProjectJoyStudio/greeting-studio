@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VideoGreetingSetupRouteImport } from './routes/video-greeting-setup'
 import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as TestLiveSaveRouteImport } from './routes/test-live-save'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShowcaseRouteImport } from './routes/showcase'
@@ -108,11 +107,6 @@ const VideoGreetingRoute = VideoGreetingRouteImport.update({
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TestLiveSaveRoute = TestLiveSaveRouteImport.update({
-  id: '/test-live-save',
-  path: '/test-live-save',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioRoute = StudioRouteImport.update({
@@ -554,7 +548,6 @@ export interface FileRoutesByFullPath {
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
-  '/test-live-save': typeof TestLiveSaveRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
   '/video-greeting-setup': typeof VideoGreetingSetupRoute
@@ -639,7 +632,6 @@ export interface FileRoutesByTo {
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
-  '/test-live-save': typeof TestLiveSaveRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
   '/video-greeting-setup': typeof VideoGreetingSetupRoute
@@ -726,7 +718,6 @@ export interface FileRoutesById {
   '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/studio': typeof StudioRoute
-  '/test-live-save': typeof TestLiveSaveRoute
   '/verify-email': typeof VerifyEmailRoute
   '/video-greeting': typeof VideoGreetingRoute
   '/video-greeting-setup': typeof VideoGreetingSetupRoute
@@ -815,7 +806,6 @@ export interface FileRouteTypes {
     | '/showcase'
     | '/sitemap.xml'
     | '/studio'
-    | '/test-live-save'
     | '/verify-email'
     | '/video-greeting'
     | '/video-greeting-setup'
@@ -900,7 +890,6 @@ export interface FileRouteTypes {
     | '/showcase'
     | '/sitemap.xml'
     | '/studio'
-    | '/test-live-save'
     | '/verify-email'
     | '/video-greeting'
     | '/video-greeting-setup'
@@ -986,7 +975,6 @@ export interface FileRouteTypes {
     | '/showcase'
     | '/sitemap.xml'
     | '/studio'
-    | '/test-live-save'
     | '/verify-email'
     | '/video-greeting'
     | '/video-greeting-setup'
@@ -1074,7 +1062,6 @@ export interface RootRouteChildren {
   ShowcaseRoute: typeof ShowcaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudioRoute: typeof StudioRoute
-  TestLiveSaveRoute: typeof TestLiveSaveRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VideoGreetingRoute: typeof VideoGreetingRoute
   VideoGreetingSetupRoute: typeof VideoGreetingSetupRoute
@@ -1109,13 +1096,6 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/test-live-save': {
-      id: '/test-live-save'
-      path: '/test-live-save'
-      fullPath: '/test-live-save'
-      preLoaderRoute: typeof TestLiveSaveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/studio': {
@@ -1852,7 +1832,6 @@ const rootRouteChildren: RootRouteChildren = {
   ShowcaseRoute: ShowcaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudioRoute: StudioRoute,
-  TestLiveSaveRoute: TestLiveSaveRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VideoGreetingRoute: VideoGreetingRoute,
   VideoGreetingSetupRoute: VideoGreetingSetupRoute,
