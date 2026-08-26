@@ -5,7 +5,7 @@ export const FREE_CARD_ATTEMPTS = 0;
 /** How many attempts one paid package unlocks. */
 export const ATTEMPTS_PER_PACK = 3;
 /** Price of one extra package, in credits. */
-export const ATTEMPT_PACK_CREDITS = 1;
+export const ATTEMPT_PACK_CREDITS = 4;
 
 export interface CardAttemptState {
   used: number;
