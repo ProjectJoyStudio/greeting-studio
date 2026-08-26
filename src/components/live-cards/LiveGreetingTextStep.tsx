@@ -12,6 +12,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
 import { LiveCardViewer } from "./LiveCardViewer";
@@ -104,6 +114,7 @@ export function LiveGreetingEditor({
   // rendering use this file, so text is never burned twice.
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [confirmNoText, setConfirmNoText] = useState(false);
   const dirty = useRef(false);
 
   const patch = useCallback((next: Partial<EditorState>) => {
@@ -195,6 +206,15 @@ export function LiveGreetingEditor({
     } finally {
       setComposing(false);
     }
+  }
+
+  /** Starts finalization, but asks first when no greeting text was added. */
+  function requestComplete() {
+    if (!state.text.trim()) {
+      setConfirmNoText(true);
+      return;
+    }
+    void complete();
   }
 
   /** Renders the finished file and stores it as the completed version. */
@@ -474,7 +494,7 @@ export function LiveGreetingEditor({
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => void complete()}
+            onClick={() => void requestComplete()}
             disabled={rendering || !videoUrl}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -495,6 +515,22 @@ export function LiveGreetingEditor({
         </div>
         <p className="mt-3 text-xs text-muted-foreground">{t("lge_draft_note")}</p>
       </div>
+
+      {/* Empty-text confirmation — does not block saving, only asks once. */}
+      <AlertDialog open={confirmNoText} onOpenChange={setConfirmNoText}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("lge_confirm_no_text_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("lge_confirm_no_text_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("lge_confirm_no_text_add")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void complete()}>
+              {t("lge_confirm_no_text_save")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

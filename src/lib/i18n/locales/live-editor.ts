@@ -3,6 +3,10 @@ import type { Dict, Lang } from "../types";
 /** The large text editor that finishes a live greeting card. */
 export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
   en: {
+    lge_confirm_no_text_title: "No greeting text added",
+    lge_confirm_no_text_desc: "This card will be saved without a greeting. You can still add text now, or save it as it is.",
+    lge_confirm_no_text_add: "Add greeting",
+    lge_confirm_no_text_save: "Save without text",
     lge_verify_warning: "Saved. We could not fully confirm the greeting in the video — please check it.",
     lge_err_render: "The final video could not be created.",
     lge_err_upload: "The finished video could not be stored.",
@@ -31,6 +35,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "This live greeting card could not be found.",
   },
   ru: {
+    lge_confirm_no_text_title: "Поздравление не добавлено",
+    lge_confirm_no_text_desc: "Открытка будет сохранена без поздравления. Вы можете добавить текст сейчас или сохранить как есть.",
+    lge_confirm_no_text_add: "Добавить поздравление",
+    lge_confirm_no_text_save: "Сохранить без текста",
     lge_verify_warning: "Сохранено. Не удалось полностью проверить текст в видео — пожалуйста, просмотрите его.",
     lge_err_render: "Не удалось создать финальное видео.",
     lge_err_upload: "Не удалось сохранить готовое видео в хранилище.",
@@ -59,6 +67,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Эта живая открытка не найдена.",
   },
   de: {
+    lge_confirm_no_text_title: "Kein Grußtext hinzugefügt",
+    lge_confirm_no_text_desc: "Diese Karte wird ohne Gruß gespeichert. Sie können jetzt noch Text hinzufügen oder sie so speichern.",
+    lge_confirm_no_text_add: "Gruß hinzufügen",
+    lge_confirm_no_text_save: "Ohne Text speichern",
     lge_verify_warning: "Gespeichert. Der Gruß im Video konnte nicht vollständig geprüft werden – bitte ansehen.",
     lge_err_render: "Das fertige Video konnte nicht erstellt werden.",
     lge_err_upload: "Das fertige Video konnte nicht gespeichert werden.",
@@ -87,6 +99,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Diese lebendige Grußkarte wurde nicht gefunden.",
   },
   uk: {
+    lge_confirm_no_text_title: "Привітання не додано",
+    lge_confirm_no_text_desc: "Листівку буде збережено без привітання. Ви можете додати текст зараз або зберегти як є.",
+    lge_confirm_no_text_add: "Додати привітання",
+    lge_confirm_no_text_save: "Зберегти без тексту",
     lge_verify_warning: "Збережено. Не вдалося повністю перевірити текст у відео — перегляньте його.",
     lge_err_render: "Не вдалося створити фінальне відео.",
     lge_err_upload: "Не вдалося зберегти готове відео у сховищі.",
@@ -115,6 +131,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Цю живу листівку не знайдено.",
   },
   fr: {
+    lge_confirm_no_text_title: "Aucun message ajouté",
+    lge_confirm_no_text_desc: "Cette carte sera enregistrée sans message. Vous pouvez encore ajouter du texte maintenant, ou l’enregistrer telle quelle.",
+    lge_confirm_no_text_add: "Ajouter un message",
+    lge_confirm_no_text_save: "Enregistrer sans texte",
     lge_verify_warning: "Enregistré. Le message dans la vidéo n’a pas pu être vérifié entièrement — veuillez le contrôler.",
     lge_err_render: "La vidéo finale n’a pas pu être créée.",
     lge_err_upload: "La vidéo finale n’a pas pu être stockée.",
@@ -143,6 +163,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Cette carte vivante est introuvable.",
   },
   pl: {
+    lge_confirm_no_text_title: "Nie dodano życzeń",
+    lge_confirm_no_text_desc: "Ta kartka zostanie zapisana bez życzeń. Możesz teraz dodać tekst lub zapisać ją w obecnej formie.",
+    lge_confirm_no_text_add: "Dodaj życzenia",
+    lge_confirm_no_text_save: "Zapisz bez tekstu",
     lge_verify_warning: "Zapisano. Nie udało się w pełni potwierdzić tekstu w filmie — sprawdź go.",
     lge_err_render: "Nie udało się utworzyć gotowego filmu.",
     lge_err_upload: "Nie udało się zapisać gotowego filmu w magazynie.",
