@@ -12,6 +12,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
 import { LiveCardViewer } from "./LiveCardViewer";
