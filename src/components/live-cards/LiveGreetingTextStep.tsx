@@ -494,7 +494,7 @@ export function LiveGreetingEditor({
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => void complete()}
+            onClick={() => void requestComplete()}
             disabled={rendering || !videoUrl}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
           >
