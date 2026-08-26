@@ -291,7 +291,7 @@ function CreateCardPage() {
     }
   }
 
-  /** Buys three more generation attempts for this card order, for one credit. */
+  /** Buys three more generation attempts for this card order, for four credits. */
   async function handleBuyPack() {
     if (!sessionKey) return;
     setBuying(true);
