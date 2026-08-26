@@ -3,6 +3,10 @@ import type { Dict, Lang } from "../types";
 /** The large text editor that finishes a live greeting card. */
 export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
   en: {
+    lge_confirm_no_text_title: "No greeting text added",
+    lge_confirm_no_text_desc: "This card will be saved without a greeting. You can still add text now, or save it as it is.",
+    lge_confirm_no_text_add: "Add greeting",
+    lge_confirm_no_text_save: "Save without text",
     lge_verify_warning: "Saved. We could not fully confirm the greeting in the video — please check it.",
     lge_err_render: "The final video could not be created.",
     lge_err_upload: "The finished video could not be stored.",
