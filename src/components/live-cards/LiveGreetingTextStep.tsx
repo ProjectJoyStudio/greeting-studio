@@ -208,6 +208,15 @@ export function LiveGreetingEditor({
     }
   }
 
+  /** Starts finalization, but asks first when no greeting text was added. */
+  function requestComplete() {
+    if (!state.text.trim()) {
+      setConfirmNoText(true);
+      return;
+    }
+    void complete();
+  }
+
   /** Renders the finished file and stores it as the completed version. */
   async function complete() {
     const clean = sourceUrl ?? videoUrl;
