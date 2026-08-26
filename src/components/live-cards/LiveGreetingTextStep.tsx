@@ -114,6 +114,7 @@ export function LiveGreetingEditor({
   // rendering use this file, so text is never burned twice.
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [confirmNoText, setConfirmNoText] = useState(false);
   const dirty = useRef(false);
 
   const patch = useCallback((next: Partial<EditorState>) => {
