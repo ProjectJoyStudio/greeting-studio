@@ -515,6 +515,22 @@ export function LiveGreetingEditor({
         </div>
         <p className="mt-3 text-xs text-muted-foreground">{t("lge_draft_note")}</p>
       </div>
+
+      {/* Empty-text confirmation — does not block saving, only asks once. */}
+      <AlertDialog open={confirmNoText} onOpenChange={setConfirmNoText}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("lge_confirm_no_text_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("lge_confirm_no_text_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("lge_confirm_no_text_add")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void complete()}>
+              {t("lge_confirm_no_text_save")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
