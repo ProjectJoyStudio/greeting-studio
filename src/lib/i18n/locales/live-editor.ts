@@ -131,6 +131,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Цю живу листівку не знайдено.",
   },
   fr: {
+    lge_confirm_no_text_title: "Aucun message ajouté",
+    lge_confirm_no_text_desc: "Cette carte sera enregistrée sans message. Vous pouvez encore ajouter du texte maintenant, ou l’enregistrer telle quelle.",
+    lge_confirm_no_text_add: "Ajouter un message",
+    lge_confirm_no_text_save: "Enregistrer sans texte",
     lge_verify_warning: "Enregistré. Le message dans la vidéo n’a pas pu être vérifié entièrement — veuillez le contrôler.",
     lge_err_render: "La vidéo finale n’a pas pu être créée.",
     lge_err_upload: "La vidéo finale n’a pas pu être stockée.",
@@ -159,6 +163,10 @@ export const LIVE_EDITOR_I18N: Record<Lang, Dict> = {
     lge_not_found: "Cette carte vivante est introuvable.",
   },
   pl: {
+    lge_confirm_no_text_title: "Nie dodano życzeń",
+    lge_confirm_no_text_desc: "Ta kartka zostanie zapisana bez życzeń. Możesz teraz dodać tekst lub zapisać ją w obecnej formie.",
+    lge_confirm_no_text_add: "Dodaj życzenia",
+    lge_confirm_no_text_save: "Zapisz bez tekstu",
     lge_verify_warning: "Zapisano. Nie udało się w pełni potwierdzić tekstu w filmie — sprawdź go.",
     lge_err_render: "Nie udało się utworzyć gotowego filmu.",
     lge_err_upload: "Nie udało się zapisać gotowego filmu w magazynie.",
