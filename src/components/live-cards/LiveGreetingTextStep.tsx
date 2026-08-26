@@ -270,10 +270,12 @@ export function LiveGreetingEditor({
       // to this card; anything else is a real error and keeps the work here.
       if (!result?.ok || !result.videoUrl) throw new Error("save_not_confirmed");
       setFinalUrl(result.videoUrl);
-      // The card is saved in the account either way; an uncertain text check
-      // is only a warning, never a reason to lose the finished card.
-      if (imperfect) toast.warning(t("lge_verify_warning"));
-      else toast.success(t("lge_completed"));
+      // The server confirmed the final file is stored and linked to this card,
+      // so the save is a fact. The browser-side pixel check of the burned text
+      // is only a hint and stays in the event log; it must never turn a
+      // confirmed save into an "it may not have been saved" warning.
+      toast.success(t("lge_completed"));
+
       onFinish?.();
     } catch (err) {
       const code = err instanceof Error ? err.message : "";
