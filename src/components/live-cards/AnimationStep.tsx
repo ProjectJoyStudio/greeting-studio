@@ -98,7 +98,7 @@ export function AnimationStep({
     ? options.data.durations
     : ([...PLANNED_VIDEO_DURATIONS] as number[]);
   void durations;
-  const chosenDuration = normaliseAnimationDuration(duration ?? ANIMATION_DURATION_DEFAULT);
+  const chosenDuration = normaliseAnimationDuration(lockedDuration ?? duration ?? ANIMATION_DURATION_DEFAULT);
   const priceCredits = animationDurationCredits(chosenDuration);
   const balanceAfter = balance - priceCredits;
   const canAfford = balance >= priceCredits;
@@ -112,7 +112,12 @@ export function AnimationStep({
   });
   useEffect(() => {
     if (animation || !existing.data?.length) return;
-    const mine = existing.data.find((a) => a.sourceCardId === card.id && !dismissed.includes(a.id));
+    const forCard = existing.data.filter((a) => a.sourceCardId === card.id && !dismissed.includes(a.id));
+    // A finished animation always wins over an older failed technical attempt.
+    const mine =
+      forCard.find((a) => a.status === "ready") ??
+      forCard.find((a) => isPending(a.status)) ??
+      forCard[0];
     if (!mine) return;
     setAnimation(mine);
     onAnimation(mine);
@@ -182,6 +187,55 @@ export function AnimationStep({
       setSending(false);
     }
   }
+
+  /**
+   * One more animation of the same picture, with the same length. The previous
+   * result stays untouched until the new one has really been produced.
+   */
+  async function runRegenerate() {
+    if (regenerating || motion.trim().length < 3) return;
+    if (!canRegenerate) return;
+    if (balance < ANIMATION_REGENERATE_CREDITS) {
+      toast.error(t("la_insufficient"));
+      return;
+    }
+    setRegenerating(true);
+    try {
+      const result = await regenerate({
+        data: {
+          cardId: card.id,
+          prompt: motion,
+          promptLang: lang,
+          sessionId: sessionId ?? undefined,
+        },
+      });
+      if (!result.ok) {
+        toast.error(
+          result.errorCode === "regeneration_limit"
+            ? t("la_regen_limit")
+            : result.errorCode === "insufficient_credits" || result.errorCode === "charge_failed"
+              ? t("la_insufficient")
+              : t("la_failed_toast"),
+        );
+        refreshBalance();
+        void project.refetch();
+        return;
+      }
+      setAnimation(result.animation);
+      onAnimation(result.animation);
+      refreshBalance();
+      void project.refetch();
+      void existing.refetch();
+    } catch {
+      toast.error(t("la_failed_toast"));
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  const variants = (existing.data ?? []).filter(
+    (a) => a.sourceCardId === card.id && a.status === "ready",
+  );
 
   const running = Boolean(animation && isPending(animation.status));
   // Once the animation exists, the session is finished: every control that
