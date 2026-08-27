@@ -273,6 +273,21 @@ export function AnimationStep({
   // could start the same animation again is removed from the page.
   const finished = animation?.status === "ready";
 
+  const creditSummary = (
+    <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
+      <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
+      <SummaryRow label={t("lc_spent")} value={`${projectSpend.spent} ${t("la_price_credits")}`} />
+      <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
+      <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
+      <SummaryRow
+        label={t("la_balance_after")}
+        value={`${Math.max(0, balanceAfter)} ${t("la_price_credits")}`}
+      />
+      <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
+    </dl>
+  );
+
+
   if (finished && animation) {
     if (textStage) {
       return (
