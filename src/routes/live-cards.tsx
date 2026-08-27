@@ -76,10 +76,14 @@ function useLiveCardSession(): [string | null, () => void] {
   const [sessionId, setSessionId] = useState<string | null>(null);
   useEffect(() => {
     // "Continue" from the personal account names the exact project to reopen;
-    // it always wins over whatever the browser last worked on.
+    // it always wins over whatever the browser last worked on. "Create new"
+    // always begins a fresh project and never reopens an existing draft.
     let asked: string | null = null;
+    let wantsNew = false;
     try {
-      asked = new URLSearchParams(window.location.search).get("session");
+      const params = new URLSearchParams(window.location.search);
+      asked = params.get("session");
+      wantsNew = params.get("new") === "1";
     } catch {
       /* no address information available */
     }
@@ -89,13 +93,17 @@ function useLiveCardSession(): [string | null, () => void] {
     } catch {
       /* private mode — the session simply starts fresh */
     }
-    const id = asked || saved || crypto.randomUUID();
+    const id = wantsNew ? crypto.randomUUID() : asked || saved || crypto.randomUUID();
     try {
-      if (asked && asked !== saved) {
+      if (wantsNew || (asked && asked !== saved)) {
         window.localStorage.removeItem(MOTION_KEY);
         window.localStorage.removeItem(DRAFT_KEY);
       }
       window.localStorage.setItem(SESSION_KEY, id);
+      if (wantsNew) {
+        // The fresh project must not be recreated again on the next reload.
+        window.history.replaceState(null, "", window.location.pathname);
+      }
     } catch {
       /* nothing to store */
     }
