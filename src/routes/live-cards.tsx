@@ -25,6 +25,7 @@ import {
   LIVE_CARD_PACK_CREDITS,
 } from "@/lib/live-cards/attempts";
 import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
+import { useLiveCardProjectSpend } from "@/lib/live-cards/useProjectSpend";
 import {
   LIVE_CARD_RATIOS,
   type LiveCardAsset,
@@ -169,6 +170,7 @@ function LiveCardsPage() {
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [sessionId, resetSession] = useLiveCardSession();
+  const projectSpend = useLiveCardProjectSpend(sessionId ?? null);
   const readSessionStatus = useServerFn(getLiveCardSessionStatus);
   // A session whose card was already delivered is closed; the page must not
   // restore it. Nothing is deleted — only the active reference moves on.
@@ -293,6 +295,7 @@ function LiveCardsPage() {
       }
       refreshBalance(result.balance);
       void attempts.refetch();
+      void projectSpend.refresh();
       toast.success(t("lc_pack_bought"));
     } catch {
       toast.error(t("lc_failed"));
@@ -454,6 +457,9 @@ function LiveCardsPage() {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {t("lc_balance")}: {balance} · {t("lc_pack_price")}
+            </p>
+            <p className="mt-1 text-xs font-medium text-foreground">
+              {t("lc_spent")}: {projectSpend.spent}
             </p>
             {attemptsLeft <= 0 && !canBuyPack && (
               <p className="mt-1 text-xs font-medium text-destructive">{t("lc_insufficient")}</p>
