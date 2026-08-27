@@ -56,7 +56,9 @@ interface GiftOption {
 /** The six Studio cards, in their fixed 2 × 3 order. */
 const GIFTS: GiftOption[] = [
   { id: "card", icon: Mail, titleKey: "gift_card", descKey: "gift_card_desc", to: "/create-card" },
-  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", to: "/live-cards" },
+  // Entering from the Studio always starts a fresh live card project; an
+  // unfinished one is resumed only through Personal Cabinet → Continue.
+  { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", to: "/live-cards?new=1" },
   { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", to: "/video-greeting" },
   { id: "video-clip", icon: Film, titleKey: "gift_video_clip", descKey: "gift_video_clip_desc", to: null },
   { id: "cartoon", icon: Clapperboard, titleKey: "gift_cartoon", descKey: "gift_cartoon_desc", to: null },
