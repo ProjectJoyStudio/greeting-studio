@@ -72,18 +72,21 @@ export function AnimationStep({
 
   // The motion description survives reloads and failed attempts, always bound
   // to the project it belongs to — another project never inherits it.
+  const draftReady = useRef(false);
   useEffect(() => {
+    draftReady.current = false;
     try {
       const raw = window.localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { sessionId?: string | null; text?: string };
+      const parsed = raw ? (JSON.parse(raw) as { sessionId?: string | null; text?: string }) : null;
       if (parsed?.text && (parsed.sessionId ?? null) === (sessionId ?? null)) setMotion(parsed.text);
     } catch {
       /* nothing stored */
     }
+    draftReady.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
   useEffect(() => {
+    if (!draftReady.current) return;
     try {
       window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ sessionId, text: motion }));
     } catch {
