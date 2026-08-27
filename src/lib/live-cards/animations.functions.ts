@@ -288,9 +288,28 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
     };
 
     async function save(patch: AnimationPatch): Promise<AnimationResult> {
+      // A generation that ends technically without a video must never keep the
+      // customer's credits. The refund happens exactly once, and the record
+      // remembers it, so a repeated poll can never pay twice.
+      let extra: Record<string, unknown> = {};
+      const alreadyRefunded = Boolean(
+        (current.metadata as { refunded?: boolean } | null | undefined)?.refunded,
+      );
+      if (patch.status === "failed" && !alreadyRefunded && (current.credits_charged ?? 0) > 0) {
+        const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
+        await wallet.rpc("refund_live_card_animation", {
+          _user_id: context.userId,
+          _price: current.credits_charged ?? 0,
+          _reason: patch.error_code ?? "generation_failed",
+        });
+        extra = {
+          metadata: { ...(current.metadata ?? {}), refunded: true },
+          credits_charged: 0,
+        };
+      }
       const { data: updated } = await context.supabase
         .from("live_card_animations")
-        .update(patch)
+        .update({ ...patch, ...extra })
         .eq("id", current.id)
         .select(COLUMNS)
         .single();
