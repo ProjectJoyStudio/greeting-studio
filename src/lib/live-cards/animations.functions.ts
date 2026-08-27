@@ -480,3 +480,224 @@ export const retryLiveCardAnimation = createServerFn({ method: "POST" })
       return { ok: false, errorCode: "retry_failed", errorMessage };
     }
   });
+
+// ---------------------------------------------------------------------------
+// One live card project = one selected start image. Its very first animation
+// fixes the length of the project; every further animation of the same picture
+// is a paid regeneration of that same project, never a new creation.
+// ---------------------------------------------------------------------------
+
+export interface LiveCardAnimationProject {
+  /** The length chosen for the first animation; null while none exists yet. */
+  lockedDuration: number | null;
+  /** Successful animations that followed the first one. */
+  regenerationsUsed: number;
+  regenerationsLeft: number;
+  canRegenerate: boolean;
+  price: number;
+  max: number;
+}
+
+/** Loads every animation row of one start image, oldest first. */
+async function projectRows(
+  context: { supabase: any; userId: string },
+  cardId: string,
+): Promise<Row[]> {
+  const { data } = await context.supabase
+    .from("live_card_animations")
+    .select(COLUMNS)
+    .eq("user_id", context.userId)
+    .eq("source_card_id", cardId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(30);
+  return (data ?? []) as Row[];
+}
+
+function projectState(rows: Row[]): LiveCardAnimationProject {
+  const { MAX_ANIMATION_REGENERATIONS, ANIMATION_REGENERATE_CREDITS } = PRICING;
+  const ready = rows.filter((row) => row.status === "ready");
+  const used = Math.max(0, ready.length - 1);
+  return {
+    lockedDuration: ready.length ? ready[0]?.duration_seconds ?? null : null,
+    regenerationsUsed: used,
+    regenerationsLeft: Math.max(0, MAX_ANIMATION_REGENERATIONS - used),
+    canRegenerate: ready.length > 0 && used < MAX_ANIMATION_REGENERATIONS,
+    price: ANIMATION_REGENERATE_CREDITS,
+    max: MAX_ANIMATION_REGENERATIONS,
+  };
+}
+
+const PRICING = {
+  MAX_ANIMATION_REGENERATIONS: 5,
+  ANIMATION_REGENERATE_CREDITS: 2,
+};
+
+/** Everything the page needs to show the locked length and the regeneration budget. */
+export const getLiveCardAnimationProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string }) => {
+    const cardId = String(input?.cardId ?? "");
+    if (!cardId) throw new Error("card_required");
+    return { cardId };
+  })
+  .handler(async ({ data, context }): Promise<LiveCardAnimationProject> =>
+    projectState(await projectRows(context, data.cardId)),
+  );
+
+/**
+ * Creates one more animation of the SAME start image, with the SAME length,
+ * for a flat price. The previous successful animation is never touched, so a
+ * technical failure can not destroy what the customer already has.
+ */
+export const regenerateLiveCardAnimation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cardId: string; prompt: string; promptLang?: string; sessionId?: string }) => {
+    const cardId = String(input?.cardId ?? "");
+    if (!cardId) throw new Error("card_required");
+    const prompt = String(input?.prompt ?? "").trim();
+    if (prompt.length < 3) throw new Error("prompt_too_short");
+    return {
+      cardId,
+      prompt: prompt.slice(0, 1000),
+      promptLang: String(input?.promptLang ?? "").slice(0, 8),
+      sessionId: String(input?.sessionId ?? "").slice(0, 64) || null,
+    };
+  })
+  .handler(async ({ data, context }): Promise<AnimationResult> => {
+    const rows = await projectRows(context, data.cardId);
+    const state = projectState(rows);
+    const ready = rows.filter((row) => row.status === "ready");
+    if (!ready.length || state.lockedDuration === null) {
+      return { ok: false, errorCode: "no_original", errorMessage: "There is no finished animation yet." };
+    }
+    if (!state.canRegenerate) {
+      return { ok: false, errorCode: "regeneration_limit", errorMessage: "The regeneration limit is reached." };
+    }
+
+    // A regeneration that is already running is returned as it is: one
+    // operation is charged exactly once, whatever the customer clicks.
+    const pending = rows.find((row) =>
+      ["preparing", "queued", "processing", "storing"].includes(row.status),
+    );
+    if (pending) return { ok: true, animation: await toAnimation(pending) };
+
+    const original = ready[0]!;
+    if (!original.source_bucket || !original.source_path) {
+      return { ok: false, errorCode: "image_missing", errorMessage: "The source picture is not available." };
+    }
+    // The length belongs to the project, never to the request.
+    const duration = state.lockedDuration;
+    const price = state.price;
+
+    const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
+    const { data: charge, error: chargeError } = await wallet.rpc("charge_live_card_animation", {
+      _user_id: context.userId,
+      _price: price,
+      _duration: duration,
+    });
+    const charged = (charge ?? {}) as { ok?: boolean; error?: string };
+    if (chargeError || !charged.ok) {
+      return {
+        ok: false,
+        errorCode: charged.error ?? "charge_failed",
+        errorMessage: "Not enough credits for this regeneration.",
+      };
+    }
+
+    const refund = async (reason: string) => {
+      await wallet.rpc("refund_live_card_animation", {
+        _user_id: context.userId,
+        _price: price,
+        _reason: reason,
+      });
+    };
+
+    const { startVideoRequest } = await import("./generators/router.server");
+    const { GeneratorError } = await import("./generators/contracts.server");
+    const { translatePromptToEnglish } = await import("@/lib/ai/prompt-translate.server");
+    const { liveCardsVideoResolution } = await import("./env.server");
+    const { logLiveCardEvent } = await import("./lifecycle.server");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const signed = await supabaseAdmin.storage
+      .from(original.source_bucket)
+      .createSignedUrl(original.source_path, 60 * 60 * 2);
+    const imageUrl = signed.data?.signedUrl;
+    if (!imageUrl) {
+      await refund("image_missing");
+      return { ok: false, errorCode: "image_missing", errorMessage: "The source picture could not be read." };
+    }
+
+    // The freshly edited movement description is always the one that is sent.
+    const translated = await translatePromptToEnglish(data.prompt, "animation");
+
+    try {
+      const routed = await startVideoRequest({
+        imageUrl,
+        prompt: translated.english,
+        durationSeconds: duration,
+        aspectRatio: original.aspect_ratio ?? "1:1",
+        resolution: liveCardsVideoResolution(),
+      });
+      const { data: row, error } = await context.supabase
+        .from("live_card_animations")
+        .insert({
+          user_id: context.userId,
+          session_id: data.sessionId ?? original.session_id ?? null,
+          source_card_id: data.cardId,
+          source_bucket: original.source_bucket,
+          source_path: original.source_path,
+          prompt: data.prompt,
+          prompt_en: translated.english,
+          prompt_lang: data.promptLang || null,
+          duration_seconds: duration,
+          aspect_ratio: original.aspect_ratio,
+          resolution: liveCardsVideoResolution(),
+          credits_charged: price,
+          status: "queued",
+          generator_key: routed.generatorKey,
+          generator_model: routed.generatorModel,
+          prediction_id: routed.jobId,
+          metadata: { regeneration: true },
+        })
+        .select(COLUMNS)
+        .single();
+      if (error || !row) {
+        await refund("db_failed");
+        return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not store the animation." };
+      }
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        ownerUserId: context.userId,
+        animationId: (row as Row).id,
+        stage: "generation_started",
+        detail: {
+          regeneration: true,
+          regenerationNumber: state.regenerationsUsed + 1,
+          generator: routed.generatorKey,
+          lockedDurationSeconds: duration,
+        },
+      });
+      return { ok: true, animation: await toAnimation(row as Row) };
+    } catch (err) {
+      const known = err instanceof GeneratorError;
+      const errorCode = known ? err.code : "unknown";
+      // Primary and backup are one single operation: nothing was produced, so
+      // the whole price goes back and no regeneration is counted.
+      await refund(errorCode);
+      await logLiveCardEvent({
+        actorUserId: context.userId,
+        ownerUserId: context.userId,
+        animationId: null,
+        stage: "failed",
+        ok: false,
+        detail: { step: "regeneration", sourceCardId: data.cardId, errorCode },
+      });
+      return {
+        ok: false,
+        errorCode,
+        errorMessage: err instanceof Error ? err.message : "The animation could not be started.",
+      };
+    }
+  });
