@@ -292,6 +292,7 @@ export function AnimationStep({
     if (textStage) {
       return (
         <div className="space-y-4">
+          {creditSummary}
           {/* Animation variants of exactly this project ------------------- */}
           <div className="space-y-3 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -407,6 +408,7 @@ export function AnimationStep({
     }
     return (
       <div className="space-y-6">
+        {creditSummary}
         <div className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center shadow-warm">
           <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
           <h2 className="mt-3 font-display text-lg font-semibold tracking-tight">{t("la_done_title")}</h2>
