@@ -478,6 +478,13 @@ export function AnimationStep({
               {chosenDuration} {t("la_seconds_long")}
             </span>
           </div>
+          {lockedDuration !== null ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              {t("la_duration_locked")}
+            </p>
+          ) : (
+          <>
           <input
             id="la-duration"
             type="range"
@@ -505,6 +512,8 @@ export function AnimationStep({
               </button>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         {/* Credits — everything the person pays, always up to date --------- */}
