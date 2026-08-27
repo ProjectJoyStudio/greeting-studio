@@ -9,8 +9,10 @@ import { LiveCardViewer } from "./LiveCardViewer";
 import { LiveGreetingTextStep } from "./LiveGreetingTextStep";
 import {
   getAnimationOptions,
+  getLiveCardAnimationProject,
   listLiveCardAnimations,
   refreshLiveCardAnimation,
+  regenerateLiveCardAnimation,
   startLiveCardAnimation,
 } from "@/lib/live-cards/animations.functions";
 import {
@@ -22,6 +24,7 @@ import {
 import {
   ANIMATION_DURATION_DEFAULT,
   ANIMATION_DURATIONS,
+  ANIMATION_REGENERATE_CREDITS,
   animationDurationCredits,
   normaliseAnimationDuration,
 } from "@/lib/live-cards/duration-pricing";
@@ -51,6 +54,8 @@ export function AnimationStep({
   const { t, lang } = useI18n();
   const start = useServerFn(startLiveCardAnimation);
   const refresh = useServerFn(refreshLiveCardAnimation);
+  const regenerate = useServerFn(regenerateLiveCardAnimation);
+  const readProject = useServerFn(getLiveCardAnimationProject);
   const { balance } = useCreditBalance();
   const refreshBalance = useRefreshCreditBalance();
 
@@ -61,6 +66,7 @@ export function AnimationStep({
   // Attempts the person has dismissed with "try again" — never restored again.
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   // The greeting text is written after the animation is finished.
   const [textStage, setTextStage] = useState(true);
 
@@ -77,6 +83,16 @@ export function AnimationStep({
     queryKey: ["live-cards", "animation-options"],
     queryFn: () => getAnimationOptions(),
   });
+
+  // The project itself decides the length and the remaining regenerations —
+  // the browser only displays what the server already enforces.
+  const project = useQuery({
+    queryKey: ["live-cards", "animation-project", card.id],
+    queryFn: () => readProject({ data: { cardId: card.id } }),
+  });
+  const lockedDuration = project.data?.lockedDuration ?? null;
+  const regenerationsLeft = project.data?.regenerationsLeft ?? 0;
+  const canRegenerate = project.data?.canRegenerate ?? false;
   // Fallback list kept for reference; the slider itself defines the range.
   const durations = options.data?.durations?.length
     ? options.data.durations
