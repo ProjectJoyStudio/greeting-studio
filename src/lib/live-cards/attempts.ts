@@ -3,7 +3,7 @@
 /** How many start-image attempts one paid package unlocks. */
 export const LIVE_CARD_ATTEMPTS_PER_PACK = 3;
 /** Price of one package, in credits. */
-export const LIVE_CARD_PACK_CREDITS = 1;
+export const LIVE_CARD_PACK_CREDITS = 4;
 
 export interface LiveCardAttemptState {
   used: number;

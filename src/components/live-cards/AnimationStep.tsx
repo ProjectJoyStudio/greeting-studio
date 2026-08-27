@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Film, Images, Loader2, Play, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock, Film, Images, Loader2, Lock, Play, Plus, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -9,8 +9,10 @@ import { LiveCardViewer } from "./LiveCardViewer";
 import { LiveGreetingTextStep } from "./LiveGreetingTextStep";
 import {
   getAnimationOptions,
+  getLiveCardAnimationProject,
   listLiveCardAnimations,
   refreshLiveCardAnimation,
+  regenerateLiveCardAnimation,
   startLiveCardAnimation,
 } from "@/lib/live-cards/animations.functions";
 import {
@@ -22,6 +24,7 @@ import {
 import {
   ANIMATION_DURATION_DEFAULT,
   ANIMATION_DURATIONS,
+  ANIMATION_REGENERATE_CREDITS,
   animationDurationCredits,
   normaliseAnimationDuration,
 } from "@/lib/live-cards/duration-pricing";
@@ -51,6 +54,8 @@ export function AnimationStep({
   const { t, lang } = useI18n();
   const start = useServerFn(startLiveCardAnimation);
   const refresh = useServerFn(refreshLiveCardAnimation);
+  const regenerate = useServerFn(regenerateLiveCardAnimation);
+  const readProject = useServerFn(getLiveCardAnimationProject);
   const { balance } = useCreditBalance();
   const refreshBalance = useRefreshCreditBalance();
 
@@ -61,6 +66,7 @@ export function AnimationStep({
   // Attempts the person has dismissed with "try again" — never restored again.
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   // The greeting text is written after the animation is finished.
   const [textStage, setTextStage] = useState(true);
 
@@ -77,12 +83,22 @@ export function AnimationStep({
     queryKey: ["live-cards", "animation-options"],
     queryFn: () => getAnimationOptions(),
   });
+
+  // The project itself decides the length and the remaining regenerations —
+  // the browser only displays what the server already enforces.
+  const project = useQuery({
+    queryKey: ["live-cards", "animation-project", card.id],
+    queryFn: () => readProject({ data: { cardId: card.id } }),
+  });
+  const lockedDuration = project.data?.lockedDuration ?? null;
+  const regenerationsLeft = project.data?.regenerationsLeft ?? 0;
+  const canRegenerate = project.data?.canRegenerate ?? false;
   // Fallback list kept for reference; the slider itself defines the range.
   const durations = options.data?.durations?.length
     ? options.data.durations
     : ([...PLANNED_VIDEO_DURATIONS] as number[]);
   void durations;
-  const chosenDuration = normaliseAnimationDuration(duration ?? ANIMATION_DURATION_DEFAULT);
+  const chosenDuration = normaliseAnimationDuration(lockedDuration ?? duration ?? ANIMATION_DURATION_DEFAULT);
   const priceCredits = animationDurationCredits(chosenDuration);
   const balanceAfter = balance - priceCredits;
   const canAfford = balance >= priceCredits;
@@ -96,7 +112,12 @@ export function AnimationStep({
   });
   useEffect(() => {
     if (animation || !existing.data?.length) return;
-    const mine = existing.data.find((a) => a.sourceCardId === card.id && !dismissed.includes(a.id));
+    const forCard = existing.data.filter((a) => a.sourceCardId === card.id && !dismissed.includes(a.id));
+    // A finished animation always wins over an older failed technical attempt.
+    const mine =
+      forCard.find((a) => a.status === "ready") ??
+      forCard.find((a) => isPending(a.status)) ??
+      forCard[0];
     if (!mine) return;
     setAnimation(mine);
     onAnimation(mine);
@@ -114,7 +135,11 @@ export function AnimationStep({
         if (!result.ok) return;
         setAnimation(result.animation);
         onAnimation(result.animation);
-        if (result.animation.status === "ready") toast.success(t("la_ready_toast"));
+        if (result.animation.status === "ready") {
+          toast.success(t("la_ready_toast"));
+          void project.refetch();
+          void existing.refetch();
+        }
         if (result.animation.status === "failed") toast.error(t("la_failed_toast"));
       } catch {
         /* transient — the next tick tries again */
@@ -167,6 +192,55 @@ export function AnimationStep({
     }
   }
 
+  /**
+   * One more animation of the same picture, with the same length. The previous
+   * result stays untouched until the new one has really been produced.
+   */
+  async function runRegenerate() {
+    if (regenerating || motion.trim().length < 3) return;
+    if (!canRegenerate) return;
+    if (balance < ANIMATION_REGENERATE_CREDITS) {
+      toast.error(t("la_insufficient"));
+      return;
+    }
+    setRegenerating(true);
+    try {
+      const result = await regenerate({
+        data: {
+          cardId: card.id,
+          prompt: motion,
+          promptLang: lang,
+          sessionId: sessionId ?? undefined,
+        },
+      });
+      if (!result.ok) {
+        toast.error(
+          result.errorCode === "regeneration_limit"
+            ? t("la_regen_limit")
+            : result.errorCode === "insufficient_credits" || result.errorCode === "charge_failed"
+              ? t("la_insufficient")
+              : t("la_failed_toast"),
+        );
+        refreshBalance();
+        void project.refetch();
+        return;
+      }
+      setAnimation(result.animation);
+      onAnimation(result.animation);
+      refreshBalance();
+      void project.refetch();
+      void existing.refetch();
+    } catch {
+      toast.error(t("la_failed_toast"));
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  const variants = (existing.data ?? []).filter(
+    (a) => a.sourceCardId === card.id && a.status === "ready",
+  );
+
   const running = Boolean(animation && isPending(animation.status));
   // Once the animation exists, the session is finished: every control that
   // could start the same animation again is removed from the page.
@@ -175,7 +249,93 @@ export function AnimationStep({
   if (finished && animation) {
     if (textStage) {
       return (
+        <div className="space-y-4">
+          {/* Variants and paid regeneration of exactly this project --------- */}
+          <div className="space-y-3 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-2 font-display text-sm font-semibold tracking-tight">
+                <Film className="h-4 w-4 text-primary" />
+                {t("la_variants")}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                {t("la_duration")}: {animation.durationSeconds} {t("la_seconds_long")}
+              </span>
+            </div>
+
+            {variants.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {variants.map((variant, index) => (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    onClick={() => {
+                      setAnimation(variant);
+                      onAnimation(variant);
+                      if (variant.prompt) setMotion(variant.prompt);
+                    }}
+                    className={`shrink-0 overflow-hidden rounded-2xl border-2 transition ${
+                      variant.id === animation.id
+                        ? "border-primary shadow-warm"
+                        : "border-border/60 hover:border-primary/50"
+                    }`}
+                  >
+                    {variant.videoUrl ? (
+                      <video
+                        src={variant.videoUrl}
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => void e.currentTarget.play().catch(() => undefined)}
+                        onMouseLeave={(e) => e.currentTarget.pause()}
+                        className="h-24 w-24 bg-black/5 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-24 w-24 items-center justify-center text-xs">{index + 1}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <textarea
+              value={motion}
+              onChange={(e) => setMotion(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              placeholder={t("la_motion_ph")}
+              className="w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-3 text-sm leading-relaxed outline-none transition focus:border-primary/60"
+            />
+
+            {canRegenerate ? (
+              <>
+                <button
+                  type="button"
+                  onClick={runRegenerate}
+                  disabled={regenerating || motion.trim().length < 3 || balance < ANIMATION_REGENERATE_CREDITS}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-semibold transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {regenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {t("la_regenerate")} — {ANIMATION_REGENERATE_CREDITS} {t("la_price_credits")}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  {t("la_regen_left")} {regenerationsLeft}
+                </p>
+                {balance < ANIMATION_REGENERATE_CREDITS && (
+                  <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs font-medium text-muted-foreground">{t("la_regen_limit")}</p>
+            )}
+          </div>
+
         <LiveGreetingTextStep
+          key={animation.id}
           animationId={animation.id}
           videoUrl={animation.videoUrl}
           aspectRatio={animation.aspectRatio}
@@ -190,6 +350,7 @@ export function AnimationStep({
             onNewProject();
           }}
         />
+        </div>
       );
     }
     return (
@@ -317,6 +478,13 @@ export function AnimationStep({
               {chosenDuration} {t("la_seconds_long")}
             </span>
           </div>
+          {lockedDuration !== null ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              {t("la_duration_locked")}
+            </p>
+          ) : (
+          <>
           <input
             id="la-duration"
             type="range"
@@ -344,6 +512,8 @@ export function AnimationStep({
               </button>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         {/* Credits — everything the person pays, always up to date --------- */}
