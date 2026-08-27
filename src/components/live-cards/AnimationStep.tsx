@@ -273,10 +273,26 @@ export function AnimationStep({
   // could start the same animation again is removed from the page.
   const finished = animation?.status === "ready";
 
+  const creditSummary = (
+    <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
+      <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
+      <SummaryRow label={t("lc_spent")} value={`${projectSpend.spent} ${t("la_price_credits")}`} />
+      <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
+      <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
+      <SummaryRow
+        label={t("la_balance_after")}
+        value={`${Math.max(0, balanceAfter)} ${t("la_price_credits")}`}
+      />
+      <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
+    </dl>
+  );
+
+
   if (finished && animation) {
     if (textStage) {
       return (
         <div className="space-y-4">
+          {creditSummary}
           {/* Animation variants of exactly this project ------------------- */}
           <div className="space-y-3 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -392,6 +408,7 @@ export function AnimationStep({
     }
     return (
       <div className="space-y-6">
+        {creditSummary}
         <div className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center shadow-warm">
           <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
           <h2 className="mt-3 font-display text-lg font-semibold tracking-tight">{t("la_done_title")}</h2>
@@ -554,20 +571,7 @@ export function AnimationStep({
         </div>
 
         {/* Credits — everything the person pays, always up to date --------- */}
-        <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
-          <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
-          <SummaryRow
-            label={t("lc_spent")}
-            value={`${projectSpend.spent} ${t("la_price_credits")}`}
-          />
-          <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
-          <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
-          <SummaryRow
-            label={t("la_balance_after")}
-            value={`${Math.max(0, balanceAfter)} ${t("la_price_credits")}`}
-          />
-          <SummaryRow label={t("la_summary_format")} value={card.aspectRatio ?? "1:1"} />
-        </dl>
+        {creditSummary}
         {!canAfford && <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>}
 
         <button
