@@ -5,6 +5,10 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  ANIMATION_REGENERATE_CREDITS,
+  MAX_ANIMATION_REGENERATIONS,
+} from "./duration-pricing";
 import type { AnimationResult, AnimationStatus, LiveCardAnimation } from "./types";
 
 const COLUMNS =
@@ -515,7 +519,6 @@ async function projectRows(
 }
 
 function projectState(rows: Row[]): LiveCardAnimationProject {
-  const { MAX_ANIMATION_REGENERATIONS, ANIMATION_REGENERATE_CREDITS } = PRICING;
   const ready = rows.filter((row) => row.status === "ready");
   const used = Math.max(0, ready.length - 1);
   return {
@@ -527,11 +530,6 @@ function projectState(rows: Row[]): LiveCardAnimationProject {
     max: MAX_ANIMATION_REGENERATIONS,
   };
 }
-
-const PRICING = {
-  MAX_ANIMATION_REGENERATIONS: 5,
-  ANIMATION_REGENERATE_CREDITS: 2,
-};
 
 /** Everything the page needs to show the locked length and the regeneration budget. */
 export const getLiveCardAnimationProject = createServerFn({ method: "POST" })
