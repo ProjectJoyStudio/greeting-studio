@@ -419,8 +419,69 @@ export const finalizeLiveGreeting = createServerFn({ method: "POST" })
     const signed = await supabaseAdmin.storage
       .from("live-greeting-card-videos")
       .createSignedUrl(data.storagePath, 60 * 60 * 12);
+
+    // Only now — the chosen animation is safely finalized — the temporary
+    // animation variants of exactly this project are cleaned up. They are the
+    // other, unselected regenerations of the same start image, of the same
+    // person, that never became a card of their own.
+    await cleanUpUnselectedVariants(context, data.animationId);
+
     return { ok: true, videoUrl: signed.data?.signedUrl ?? null };
   });
+
+/**
+ * Frees the storage of the animation variants the customer did not choose.
+ * Scoped to one owner, one start image and only rows that are not finalized,
+ * not delivered and not the selected animation itself.
+ */
+async function cleanUpUnselectedVariants(
+  context: { supabase: any; userId: string },
+  keptAnimationId: string,
+): Promise<void> {
+  try {
+    const { data: kept } = await context.supabase
+      .from("live_card_animations")
+      .select("id, source_card_id")
+      .eq("id", keptAnimationId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const sourceCardId = (kept as { source_card_id: string | null } | null)?.source_card_id;
+    if (!sourceCardId) return;
+
+    const { data: others } = await context.supabase
+      .from("live_card_animations")
+      .select("id, storage_bucket, storage_path")
+      .eq("user_id", context.userId)
+      .eq("source_card_id", sourceCardId)
+      .neq("id", keptAnimationId)
+      .is("finalized_at", null)
+      .is("delivered_at", null)
+      .is("deleted_at", null);
+    const rows = (others ?? []) as { id: string; storage_bucket: string | null; storage_path: string | null }[];
+    if (!rows.length) return;
+
+    const now = new Date().toISOString();
+    await context.supabase
+      .from("live_card_animations")
+      .update({ status: "discarded", deleted_at: now })
+      .in("id", rows.map((row) => row.id))
+      .eq("user_id", context.userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const byBucket = new Map<string, string[]>();
+    for (const row of rows) {
+      if (!row.storage_bucket || !row.storage_path) continue;
+      // Extra safety: never touch a file outside the person's own folder.
+      if (!row.storage_path.startsWith(`${context.userId}/`)) continue;
+      byBucket.set(row.storage_bucket, [...(byBucket.get(row.storage_bucket) ?? []), row.storage_path]);
+    }
+    for (const [bucket, paths] of byBucket) {
+      await supabaseAdmin.storage.from(bucket).remove(paths);
+    }
+  } catch {
+    /* cleanup is best effort — it must never endanger a finished card */
+  }
+}
 
 /**
  * The editor reports every step of the final rendering, so a card that fails
