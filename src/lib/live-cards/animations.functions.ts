@@ -8,7 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { AnimationResult, AnimationStatus, LiveCardAnimation } from "./types";
 
 const COLUMNS =
-  "id, status, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, generator_key, prediction_id, error_code, error_message, created_at";
+  "id, status, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, generator_key, prediction_id, error_code, error_message, created_at, session_id, credits_charged, metadata";
 
 type Row = {
   id: string;
@@ -27,6 +27,9 @@ type Row = {
   error_code: string | null;
   error_message: string | null;
   created_at: string;
+  session_id?: string | null;
+  credits_charged?: number | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 const STATUSES: AnimationStatus[] = ["preparing", "queued", "processing", "storing", "ready", "failed"];
