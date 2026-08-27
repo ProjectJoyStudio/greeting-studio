@@ -70,14 +70,26 @@ export function AnimationStep({
   // The greeting text is written after the animation is finished.
   const [textStage, setTextStage] = useState(true);
 
-  // The motion description survives reloads and failed attempts.
+  // The motion description survives reloads and failed attempts, always bound
+  // to the project it belongs to — another project never inherits it.
   useEffect(() => {
-    const saved = window.localStorage.getItem(DRAFT_KEY);
-    if (saved) setMotion(saved);
-  }, []);
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { sessionId?: string | null; text?: string };
+      if (parsed?.text && (parsed.sessionId ?? null) === (sessionId ?? null)) setMotion(parsed.text);
+    } catch {
+      /* nothing stored */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
   useEffect(() => {
-    window.localStorage.setItem(DRAFT_KEY, motion);
-  }, [motion]);
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ sessionId, text: motion }));
+    } catch {
+      /* nothing to store */
+    }
+  }, [motion, sessionId]);
 
   const options = useQuery({
     queryKey: ["live-cards", "animation-options"],
