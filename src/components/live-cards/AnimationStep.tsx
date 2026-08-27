@@ -29,6 +29,7 @@ import {
   normaliseAnimationDuration,
 } from "@/lib/live-cards/duration-pricing";
 import { useCreditBalance, useRefreshCreditBalance } from "@/lib/credits/useCreditBalance";
+import { useLiveCardProjectSpend } from "@/lib/live-cards/useProjectSpend";
 
 const DRAFT_KEY = "joy.live-cards.motion";
 
@@ -58,6 +59,7 @@ export function AnimationStep({
   const readProject = useServerFn(getLiveCardAnimationProject);
   const { balance } = useCreditBalance();
   const refreshBalance = useRefreshCreditBalance();
+  const projectSpend = useLiveCardProjectSpend(sessionId ?? null);
 
   const [motion, setMotion] = useState("");
   const [duration, setDuration] = useState<number | null>(null);
@@ -195,11 +197,14 @@ export function AnimationStep({
               : t("la_failed_toast"),
         );
         refreshBalance();
+        void projectSpend.refresh();
+      void projectSpend.refresh();
         return;
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
       refreshBalance();
+      void projectSpend.refresh();
     } catch {
       toast.error(t("la_failed_toast"));
     } finally {
@@ -237,12 +242,15 @@ export function AnimationStep({
               : t("la_failed_toast"),
         );
         refreshBalance();
+        void projectSpend.refresh();
+      void projectSpend.refresh();
         void project.refetch();
         return;
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
       refreshBalance();
+      void projectSpend.refresh();
       void project.refetch();
       void existing.refetch();
     } catch {
@@ -544,6 +552,10 @@ export function AnimationStep({
         {/* Credits — everything the person pays, always up to date --------- */}
         <dl className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-xs">
           <SummaryRow label={t("la_balance_now")} value={`${balance} ${t("la_price_credits")}`} />
+          <SummaryRow
+            label={t("lc_spent")}
+            value={`${projectSpend.spent} ${t("la_price_credits")}`}
+          />
           <SummaryRow label={t("la_summary_duration")} value={`${chosenDuration}${t("la_seconds")}`} />
           <SummaryRow label={t("la_cost")} value={`${priceCredits} ${t("la_price_credits")}`} />
           <SummaryRow
