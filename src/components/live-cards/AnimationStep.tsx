@@ -198,7 +198,6 @@ export function AnimationStep({
         );
         refreshBalance();
         void projectSpend.refresh();
-      void projectSpend.refresh();
         return;
       }
       setAnimation(result.animation);
@@ -243,7 +242,6 @@ export function AnimationStep({
         );
         refreshBalance();
         void projectSpend.refresh();
-      void projectSpend.refresh();
         void project.refetch();
         return;
       }
