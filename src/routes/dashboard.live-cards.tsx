@@ -176,14 +176,29 @@ function MyLiveCardsPage() {
                         </Link>
                       )}
                       {!imageOnly && item.status === "ready" && (
-                        <Link
-                          to="/live-editor/$animationId"
-                          params={{ animationId: item.id }}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {t("llc_continue")}
-                        </Link>
+                        // Continue reopens the exact live card project, with all
+                        // its successful animation variants and its regeneration
+                        // budget. Only a project without a session identity has
+                        // to fall back to the single-animation editor.
+                        item.sessionId ? (
+                          <Link
+                            to="/live-cards"
+                            search={{ session: item.sessionId }}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {t("llc_continue")}
+                          </Link>
+                        ) : (
+                          <Link
+                            to="/live-editor/$animationId"
+                            params={{ animationId: item.id }}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {t("llc_continue")}
+                          </Link>
+                        )
                       )}
                       <button
                         type="button"
