@@ -516,6 +516,7 @@ export function LiveGreetingEditor({
             </button>
           )}
         </div>
+        {belowSave}
         <p className="mt-3 text-xs text-muted-foreground">{t("lge_draft_note")}</p>
       </div>
 
