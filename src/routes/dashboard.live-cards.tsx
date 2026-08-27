@@ -104,6 +104,7 @@ function MyLiveCardsPage() {
 
       <Link
         to="/live-cards"
+        search={{ new: "1" }}
         className="mb-6 inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
       >
         <Plus className="h-4 w-4" />
