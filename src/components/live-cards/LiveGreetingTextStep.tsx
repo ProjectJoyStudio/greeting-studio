@@ -88,12 +88,15 @@ export function LiveGreetingEditor({
   aspectRatio,
   onFinish,
   onNewProject,
+  belowSave,
 }: {
   animationId: string;
   videoUrl: string | null;
   aspectRatio?: string | null;
   onFinish?: () => void;
   onNewProject?: () => void;
+  /** Extra actions of the creation flow, shown directly under "Save Live Card". */
+  belowSave?: React.ReactNode;
 }) {
   const { t, lang } = useI18n();
   const save = useServerFn(saveLiveGreetingText);
@@ -513,6 +516,7 @@ export function LiveGreetingEditor({
             </button>
           )}
         </div>
+        {belowSave}
         <p className="mt-3 text-xs text-muted-foreground">{t("lge_draft_note")}</p>
       </div>
 
