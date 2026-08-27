@@ -156,8 +156,14 @@ export function AnimationStep({
           toast.success(t("la_ready_toast"));
           void project.refetch();
           void existing.refetch();
+          void projectSpend.refresh();
         }
-        if (result.animation.status === "failed") toast.error(t("la_failed_toast"));
+        if (result.animation.status === "failed") {
+          toast.error(t("la_failed_toast"));
+          // A refunded attempt carries no charge any more.
+          refreshBalance();
+          void projectSpend.refresh();
+        }
       } catch {
         /* transient — the next tick tries again */
       }
