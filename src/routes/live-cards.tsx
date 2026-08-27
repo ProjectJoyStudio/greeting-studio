@@ -82,8 +82,8 @@ function useLiveCardSession(): [string | null, () => void] {
     let wantsNew = false;
     try {
       const params = new URLSearchParams(window.location.search);
-      asked = params.get("session");
-      wantsNew = params.get("new") === "1";
+      asked = (params.get("session") ?? "").replace(/^"|"$/g, "") || null;
+      wantsNew = ["1", "true"].includes((params.get("new") ?? "").replace(/^"|"$/g, ""));
     } catch {
       /* no address information available */
     }
