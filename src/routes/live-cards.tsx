@@ -157,7 +157,6 @@ function LiveCardsPage() {
   const readAttempts = useServerFn(getLiveCardAttempts);
   const buyPack = useServerFn(buyLiveCardAttemptPack);
   const { balance } = useCreditBalance();
-  const projectSpend = useLiveCardProjectSpend(sessionId ?? null);
   const refreshBalance = useRefreshCreditBalance();
 
   const [prompt, setPrompt] = useState("");
@@ -171,6 +170,7 @@ function LiveCardsPage() {
   const [animation, setAnimation] = useState<LiveCardAnimation | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [sessionId, resetSession] = useLiveCardSession();
+  const projectSpend = useLiveCardProjectSpend(sessionId ?? null);
   const readSessionStatus = useServerFn(getLiveCardSessionStatus);
   // A session whose card was already delivered is closed; the page must not
   // restore it. Nothing is deleted — only the active reference moves on.
