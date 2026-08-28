@@ -292,7 +292,6 @@ export function AnimationStep({
     if (textStage) {
       return (
         <div className="space-y-4">
-          {creditSummary}
           {/* Animation variants of exactly this project ------------------- */}
           <div className="space-y-3 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-warm sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -350,7 +349,7 @@ export function AnimationStep({
           belowSave={
             /* The one movement description of this card, and the paid
                regeneration that uses exactly its current content. */
-            <div className="mt-4 space-y-3 border-t border-border/60 pt-4">
+            <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
               <label
                 htmlFor="la-motion"
                 className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
@@ -366,31 +365,42 @@ export function AnimationStep({
                 placeholder={t("la_motion_ph")}
                 className="w-full resize-none rounded-2xl border border-border/60 bg-background/70 p-3 text-sm leading-relaxed outline-none transition focus:border-primary/60"
               />
-              {canRegenerate ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={runRegenerate}
-                    disabled={regenerating || motion.trim().length < 3 || balance < ANIMATION_REGENERATE_CREDITS}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-semibold transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                  >
-                    {regenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4" />
-                    )}
-                    {t("la_regenerate")} — {ANIMATION_REGENERATE_CREDITS} {t("la_price_credits")}
-                  </button>
-                  <p className="text-xs text-muted-foreground">
-                    {t("la_regen_left")} {regenerationsLeft}
-                  </p>
-                  {balance < ANIMATION_REGENERATE_CREDITS && (
-                    <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>
+
+              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_auto]">
+                {/* Main action: paid regeneration ------------------------ */}
+                <div className="min-w-0 space-y-2">
+                  {canRegenerate ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={runRegenerate}
+                        disabled={regenerating || motion.trim().length < 3 || balance < ANIMATION_REGENERATE_CREDITS}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-semibold transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                      >
+                        {regenerating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                        {t("la_regenerate")} — {ANIMATION_REGENERATE_CREDITS} {t("la_price_credits")}
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        {t("la_regen_left")} {regenerationsLeft}
+                      </p>
+                      {balance < ANIMATION_REGENERATE_CREDITS && (
+                        <p className="text-xs font-medium text-destructive">{t("la_insufficient")}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs font-medium text-muted-foreground">{t("la_regen_limit")}</p>
                   )}
-                </>
-              ) : (
-                <p className="text-xs font-medium text-muted-foreground">{t("la_regen_limit")}</p>
-              )}
+                </div>
+
+                {/* Credit summary — opposite the regeneration action ------ */}
+                <div className="min-w-0 lg:max-w-[16rem]">
+                  {creditSummary}
+                </div>
+              </div>
             </div>
           }
           onNewProject={() => {
