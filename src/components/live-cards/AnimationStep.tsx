@@ -418,11 +418,14 @@ export function AnimationStep({
     }
     return (
       <div className="space-y-6">
-        {creditSummary}
         <div className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center shadow-warm">
           <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
           <h2 className="mt-3 font-display text-lg font-semibold tracking-tight">{t("la_done_title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t("la_done_hint")}</p>
+
+          <div className="mx-auto mt-5 max-w-sm">
+            {creditSummary}
+          </div>
 
           <div className="mt-5 flex flex-col gap-3">
             {animation.videoUrl && (
