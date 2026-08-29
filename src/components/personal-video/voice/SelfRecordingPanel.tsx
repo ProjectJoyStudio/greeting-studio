@@ -267,7 +267,6 @@ export function SelfRecordingPanel({
           )}
 
           <p className="mt-3 text-[11px] text-muted-foreground">{t("pvsr_no_tts")}</p>
-          <p className="text-[11px] text-muted-foreground">{t("pvsr_free")}</p>
         </>
       )}
     </div>

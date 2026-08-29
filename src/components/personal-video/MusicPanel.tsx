@@ -189,9 +189,6 @@ export function MusicPanel({
           <Music className="h-4 w-4" />
         </span>
         {t("mus_title")}
-        <span className="rounded-full border border-border/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {t("mus_free")}
-        </span>
       </p>
 
       <div className="flex flex-wrap gap-2">

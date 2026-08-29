@@ -1329,8 +1329,6 @@ export function VoicePanel({
           </div>
         </div>
       )}
-
-      <p className="mt-3 text-[11px] text-muted-foreground">{t("pvv_free_note")}</p>
     </div>
   );
 }
