@@ -131,13 +131,14 @@ export function costSummary(
   const video = videoCredits(seconds);
   const voice = 0;
   const sceneSounds = sceneSoundsEnabled ? sceneSoundCredits(seconds) : 0;
-  const total = video + voice + sceneSounds;
+  // Total is cumulative project spend including the current video choice.
+  const total = alreadySpent + video;
   return {
     alreadySpent,
     video,
     voice,
     sceneSounds,
     total,
-    remaining: Math.max(0, balance - total),
+    remaining: Math.max(0, balance),
   };
 }

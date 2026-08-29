@@ -504,9 +504,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 <dl className="mt-4 space-y-2 text-sm">
                   <Row label={t("pvs_cost_spent")} value={`${cost.alreadySpent} ${word}`} />
                   <Row label={t("pvs_cost_video")} value={`${cost.video} ${word}`} />
-                  <Row label={t("pvs_cost_voice")} value={`+${cost.voice} ${word}`} />
-                  <Row label={t("pvr_cost_sounds")} value={`+${cost.sceneSounds} ${word}`} />
-                  <Row label={t("pvs_cost_music")} value={t("pvs_cost_included")} />
                   <div className="my-2 h-px bg-border/60" />
                   <Row label={t("pvs_cost_total")} value={`${cost.total} ${word}`} strong />
                   <Row label={t("pvs_cost_remaining")} value={`${cost.remaining} ${word}`} />
