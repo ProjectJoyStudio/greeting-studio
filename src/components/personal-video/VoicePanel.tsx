@@ -47,11 +47,15 @@ import {
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import {
+  SELF_RECORDING_PROVIDER,
+  SelfRecordingPanel,
+} from "./voice/SelfRecordingPanel";
+import {
   PERSONAL_VOICE_STYLES,
   personalVoiceRef,
 } from "@/lib/personal-video/voice/personal-voices";
 
-type VoiceMode = "library" | "mine" | "add";
+type VoiceMode = "library" | "mine" | "add" | "self";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
@@ -223,6 +227,9 @@ export function VoicePanel({
   useEffect(() => {
     const found = saved.data?.voiceover ?? null;
     if (found) setVoiceover(found);
+    // A greeting the customer recorded themselves comes back in its own mode,
+    // with the saved recording and its name ready to play again.
+    if (found?.provider === SELF_RECORDING_PROVIDER) setMode((current) => current ?? "self");
   }, [saved.data]);
 
   useEffect(() => {
@@ -370,8 +377,15 @@ export function VoicePanel({
       : speakerVoice.id
     : null;
 
+  /** The saved greeting is the customer's own recording, not a spoken voice. */
+  const selfRecorded = voiceover?.provider === SELF_RECORDING_PROVIDER;
+
   const voiceChanged = Boolean(
-    voiceover && speakerVoice && speakerStoredVoiceId && voiceover.voiceId !== speakerStoredVoiceId,
+    !selfRecorded &&
+      voiceover &&
+      speakerVoice &&
+      speakerStoredVoiceId &&
+      voiceover.voiceId !== speakerStoredVoiceId,
   );
   const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
   const outdated = voiceChanged || textChanged;
@@ -780,7 +794,7 @@ export function VoicePanel({
       )}
 
       {/* Where the voice comes from --------------------------------------- */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           disabled={disabled}
@@ -837,7 +851,47 @@ export function VoicePanel({
             {t("mv_only_profiles")}
           </span>
         </button>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMode(mode === "self" ? null : "self")}
+          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
+            mode === "self"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
+          }`}
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <Mic className="h-4 w-4 text-primary" />
+            {t("pvsr_option")}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t("pvsr_option_note")}
+          </span>
+        </button>
       </div>
+
+      {/* Record the greeting with my own real voice ----------------------- */}
+      {mode === "self" && (
+        <div className="mt-5">
+          <SelfRecordingPanel
+            projectId={projectId}
+            personId={speaker?.id ?? null}
+            greeting={greeting}
+            language={language}
+            videoSeconds={videoSeconds ?? 0}
+            disabled={disabled}
+            onSaved={(made) => {
+              audioRef.current?.pause();
+              setPlaying(false);
+              setVoiceover(made);
+              queryClient.setQueryData(pvgVoiceQueryKey(projectId), { voiceover: made });
+              onAssigned?.();
+            }}
+          />
+        </div>
+      )}
 
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
@@ -1216,21 +1270,24 @@ export function VoicePanel({
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={busy || disabled}
-          onClick={() => void generate()}
-          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-        >
-          {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : voiceover ? (
-            <RefreshCw className="h-4 w-4" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          {busy ? t("pvv_working") : voiceover ? t("pvv_regenerate") : t("pvv_generate")}
-        </button>
+        {/* In the own-recording mode nothing is ever spoken by a machine. */}
+        {mode !== "self" && (
+          <button
+            type="button"
+            disabled={busy || disabled}
+            onClick={() => void generate()}
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : voiceover ? (
+              <RefreshCw className="h-4 w-4" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {busy ? t("pvv_working") : voiceover ? t("pvv_regenerate") : t("pvv_generate")}
+          </button>
+        )}
 
         {voiceover?.audioUrl && !outdated && (
           <button
