@@ -20,7 +20,7 @@ export const PVG_EXTRA_SCENE_CREDITS = 1;
 /** One paid package of starting-scene attempts unlocks three generations. */
 export const PVG_SCENE_ATTEMPTS_PER_PACK = 3;
 /** Price of one package of starting-scene attempts, in credits. */
-export const PVG_SCENE_PACK_CREDITS = 1;
+export const PVG_SCENE_PACK_CREDITS = 5;
 
 export interface PvgSceneAttempts {
   used: number;
