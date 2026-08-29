@@ -374,8 +374,15 @@ export function VoicePanel({
       : speakerVoice.id
     : null;
 
+  /** The saved greeting is the customer's own recording, not a spoken voice. */
+  const selfRecorded = voiceover?.provider === SELF_RECORDING_PROVIDER;
+
   const voiceChanged = Boolean(
-    voiceover && speakerVoice && speakerStoredVoiceId && voiceover.voiceId !== speakerStoredVoiceId,
+    !selfRecorded &&
+      voiceover &&
+      speakerVoice &&
+      speakerStoredVoiceId &&
+      voiceover.voiceId !== speakerStoredVoiceId,
   );
   const textChanged = Boolean(voiceover && voiceover.greetingText.trim() !== greeting.trim());
   const outdated = voiceChanged || textChanged;
