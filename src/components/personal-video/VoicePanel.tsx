@@ -848,7 +848,47 @@ export function VoicePanel({
             {t("mv_only_profiles")}
           </span>
         </button>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMode(mode === "self" ? null : "self")}
+          className={`rounded-2xl border px-4 py-4 text-left transition disabled:opacity-60 ${
+            mode === "self"
+              ? "border-primary bg-primary/10"
+              : "border-border/60 hover:border-primary/40"
+          }`}
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <Mic className="h-4 w-4 text-primary" />
+            {t("pvsr_option")}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t("pvsr_option_note")}
+          </span>
+        </button>
       </div>
+
+      {/* Record the greeting with my own real voice ----------------------- */}
+      {mode === "self" && (
+        <div className="mt-5">
+          <SelfRecordingPanel
+            projectId={projectId}
+            personId={speaker?.id ?? null}
+            greeting={greeting}
+            language={language}
+            videoSeconds={videoSeconds ?? 0}
+            disabled={disabled}
+            onSaved={(made) => {
+              audioRef.current?.pause();
+              setPlaying(false);
+              setVoiceover(made);
+              queryClient.setQueryData(pvgVoiceQueryKey(projectId), { voiceover: made });
+              onAssigned?.();
+            }}
+          />
+        </div>
+      )}
 
       {/* Female · Male · Children ---------------------------------------- */}
       {mode === "library" && (
