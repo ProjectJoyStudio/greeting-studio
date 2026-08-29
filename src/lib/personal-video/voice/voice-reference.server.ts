@@ -24,7 +24,10 @@ async function admin(): Promise<Admin> {
 }
 
 function dataUri(bytes: Uint8Array, mime: string): string {
-  return `data:${mime};base64,${Buffer.from(bytes).toString("base64")}`;
+  // Strip media-type parameters ("audio/webm;codecs=opus" -> "audio/webm"):
+  // voice studios reject parameterized MIME types inside data URIs.
+  const baseMime = (mime.split(";")[0] || "audio/webm").trim();
+  return `data:${baseMime};base64,${Buffer.from(bytes).toString("base64")}`;
 }
 
 /** The stored preview of one library voice, preferring the greeting language. */

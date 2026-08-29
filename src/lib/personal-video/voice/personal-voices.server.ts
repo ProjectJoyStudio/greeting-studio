@@ -33,6 +33,10 @@ interface StoredSample {
   mime: string;
   seconds: number;
   textId: string;
+  /** Studio-readable rendition (WAV) prepared from the original recording. */
+  renditionBucket?: string;
+  renditionPath?: string;
+  renditionMime?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
