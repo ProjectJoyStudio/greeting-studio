@@ -1267,21 +1267,24 @@ export function VoicePanel({
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={busy || disabled}
-          onClick={() => void generate()}
-          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
-        >
-          {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : voiceover ? (
-            <RefreshCw className="h-4 w-4" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          {busy ? t("pvv_working") : voiceover ? t("pvv_regenerate") : t("pvv_generate")}
-        </button>
+        {/* In the own-recording mode nothing is ever spoken by a machine. */}
+        {mode !== "self" && (
+          <button
+            type="button"
+            disabled={busy || disabled}
+            onClick={() => void generate()}
+            className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : voiceover ? (
+              <RefreshCw className="h-4 w-4" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {busy ? t("pvv_working") : voiceover ? t("pvv_regenerate") : t("pvv_generate")}
+          </button>
+        )}
 
         {voiceover?.audioUrl && !outdated && (
           <button
