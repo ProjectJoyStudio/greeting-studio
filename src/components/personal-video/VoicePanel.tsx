@@ -791,7 +791,7 @@ export function VoicePanel({
       )}
 
       {/* Where the voice comes from --------------------------------------- */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           disabled={disabled}
