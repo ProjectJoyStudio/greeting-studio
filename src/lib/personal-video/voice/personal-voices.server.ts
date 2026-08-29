@@ -33,6 +33,10 @@ interface StoredSample {
   mime: string;
   seconds: number;
   textId: string;
+  /** Studio-readable rendition (WAV) prepared from the original recording. */
+  renditionBucket?: string;
+  renditionPath?: string;
+  renditionMime?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -478,9 +482,27 @@ export async function personalVoiceReference(
   const { enrollmentText } = await import("./enrollment");
   const language = row["language"] ?? "en";
   const spoken = enrollmentText(language, sample.textId === "sample2" ? "sample2" : "sample1");
+  // Voice studios reject raw WebM/Opus as a cloning reference. Prefer the
+  // compatible WAV rendition kept next to the original recording; the
+  // original itself is never deleted or overwritten.
+  if (sample.renditionPath) {
+    const bytes = await downloadSample({
+      ...sample,
+      bucket: sample.renditionBucket || sample.bucket,
+      path: sample.renditionPath,
+    });
+    if (bytes.byteLength === 0) return null;
+    return { bytes, mime: sample.renditionMime || "audio/wav", text: spoken.text };
+  }
+  // Without a rendition only already studio-readable originals may be sent;
+  // anything else fails safely instead of substituting another voice.
+  const baseMime = (sample.mime || "audio/webm").split(";")[0]!.trim();
+  if (!["audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/ogg"].includes(baseMime)) {
+    return null;
+  }
   const bytes = await downloadSample(sample);
   if (bytes.byteLength === 0) return null;
-  return { bytes, mime: sample.mime || "audio/webm", text: spoken.text };
+  return { bytes, mime: baseMime, text: spoken.text };
 }
 
 /** The cloned studio voice behind one profile, ready to speak any greeting. */
