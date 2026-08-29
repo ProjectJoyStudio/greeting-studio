@@ -47,11 +47,15 @@ import {
 } from "@/lib/personal-video/voice/personal-voices.functions";
 import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import {
+  SELF_RECORDING_PROVIDER,
+  SelfRecordingPanel,
+} from "./voice/SelfRecordingPanel";
+import {
   PERSONAL_VOICE_STYLES,
   personalVoiceRef,
 } from "@/lib/personal-video/voice/personal-voices";
 
-type VoiceMode = "library" | "mine" | "add";
+type VoiceMode = "library" | "mine" | "add" | "self";
 
 const CATEGORIES: VoiceCategory[] = ["female", "male", "children"];
 
