@@ -227,6 +227,9 @@ export function VoicePanel({
   useEffect(() => {
     const found = saved.data?.voiceover ?? null;
     if (found) setVoiceover(found);
+    // A greeting the customer recorded themselves comes back in its own mode,
+    // with the saved recording and its name ready to play again.
+    if (found?.provider === SELF_RECORDING_PROVIDER) setMode((current) => current ?? "self");
   }, [saved.data]);
 
   useEffect(() => {
