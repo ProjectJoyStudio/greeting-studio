@@ -89,7 +89,19 @@ export function DevCreditsPage() {
           <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {L("dtc_accounts")}
           </h2>
+          <div className="relative mb-2">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={L("dtc_search")}
+              className={`${inputCls} pl-8`}
+            />
+          </div>
           {accounts.isLoading && <Loader2 className="m-3 h-4 w-4 animate-spin text-muted-foreground" />}
+          {!accounts.isLoading && rows.length === 0 && (
+            <p className="px-1 py-3 text-xs text-muted-foreground">{L("dtc_no_match")}</p>
+          )}
           <ul className="space-y-1">
             {rows.map((r) => (
               <li key={r.user_id}>
