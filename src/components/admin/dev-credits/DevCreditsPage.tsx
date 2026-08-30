@@ -134,7 +134,10 @@ export function DevCreditsPage() {
             <div className="rounded-xl border border-border/60 bg-card/70 p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_balance")}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_selected_user")}</p>
+                  <p className="text-sm font-medium">{current.display_name ?? "—"}</p>
+                  <p className="text-xs text-muted-foreground">{current.email ?? current.user_id}</p>
+                  <p className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_balance")}</p>
                   <p className="font-[Fraunces] text-3xl font-semibold">{current.balance}</p>
                 </div>
                 <button
