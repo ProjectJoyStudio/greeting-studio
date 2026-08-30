@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
+import { Coins, Loader2, RotateCcw, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
