@@ -1,15 +1,15 @@
 import type { Lang } from "@/lib/i18n/types";
 
-const TEST_CREDITS: Record<Lang, string> = {
-  en: "Test Credits",
-  ru: "тестовых кредитов",
-  de: "Test-Kredits",
-  uk: "тестових кредитів",
-  fr: "crédits de test",
-  pl: "kredytów testowych",
+const BONUS_CREDITS: Record<Lang, string> = {
+  en: "Bonus Credits",
+  ru: "бонусных кредитов",
+  de: "Bonus-Credits",
+  uk: "бонусних кредитів",
+  fr: "crédits bonus",
+  pl: "kredytów bonusowych",
 };
 
-/** The word shown after a balance — test wallets are always marked as such. */
+/** The word shown after a balance — bonus wallets are always marked as such. */
 export function creditWord(lang: Lang, isTest: boolean, realWord: string): string {
-  return isTest ? TEST_CREDITS[lang] ?? TEST_CREDITS.en : realWord;
+  return isTest ? BONUS_CREDITS[lang] ?? BONUS_CREDITS.en : realWord;
 }

@@ -392,7 +392,7 @@ export const INFRA_DICT: Record<string, Row> = {
   sb_enable:   L("Enable Sandbox","Включить песочницу","Sandbox aktivieren","Увімкнути пісочницю","Activer le bac à sable","Włącz sandbox"),
   sb_sw_payments:      L("Test Payments","Тестовые платежи","Testzahlungen","Тест. платежі","Paiements test","Płatności test"),
   sb_sw_registration:  L("Test Registration","Тест. регистрация","Testregistrierung","Тест. реєстрація","Inscription test","Rejestracja test"),
-  sb_sw_credits:       L("Test Credit Purchases","Тест. покупки кредитов","Test-Guthabenkäufe","Тест. покупки кредитів","Achats crédits test","Zakupy kredytów test"),
+  sb_sw_credits:       L("Bonus Credit Purchases","Покупки бонусных кредитов","Bonus-Guthabenkäufe","Покупки бонусних кредитів","Achats crédits bonus","Zakupy kredytów bonusowych"),
   sb_sw_subscriptions: L("Test Subscriptions","Тест. подписки","Testabonnements","Тест. підписки","Abonnements test","Subskrypcje test"),
   sb_sw_generation:    L("Test Generation","Тест. генерация","Testgenerierung","Тест. генерація","Génération test","Generacja test"),
   sb_sw_translation:   L("Test Translation","Тест. перевод","Testübersetzung","Тест. переклад","Traduction test","Tłumaczenie test"),
@@ -403,7 +403,7 @@ export const INFRA_DICT: Record<string, Row> = {
 
   sb_rules_h: L("Sandbox Rules","Правила песочницы","Sandbox-Regeln","Правила пісочниці","Règles sandbox","Zasady sandboxa"),
   sb_r1: L("Test payments use no real money.","В тестовых платежах нет реальных денег.","Testzahlungen ohne echtes Geld.","Тестові платежі — без реальних грошей.","Aucun argent réel en test.","Płatności test bez pieniędzy."),
-  sb_r2: L("Test credits have no real financial value.","Тестовые кредиты не имеют финансовой ценности.","Testguthaben hat keinen finanziellen Wert.","Тест. кредити без грошової цінності.","Crédits test sans valeur financière.","Kredyty test bez wartości."),
+  sb_r2: L("Bonus credits have no real financial value.","Бонусные кредиты не имеют финансовой ценности.","Bonus-Credits haben keinen finanziellen Wert.","Бонусні кредити без грошової цінності.","Crédits bonus sans valeur financière.","Kredyty bonusowe bez wartości."),
   sb_r3: L("Test orders never enter the live production queue.","Тест. заказы не попадают в боевую очередь.","Testaufträge kommen nicht in die Live-Warteschlange.","Тест. замовлення не в Live-черзі.","Commandes test hors file de production.","Zamówienia test poza kolejką prod."),
   sb_r4: L("Test notifications are never sent to real customers.","Тест. уведомления не отправляются реальным клиентам.","Testbenachrichtigungen gehen nie an echte Kunden.","Тест. сповіщення не отримують реальні клієнти.","Notifs test jamais envoyées aux vrais clients.","Powiadomienia test nigdy do klientów."),
   sb_r5: L("Test files are stored separately.","Тест. файлы хранятся отдельно.","Testdateien werden getrennt gespeichert.","Тест. файли зберігаються окремо.","Fichiers test stockés séparément.","Pliki test przechowywane osobno."),
