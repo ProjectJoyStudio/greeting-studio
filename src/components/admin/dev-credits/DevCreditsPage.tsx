@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
+import { Coins, Loader2, RotateCcw, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +19,10 @@ const QUICK = [100, 500, 1000, 5000];
 const inputCls =
   "w-full rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary/60";
 
+type Pending = { kind: "add" | "remove" | "reset"; amount: number };
+
+const REASONS = ["dtc_reason_testing", "dtc_reason_compensation", "dtc_reason_promotion", "dtc_reason_gift", "dtc_reason_other"];
+
 export function DevCreditsPage() {
   const { lang } = useI18n();
   const L = useLocal(lang);
@@ -26,6 +30,8 @@ export function DevCreditsPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [amount, setAmount] = useState(500);
   const [reason, setReason] = useState("");
+  const [search, setSearch] = useState("");
+  const [pending, setPending] = useState<Pending | null>(null);
 
   const accounts = useQuery({ queryKey: ["dev-credits", "accounts"], queryFn: listTestAccounts });
   const history = useQuery({
@@ -33,12 +39,21 @@ export function DevCreditsPage() {
     queryFn: () => listTestHistory(selected),
   });
 
-  const rows = accounts.data ?? [];
-  const current = useMemo(() => rows.find((r) => r.user_id === selected) ?? null, [rows, selected]);
+  const allRows = accounts.data ?? [];
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allRows;
+    return allRows.filter((r) =>
+      [r.email, r.display_name].some((v) => (v ?? "").toLowerCase().includes(q)),
+    );
+  }, [allRows, search]);
+  const current = useMemo(() => allRows.find((r) => r.user_id === selected) ?? null, [allRows, selected]);
+  const who = current?.email ?? current?.display_name ?? current?.user_id ?? "";
 
   const after = () => {
     void queryClient.invalidateQueries({ queryKey: ["dev-credits"] });
     void queryClient.invalidateQueries({ queryKey: CREDIT_BALANCE_KEY });
+    setPending(null);
     toast.success(L("dtc_done"));
   };
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Error");
@@ -74,7 +89,19 @@ export function DevCreditsPage() {
           <h2 className="px-1 pb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {L("dtc_accounts")}
           </h2>
+          <div className="relative mb-2">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={L("dtc_search")}
+              className={`${inputCls} pl-8`}
+            />
+          </div>
           {accounts.isLoading && <Loader2 className="m-3 h-4 w-4 animate-spin text-muted-foreground" />}
+          {!accounts.isLoading && rows.length === 0 && (
+            <p className="px-1 py-3 text-xs text-muted-foreground">{L("dtc_no_match")}</p>
+          )}
           <ul className="space-y-1">
             {rows.map((r) => (
               <li key={r.user_id}>
@@ -107,7 +134,10 @@ export function DevCreditsPage() {
             <div className="rounded-xl border border-border/60 bg-card/70 p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_balance")}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_selected_user")}</p>
+                  <p className="text-sm font-medium">{current.display_name ?? "—"}</p>
+                  <p className="text-xs text-muted-foreground">{current.email ?? current.user_id}</p>
+                  <p className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">{L("dtc_balance")}</p>
                   <p className="font-[Fraunces] text-3xl font-semibold">{current.balance}</p>
                 </div>
                 <button
@@ -133,8 +163,26 @@ export function DevCreditsPage() {
                 </label>
                 <label className="text-xs text-muted-foreground">
                   {L("dtc_reason")}
-                  <input value={reason} onChange={(e) => setReason(e.target.value)} className={`mt-1 ${inputCls}`} />
+                  <input
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder={L("dtc_reason_ph")}
+                    className={`mt-1 ${inputCls}`}
+                  />
                 </label>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {REASONS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setReason(L(key))}
+                    className="rounded-full border border-border/60 px-3 py-1 text-xs transition hover:border-primary/50"
+                  >
+                    {L(key)}
+                  </button>
+                ))}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -154,7 +202,7 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => adjust.mutate(amount)}
+                  onClick={() => setPending({ kind: "add", amount })}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                 >
                   {adjust.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -163,7 +211,7 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => adjust.mutate(-amount)}
+                  onClick={() => setPending({ kind: "remove", amount })}
                   className="rounded-full border border-border/60 px-4 py-2 text-sm transition hover:bg-muted/50 disabled:opacity-60"
                 >
                   {L("dtc_remove")}
@@ -171,12 +219,58 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => reset.mutate()}
+                  onClick={() => setPending({ kind: "reset", amount: 0 })}
                   className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2 text-sm text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   {L("dtc_reset")}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {current && pending && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
+              <div className="w-full max-w-md rounded-xl border border-border/60 bg-card p-5 shadow-lg">
+                <h3 className="text-sm font-semibold">{L("dtc_confirm_title")}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {L(
+                    pending.kind === "add"
+                      ? "dtc_confirm_add"
+                      : pending.kind === "remove"
+                        ? "dtc_confirm_remove"
+                        : "dtc_confirm_reset",
+                  )
+                    .replace("{n}", String(pending.amount))
+                    .replace("{who}", who)}
+                </p>
+                {reason.trim() && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {L("dtc_reason")}: {reason.trim()}
+                  </p>
+                )}
+                <div className="mt-5 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setPending(null)}
+                    className="rounded-full border border-border/60 px-4 py-2 text-sm transition hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    {L("dtc_cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (pending.kind === "reset") reset.mutate();
+                      else adjust.mutate(pending.kind === "add" ? pending.amount : -pending.amount);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                  >
+                    {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {L("dtc_confirm_yes")}
+                  </button>
+                </div>
               </div>
             </div>
           )}
