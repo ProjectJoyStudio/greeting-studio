@@ -163,8 +163,26 @@ export function DevCreditsPage() {
                 </label>
                 <label className="text-xs text-muted-foreground">
                   {L("dtc_reason")}
-                  <input value={reason} onChange={(e) => setReason(e.target.value)} className={`mt-1 ${inputCls}`} />
+                  <input
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder={L("dtc_reason_ph")}
+                    className={`mt-1 ${inputCls}`}
+                  />
                 </label>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {REASONS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setReason(L(key))}
+                    className="rounded-full border border-border/60 px-3 py-1 text-xs transition hover:border-primary/50"
+                  >
+                    {L(key)}
+                  </button>
+                ))}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -184,7 +202,7 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => adjust.mutate(amount)}
+                  onClick={() => setPending({ kind: "add", amount })}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                 >
                   {adjust.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -193,7 +211,7 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => adjust.mutate(-amount)}
+                  onClick={() => setPending({ kind: "remove", amount })}
                   className="rounded-full border border-border/60 px-4 py-2 text-sm transition hover:bg-muted/50 disabled:opacity-60"
                 >
                   {L("dtc_remove")}
@@ -201,12 +219,58 @@ export function DevCreditsPage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => reset.mutate()}
+                  onClick={() => setPending({ kind: "reset", amount: 0 })}
                   className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2 text-sm text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   {L("dtc_reset")}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {current && pending && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
+              <div className="w-full max-w-md rounded-xl border border-border/60 bg-card p-5 shadow-lg">
+                <h3 className="text-sm font-semibold">{L("dtc_confirm_title")}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {L(
+                    pending.kind === "add"
+                      ? "dtc_confirm_add"
+                      : pending.kind === "remove"
+                        ? "dtc_confirm_remove"
+                        : "dtc_confirm_reset",
+                  )
+                    .replace("{n}", String(pending.amount))
+                    .replace("{who}", who)}
+                </p>
+                {reason.trim() && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {L("dtc_reason")}: {reason.trim()}
+                  </p>
+                )}
+                <div className="mt-5 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setPending(null)}
+                    className="rounded-full border border-border/60 px-4 py-2 text-sm transition hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    {L("dtc_cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (pending.kind === "reset") reset.mutate();
+                      else adjust.mutate(pending.kind === "add" ? pending.amount : -pending.amount);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                  >
+                    {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {L("dtc_confirm_yes")}
+                  </button>
+                </div>
               </div>
             </div>
           )}
