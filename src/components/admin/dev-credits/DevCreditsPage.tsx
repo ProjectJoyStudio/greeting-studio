@@ -19,6 +19,10 @@ const QUICK = [100, 500, 1000, 5000];
 const inputCls =
   "w-full rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary/60";
 
+type Pending = { kind: "add" | "remove" | "reset"; amount: number };
+
+const REASONS = ["dtc_reason_testing", "dtc_reason_compensation", "dtc_reason_promotion", "dtc_reason_gift", "dtc_reason_other"];
+
 export function DevCreditsPage() {
   const { lang } = useI18n();
   const L = useLocal(lang);
@@ -26,6 +30,8 @@ export function DevCreditsPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [amount, setAmount] = useState(500);
   const [reason, setReason] = useState("");
+  const [search, setSearch] = useState("");
+  const [pending, setPending] = useState<Pending | null>(null);
 
   const accounts = useQuery({ queryKey: ["dev-credits", "accounts"], queryFn: listTestAccounts });
   const history = useQuery({
@@ -33,12 +39,21 @@ export function DevCreditsPage() {
     queryFn: () => listTestHistory(selected),
   });
 
-  const rows = accounts.data ?? [];
-  const current = useMemo(() => rows.find((r) => r.user_id === selected) ?? null, [rows, selected]);
+  const allRows = accounts.data ?? [];
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allRows;
+    return allRows.filter((r) =>
+      [r.email, r.display_name].some((v) => (v ?? "").toLowerCase().includes(q)),
+    );
+  }, [allRows, search]);
+  const current = useMemo(() => allRows.find((r) => r.user_id === selected) ?? null, [allRows, selected]);
+  const who = current?.email ?? current?.display_name ?? current?.user_id ?? "";
 
   const after = () => {
     void queryClient.invalidateQueries({ queryKey: ["dev-credits"] });
     void queryClient.invalidateQueries({ queryKey: CREDIT_BALANCE_KEY });
+    setPending(null);
     toast.success(L("dtc_done"));
   };
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Error");
