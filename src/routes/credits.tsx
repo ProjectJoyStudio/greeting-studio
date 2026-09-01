@@ -3,8 +3,6 @@ import { Coins, Sparkles } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
-import { useCreditBalance } from "@/lib/credits/useCreditBalance";
-import { creditWord } from "@/lib/credits/i18n";
 import { CreditBalanceBreakdown } from "@/components/credits/CreditBalanceBreakdown";
 
 export const Route = createFileRoute("/credits")({
@@ -35,8 +33,7 @@ const PACKAGES = [
 ];
 
 function CreditsPurchasePage() {
-  const { t, lang } = useI18n();
-  const { balance, isTest } = useCreditBalance();
+  const { t } = useI18n();
 
   return (
     <SiteLayout>

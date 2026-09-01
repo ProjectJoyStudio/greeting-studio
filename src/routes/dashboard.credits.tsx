@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins } from "lucide-react";
 
 import { DashboardPageHeader } from "@/components/dashboard/DashboardLayout";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreditBalance } from "@/lib/credits/useCreditBalance";
-import { creditWord } from "@/lib/credits/i18n";
 import { CreditBalanceBreakdown } from "@/components/credits/CreditBalanceBreakdown";
 
 export const Route = createFileRoute("/dashboard/credits")({
@@ -35,8 +32,7 @@ async function fetchTransactions(): Promise<Txn[]> {
 }
 
 function CreditsPage() {
-  const { t, lang } = useI18n();
-  const { balance, isTest } = useCreditBalance();
+  const { t } = useI18n();
   const txns = useQuery({ queryKey: ["credit-transactions"], queryFn: fetchTransactions });
 
   return (
