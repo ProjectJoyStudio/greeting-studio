@@ -279,18 +279,31 @@ export const generateCardImage = createServerFn({ method: "POST" })
 
     // The previous version leaves the account only now, once the new one is
     // safely stored, so a failed attempt never loses the current card.
+    // A variant of the same paid package is never archived: the person paid to
+    // compare all of them. Only a card from another order steps aside.
     if (data.replaceCardId && data.replaceCardId !== row.id) {
-      const { moveCardToDrafts } = await import("./reject.server");
-      try {
-        await moveCardToDrafts(
-          data.replaceCardId,
-          context.userId,
-          (context.claims as { email?: string } | null)?.email ?? null,
-        );
-      } catch {
-        // The new card is already in place; the old one stays untouched.
+      const { data: previous } = await context.supabase
+        .from("user_greeting_cards")
+        .select("attempt_session_key")
+        .eq("id", data.replaceCardId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      const sameOrder =
+        Boolean(data.sessionKey) && previous?.attempt_session_key === data.sessionKey;
+      if (!sameOrder) {
+        const { moveCardToDrafts } = await import("./reject.server");
+        try {
+          await moveCardToDrafts(
+            data.replaceCardId,
+            context.userId,
+            (context.claims as { email?: string } | null)?.email ?? null,
+          );
+        } catch {
+          // The new card is already in place; the old one stays untouched.
+        }
       }
     }
+
 
     return {
       ok: true,
