@@ -139,6 +139,9 @@ function CreateCardPage() {
   const enteredFresh = useRef(false);
   /** Session of a card that was just saved, kept only to close it on delivery. */
   const finishedSessionKey = useRef("");
+  /** Guards the paid start against a rapid double tap on touch devices. */
+  const startingRef = useRef(false);
+
   if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
     enteredFresh.current = true;
     resetCardSession();
