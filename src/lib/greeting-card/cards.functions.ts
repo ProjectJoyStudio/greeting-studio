@@ -234,7 +234,11 @@ export const generateCardImage = createServerFn({ method: "POST" })
         greeting_text: data.greetingText,
         storage_bucket: USER_CARD_BUCKET,
         storage_path: storagePath,
+        // Every variant of one paid package carries that package's key, so the
+        // person can come back and compare all of them.
+        attempt_session_key: data.sessionKey || null,
       })
+
       .select("id")
       .single();
     if (error || !row) {
