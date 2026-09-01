@@ -603,16 +603,39 @@ function CreateCardPage() {
                   )}
 
                   {attempts.remaining > 0 ? (
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {generating ? t("gc_generating") : t("gc_generate_btn")}
-                    </button>
+                    <div className="space-y-2">
+                      {attempts.packs > 0 && attempts.used > 0 && (
+                        <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+                          <p className="text-sm font-medium text-foreground">
+                            {attempts.remaining === 1
+                              ? t("gc_var_remaining_one")
+                              : t("gc_var_remaining_many").replace("{n}", String(attempts.remaining))}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{t("gc_var_no_charge")}</p>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
+                      >
+                        {generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating
+                          ? t("gc_generating")
+                          : attempts.used === 0
+                            ? t("gc_generate_btn")
+                            : attempts.remaining === 1
+                              ? t("gc_var_btn_final")
+                              : t("gc_var_btn_another")}
+                      </button>
+                    </div>
                   ) : attempts.packs === 0 ? (
+
                     <div className="space-y-1">
                       <button
                         type="button"
