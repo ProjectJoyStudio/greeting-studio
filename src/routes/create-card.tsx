@@ -311,6 +311,43 @@ function CreateCardPage() {
     }
   }
 
+  /**
+   * "Create card — 4 credits": paying for the package and creating the first
+   * picture is one single action, so credits are never charged for a card that
+   * was never started.
+   */
+  async function handleStartPaidCard() {
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (prompt.trim().length < 3) {
+      toast.error(t("gc_err_prompt"));
+      return;
+    }
+    if (!sessionKey || startingRef.current) return;
+    startingRef.current = true;
+    setBuying(true);
+    try {
+      const res = await runBuyPack({ data: { sessionKey, firstPackOnly: true } });
+      if (!res.ok) {
+        toast.error(t("gc_attempts_no_credits"));
+        return;
+      }
+      setAttempts(res.attempts);
+      refreshCredits(res.balance);
+      // The paid package immediately produces the first picture; a technical
+      // failure keeps the package, because only a real picture uses an attempt.
+      await handleGenerate();
+    } catch {
+      toast.error(t("gc_attempts_no_credits"));
+    } finally {
+      setBuying(false);
+      startingRef.current = false;
+    }
+  }
+
+
   /** Download or send finishes the order: the card leaves the workflow. */
   async function finishDelivery(channel: string) {
     if (!card) return;
