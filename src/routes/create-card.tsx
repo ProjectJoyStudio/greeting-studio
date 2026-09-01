@@ -574,7 +574,29 @@ function CreateCardPage() {
                       {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                       {generating ? t("gc_generating") : t("gc_generate_btn")}
                     </button>
+                  ) : attempts.packs === 0 ? (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={handleStartPaidCard}
+                        disabled={buying || generating}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        {buying || generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating
+                          ? t("gc_generating")
+                          : t("gc_start_paid_btn").replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        {t("gc_start_paid_note").replace("{n}", String(ATTEMPTS_PER_PACK))}
+                      </p>
+                    </div>
                   ) : (
+
                     <button
                       type="button"
                       onClick={handleBuyPack}
