@@ -17,6 +17,7 @@ import {
   generateCardImage,
   getOwnCard,
   logCardEvent,
+  listCardVariants,
   markCardDelivered,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
@@ -105,6 +106,7 @@ function CreateCardPage() {
   const trackEvent = useServerFn(logCardEvent);
   const runAttempts = useServerFn(getCardAttempts);
   const runAttemptsForCard = useServerFn(getAttemptsForCard);
+  const runVariants = useServerFn(listCardVariants);
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
@@ -127,6 +129,8 @@ function CreateCardPage() {
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [card, setCard] = useState<{ id: string; imageUrl: string } | null>(null);
+  /** Every picture generated inside the current paid package, oldest first. */
+  const [variants, setVariants] = useState<{ id: string; imageUrl: string }[]>([]);
   const [sessionKey, setSessionKey] = useState("");
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
@@ -207,6 +211,29 @@ function CreateCardPage() {
     };
   }, [user, sessionKey, runAttempts, search.cardId]);
 
+  // A refresh or a Continue from the cabinet brings back every variant that was
+  // already paid for inside this package.
+  useEffect(() => {
+    if (!user || !sessionKey) return;
+    let active = true;
+    void runVariants({ data: { sessionKey } })
+      .then((rows) => {
+        if (!active) return;
+        const list = rows
+          .filter((r): r is typeof r & { image_url: string } => Boolean(r.image_url))
+          .map((r) => ({ id: r.id, imageUrl: r.image_url }));
+        setVariants(list);
+        const latest = list[list.length - 1];
+        if (latest) {
+          setCard((cur) => cur ?? latest);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user, sessionKey, runVariants]);
+
   /** Re-opening a saved postcard restores the whole project, not just the picture. */
   const openCardId = search.cardId ?? restoreCardId ?? null;
   const { data: existing } = useQuery({
@@ -218,6 +245,11 @@ function CreateCardPage() {
   useEffect(() => {
     if (!existing?.image_url) return;
     setCard({ id: existing.id, imageUrl: existing.image_url });
+    setVariants((list) =>
+      list.some((v) => v.id === existing.id)
+        ? list
+        : [...list, { id: existing.id, imageUrl: existing.image_url! }],
+    );
     setPrompt(existing.prompt ?? "");
     setGreeting(existing.greeting_text ?? "");
     setKeywords((existing.keywords ?? []).join(", "));
@@ -230,6 +262,7 @@ function CreateCardPage() {
   /** Deliberately starting a new card: nothing of the old one travels along. */
   function startNewCard() {
     setCard(null);
+    setVariants([]);
     setRestoreCardId(null);
     setShareUrl(null);
     setShareOpen(false);
@@ -284,6 +317,11 @@ function CreateCardPage() {
         return;
       }
       setCard({ id: res.cardId, imageUrl: res.imageUrl });
+      setVariants((list) =>
+        list.some((v) => v.id === res.cardId)
+          ? list
+          : [...list, { id: res.cardId, imageUrl: res.imageUrl }],
+      );
       setShareUrl(null);
       setAttempts((a) => attemptState(Math.min(a.allowed, a.used + 1), a.packs));
       setStage("preview");
