@@ -658,18 +658,28 @@ function CreateCardPage() {
                     </div>
                   ) : (
 
-                    <button
-                      type="button"
-                      onClick={handleBuyPack}
-                      disabled={buying}
-                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {buying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {t("gc_attempts_buy")
-                        .replace("{n}", String(ATTEMPTS_PER_PACK))
-                        .replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
-                    </button>
+                    <div className="space-y-2">
+                      <p className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm text-foreground">
+                        {t("gc_var_all_used").replace("{n}", String(attempts.allowed))}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleBuyPack}
+                        disabled={buying}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
+                      >
+                        {buying ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {t("gc_attempts_buy")
+                          .replace("{n}", String(ATTEMPTS_PER_PACK))
+                          .replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
+                      </button>
+                    </div>
                   )}
+
                 </div>
               )}
             </div>
