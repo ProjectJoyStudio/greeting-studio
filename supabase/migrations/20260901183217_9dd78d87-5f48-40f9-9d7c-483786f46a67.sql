@@ -1,0 +1,2 @@
+ALTER TABLE public.user_greeting_cards ADD COLUMN IF NOT EXISTS attempt_session_key text;
+CREATE INDEX IF NOT EXISTS user_greeting_cards_attempt_session_idx ON public.user_greeting_cards (user_id, attempt_session_key) WHERE attempt_session_key IS NOT NULL;
