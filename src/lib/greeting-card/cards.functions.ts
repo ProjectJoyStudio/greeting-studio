@@ -679,8 +679,21 @@ export const listOwnCards = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) query = query.eq("status", data.status);
-    const { data: rows, error } = await query;
+    const { data: allRows, error } = await query;
     if (error) throw new Error(error.message);
+
+    // One unfinished card order shows up once, even when the person already
+    // generated several variants inside its paid package.
+    const seen = new Set<string>();
+    const rows = (allRows ?? []).filter((r) => {
+      const key = (r as { attempt_session_key?: string | null }).attempt_session_key;
+      if (data.status !== "preview" || !key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return Promise.all(
