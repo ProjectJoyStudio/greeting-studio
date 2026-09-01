@@ -8,7 +8,7 @@ export const USER_DRAFT_BUCKET = "user-card-drafts";
 
 /** Every column the account UI needs to render and re-edit a card. */
 const CARD_COLUMNS =
-  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count";
+  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count, attempt_session_key";
 
 export type GenerateCardResult =
   | { ok: true; cardId: string; imageUrl: string; storagePath: string }
@@ -234,7 +234,11 @@ export const generateCardImage = createServerFn({ method: "POST" })
         greeting_text: data.greetingText,
         storage_bucket: USER_CARD_BUCKET,
         storage_path: storagePath,
+        // Every variant of one paid package carries that package's key, so the
+        // person can come back and compare all of them.
+        attempt_session_key: data.sessionKey || null,
       })
+
       .select("id")
       .single();
     if (error || !row) {
@@ -275,18 +279,31 @@ export const generateCardImage = createServerFn({ method: "POST" })
 
     // The previous version leaves the account only now, once the new one is
     // safely stored, so a failed attempt never loses the current card.
+    // A variant of the same paid package is never archived: the person paid to
+    // compare all of them. Only a card from another order steps aside.
     if (data.replaceCardId && data.replaceCardId !== row.id) {
-      const { moveCardToDrafts } = await import("./reject.server");
-      try {
-        await moveCardToDrafts(
-          data.replaceCardId,
-          context.userId,
-          (context.claims as { email?: string } | null)?.email ?? null,
-        );
-      } catch {
-        // The new card is already in place; the old one stays untouched.
+      const { data: previous } = await context.supabase
+        .from("user_greeting_cards")
+        .select("attempt_session_key")
+        .eq("id", data.replaceCardId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      const sameOrder =
+        Boolean(data.sessionKey) && previous?.attempt_session_key === data.sessionKey;
+      if (!sameOrder) {
+        const { moveCardToDrafts } = await import("./reject.server");
+        try {
+          await moveCardToDrafts(
+            data.replaceCardId,
+            context.userId,
+            (context.claims as { email?: string } | null)?.email ?? null,
+          );
+        } catch {
+          // The new card is already in place; the old one stays untouched.
+        }
       }
     }
+
 
     return {
       ok: true,
@@ -662,8 +679,21 @@ export const listOwnCards = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) query = query.eq("status", data.status);
-    const { data: rows, error } = await query;
+    const { data: allRows, error } = await query;
     if (error) throw new Error(error.message);
+
+    // One unfinished card order shows up once, even when the person already
+    // generated several variants inside its paid package.
+    const seen = new Set<string>();
+    const rows = (allRows ?? []).filter((r) => {
+      const key = (r as { attempt_session_key?: string | null }).attempt_session_key;
+      if (data.status !== "preview" || !key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return Promise.all(
@@ -740,4 +770,48 @@ export const composeGreetingFromKeywords = createServerFn({ method: "POST" })
     const text = json.choices?.[0]?.message?.content?.trim() ?? "";
     if (!text) return { ok: false, text: "", errorMessage: "service_unavailable" };
     return { ok: true, text };
+  });
+
+export type CardVariantRow = {
+  id: string;
+  created_at: string;
+  image_url: string | null;
+};
+
+/**
+ * All picture variants that belong to one paid attempt package. The person paid
+ * to compare them, so every successful generation stays selectable until the
+ * card order is finished.
+ */
+export const listCardVariants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionKey: string }) => ({
+    sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }): Promise<CardVariantRow[]> => {
+    if (!data.sessionKey) return [];
+    const { data: rows, error } = await context.supabase
+      .from("user_greeting_cards")
+      .select("id, created_at, storage_bucket, storage_path")
+      .eq("user_id", context.userId)
+      .eq("attempt_session_key", data.sessionKey)
+      .is("deleted_at", null)
+      .is("delivered_at", null)
+      .order("created_at", { ascending: true })
+      .limit(12);
+    if (error) throw new Error(error.message);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return Promise.all(
+      (rows ?? []).map(async (r) => {
+        const signed = await supabaseAdmin.storage
+          .from(r.storage_bucket)
+          .createSignedUrl(r.storage_path, 60 * 60 * 12);
+        return {
+          id: r.id,
+          created_at: r.created_at,
+          image_url: signed.data?.signedUrl ?? null,
+        } satisfies CardVariantRow;
+      }),
+    );
   });

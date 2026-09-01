@@ -17,6 +17,7 @@ import {
   generateCardImage,
   getOwnCard,
   logCardEvent,
+  listCardVariants,
   markCardDelivered,
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
@@ -105,6 +106,7 @@ function CreateCardPage() {
   const trackEvent = useServerFn(logCardEvent);
   const runAttempts = useServerFn(getCardAttempts);
   const runAttemptsForCard = useServerFn(getAttemptsForCard);
+  const runVariants = useServerFn(listCardVariants);
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
@@ -127,6 +129,8 @@ function CreateCardPage() {
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [card, setCard] = useState<{ id: string; imageUrl: string } | null>(null);
+  /** Every picture generated inside the current paid package, oldest first. */
+  const [variants, setVariants] = useState<{ id: string; imageUrl: string }[]>([]);
   const [sessionKey, setSessionKey] = useState("");
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
@@ -207,6 +211,29 @@ function CreateCardPage() {
     };
   }, [user, sessionKey, runAttempts, search.cardId]);
 
+  // A refresh or a Continue from the cabinet brings back every variant that was
+  // already paid for inside this package.
+  useEffect(() => {
+    if (!user || !sessionKey) return;
+    let active = true;
+    void runVariants({ data: { sessionKey } })
+      .then((rows) => {
+        if (!active) return;
+        const list = rows
+          .filter((r): r is typeof r & { image_url: string } => Boolean(r.image_url))
+          .map((r) => ({ id: r.id, imageUrl: r.image_url }));
+        setVariants(list);
+        const latest = list[list.length - 1];
+        if (latest) {
+          setCard((cur) => cur ?? latest);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user, sessionKey, runVariants]);
+
   /** Re-opening a saved postcard restores the whole project, not just the picture. */
   const openCardId = search.cardId ?? restoreCardId ?? null;
   const { data: existing } = useQuery({
@@ -218,6 +245,11 @@ function CreateCardPage() {
   useEffect(() => {
     if (!existing?.image_url) return;
     setCard({ id: existing.id, imageUrl: existing.image_url });
+    setVariants((list) =>
+      list.some((v) => v.id === existing.id)
+        ? list
+        : [...list, { id: existing.id, imageUrl: existing.image_url! }],
+    );
     setPrompt(existing.prompt ?? "");
     setGreeting(existing.greeting_text ?? "");
     setKeywords((existing.keywords ?? []).join(", "));
@@ -230,6 +262,7 @@ function CreateCardPage() {
   /** Deliberately starting a new card: nothing of the old one travels along. */
   function startNewCard() {
     setCard(null);
+    setVariants([]);
     setRestoreCardId(null);
     setShareUrl(null);
     setShareOpen(false);
@@ -284,6 +317,11 @@ function CreateCardPage() {
         return;
       }
       setCard({ id: res.cardId, imageUrl: res.imageUrl });
+      setVariants((list) =>
+        list.some((v) => v.id === res.cardId)
+          ? list
+          : [...list, { id: res.cardId, imageUrl: res.imageUrl }],
+      );
       setShareUrl(null);
       setAttempts((a) => attemptState(Math.min(a.allowed, a.used + 1), a.packs));
       setStage("preview");
@@ -565,16 +603,39 @@ function CreateCardPage() {
                   )}
 
                   {attempts.remaining > 0 ? (
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {generating ? t("gc_generating") : t("gc_generate_btn")}
-                    </button>
+                    <div className="space-y-2">
+                      {attempts.packs > 0 && attempts.used > 0 && (
+                        <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+                          <p className="text-sm font-medium text-foreground">
+                            {attempts.remaining === 1
+                              ? t("gc_var_remaining_one")
+                              : t("gc_var_remaining_many").replace("{n}", String(attempts.remaining))}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{t("gc_var_no_charge")}</p>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
+                      >
+                        {generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating
+                          ? t("gc_generating")
+                          : attempts.used === 0
+                            ? t("gc_generate_btn")
+                            : attempts.remaining === 1
+                              ? t("gc_var_btn_final")
+                              : t("gc_var_btn_another")}
+                      </button>
+                    </div>
                   ) : attempts.packs === 0 ? (
+
                     <div className="space-y-1">
                       <button
                         type="button"
@@ -597,18 +658,28 @@ function CreateCardPage() {
                     </div>
                   ) : (
 
-                    <button
-                      type="button"
-                      onClick={handleBuyPack}
-                      disabled={buying}
-                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {buying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {t("gc_attempts_buy")
-                        .replace("{n}", String(ATTEMPTS_PER_PACK))
-                        .replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
-                    </button>
+                    <div className="space-y-2">
+                      <p className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm text-foreground">
+                        {t("gc_var_all_used").replace("{n}", String(attempts.allowed))}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleBuyPack}
+                        disabled={buying}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
+                      >
+                        {buying ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {t("gc_attempts_buy")
+                          .replace("{n}", String(ATTEMPTS_PER_PACK))
+                          .replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
+                      </button>
+                    </div>
                   )}
+
                 </div>
               )}
             </div>
@@ -725,6 +796,42 @@ function CreateCardPage() {
                 alt={t("gc_preview_alt")}
               />
             )}
+
+            {/* Choosing between the paid variants never generates or charges. */}
+            {variants.length > 1 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-muted-foreground">{t("gc_var_compare_hint")}</p>
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                  {variants.map((v, i) => {
+                    const active = card?.id === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setCard(v)}
+                        aria-pressed={active}
+                        aria-label={t("gc_var_label").replace("{n}", String(i + 1))}
+                        className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                          active ? "border-primary shadow-warm" : "border-border/60 opacity-80"
+                        }`}
+                      >
+                        <img
+                          src={v.imageUrl}
+                          alt={t("gc_var_label").replace("{n}", String(i + 1))}
+                          className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                          draggable={false}
+                        />
+                        <span className="block bg-card/80 py-1 text-center text-[11px] text-foreground">
+                          {t("gc_var_label").replace("{n}", String(i + 1))}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
 
             {stage === "preview" && card && (
               <div className="mt-4 flex flex-wrap gap-3">

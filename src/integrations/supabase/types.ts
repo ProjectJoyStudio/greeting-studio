@@ -3685,6 +3685,7 @@ export type Database = {
       }
       user_greeting_cards: {
         Row: {
+          attempt_session_key: string | null
           card_kind: string
           created_at: string
           deleted_at: string | null
@@ -3716,6 +3717,7 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          attempt_session_key?: string | null
           card_kind?: string
           created_at?: string
           deleted_at?: string | null
@@ -3747,6 +3749,7 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          attempt_session_key?: string | null
           card_kind?: string
           created_at?: string
           deleted_at?: string | null
