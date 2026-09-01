@@ -26,6 +26,7 @@ import {
   getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
+  getOpenPaidCardSession,
 } from "@/lib/greeting-card/attempts.functions";
 import {
   ATTEMPTS_PER_PACK,
@@ -37,6 +38,7 @@ import {
 import {
   adoptCardSession,
   currentCardSession,
+  isCardSessionStorageAvailable,
   isEditorPageReload,
   resetCardSession,
 } from "@/lib/greeting-card/card-session";
@@ -110,6 +112,7 @@ function CreateCardPage() {
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
+  const runOpenSession = useServerFn(getOpenPaidCardSession);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
   const { balance } = useCreditBalance();
