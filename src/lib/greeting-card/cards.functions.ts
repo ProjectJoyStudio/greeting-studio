@@ -8,7 +8,7 @@ export const USER_DRAFT_BUCKET = "user-card-drafts";
 
 /** Every column the account UI needs to render and re-edit a card. */
 const CARD_COLUMNS =
-  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count";
+  "id, status, prompt, keywords, greeting_mode, greeting_text, storage_bucket, storage_path, text_design, created_at, title, language, share_slug, is_shared, final_storage_path, view_count, attempt_session_key";
 
 export type GenerateCardResult =
   | { ok: true; cardId: string; imageUrl: string; storagePath: string }
@@ -770,4 +770,48 @@ export const composeGreetingFromKeywords = createServerFn({ method: "POST" })
     const text = json.choices?.[0]?.message?.content?.trim() ?? "";
     if (!text) return { ok: false, text: "", errorMessage: "service_unavailable" };
     return { ok: true, text };
+  });
+
+export type CardVariantRow = {
+  id: string;
+  created_at: string;
+  image_url: string | null;
+};
+
+/**
+ * All picture variants that belong to one paid attempt package. The person paid
+ * to compare them, so every successful generation stays selectable until the
+ * card order is finished.
+ */
+export const listCardVariants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionKey: string }) => ({
+    sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }): Promise<CardVariantRow[]> => {
+    if (!data.sessionKey) return [];
+    const { data: rows, error } = await context.supabase
+      .from("user_greeting_cards")
+      .select("id, created_at, storage_bucket, storage_path")
+      .eq("user_id", context.userId)
+      .eq("attempt_session_key", data.sessionKey)
+      .is("deleted_at", null)
+      .is("delivered_at", null)
+      .order("created_at", { ascending: true })
+      .limit(12);
+    if (error) throw new Error(error.message);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return Promise.all(
+      (rows ?? []).map(async (r) => {
+        const signed = await supabaseAdmin.storage
+          .from(r.storage_bucket)
+          .createSignedUrl(r.storage_path, 60 * 60 * 12);
+        return {
+          id: r.id,
+          created_at: r.created_at,
+          image_url: signed.data?.signedUrl ?? null,
+        } satisfies CardVariantRow;
+      }),
+    );
   });
