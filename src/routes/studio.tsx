@@ -4,7 +4,7 @@ import { Mail, Sparkles, Video, Film, Clapperboard, Crown, Coins, Clock, Gift, t
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
-import { creditWord } from "@/lib/credits/i18n";
+import { creditLabel } from "@/lib/credits/i18n";
 import { StudioPromoShowcase } from "@/components/studio/StudioPromoShowcase";
 import {
   STUDIO_PRICING,
@@ -94,7 +94,7 @@ function baselineEstimateForCard(id: GiftId): Estimate {
 
 function StudioPage() {
   const { t, lang } = useI18n();
-  const { balance, isTest } = useCreditBalance();
+  const { balance, purchased, total } = useCreditBalance();
 
   return (
     <SiteLayout>
@@ -123,7 +123,10 @@ function StudioPage() {
               <Coins className="h-4 w-4 text-primary" />
               <span className="text-muted-foreground">{t("credits_balance")}:</span>
               <span className="font-semibold text-foreground">
-                {balance} {creditWord(lang, isTest, t("studio_credits_word"))}
+                {total} {t("studio_credits_word")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                ({creditLabel(lang, "yours")}: {purchased} · {creditLabel(lang, "bonus")}: {balance})
               </span>
             </span>
             <Link
