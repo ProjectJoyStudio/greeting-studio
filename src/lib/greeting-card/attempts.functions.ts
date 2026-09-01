@@ -77,10 +77,10 @@ export const getAttemptsForCard = createServerFn({ method: "POST" })
  */
 export const buyCardAttemptPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sessionKey: string }) => {
+  .inputValidator((input: { sessionKey: string; firstPackOnly?: boolean }) => {
     const sessionKey = String(input?.sessionKey ?? "").slice(0, 64);
     if (!sessionKey) throw new Error("session_required");
-    return { sessionKey };
+    return { sessionKey, firstPackOnly: Boolean(input?.firstPackOnly) };
   })
   .handler(
     async ({
@@ -101,6 +101,22 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
       // A completed card order can never be topped up again.
       if (session?.closed_at) return { ok: false, errorCode: "session_closed", balance: 0 };
       const current = session ?? { id: null, attempts_used: 0, extra_packs: 0 };
+
+      // Starting the card is a one-time purchase: a repeated tap that reaches
+      // the server twice finds the package already there and charges nothing.
+      if (data.firstPackOnly && current.extra_packs > 0) {
+        const { data: w0 } = await supabaseAdmin
+          .from("credit_wallets")
+          .select("balance")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        return {
+          ok: true,
+          attempts: attemptState(current.attempts_used, current.extra_packs),
+          balance: (w0 as { balance: number } | null)?.balance ?? 0,
+        };
+      }
+
 
       const { data: wallet } = await supabaseAdmin
         .from("credit_wallets")

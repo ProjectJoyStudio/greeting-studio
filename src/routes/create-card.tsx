@@ -139,6 +139,9 @@ function CreateCardPage() {
   const enteredFresh = useRef(false);
   /** Session of a card that was just saved, kept only to close it on delivery. */
   const finishedSessionKey = useRef("");
+  /** Guards the paid start against a rapid double tap on touch devices. */
+  const startingRef = useRef(false);
+
   if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
     enteredFresh.current = true;
     resetCardSession();
@@ -310,6 +313,43 @@ function CreateCardPage() {
       setBuying(false);
     }
   }
+
+  /**
+   * "Create card — 4 credits": paying for the package and creating the first
+   * picture is one single action, so credits are never charged for a card that
+   * was never started.
+   */
+  async function handleStartPaidCard() {
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (prompt.trim().length < 3) {
+      toast.error(t("gc_err_prompt"));
+      return;
+    }
+    if (!sessionKey || startingRef.current) return;
+    startingRef.current = true;
+    setBuying(true);
+    try {
+      const res = await runBuyPack({ data: { sessionKey, firstPackOnly: true } });
+      if (!res.ok) {
+        toast.error(t("gc_attempts_no_credits"));
+        return;
+      }
+      setAttempts(res.attempts);
+      refreshCredits(res.balance);
+      // The paid package immediately produces the first picture; a technical
+      // failure keeps the package, because only a real picture uses an attempt.
+      await handleGenerate();
+    } catch {
+      toast.error(t("gc_attempts_no_credits"));
+    } finally {
+      setBuying(false);
+      startingRef.current = false;
+    }
+  }
+
 
   /** Download or send finishes the order: the card leaves the workflow. */
   async function finishDelivery(channel: string) {
@@ -534,7 +574,29 @@ function CreateCardPage() {
                       {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                       {generating ? t("gc_generating") : t("gc_generate_btn")}
                     </button>
+                  ) : attempts.packs === 0 ? (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={handleStartPaidCard}
+                        disabled={buying || generating}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        {buying || generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating
+                          ? t("gc_generating")
+                          : t("gc_start_paid_btn").replace("{credits}", String(ATTEMPT_PACK_CREDITS))}
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        {t("gc_start_paid_note").replace("{n}", String(ATTEMPTS_PER_PACK))}
+                      </p>
+                    </div>
                   ) : (
+
                     <button
                       type="button"
                       onClick={handleBuyPack}
