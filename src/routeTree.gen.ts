@@ -51,6 +51,7 @@ import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits
 import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
 import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as AdminYourCreditsRouteImport } from './routes/admin.your-credits'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminUserLiveCardsRouteImport } from './routes/admin.user-live-cards'
 import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
@@ -303,6 +304,11 @@ const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
   path: '/c/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminYourCreditsRoute = AdminYourCreditsRouteImport.update({
+  id: '/your-credits',
+  path: '/your-credits',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -573,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/your-credits': typeof AdminYourCreditsRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -656,6 +663,7 @@ export interface FileRoutesByTo {
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/your-credits': typeof AdminYourCreditsRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -743,6 +751,7 @@ export interface FileRoutesById {
   '/admin/user-drafts': typeof AdminUserDraftsRoute
   '/admin/user-live-cards': typeof AdminUserLiveCardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/your-credits': typeof AdminYourCreditsRoute
   '/c/$slug': typeof CSlugRoute
   '/catalog/$category': typeof CatalogCategoryRoute
   '/dashboard/cards': typeof DashboardCardsRoute
@@ -831,6 +840,7 @@ export interface FileRouteTypes {
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
+    | '/admin/your-credits'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -914,6 +924,7 @@ export interface FileRouteTypes {
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
+    | '/admin/your-credits'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -1000,6 +1011,7 @@ export interface FileRouteTypes {
     | '/admin/user-drafts'
     | '/admin/user-live-cards'
     | '/admin/users'
+    | '/admin/your-credits'
     | '/c/$slug'
     | '/catalog/$category'
     | '/dashboard/cards'
@@ -1371,6 +1383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/your-credits': {
+      id: '/admin/your-credits'
+      path: '/your-credits'
+      fullPath: '/admin/your-credits'
+      preLoaderRoute: typeof AdminYourCreditsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -1739,6 +1758,7 @@ interface AdminRouteChildren {
   AdminUserDraftsRoute: typeof AdminUserDraftsRoute
   AdminUserLiveCardsRoute: typeof AdminUserLiveCardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminYourCreditsRoute: typeof AdminYourCreditsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminVoiceSettingsLibraryRoute: typeof AdminVoiceSettingsLibraryRoute
   AdminVoiceSettingsTestingRoute: typeof AdminVoiceSettingsTestingRoute
@@ -1768,6 +1788,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUserDraftsRoute: AdminUserDraftsRoute,
   AdminUserLiveCardsRoute: AdminUserLiveCardsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminYourCreditsRoute: AdminYourCreditsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminVoiceSettingsLibraryRoute: AdminVoiceSettingsLibraryRoute,
   AdminVoiceSettingsTestingRoute: AdminVoiceSettingsTestingRoute,
