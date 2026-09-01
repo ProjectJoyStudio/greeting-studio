@@ -191,3 +191,32 @@ export const getCardSessionStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     return { closed: Boolean(row?.closed_at) };
   });
+
+/**
+ * Recovery for browsers whose sessionStorage is unavailable or was evicted:
+ * finds the user's most recent unfinished, already-paid card package so the
+ * page can continue it instead of starting (and charging) a new one.
+ */
+export const getOpenPaidCardSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{ sessionKey: string | null; cardId: string | null; attempts: CardAttemptState }> => {
+      const { data: row } = await context.supabase
+        .from("user_card_attempt_sessions")
+        .select("session_key, attempts_used, extra_packs, card_id, closed_at")
+        .eq("user_id", context.userId)
+        .is("closed_at", null)
+        .gt("extra_packs", 0)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!row) return { sessionKey: null, cardId: null, attempts: attemptState(0, 0) };
+      return {
+        sessionKey: row.session_key,
+        cardId: row.card_id ?? null,
+        attempts: attemptState(row.attempts_used, row.extra_packs),
+      };
+    },
+  );

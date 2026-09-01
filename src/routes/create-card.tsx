@@ -26,6 +26,7 @@ import {
   getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
+  getOpenPaidCardSession,
 } from "@/lib/greeting-card/attempts.functions";
 import {
   ATTEMPTS_PER_PACK,
@@ -37,6 +38,7 @@ import {
 import {
   adoptCardSession,
   currentCardSession,
+  isCardSessionStorageAvailable,
   isEditorPageReload,
   resetCardSession,
 } from "@/lib/greeting-card/card-session";
@@ -110,6 +112,7 @@ function CreateCardPage() {
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
+  const runOpenSession = useServerFn(getOpenPaidCardSession);
   const runDelivered = useServerFn(markCardDelivered);
   const refreshCredits = useRefreshCreditBalance();
   const { balance } = useCreditBalance();
@@ -146,10 +149,19 @@ function CreateCardPage() {
   /** Guards the paid start against a rapid double tap on touch devices. */
   const startingRef = useRef(false);
 
-  if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
-    enteredFresh.current = true;
-    resetCardSession();
-  }
+  /** Set once the session bootstrap has run — never during render. */
+  const [booted, setBooted] = useState(false);
+
+  // Session bootstrap runs after mount so that no browser-storage access can
+  // throw during render and send the customer to the generic error page.
+  useEffect(() => {
+    if (!enteredFresh.current && !search.cardId && (search.fresh === "1" || !isEditorPageReload())) {
+      enteredFresh.current = true;
+      resetCardSession();
+    }
+    setBooted(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // "Create new card" from anywhere in Project Joy: a clean, independent order.
   useEffect(() => {
@@ -177,24 +189,45 @@ function CreateCardPage() {
   }, [user, search.cardId, runAttemptsForCard]);
 
   // A refresh keeps the unfinished order alive; a finished one is replaced by a
-  // brand new, clean card order.
+  // brand new, clean card order. When browser storage is unavailable or was
+  // evicted, the already-paid unfinished package is recovered from the account
+  // instead of starting (and charging) a new one.
   useEffect(() => {
-    if (search.cardId) return;
+    if (!booted || search.cardId) return;
     let active = true;
     const key = currentCardSession();
     if (!key) return;
-    void runSessionStatus({ data: { sessionKey: key } })
-      .then((res) => {
+    const storageLost = !isCardSessionStorageAvailable();
+
+    void (async () => {
+      if (storageLost && !enteredFresh.current && user) {
+        try {
+          const open = await runOpenSession({});
+          if (!active) return;
+          if (open.sessionKey) {
+            setSessionKey(adoptCardSession(open.sessionKey));
+            setAttempts(open.attempts);
+            if (open.cardId) setRestoreCardId(open.cardId);
+            return;
+          }
+        } catch {
+          /* fall back to the normal session check below */
+        }
+      }
+      try {
+        const res = await runSessionStatus({ data: { sessionKey: key } });
         if (!active) return;
         setSessionKey(res.closed ? resetCardSession() : key);
-      })
-      .catch(() => {
+      } catch {
         if (active) setSessionKey(key);
-      });
+      }
+    })();
+
     return () => {
       active = false;
     };
-  }, [runSessionStatus, search.cardId]);
+  }, [booted, user, runSessionStatus, runOpenSession, search.cardId]);
+
 
   useEffect(() => {
     if (!user || !sessionKey || search.cardId) return;
