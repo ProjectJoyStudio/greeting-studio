@@ -3,8 +3,7 @@ import { Coins, Sparkles } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
-import { useCreditBalance } from "@/lib/credits/useCreditBalance";
-import { creditWord } from "@/lib/credits/i18n";
+import { CreditBalanceBreakdown } from "@/components/credits/CreditBalanceBreakdown";
 
 export const Route = createFileRoute("/credits")({
   head: () => ({
@@ -34,8 +33,7 @@ const PACKAGES = [
 ];
 
 function CreditsPurchasePage() {
-  const { t, lang } = useI18n();
-  const { balance, isTest } = useCreditBalance();
+  const { t } = useI18n();
 
   return (
     <SiteLayout>
@@ -45,15 +43,7 @@ function CreditsPurchasePage() {
         </h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">{t("credits_page_sub")}</p>
 
-        <div className="mt-8 flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-5 py-4 backdrop-blur">
-          <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            <Coins className="h-4 w-4 text-primary" />
-            {t("credits_balance")}
-          </span>
-          <span className="font-display text-lg font-semibold">
-            {balance} {creditWord(lang, isTest, t("studio_credits_word"))}
-          </span>
-        </div>
+        <CreditBalanceBreakdown className="mt-8" />
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {PACKAGES.map((p) => (

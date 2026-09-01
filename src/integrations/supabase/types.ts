@@ -1433,12 +1433,17 @@ export type Database = {
         Row: {
           amount: number
           balance_after: number
+          balance_before: number | null
+          bucket: string
           created_at: string
           description: string | null
           id: string
           metadata: Json
           order_id: string | null
           payment_id: string | null
+          reference_id: string | null
+          source: string | null
+          status: string
           txn_type: Database["public"]["Enums"]["credit_txn_type"]
           user_id: string
           wallet_id: string
@@ -1446,12 +1451,17 @@ export type Database = {
         Insert: {
           amount: number
           balance_after: number
+          balance_before?: number | null
+          bucket?: string
           created_at?: string
           description?: string | null
           id?: string
           metadata?: Json
           order_id?: string | null
           payment_id?: string | null
+          reference_id?: string | null
+          source?: string | null
+          status?: string
           txn_type: Database["public"]["Enums"]["credit_txn_type"]
           user_id: string
           wallet_id: string
@@ -1459,12 +1469,17 @@ export type Database = {
         Update: {
           amount?: number
           balance_after?: number
+          balance_before?: number | null
+          bucket?: string
           created_at?: string
           description?: string | null
           id?: string
           metadata?: Json
           order_id?: string | null
           payment_id?: string | null
+          reference_id?: string | null
+          source?: string | null
+          status?: string
           txn_type?: Database["public"]["Enums"]["credit_txn_type"]
           user_id?: string
           wallet_id?: string
@@ -1494,6 +1509,9 @@ export type Database = {
           is_test: boolean
           lifetime_purchased: number
           lifetime_spent: number
+          purchased_balance: number
+          purchased_lifetime_purchased: number
+          purchased_lifetime_spent: number
           reserved: number
           updated_at: string
           user_id: string
@@ -1505,6 +1523,9 @@ export type Database = {
           is_test?: boolean
           lifetime_purchased?: number
           lifetime_spent?: number
+          purchased_balance?: number
+          purchased_lifetime_purchased?: number
+          purchased_lifetime_spent?: number
           reserved?: number
           updated_at?: string
           user_id: string
@@ -1516,6 +1537,9 @@ export type Database = {
           is_test?: boolean
           lifetime_purchased?: number
           lifetime_spent?: number
+          purchased_balance?: number
+          purchased_lifetime_purchased?: number
+          purchased_lifetime_spent?: number
           reserved?: number
           updated_at?: string
           user_id?: string
@@ -4071,6 +4095,17 @@ export type Database = {
         Args: { _amount: number; _reason?: string; _user_id: string }
         Returns: number
       }
+      admin_list_credit_accounts: {
+        Args: never
+        Returns: {
+          bonus_balance: number
+          display_name: string
+          email: string
+          purchased_balance: number
+          total_balance: number
+          user_id: string
+        }[]
+      }
       admin_list_test_accounts: {
         Args: never
         Returns: {
@@ -4079,6 +4114,24 @@ export type Database = {
           email: string
           is_dev_test_account: boolean
           is_test: boolean
+          user_id: string
+        }[]
+      }
+      admin_purchased_credit_history: {
+        Args: { _limit?: number; _user_id?: string }
+        Returns: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string
+          email: string
+          id: string
+          order_id: string
+          reference_id: string
+          source: string
+          status: string
+          txn_type: Database["public"]["Enums"]["credit_txn_type"]
           user_id: string
         }[]
       }

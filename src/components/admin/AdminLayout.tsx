@@ -55,6 +55,7 @@ const NAV: NavItem[] = [
   { to: "/admin/activity-log", key: "al_title", icon: ShieldCheck },
   { to: "/admin/credit-packages", key: "admin_nav_credit_packages", icon: Package },
   { to: "/admin/dev-credits", key: "admin_nav_dev_credits", icon: FlaskConical },
+  { to: "/admin/your-credits", key: "admin_nav_your_credits", icon: Coins },
   { to: "/admin/voice-settings", key: "admin_nav_voice_settings", icon: Mic2 },
   { to: "/admin/music", key: "mus_admin_title", icon: Music2 },
   { to: "/admin/promotions", key: "admin_nav_promotions", icon: Megaphone },
