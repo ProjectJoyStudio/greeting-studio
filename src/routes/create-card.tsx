@@ -797,6 +797,42 @@ function CreateCardPage() {
               />
             )}
 
+            {/* Choosing between the paid variants never generates or charges. */}
+            {variants.length > 1 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-muted-foreground">{t("gc_var_compare_hint")}</p>
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                  {variants.map((v, i) => {
+                    const active = card?.id === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setCard(v)}
+                        aria-pressed={active}
+                        aria-label={t("gc_var_label").replace("{n}", String(i + 1))}
+                        className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                          active ? "border-primary shadow-warm" : "border-border/60 opacity-80"
+                        }`}
+                      >
+                        <img
+                          src={v.imageUrl}
+                          alt={t("gc_var_label").replace("{n}", String(i + 1))}
+                          className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                          draggable={false}
+                        />
+                        <span className="block bg-card/80 py-1 text-center text-[11px] text-foreground">
+                          {t("gc_var_label").replace("{n}", String(i + 1))}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
+
             {stage === "preview" && card && (
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
