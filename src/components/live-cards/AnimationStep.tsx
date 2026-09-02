@@ -69,8 +69,22 @@ export function AnimationStep({
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  // Paid regeneration always asks first: opening this dialog costs nothing.
+  const [regenAsk, setRegenAsk] = useState(false);
+  // Set once the person explicitly chose to edit the description, so the paid
+  // button then starts the regeneration without asking again.
+  const [regenEditing, setRegenEditing] = useState(false);
+  const motionRef = useRef<HTMLTextAreaElement>(null);
   // The greeting text is written after the animation is finished.
   const [textStage, setTextStage] = useState(true);
+
+  function focusMotion() {
+    const node = motionRef.current;
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    node.focus({ preventScroll: true });
+  }
+
 
   // The motion description survives reloads and failed attempts, always bound
   // to the project it belongs to — another project never inherits it.
@@ -222,8 +236,14 @@ export function AnimationStep({
    * result stays untouched until the new one has really been produced.
    */
   async function runRegenerate() {
-    if (regenerating || motion.trim().length < 3) return;
+    if (regenerating) return;
+    if (motion.trim().length < 3) {
+      toast.error(t("la_motion_required"));
+      focusMotion();
+      return;
+    }
     if (!canRegenerate) return;
+
     if (balance < ANIMATION_REGENERATE_CREDITS) {
       toast.error(t("la_insufficient"));
       return;
@@ -253,6 +273,7 @@ export function AnimationStep({
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
+      setRegenEditing(false);
       refreshBalance();
       void projectSpend.refresh();
       void project.refetch();
@@ -358,6 +379,7 @@ export function AnimationStep({
               </label>
               <textarea
                 id="la-motion"
+                ref={motionRef}
                 value={motion}
                 onChange={(e) => setMotion(e.target.value)}
                 rows={2}
@@ -373,10 +395,15 @@ export function AnimationStep({
                     <>
                       <button
                         type="button"
-                        onClick={runRegenerate}
-                        disabled={regenerating || motion.trim().length < 3 || balance < ANIMATION_REGENERATE_CREDITS}
+                        onClick={() => {
+                          // The first press only asks — nothing is charged here.
+                          if (regenEditing) void runRegenerate();
+                          else setRegenAsk(true);
+                        }}
+                        disabled={regenerating || balance < ANIMATION_REGENERATE_CREDITS}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-semibold transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                       >
+
                         {regenerating ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -413,7 +440,46 @@ export function AnimationStep({
             onNewProject();
           }}
         />
+
+        {regenAsk && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/75 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl border border-border/60 bg-card p-5 shadow-xl">
+              <p className="text-sm text-foreground">{t("la_regen_ask")}</p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegenAsk(false);
+                    setRegenEditing(true);
+                    setTimeout(focusMotion, 50);
+                  }}
+                  className="w-full rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
+                >
+                  {t("la_regen_edit")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegenAsk(false);
+                    void runRegenerate();
+                  }}
+                  className="w-full rounded-full bg-gold-gradient px-5 py-3 text-sm font-semibold text-primary-foreground shadow-warm"
+                >
+                  {t("la_regen_now")} — {ANIMATION_REGENERATE_CREDITS} {t("la_price_credits")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegenAsk(false)}
+                  className="w-full rounded-full px-5 py-2 text-sm text-muted-foreground transition hover:text-foreground"
+                >
+                  {t("la_regen_cancel")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
+
       );
     }
     return (
