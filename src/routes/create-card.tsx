@@ -700,6 +700,14 @@ function CreateCardPage() {
                   className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
                 />
               </div>
+              <GreetingKeywordsPanel
+                mode={mode}
+                onModeChange={setMode}
+                keywords={keywords}
+                onKeywordsChange={setKeywords}
+                composing={composing}
+                onCompose={handleCompose}
+              />
               <textarea
                 rows={4}
                 value={greeting}
