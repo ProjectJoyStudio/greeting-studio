@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
+import { LiveMobileTextWorkspace } from "./LiveMobileTextWorkspace";
+
 import { LiveCardViewer } from "./LiveCardViewer";
 import { LiveMusicPanel } from "./LiveMusicPanel";
 import { composeGreetingFromKeywords } from "@/lib/greeting-card/cards.functions";
