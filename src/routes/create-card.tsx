@@ -480,7 +480,7 @@ function CreateCardPage() {
    * picture is one single action, so credits are never charged for a card that
    * was never started.
    */
-  async function handleStartPaidCard() {
+  async function handleStartPaidCard(options?: { skipResumeCheck?: boolean }) {
     if (!user) {
       navigate({ to: "/login" });
       return;
@@ -493,7 +493,25 @@ function CreateCardPage() {
     startingRef.current = true;
     setBuying(true);
     try {
-      const res = await runBuyPack({ data: { sessionKey, firstPackOnly: true } });
+      // Never charge a second package for a start that was only interrupted:
+      // an unused paid package of this account is offered for continuation
+      // first. The check itself tolerates a token that is still restoring.
+      if (!options?.skipResumeCheck && attempts.packs === 0) {
+        try {
+          const found = await withAuthRetry(() => runFindInterrupted({}));
+          const other = found.candidates.filter((c) => c.sessionKey !== sessionKey);
+          if (other.length > 0) {
+            setResumeCandidates(other);
+            return;
+          }
+        } catch {
+          /* the purchase below stays idempotent per session key */
+        }
+      }
+
+      const res = await withAuthRetry(() =>
+        runBuyPack({ data: { sessionKey, firstPackOnly: true } }),
+      );
       if (!res.ok) {
         toast.error(t("gc_attempts_no_credits"));
         return;
@@ -510,6 +528,19 @@ function CreateCardPage() {
       startingRef.current = false;
     }
   }
+
+  /** Explicit "Continue recent card": adopts the chosen interrupted package. */
+  function resumeInterrupted(candidate: {
+    sessionKey: string;
+    cardId: string | null;
+    attempts: CardAttemptState;
+  }) {
+    setResumeCandidates([]);
+    setSessionKey(adoptCardSession(candidate.sessionKey));
+    setAttempts(candidate.attempts);
+    setRestoreCardId(candidate.cardId);
+  }
+
 
 
   /** Download or send finishes the order: the card leaves the workflow. */
