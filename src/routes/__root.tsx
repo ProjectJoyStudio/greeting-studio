@@ -7,10 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { logCatastrophicError, newErrorId } from "../lib/error-diagnostics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { AuthProvider } from "../lib/auth/AuthContext";
 import { AdminRoleProvider } from "../lib/admin/role";
