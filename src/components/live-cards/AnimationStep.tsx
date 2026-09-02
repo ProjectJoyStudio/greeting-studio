@@ -273,6 +273,7 @@ export function AnimationStep({
       }
       setAnimation(result.animation);
       onAnimation(result.animation);
+      setRegenEditing(false);
       refreshBalance();
       void projectSpend.refresh();
       void project.refetch();
