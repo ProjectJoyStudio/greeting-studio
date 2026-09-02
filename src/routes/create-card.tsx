@@ -882,7 +882,15 @@ function CreateCardPage() {
                 placeholder={t("gc_greeting_ph")}
                 className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
               />
-              <TextStylePanel design={design} onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))} />
+              <MobileTextWorkspace
+                imageUrl={card?.imageUrl ?? null}
+                text={greeting}
+                design={design}
+                onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))}
+              />
+              <div className="hidden sm:block">
+                <TextStylePanel design={design} onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))} />
+              </div>
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
