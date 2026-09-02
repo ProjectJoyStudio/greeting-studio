@@ -24,13 +24,14 @@ import {
 } from "@/lib/greeting-card/cards.functions";
 import {
   buyCardAttemptPack,
+  findInterruptedPaidCardSession,
   getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
-  getOpenPaidCardSession,
   startFreeFirstCard,
   releaseFreeFirstCard,
 } from "@/lib/greeting-card/attempts.functions";
+import { withAuthRetry } from "@/lib/auth/resume-retry";
 import { getFirstFreeStatus } from "@/lib/entitlements/first-free.functions";
 import {
   ATTEMPTS_PER_PACK,
@@ -116,7 +117,7 @@ function CreateCardPage() {
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
-  const runOpenSession = useServerFn(getOpenPaidCardSession);
+  const runFindInterrupted = useServerFn(findInterruptedPaidCardSession);
   const runDelivered = useServerFn(markCardDelivered);
   const runStartFree = useServerFn(startFreeFirstCard);
   const runReleaseFree = useServerFn(releaseFreeFirstCard);
@@ -159,6 +160,14 @@ function CreateCardPage() {
   const [freeGrant, setFreeGrant] = useState(false);
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
+  /**
+   * Candidates for a paid card start that a phone lock / crashed resume left
+   * behind. Shown as an explicit choice — never adopted silently when the match
+   * is ambiguous, and never fed from old cabinet drafts.
+   */
+  const [resumeCandidates, setResumeCandidates] = useState<
+    { sessionKey: string; cardId: string | null; attempts: CardAttemptState }[]
+  >([]);
 
   // Entering the editor from Studio, the cabinet or any other page always means
   // "create a new card". Only an explicit Continue (cardId) or a real browser
@@ -222,20 +231,27 @@ function CreateCardPage() {
     void (async () => {
       if (storageLost && !enteredFresh.current && user) {
         try {
-          const open = await runOpenSession({});
+          const found = await withAuthRetry(() => runFindInterrupted({}));
           if (!active) return;
-          if (open.sessionKey) {
-            setSessionKey(adoptCardSession(open.sessionKey));
-            setAttempts(open.attempts);
-            if (open.cardId) setRestoreCardId(open.cardId);
+          // Exactly one unused paid package from the last hours can only be the
+          // interrupted start: adopt it. Anything ambiguous is offered as a
+          // choice instead, so no old draft is ever opened automatically.
+          if (found.candidates.length === 1) {
+            const only = found.candidates[0]!;
+            setSessionKey(adoptCardSession(only.sessionKey));
+            setAttempts(only.attempts);
+            if (only.cardId) setRestoreCardId(only.cardId);
             return;
+          }
+          if (found.candidates.length > 1) {
+            setResumeCandidates(found.candidates);
           }
         } catch {
           /* fall back to the normal session check below */
         }
       }
       try {
-        const res = await runSessionStatus({ data: { sessionKey: key } });
+        const res = await withAuthRetry(() => runSessionStatus({ data: { sessionKey: key } }));
         if (!active) return;
         setSessionKey(res.closed ? resetCardSession() : key);
       } catch {
@@ -246,13 +262,13 @@ function CreateCardPage() {
     return () => {
       active = false;
     };
-  }, [booted, user, runSessionStatus, runOpenSession, search.cardId]);
+  }, [booted, user, runSessionStatus, runFindInterrupted, search.cardId]);
 
 
   useEffect(() => {
     if (!user || !sessionKey || search.cardId) return;
     let active = true;
-    void runAttempts({ data: { sessionKey } })
+    void withAuthRetry(() => runAttempts({ data: { sessionKey } }))
       .then((state) => {
         if (!active) return;
         setAttempts(attemptState(state.used, state.packs, state.freeGrant ? 1 : 0));
@@ -270,7 +286,7 @@ function CreateCardPage() {
   useEffect(() => {
     if (!user || !sessionKey) return;
     let active = true;
-    void runVariants({ data: { sessionKey } })
+    void withAuthRetry(() => runVariants({ data: { sessionKey } }))
       .then((rows) => {
         if (!active) return;
         const list = rows
@@ -464,7 +480,7 @@ function CreateCardPage() {
    * picture is one single action, so credits are never charged for a card that
    * was never started.
    */
-  async function handleStartPaidCard() {
+  async function handleStartPaidCard(options?: { skipResumeCheck?: boolean }) {
     if (!user) {
       navigate({ to: "/login" });
       return;
@@ -477,7 +493,25 @@ function CreateCardPage() {
     startingRef.current = true;
     setBuying(true);
     try {
-      const res = await runBuyPack({ data: { sessionKey, firstPackOnly: true } });
+      // Never charge a second package for a start that was only interrupted:
+      // an unused paid package of this account is offered for continuation
+      // first. The check itself tolerates a token that is still restoring.
+      if (!options?.skipResumeCheck && attempts.packs === 0) {
+        try {
+          const found = await withAuthRetry(() => runFindInterrupted({}));
+          const other = found.candidates.filter((c) => c.sessionKey !== sessionKey);
+          if (other.length > 0) {
+            setResumeCandidates(other);
+            return;
+          }
+        } catch {
+          /* the purchase below stays idempotent per session key */
+        }
+      }
+
+      const res = await withAuthRetry(() =>
+        runBuyPack({ data: { sessionKey, firstPackOnly: true } }),
+      );
       if (!res.ok) {
         toast.error(t("gc_attempts_no_credits"));
         return;
@@ -494,6 +528,19 @@ function CreateCardPage() {
       startingRef.current = false;
     }
   }
+
+  /** Explicit "Continue recent card": adopts the chosen interrupted package. */
+  function resumeInterrupted(candidate: {
+    sessionKey: string;
+    cardId: string | null;
+    attempts: CardAttemptState;
+  }) {
+    setResumeCandidates([]);
+    setSessionKey(adoptCardSession(candidate.sessionKey));
+    setAttempts(candidate.attempts);
+    setRestoreCardId(candidate.cardId);
+  }
+
 
 
   /** Download or send finishes the order: the card leaves the workflow. */
@@ -608,6 +655,34 @@ function CreateCardPage() {
   return (
     <SiteLayout>
       <PageHeader title={t("gc_page_title")} subtitle={t("gc_page_sub")} />
+
+      {resumeCandidates.length > 0 && (
+        <div className="mx-auto mb-6 w-full max-w-6xl px-5 lg:px-8">
+          <div className="space-y-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4">
+            <p className="text-sm font-medium text-foreground">{t("gc_resume_title")}</p>
+            <p className="text-xs text-muted-foreground">{t("gc_resume_note")}</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => resumeInterrupted(resumeCandidates[0]!)}
+                className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
+              >
+                {t("gc_resume_continue")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setResumeCandidates([]);
+                  void handleStartPaidCard({ skipResumeCheck: true });
+                }}
+                className="rounded-full border border-border/60 px-5 py-2 text-sm text-foreground hover:bg-secondary"
+              >
+                {t("gc_resume_new")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="mx-auto grid w-full max-w-6xl gap-8 px-5 pb-20 lg:grid-cols-[1fr_minmax(320px,460px)] lg:px-8">
         {/* Left: editor / styling */}
@@ -733,7 +808,7 @@ function CreateCardPage() {
                     <div className="space-y-1">
                       <button
                         type="button"
-                        onClick={handleStartPaidCard}
+                        onClick={() => void handleStartPaidCard()}
                         disabled={buying || generating}
                         className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
                       >
