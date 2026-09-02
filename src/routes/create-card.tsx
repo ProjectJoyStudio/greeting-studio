@@ -712,6 +712,24 @@ function CreateCardPage() {
                     </div>
                   ) : attempts.packs === 0 ? (
 
+                    firstFree && !firstFree.used ? (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={handleStartFreeCard}
+                        disabled={buying || generating}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        {buying || generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating ? t("gc_generating") : t("gc_free_first_btn")}
+                      </button>
+                      <p className="text-xs text-muted-foreground">{t("gc_free_first_note")}</p>
+                    </div>
+                    ) : (
                     <div className="space-y-1">
                       <button
                         type="button"
@@ -732,6 +750,7 @@ function CreateCardPage() {
                         {t("gc_start_paid_note").replace("{n}", String(ATTEMPTS_PER_PACK))}
                       </p>
                     </div>
+                    )
                   ) : (
 
                     <div className="space-y-2">
