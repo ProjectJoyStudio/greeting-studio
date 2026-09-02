@@ -9,6 +9,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CardPreview } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
+import { MobileTextWorkspace } from "@/components/greeting-card/MobileTextWorkspace";
 import { GreetingKeywordsPanel } from "@/components/greeting-card/GreetingKeywordsPanel";
 import { ShareDialog } from "@/components/greeting-card/ShareDialog";
 import { useI18n } from "@/lib/i18n";
@@ -882,7 +883,15 @@ function CreateCardPage() {
                 placeholder={t("gc_greeting_ph")}
                 className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
               />
-              <TextStylePanel design={design} onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))} />
+              <MobileTextWorkspace
+                imageUrl={card?.imageUrl ?? null}
+                text={greeting}
+                design={design}
+                onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))}
+              />
+              <div className="hidden sm:block">
+                <TextStylePanel design={design} onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))} />
+              </div>
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
