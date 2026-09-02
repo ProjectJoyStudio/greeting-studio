@@ -356,3 +356,47 @@ export const releaseFreeFirstCard = createServerFn({ method: "POST" })
       .eq("id", session.id);
     return { released: true };
   });
+
+/**
+ * Mobile-resume recovery, narrowly scoped.
+ *
+ * Finds ONLY the paid attempt packages that can be the just-interrupted card
+ * start: same signed-in user, paid, still open, not a single successful picture
+ * yet and created within the last few hours. Old unfinished cabinet drafts
+ * always have at least one stored picture (attempts_used > 0) and are therefore
+ * never returned here — they stay reachable through "Continue" only.
+ */
+const INTERRUPTED_WINDOW_MS = 6 * 60 * 60 * 1000;
+
+export const findInterruptedPaidCardSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      candidates: { sessionKey: string; cardId: string | null; attempts: CardAttemptState }[];
+    }> => {
+      const since = new Date(Date.now() - INTERRUPTED_WINDOW_MS).toISOString();
+      const { data: rows } = await context.supabase
+        .from("user_card_attempt_sessions")
+        .select("session_key, attempts_used, extra_packs, card_id, free_grant, updated_at")
+        .eq("user_id", context.userId)
+        .is("closed_at", null)
+        .eq("attempts_used", 0)
+        .gt("extra_packs", 0)
+        .gte("updated_at", since)
+        .order("updated_at", { ascending: false })
+        .limit(3);
+      return {
+        candidates: (rows ?? []).map((row) => ({
+          sessionKey: row.session_key,
+          cardId: row.card_id ?? null,
+          attempts: attemptState(
+            row.attempts_used,
+            row.extra_packs,
+            row.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0,
+          ),
+        })),
+      };
+    },
+  );
