@@ -780,7 +780,7 @@ function CreateCardPage() {
                     <div className="space-y-1">
                       <button
                         type="button"
-                        onClick={handleStartPaidCard}
+                        onClick={() => void handleStartPaidCard()}
                         disabled={buying || generating}
                         className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
                       >
