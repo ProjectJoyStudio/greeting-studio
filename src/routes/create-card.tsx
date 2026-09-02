@@ -160,6 +160,14 @@ function CreateCardPage() {
   const [freeGrant, setFreeGrant] = useState(false);
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
+  /**
+   * Candidates for a paid card start that a phone lock / crashed resume left
+   * behind. Shown as an explicit choice — never adopted silently when the match
+   * is ambiguous, and never fed from old cabinet drafts.
+   */
+  const [resumeCandidates, setResumeCandidates] = useState<
+    { sessionKey: string; cardId: string | null; attempts: CardAttemptState }[]
+  >([]);
 
   // Entering the editor from Studio, the cabinet or any other page always means
   // "create a new card". Only an explicit Continue (cardId) or a real browser
