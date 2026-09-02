@@ -52,7 +52,7 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } =
       await import("@/lib/replicate/replicate.server");
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
-    const { attemptState } = await import("./attempts");
+    const { attemptState, FREE_FIRST_CARD_ATTEMPTS } = await import("./attempts");
 
     // Every card creation carries its own attempt budget: three attempts for
     // each package the person paid for, valid only for this card order.
