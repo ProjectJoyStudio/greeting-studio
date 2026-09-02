@@ -43,15 +43,34 @@ export function reportLovableError(error: unknown, context: Record<string, unkno
   // which is present only inside the editor preview.
   // Loaders and server fns commonly throw a raw Response; String(it) is the
   // opaque "[object Response]", so pull out the status and URL instead.
-  const message =
+  const baseMessage =
     error instanceof Response
       ? `Response ${error.status}${error.url ? ` at ${error.url}` : ""}`
       : error instanceof Error
         ? error.message
         : String(error);
+  // Prefix the short Error ID shown on the full-page error screen so the exact
+  // PJ-XXXXXX value is searchable in runtime logs alongside the original message.
+  const errorId = typeof context["errorId"] === "string" ? (context["errorId"] as string) : undefined;
+  const errorName = error instanceof Error ? error.name : undefined;
+  const message = errorId ? `[${errorId}] ${baseMessage}` : baseMessage;
+  const stack = error instanceof Error ? error.stack : undefined;
+  const componentStack =
+    typeof context["componentStack"] === "string" ? (context["componentStack"] as string) : undefined;
   window.__lovableReportRuntimeError?.({
     message,
-    stack: error instanceof Error ? error.stack : undefined,
+    stack: [
+      errorId ? `Error ID: ${errorId}` : undefined,
+      errorName ? `name: ${errorName}` : undefined,
+      `source: ${String(context["source"] ?? "react_error_boundary")}`,
+      `pathname: ${window.location.pathname}`,
+      `timestamp: ${new Date().toISOString()}`,
+      stack,
+      componentStack,
+    ]
+      .filter(Boolean)
+      .join("\n"),
     filename: window.location.pathname,
   });
 }
+
