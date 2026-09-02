@@ -69,8 +69,22 @@ export function AnimationStep({
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  // Paid regeneration always asks first: opening this dialog costs nothing.
+  const [regenAsk, setRegenAsk] = useState(false);
+  // Set once the person explicitly chose to edit the description, so the paid
+  // button then starts the regeneration without asking again.
+  const [regenEditing, setRegenEditing] = useState(false);
+  const motionRef = useRef<HTMLTextAreaElement>(null);
   // The greeting text is written after the animation is finished.
   const [textStage, setTextStage] = useState(true);
+
+  function focusMotion() {
+    const node = motionRef.current;
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    node.focus({ preventScroll: true });
+  }
+
 
   // The motion description survives reloads and failed attempts, always bound
   // to the project it belongs to — another project never inherits it.
