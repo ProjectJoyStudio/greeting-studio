@@ -1,4 +1,9 @@
-export function renderErrorPage(): string {
+export function renderErrorPage(errorId?: string): string {
+  const safeId = errorId && /^[A-Z0-9-]{1,32}$/.test(errorId) ? errorId : undefined;
+  const idBlock = safeId
+    ? `<p class="eid">Error ID: <code>${safeId}</code></p>
+      <p class="hint">Please send this ID to support so we can locate the problem.</p>`
+    : "";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -10,6 +15,9 @@ export function renderErrorPage(): string {
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; }
       h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
       p { color: #4b5563; margin: 0 0 1.5rem; }
+      .eid { margin: 0 0 0.25rem; color: #111; }
+      .eid code { font: 600 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; user-select: all; -webkit-user-select: all; padding: 0.15rem 0.4rem; border-radius: 0.25rem; background: #f3f4f6; }
+      .hint { font-size: 13px; margin: 0 0 1.5rem; }
       .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
       a, button { padding: 0.5rem 1rem; border-radius: 0.375rem; font: inherit; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
       .primary { background: #111; color: #fff; }
@@ -20,6 +28,7 @@ export function renderErrorPage(): string {
     <div class="card">
       <h1>This page didn't load</h1>
       <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+      ${idBlock}
       <div class="actions">
         <button class="primary" onclick="location.reload()">Try again</button>
         <a class="secondary" href="/">Go home</a>
