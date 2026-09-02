@@ -231,20 +231,27 @@ function CreateCardPage() {
     void (async () => {
       if (storageLost && !enteredFresh.current && user) {
         try {
-          const open = await runOpenSession({});
+          const found = await withAuthRetry(() => runFindInterrupted({}));
           if (!active) return;
-          if (open.sessionKey) {
-            setSessionKey(adoptCardSession(open.sessionKey));
-            setAttempts(open.attempts);
-            if (open.cardId) setRestoreCardId(open.cardId);
+          // Exactly one unused paid package from the last hours can only be the
+          // interrupted start: adopt it. Anything ambiguous is offered as a
+          // choice instead, so no old draft is ever opened automatically.
+          if (found.candidates.length === 1) {
+            const only = found.candidates[0]!;
+            setSessionKey(adoptCardSession(only.sessionKey));
+            setAttempts(only.attempts);
+            if (only.cardId) setRestoreCardId(only.cardId);
             return;
+          }
+          if (found.candidates.length > 1) {
+            setResumeCandidates(found.candidates);
           }
         } catch {
           /* fall back to the normal session check below */
         }
       }
       try {
-        const res = await runSessionStatus({ data: { sessionKey: key } });
+        const res = await withAuthRetry(() => runSessionStatus({ data: { sessionKey: key } }));
         if (!active) return;
         setSessionKey(res.closed ? resetCardSession() : key);
       } catch {
@@ -255,7 +262,7 @@ function CreateCardPage() {
     return () => {
       active = false;
     };
-  }, [booted, user, runSessionStatus, runOpenSession, search.cardId]);
+  }, [booted, user, runSessionStatus, runFindInterrupted, search.cardId]);
 
 
   useEffect(() => {
