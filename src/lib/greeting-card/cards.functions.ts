@@ -52,7 +52,7 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } =
       await import("@/lib/replicate/replicate.server");
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
-    const { attemptState } = await import("./attempts");
+    const { attemptState, FREE_FIRST_CARD_ATTEMPTS } = await import("./attempts");
 
     // Every card creation carries its own attempt budget: three attempts for
     // each package the person paid for, valid only for this card order.
@@ -61,11 +61,16 @@ export const generateCardImage = createServerFn({ method: "POST" })
     if (data.sessionKey) {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs, closed_at")
+        .select("id, attempts_used, extra_packs, closed_at, free_grant")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
-      const state = attemptState(row?.attempts_used ?? 0, row?.extra_packs ?? 0);
+      // The one-time free first card adds exactly one generation, nothing more.
+      const state = attemptState(
+        row?.attempts_used ?? 0,
+        row?.extra_packs ?? 0,
+        row?.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0,
+      );
       if (row?.closed_at || state.remaining <= 0) {
         return {
           ok: false,

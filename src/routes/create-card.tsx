@@ -28,7 +28,10 @@ import {
   getCardAttempts,
   getCardSessionStatus,
   getOpenPaidCardSession,
+  startFreeFirstCard,
+  releaseFreeFirstCard,
 } from "@/lib/greeting-card/attempts.functions";
+import { getFirstFreeStatus } from "@/lib/entitlements/first-free.functions";
 import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
@@ -115,8 +118,22 @@ function CreateCardPage() {
   const runSessionStatus = useServerFn(getCardSessionStatus);
   const runOpenSession = useServerFn(getOpenPaidCardSession);
   const runDelivered = useServerFn(markCardDelivered);
+  const runStartFree = useServerFn(startFreeFirstCard);
+  const runReleaseFree = useServerFn(releaseFreeFirstCard);
+  const fetchFirstFree = useServerFn(getFirstFreeStatus);
   const refreshCredits = useRefreshCreditBalance();
   const { balance } = useCreditBalance();
+
+  // The account-level first-free entitlement is the single source of truth.
+  const {
+    data: firstFree,
+    refetch: refetchFirstFree,
+  } = useQuery({
+    queryKey: ["first-free-status"],
+    queryFn: () => fetchFirstFree(),
+    enabled: Boolean(user),
+    staleTime: 0,
+  });
 
   const [stage, setStage] = useState<Stage>("edit");
   const [prompt, setPrompt] = useState(search.prompt ?? "");
@@ -138,6 +155,8 @@ function CreateCardPage() {
   const [sessionKey, setSessionKey] = useState("");
   const [attempts, setAttempts] = useState<CardAttemptState>(attemptState(0, 0));
   const [buying, setBuying] = useState(false);
+  /** True while this card creation runs on the one-time free entitlement. */
+  const [freeGrant, setFreeGrant] = useState(false);
   /** The unfinished card this workspace belongs to, restored after a refresh. */
   const [restoreCardId, setRestoreCardId] = useState<string | null>(null);
 
@@ -236,7 +255,8 @@ function CreateCardPage() {
     void runAttempts({ data: { sessionKey } })
       .then((state) => {
         if (!active) return;
-        setAttempts(attemptState(state.used, state.packs));
+        setAttempts(attemptState(state.used, state.packs, state.freeGrant ? 1 : 0));
+        setFreeGrant(state.freeGrant);
         setRestoreCardId(state.cardId);
       })
       .catch(() => undefined);
@@ -309,6 +329,7 @@ function CreateCardPage() {
     finishedSessionKey.current = "";
     setSessionKey(resetCardSession());
     setAttempts(attemptState(0, 0));
+    setFreeGrant(false);
     setStage("edit");
     void navigate({ to: "/create-card", search: {}, replace: true });
   }
@@ -319,14 +340,14 @@ function CreateCardPage() {
     [keywords],
   );
 
-  async function handleGenerate() {
+  async function handleGenerate(): Promise<boolean> {
     if (!user) {
       navigate({ to: "/login" });
-      return;
+      return false;
     }
     if (prompt.trim().length < 3) {
       toast.error(t("gc_err_prompt"));
-      return;
+      return false;
     }
     setGenerating(true);
     try {
@@ -345,10 +366,10 @@ function CreateCardPage() {
         if (res.errorCode === "attempt_limit") {
           toast.error(t("gc_attempts_none"));
           setAttempts((a) => ({ ...a, used: a.allowed, remaining: 0 }));
-          return;
+          return false;
         }
         toast.error(`${t("gc_err_generate")} (${res.errorCode})`);
-        return;
+        return false;
       }
       setCard({ id: res.cardId, imageUrl: res.imageUrl });
       setVariants((list) =>
@@ -357,12 +378,64 @@ function CreateCardPage() {
           : [...list, { id: res.cardId, imageUrl: res.imageUrl }],
       );
       setShareUrl(null);
-      setAttempts((a) => attemptState(Math.min(a.allowed, a.used + 1), a.packs));
+      setAttempts((a) =>
+        attemptState(Math.min(a.allowed, a.used + 1), a.packs, freeGrant ? 1 : 0),
+      );
       setStage("preview");
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("gc_err_generate"));
+      return false;
     } finally {
       setGenerating(false);
+    }
+  }
+
+  /**
+   * First free Greeting Card of a new account: the backend entitlement is
+   * claimed atomically, one single generation runs and no credits are touched.
+   * A technical failure gives the free right straight back.
+   */
+  async function handleStartFreeCard() {
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (prompt.trim().length < 3) {
+      toast.error(t("gc_err_prompt"));
+      return;
+    }
+    if (!sessionKey || startingRef.current) return;
+    startingRef.current = true;
+    setBuying(true);
+    try {
+      const res = await runStartFree({ data: { sessionKey, language: lang } });
+      if (!res.ok) {
+        toast.error(
+          res.errorCode === "already_used" ? t("gc_free_used_note") : t("gc_err_generate"),
+        );
+        void refetchFirstFree();
+        return;
+      }
+      setFreeGrant(true);
+      setAttempts(res.attempts);
+      const ok = await handleGenerate();
+      if (!ok) {
+        // Nothing was stored: the free greeting stays available for a retry.
+        try {
+          await runReleaseFree({ data: { sessionKey } });
+          setFreeGrant(false);
+          setAttempts(attemptState(0, 0));
+        } catch {
+          /* the entitlement is restored on the next attempt */
+        }
+      }
+      void refetchFirstFree();
+    } catch {
+      toast.error(t("gc_err_generate"));
+    } finally {
+      setBuying(false);
+      startingRef.current = false;
     }
   }
 
@@ -639,6 +712,24 @@ function CreateCardPage() {
                     </div>
                   ) : attempts.packs === 0 ? (
 
+                    firstFree && !firstFree.used ? (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={handleStartFreeCard}
+                        disabled={buying || generating}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        {buying || generating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generating ? t("gc_generating") : t("gc_free_first_btn")}
+                      </button>
+                      <p className="text-xs text-muted-foreground">{t("gc_free_first_note")}</p>
+                    </div>
+                    ) : (
                     <div className="space-y-1">
                       <button
                         type="button"
@@ -659,6 +750,7 @@ function CreateCardPage() {
                         {t("gc_start_paid_note").replace("{n}", String(ATTEMPTS_PER_PACK))}
                       </p>
                     </div>
+                    )
                   ) : (
 
                     <div className="space-y-2">

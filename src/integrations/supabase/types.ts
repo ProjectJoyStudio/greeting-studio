@@ -3531,6 +3531,8 @@ export type Database = {
           closed_at: string | null
           created_at: string
           extra_packs: number
+          free_grant: boolean
+          free_order_id: string | null
           id: string
           session_key: string
           updated_at: string
@@ -3542,6 +3544,8 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           extra_packs?: number
+          free_grant?: boolean
+          free_order_id?: string | null
           id?: string
           session_key: string
           updated_at?: string
@@ -3553,6 +3557,8 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           extra_packs?: number
+          free_grant?: boolean
+          free_order_id?: string | null
           id?: string
           session_key?: string
           updated_at?: string
