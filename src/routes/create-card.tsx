@@ -286,7 +286,7 @@ function CreateCardPage() {
   useEffect(() => {
     if (!user || !sessionKey) return;
     let active = true;
-    void runVariants({ data: { sessionKey } })
+    void withAuthRetry(() => runVariants({ data: { sessionKey } }))
       .then((rows) => {
         if (!active) return;
         const list = rows
