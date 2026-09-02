@@ -7,10 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { logCatastrophicError, newErrorId } from "../lib/error-diagnostics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import { AuthProvider } from "../lib/auth/AuthContext";
 import { AdminRoleProvider } from "../lib/admin/role";
@@ -41,9 +43,22 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const [errorId] = useState(() => newErrorId());
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    logCatastrophicError({
+      errorId,
+      source: "react-root-boundary",
+      error,
+      extra: {
+        path: typeof window === "undefined" ? undefined : window.location.pathname,
+      },
+    });
+    reportLovableError(error, {
+      boundary: "tanstack_root_error_component",
+      errorId,
+      source: "react-root-boundary",
+    });
+  }, [error, errorId]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -54,6 +69,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        <p className="mt-4 text-sm text-foreground">
+          Error ID:{" "}
+          <code className="select-all rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            {errorId}
+          </code>
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Please send this ID to support so we can locate the problem.
+        </p>
+
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
