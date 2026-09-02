@@ -24,13 +24,14 @@ import {
 } from "@/lib/greeting-card/cards.functions";
 import {
   buyCardAttemptPack,
+  findInterruptedPaidCardSession,
   getAttemptsForCard,
   getCardAttempts,
   getCardSessionStatus,
-  getOpenPaidCardSession,
   startFreeFirstCard,
   releaseFreeFirstCard,
 } from "@/lib/greeting-card/attempts.functions";
+import { withAuthRetry } from "@/lib/auth/resume-retry";
 import { getFirstFreeStatus } from "@/lib/entitlements/first-free.functions";
 import {
   ATTEMPTS_PER_PACK,
