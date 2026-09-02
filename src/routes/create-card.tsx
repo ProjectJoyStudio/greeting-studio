@@ -9,6 +9,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CardPreview } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
+import { GreetingKeywordsPanel } from "@/components/greeting-card/GreetingKeywordsPanel";
 import { ShareDialog } from "@/components/greeting-card/ShareDialog";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -554,46 +555,15 @@ function CreateCardPage() {
                 <p className="mt-1 text-xs text-muted-foreground">{t("gc_prompt_hint")}</p>
               </div>
 
-              <div>
-                <span className="mb-2 block text-sm font-medium text-foreground">{t("gc_mode_label")}</span>
-                <div className="flex flex-wrap gap-2">
-                  {(["manual", "keywords"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setMode(m)}
-                      className={`rounded-full border px-4 py-2 text-sm transition ${
-                        mode === m
-                          ? "border-primary/50 bg-primary/10 text-primary"
-                          : "border-border/60 bg-background text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {t(m === "manual" ? "gc_mode_manual" : "gc_mode_keywords")}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <GreetingKeywordsPanel
+                mode={mode}
+                onModeChange={setMode}
+                keywords={keywords}
+                onKeywordsChange={setKeywords}
+                composing={composing}
+                onCompose={handleCompose}
+              />
 
-              {mode === "keywords" && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">{t("gc_keywords_label")}</label>
-                  <input
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    placeholder={t("gc_keywords_ph")}
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCompose}
-                    disabled={composing}
-                    className="mt-2 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50"
-                  >
-                    {composing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                    {t("gc_compose_btn")}
-                  </button>
-                </div>
-              )}
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">{t("gc_greeting_label")}</label>
@@ -730,6 +700,14 @@ function CreateCardPage() {
                   className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus:border-primary/60"
                 />
               </div>
+              <GreetingKeywordsPanel
+                mode={mode}
+                onModeChange={setMode}
+                keywords={keywords}
+                onKeywordsChange={setKeywords}
+                composing={composing}
+                onCompose={handleCompose}
+              />
               <textarea
                 rows={4}
                 value={greeting}
