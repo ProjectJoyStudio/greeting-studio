@@ -61,11 +61,16 @@ export const generateCardImage = createServerFn({ method: "POST" })
     if (data.sessionKey) {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs, closed_at")
+        .select("id, attempts_used, extra_packs, closed_at, free_grant")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
-      const state = attemptState(row?.attempts_used ?? 0, row?.extra_packs ?? 0);
+      // The one-time free first card adds exactly one generation, nothing more.
+      const state = attemptState(
+        row?.attempts_used ?? 0,
+        row?.extra_packs ?? 0,
+        row?.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0,
+      );
       if (row?.closed_at || state.remaining <= 0) {
         return {
           ok: false,
