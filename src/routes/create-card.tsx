@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Wand2, Download, Check, Share2 } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -884,15 +884,6 @@ function CreateCardPage() {
               />
               <TextStylePanel design={design} onChange={(patch) => setDesign((d) => ({ ...d, ...patch }))} />
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => persist(true)}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  {saving ? t("gc_saving") : t("gc_finish_btn")}
-                </button>
                 <button
                   type="button"
                   onClick={handleShare}
