@@ -253,14 +253,8 @@ function LiveCardsPage() {
     }
   }, [sessionId, restored, prompt, ratio]);
 
-  async function runGenerate() {
-    if (prompt.trim().length < 3) return;
-    if (attemptsLeft <= 0) {
-      toast.error(t("lc_attempts_done"));
-      return;
-    }
-    if (busy) return;
-    setBusy("generate");
+  /** The actual picture request — the caller owns the busy state. */
+  async function doGenerate() {
     setRestored(true);
     try {
       const result = await generate({
@@ -274,29 +268,66 @@ function LiveCardsPage() {
       setSelectedId(null);
       toast.success(t("lc_saved"));
       void recent.refetch();
-      void attempts.refetch();
     } catch {
+      // A technical failure never consumes the paid package.
       toast.error(t("lc_failed"));
     } finally {
-      setBusy(null);
+      void attempts.refetch();
     }
   }
 
-  /** Buys three more attempts for one credit — charged exactly once. */
-  async function buyAttempts() {
+  async function runGenerate() {
+    if (prompt.trim().length < 3) {
+      toast.error(t("lc_prompt_required"));
+      return;
+    }
+    if (attemptsLeft <= 0) {
+      toast.error(t("lc_attempts_done"));
+      return;
+    }
     if (busy) return;
+    setBusy("generate");
+    await doGenerate();
+    setBusy(null);
+  }
+
+  /**
+   * One single action: check the description, activate the paid package (only
+   * when the session really has no variants left) and start the first picture
+   * straight away. There is never a paid state without a generation attempt.
+   */
+  async function buyAndGenerate() {
+    if (busy) return;
+    if (prompt.trim().length < 3) {
+      toast.error(t("lc_prompt_required"));
+      return;
+    }
     setBusy("buy");
     try {
-      const result = await buyPack({ data: { sessionKey: sessionId! } });
-      if (!result.ok) {
-        toast.error(t("lc_insufficient"));
-        refreshBalance(result.balance);
-        return;
+      // The server decides whether this project already owns a package, so a
+      // double tap, a refresh or a repeated request never charges twice.
+      let remaining = 0;
+      try {
+        const state = await readAttempts({ data: { sessionKey: sessionId! } });
+        remaining = state?.remaining ?? 0;
+      } catch {
+        remaining = attemptsLeft;
       }
-      refreshBalance(result.balance);
+
+      if (remaining <= 0) {
+        const result = await buyPack({ data: { sessionKey: sessionId! } });
+        if (!result.ok) {
+          toast.error(t("lc_insufficient"));
+          refreshBalance(result.balance);
+          return;
+        }
+        refreshBalance(result.balance);
+        void projectSpend.refresh();
+        toast.success(t("lc_pack_bought"));
+      }
+
       void attempts.refetch();
-      void projectSpend.refresh();
-      toast.success(t("lc_pack_bought"));
+      await doGenerate();
     } catch {
       toast.error(t("lc_failed"));
     } finally {
@@ -438,7 +469,7 @@ function LiveCardsPage() {
                 <button
                   type="button"
                   disabled={!isAuthenticated || busy !== null || !canBuyPack}
-                  onClick={buyAttempts}
+                  onClick={buyAndGenerate}
                   className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy === "buy" ? (
@@ -604,7 +635,7 @@ function LiveCardsPage() {
                 <button
                   type="button"
                   disabled={busy !== null || (attemptsLeft <= 0 && !canBuyPack)}
-                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAttempts())}
+                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAndGenerate())}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
