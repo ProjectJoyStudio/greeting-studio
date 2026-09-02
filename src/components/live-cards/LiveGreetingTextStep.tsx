@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { LiveVideoPreview } from "./LiveVideoPreview";
+import { LiveMobileTextWorkspace } from "./LiveMobileTextWorkspace";
+
 import { LiveCardViewer } from "./LiveCardViewer";
 import { LiveMusicPanel } from "./LiveMusicPanel";
 import { composeGreetingFromKeywords } from "@/lib/greeting-card/cards.functions";
@@ -465,13 +467,27 @@ export function LiveGreetingEditor({
             className="w-full rounded-xl border border-border/60 bg-background/70 px-4 py-2.5 text-sm outline-none transition focus:border-primary/60"
           />
 
-          <TextStylePanel
+          <LiveMobileTextWorkspace
+            videoUrl={sourceUrl ?? videoUrl}
+            text={state.text}
             design={state.design}
+            ratioClass={ratioClass}
             onChange={(p) => {
               const merged = { ...state.design, ...p };
               patchDesign({ ...p, ...clampPosition(merged.x, merged.y, merged.width) });
             }}
           />
+
+          <div className="hidden sm:block">
+            <TextStylePanel
+              design={state.design}
+              onChange={(p) => {
+                const merged = { ...state.design, ...p };
+                patchDesign({ ...p, ...clampPosition(merged.x, merged.y, merged.width) });
+              }}
+            />
+          </div>
+
 
           <LiveMusicPanel music={state.music} onChange={(music) => patch({ music })} />
         </div>
