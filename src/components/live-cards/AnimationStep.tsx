@@ -222,8 +222,14 @@ export function AnimationStep({
    * result stays untouched until the new one has really been produced.
    */
   async function runRegenerate() {
-    if (regenerating || motion.trim().length < 3) return;
+    if (regenerating) return;
+    if (motion.trim().length < 3) {
+      toast.error(t("la_motion_required"));
+      focusMotion();
+      return;
+    }
     if (!canRegenerate) return;
+
     if (balance < ANIMATION_REGENERATE_CREDITS) {
       toast.error(t("la_insufficient"));
       return;
