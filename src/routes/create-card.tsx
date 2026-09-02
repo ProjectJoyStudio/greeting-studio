@@ -9,6 +9,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { CardPreview } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
+import { GreetingKeywordsPanel } from "@/components/greeting-card/GreetingKeywordsPanel";
 import { ShareDialog } from "@/components/greeting-card/ShareDialog";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth/AuthContext";
