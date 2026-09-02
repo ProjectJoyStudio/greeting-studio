@@ -42,6 +42,7 @@ export function DeliveryDialog({
     const res = await fetch(videoUrl);
     if (!res.ok) throw new Error("download_failed");
     const blob = await res.blob();
+    if (!blob.size) throw new Error("download_failed");
     return new File([blob], "project-joy-greeting.mp4", {
       type: blob.type || "video/mp4",
     });
@@ -78,16 +79,17 @@ export function DeliveryDialog({
       };
       const file = await fileOf();
       const data: ShareData = { files: [file], title: t("pvr_deliver_title") };
+      // Sharing hands the film to the device; it is never proof of delivery,
+      // so the film stays available and can be sent again.
       if (nav.share && (!nav.canShare || nav.canShare(data))) {
         await nav.share(data);
-        onDelivered();
       } else {
-        toast.error(t("pvr_share_failed"));
+        toast.info(t("sh_unsupported"));
       }
     } catch (err) {
       // A cancelled share is not a failure and must not deliver the film.
       if (!(err instanceof DOMException && err.name === "AbortError")) {
-        toast.error(t("pvr_share_failed"));
+        toast.error(t("sh_failed"));
       }
     } finally {
       setBusy(null);
@@ -154,7 +156,7 @@ export function DeliveryDialog({
             ) : (
               <Share2 className="h-4 w-4" />
             )}
-            {t("pvr_share")}
+            {t("sh_share_video")}
           </button>
         </div>
         <button

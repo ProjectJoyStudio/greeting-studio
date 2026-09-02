@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Copy, Download, Mail, Share2, X, Check } from "lucide-react";
+import { Copy, Download, Loader2, Mail, Share2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
+import { canShareFiles, shareMediaFile } from "@/lib/share/share-media";
 
 type Channel = "telegram" | "whatsapp" | "viber" | "facebook" | "messenger" | "email";
 
@@ -21,6 +22,7 @@ export function ShareDialog({
   title,
   onDownload,
   onShared,
+  prepareFile,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,14 +30,51 @@ export function ShareDialog({
   title: string;
   onDownload: () => void;
   onShared?: (channel: string) => void;
+  /** Builds the finished media file that is handed to the system share sheet. */
+  prepareFile?: () => Promise<File>;
 }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
+  const [canFileShare, setCanFileShare] = useState(false);
+  const [sharingFile, setSharingFile] = useState(false);
 
   useEffect(() => {
     setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+    setCanFileShare(canShareFiles());
   }, []);
+
+  /** Hands the actual image file to the system share sheet. Cancelling or
+   * failing keeps the card exactly as it is, ready for another attempt. */
+  async function shareFile() {
+    if (sharingFile || !prepareFile) return;
+    setSharingFile(true);
+    try {
+      let file: File;
+      try {
+        file = await prepareFile();
+      } catch {
+        toast.error(t("sh_failed"));
+        return;
+      }
+      if (!file.size) {
+        toast.error(t("sh_failed"));
+        return;
+      }
+      const result = await shareMediaFile({
+        url: "",
+        file,
+        filename: file.name,
+        mimeType: file.type || "image/png",
+        title,
+      });
+      if (result === "shared") onShared?.("file");
+      else if (result === "unsupported") toast.info(t("sh_unsupported"));
+      else if (result === "failed") toast.error(t("sh_failed"));
+    } finally {
+      setSharingFile(false);
+    }
+  }
 
   if (!open) return null;
 
@@ -59,7 +98,7 @@ export function ShareDialog({
       await navigator.share({ title, text: title, url });
       onShared?.("native");
     } catch {
-      /* the person dismissed the sheet */
+      /* the person dismissed the sheet — nothing changes */
     }
   }
 
@@ -101,6 +140,22 @@ export function ShareDialog({
         </div>
 
         <div className="mt-4 space-y-2.5">
+          {prepareFile && canFileShare && (
+            <button
+              type="button"
+              disabled={sharingFile}
+              onClick={() => void shareFile()}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-5 py-3 text-sm font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+            >
+              {sharingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              {sharingFile ? t("sh_preparing") : t("sh_share_image")}
+            </button>
+          )}
+          {prepareFile && !canFileShare && (
+            <p className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs text-muted-foreground">
+              {t("sh_unsupported")}
+            </p>
+          )}
           <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-2">
             <span className="truncate text-xs text-muted-foreground">{url}</span>
             <button

@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { Download, Send, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, Loader2, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
+import { canShareFiles, fetchShareFile, shareFileName, shareMediaFile } from "@/lib/share/share-media";
 
 /**
  * Built-in viewer for a finished live greeting card. The video never opens as a
@@ -19,10 +20,16 @@ export function LiveCardViewer({
   videoUrl: string;
   title?: string | null;
   onClose: () => void;
-  /** Called only after a successful download or share, never on preview. */
+  /** Called only after a successful download — sharing never closes a card. */
   onDelivered?: (method: "download" | "share") => void;
 }) {
   const { t } = useI18n();
+  const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const [canFileShare, setCanFileShare] = useState(false);
+
+  useEffect(() => {
+    setCanFileShare(canShareFiles());
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -33,6 +40,8 @@ export function LiveCardViewer({
   }, [onClose]);
 
   async function download() {
+    if (busy) return;
+    setBusy("download");
     try {
       const res = await fetch(videoUrl);
       const blob = await res.blob();
@@ -47,21 +56,39 @@ export function LiveCardViewer({
       onDelivered?.("download");
     } catch {
       toast.error(t("llc_download_failed"));
+    } finally {
+      setBusy(null);
     }
   }
 
+  /**
+   * Hands the finished MP4 itself to the system share sheet. Sharing is never
+   * destructive: the card stays exactly where it is, whatever the outcome, and
+   * can be sent again as often as the person wishes.
+   */
   async function share() {
+    if (busy) return;
+    setBusy("share");
     try {
-      if (navigator.share) {
-        await navigator.share({ title: title || t("llc_title"), url: videoUrl });
-        onDelivered?.("share");
+      const name = shareFileName(title || "live-greeting-card", "mp4");
+      let file: File;
+      try {
+        file = await fetchShareFile(videoUrl, name, "video/mp4");
+      } catch {
+        toast.error(t("sh_failed"));
         return;
       }
-      await navigator.clipboard.writeText(videoUrl);
-      toast.success(t("llc_link_copied"));
-      onDelivered?.("share");
-    } catch {
-      /* the person cancelled */
+      const result = await shareMediaFile({
+        url: videoUrl,
+        file,
+        filename: name,
+        mimeType: "video/mp4",
+        title: title || t("llc_title"),
+      });
+      if (result === "unsupported") toast.info(t("sh_unsupported"));
+      else if (result === "failed") toast.error(t("sh_failed"));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -103,19 +130,21 @@ export function LiveCardViewer({
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={download}
+            onClick={() => void download()}
+            disabled={busy !== null}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-gradient px-5 py-3 text-sm font-semibold text-primary-foreground shadow-warm"
           >
-            <Download className="h-4 w-4" />
+            {busy === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             {t("llc_download")}
           </button>
           <button
             type="button"
-            onClick={share}
+            onClick={() => void share()}
+            disabled={busy !== null}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
           >
-            <Send className="h-4 w-4" />
-            {t("llc_send")}
+            {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {canFileShare ? t("sh_share_video") : t("llc_send")}
           </button>
           <button
             type="button"
