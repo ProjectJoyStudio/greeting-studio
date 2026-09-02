@@ -56,7 +56,7 @@ import {
   type CardTextDesign,
   type GreetingMode,
 } from "@/lib/greeting-card/types";
-import { downloadFinalCard } from "@/lib/greeting-card/compose";
+import { composeFinalCard, downloadFinalCard } from "@/lib/greeting-card/compose";
 import { uploadFinalCardImage } from "@/lib/greeting-card/save-final";
 
 type Stage = "edit" | "preview" | "design" | "done";

@@ -18,7 +18,7 @@ import {
   saveCardProject,
 } from "@/lib/greeting-card/cards.functions";
 import { normalizeTextDesign } from "@/lib/greeting-card/types";
-import { downloadFinalCard } from "@/lib/greeting-card/compose";
+import { composeFinalCard, downloadFinalCard } from "@/lib/greeting-card/compose";
 import { uploadFinalCardImage } from "@/lib/greeting-card/save-final";
 
 export const Route = createFileRoute("/dashboard/cards")({
@@ -291,10 +291,19 @@ function MyCardsPage() {
           onClose={() => setShare(null)}
           url={share.url}
           title={share.title}
+          // Sharing keeps the card in the cabinet: it can always be sent again.
           onShared={(channel) => {
-            const cardId = share.id;
-            void trackEvent({ data: { cardId, eventType: "share", channel } });
-            void finishCard(cardId, `share_${channel}`);
+            void trackEvent({ data: { cardId: share.id, eventType: "share", channel } });
+          }}
+          prepareFile={async () => {
+            const card = cards.find((c) => c.id === share.id);
+            if (!card?.image_url) throw new Error("media_unavailable");
+            const blob = await composeFinalCard(
+              card.image_url,
+              card.greeting_text ?? "",
+              normalizeTextDesign(card.text_design),
+            );
+            return new File([blob], `project-joy-${card.id}.png`, { type: "image/png" });
           }}
           onDownload={() => {
             const card = cards.find((c) => c.id === share.id);
