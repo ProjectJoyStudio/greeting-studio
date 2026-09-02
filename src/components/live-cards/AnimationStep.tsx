@@ -378,6 +378,7 @@ export function AnimationStep({
               </label>
               <textarea
                 id="la-motion"
+                ref={motionRef}
                 value={motion}
                 onChange={(e) => setMotion(e.target.value)}
                 rows={2}
@@ -393,10 +394,15 @@ export function AnimationStep({
                     <>
                       <button
                         type="button"
-                        onClick={runRegenerate}
-                        disabled={regenerating || motion.trim().length < 3 || balance < ANIMATION_REGENERATE_CREDITS}
+                        onClick={() => {
+                          // The first press only asks — nothing is charged here.
+                          if (regenEditing) void runRegenerate();
+                          else setRegenAsk(true);
+                        }}
+                        disabled={regenerating || balance < ANIMATION_REGENERATE_CREDITS}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/60 px-6 py-3 text-sm font-semibold transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                       >
+
                         {regenerating ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
