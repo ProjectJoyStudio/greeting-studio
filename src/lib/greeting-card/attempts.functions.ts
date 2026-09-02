@@ -5,6 +5,7 @@ import {
   ATTEMPTS_PER_PACK,
   ATTEMPT_PACK_CREDITS,
   attemptState,
+  FREE_FIRST_CARD_ATTEMPTS,
   type CardAttemptState,
 } from "./attempts";
 
@@ -17,24 +18,32 @@ export const getCardAttempts = createServerFn({ method: "POST" })
     return { sessionKey };
   })
   .handler(
-    async ({ data, context }): Promise<CardAttemptState & { cardId: string | null }> => {
+    async ({
+      data,
+      context,
+    }): Promise<CardAttemptState & { cardId: string | null; freeGrant: boolean }> => {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("attempts_used, extra_packs, closed_at, card_id")
+        .select("attempts_used, extra_packs, closed_at, card_id, free_grant")
         .eq("user_id", context.userId)
         .eq("session_key", data.sessionKey)
         .maybeSingle();
       // A finished card order keeps its history, but never funds a new card.
-      if (row?.closed_at) return { ...attemptState(0, 0), cardId: null };
+      if (row?.closed_at) return { ...attemptState(0, 0), cardId: null, freeGrant: false };
       if (!row) {
         await context.supabase
           .from("user_card_attempt_sessions")
           .insert({ user_id: context.userId, session_key: data.sessionKey })
           .select("id")
           .maybeSingle();
-        return { ...attemptState(0, 0), cardId: null };
+        return { ...attemptState(0, 0), cardId: null, freeGrant: false };
       }
-      return { ...attemptState(row.attempts_used, row.extra_packs), cardId: row.card_id ?? null };
+      const free = row.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0;
+      return {
+        ...attemptState(row.attempts_used, row.extra_packs, free),
+        cardId: row.card_id ?? null,
+        freeGrant: Boolean(row.free_grant),
+      };
     },
   );
 
@@ -56,7 +65,7 @@ export const getAttemptsForCard = createServerFn({ method: "POST" })
     }): Promise<{ sessionKey: string | null; attempts: CardAttemptState }> => {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("session_key, attempts_used, extra_packs, closed_at")
+        .select("session_key, attempts_used, extra_packs, closed_at, free_grant")
         .eq("user_id", context.userId)
         .eq("card_id", data.cardId)
         .order("updated_at", { ascending: false })
@@ -65,7 +74,11 @@ export const getAttemptsForCard = createServerFn({ method: "POST" })
       if (!row || row.closed_at) return { sessionKey: null, attempts: attemptState(0, 0) };
       return {
         sessionKey: row.session_key,
-        attempts: attemptState(row.attempts_used, row.extra_packs),
+        attempts: attemptState(
+          row.attempts_used,
+          row.extra_packs,
+          row.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0,
+        ),
       };
     },
   );
@@ -205,7 +218,7 @@ export const getOpenPaidCardSession = createServerFn({ method: "POST" })
     }): Promise<{ sessionKey: string | null; cardId: string | null; attempts: CardAttemptState }> => {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
-        .select("session_key, attempts_used, extra_packs, card_id, closed_at")
+        .select("session_key, attempts_used, extra_packs, card_id, closed_at, free_grant")
         .eq("user_id", context.userId)
         .is("closed_at", null)
         .gt("extra_packs", 0)
@@ -216,7 +229,11 @@ export const getOpenPaidCardSession = createServerFn({ method: "POST" })
       return {
         sessionKey: row.session_key,
         cardId: row.card_id ?? null,
-        attempts: attemptState(row.attempts_used, row.extra_packs),
+        attempts: attemptState(
+          row.attempts_used,
+          row.extra_packs,
+          row.free_grant ? FREE_FIRST_CARD_ATTEMPTS : 0,
+        ),
       };
     },
   );
