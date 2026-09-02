@@ -469,7 +469,7 @@ function LiveCardsPage() {
                 <button
                   type="button"
                   disabled={!isAuthenticated || busy !== null || !canBuyPack}
-                  onClick={buyAttempts}
+                  onClick={buyAndGenerate}
                   className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy === "buy" ? (
@@ -635,7 +635,7 @@ function LiveCardsPage() {
                 <button
                   type="button"
                   disabled={busy !== null || (attemptsLeft <= 0 && !canBuyPack)}
-                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAttempts())}
+                  onClick={() => (attemptsLeft > 0 ? void runGenerate() : void buyAndGenerate())}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busy === "generate" ? (
