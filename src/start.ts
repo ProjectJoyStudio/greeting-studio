@@ -1,5 +1,6 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
+import { isDocumentRequest, logCatastrophicError, newErrorId } from "./lib/error-diagnostics";
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
@@ -10,9 +11,9 @@ function isAuthError(error: unknown): boolean {
   return /^unauthorized/i.test(message.trim());
 }
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async (ctx) => {
   try {
-    return await next();
+    return await ctx.next();
   } catch (error) {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
@@ -26,13 +27,23 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
         headers: { "content-type": "application/json; charset=utf-8" },
       });
     }
-    console.error(error);
-    return new Response(renderErrorPage(), {
+    const request = (ctx as { request?: Request }).request;
+    const errorId = newErrorId();
+    logCatastrophicError({
+      errorId,
+      source: "start-middleware",
+      error,
+      request,
+      status: 500,
+      isDocumentRequest: request ? isDocumentRequest(request) : undefined,
+    });
+    return new Response(renderErrorPage(errorId), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     });
   }
 });
+
 
 
 export const startInstance = createStart(() => ({
