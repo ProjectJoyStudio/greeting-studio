@@ -439,7 +439,46 @@ export function AnimationStep({
             onNewProject();
           }}
         />
+
+        {regenAsk && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/75 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl border border-border/60 bg-card p-5 shadow-xl">
+              <p className="text-sm text-foreground">{t("la_regen_ask")}</p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegenAsk(false);
+                    setRegenEditing(true);
+                    setTimeout(focusMotion, 50);
+                  }}
+                  className="w-full rounded-full border border-border/60 px-5 py-3 text-sm font-medium transition hover:border-primary/50"
+                >
+                  {t("la_regen_edit")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegenAsk(false);
+                    void runRegenerate();
+                  }}
+                  className="w-full rounded-full bg-gold-gradient px-5 py-3 text-sm font-semibold text-primary-foreground shadow-warm"
+                >
+                  {t("la_regen_now")} — {ANIMATION_REGENERATE_CREDITS} {t("la_price_credits")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegenAsk(false)}
+                  className="w-full rounded-full px-5 py-2 text-sm text-muted-foreground transition hover:text-foreground"
+                >
+                  {t("la_regen_cancel")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
+
       );
     }
     return (
