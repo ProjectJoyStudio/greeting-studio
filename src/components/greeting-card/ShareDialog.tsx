@@ -22,9 +22,7 @@ export function ShareDialog({
   title,
   onDownload,
   onShared,
-  fileUrl,
-  fileName,
-  fileType,
+  prepareFile,
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,10 +30,8 @@ export function ShareDialog({
   title: string;
   onDownload: () => void;
   onShared?: (channel: string) => void;
-  /** The finished media file, shared directly where the device supports it. */
-  fileUrl?: string | null;
-  fileName?: string;
-  fileType?: string;
+  /** Builds the finished media file that is handed to the system share sheet. */
+  prepareFile?: () => Promise<File>;
 }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
@@ -51,13 +47,25 @@ export function ShareDialog({
   /** Hands the actual image file to the system share sheet. Cancelling or
    * failing keeps the card exactly as it is, ready for another attempt. */
   async function shareFile() {
-    if (sharingFile || !fileUrl) return;
+    if (sharingFile || !prepareFile) return;
     setSharingFile(true);
     try {
+      let file: File;
+      try {
+        file = await prepareFile();
+      } catch {
+        toast.error(t("sh_failed"));
+        return;
+      }
+      if (!file.size) {
+        toast.error(t("sh_failed"));
+        return;
+      }
       const result = await shareMediaFile({
-        url: fileUrl,
-        filename: fileName || "project-joy.png",
-        mimeType: fileType || "image/png",
+        url: "",
+        file,
+        filename: file.name,
+        mimeType: file.type || "image/png",
         title,
       });
       if (result === "shared") onShared?.("file");
@@ -132,7 +140,7 @@ export function ShareDialog({
         </div>
 
         <div className="mt-4 space-y-2.5">
-          {fileUrl && canFileShare && (
+          {prepareFile && canFileShare && (
             <button
               type="button"
               disabled={sharingFile}
@@ -143,7 +151,7 @@ export function ShareDialog({
               {sharingFile ? t("sh_preparing") : t("sh_share_image")}
             </button>
           )}
-          {fileUrl && !canFileShare && (
+          {prepareFile && !canFileShare && (
             <p className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs text-muted-foreground">
               {t("sh_unsupported")}
             </p>

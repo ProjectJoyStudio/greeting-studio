@@ -1078,9 +1078,13 @@ function CreateCardPage() {
           onClose={() => setShareOpen(false)}
           url={shareUrl}
           title={title || t("gc_shared_title")}
+          // Sharing never closes the card: it stays available for another try.
           onShared={(channel) => {
             void trackEvent({ data: { cardId: card.id, eventType: "share", channel } });
-            void finishDelivery(channel);
+          }}
+          prepareFile={async () => {
+            const blob = await composeFinalCard(card.imageUrl, greeting, design);
+            return new File([blob], `project-joy-${card.id}.png`, { type: "image/png" });
           }}
           onDownload={() => {
             void handleDownloadAndFinish();
