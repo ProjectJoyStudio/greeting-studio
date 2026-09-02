@@ -3,8 +3,12 @@
 // every label, badge and action control lives outside the card image.
 // ---------------------------------------------------------------------------
 
-import { useEffect } from "react";
-import { Download, Heart, Send, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, Heart, Loader2, Send, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { useI18n } from "@/lib/i18n";
+import { canShareFiles, fetchShareFile, shareFileName, shareMediaFile } from "@/lib/share/share-media";
 
 import { PublicCardText } from "./PublicCardText";
 import type { PublicTextDesignRow } from "@/lib/public-catalog.functions";
@@ -29,6 +33,60 @@ export function CardLightbox({
   onClose: () => void;
   labels: { send: string; download: string; favorite: string; close: string };
 }) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const [canFileShare, setCanFileShare] = useState(false);
+
+  useEffect(() => {
+    setCanFileShare(canShareFiles());
+  }, []);
+
+  /** The catalog artwork itself is handed to the device share sheet. */
+  async function shareCard() {
+    if (busy || !card.imageUrl) return;
+    setBusy("share");
+    try {
+      const name = shareFileName("project-joy-card", "jpg");
+      let file: File;
+      try {
+        file = await fetchShareFile(card.imageUrl, name, "image/jpeg");
+      } catch {
+        toast.error(t("sh_failed"));
+        return;
+      }
+      const result = await shareMediaFile({
+        url: card.imageUrl,
+        file,
+        filename: file.name,
+        mimeType: file.type || "image/jpeg",
+      });
+      if (result === "unsupported") toast.info(t("sh_unsupported"));
+      else if (result === "failed") toast.error(t("sh_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadCard() {
+    if (busy || !card.imageUrl) return;
+    setBusy("download");
+    try {
+      const name = shareFileName("project-joy-card", "jpg");
+      const file = await fetchShareFile(card.imageUrl, name, "image/jpeg");
+      const href = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 30_000);
+    } catch {
+      toast.error(t("sh_failed"));
+    } finally {
+      setBusy(null);
+    }
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -95,11 +153,23 @@ export function CardLightbox({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-3" onClick={(e) => e.stopPropagation()}>
-        <button className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95">
-          <Send className="h-4 w-4" /> {labels.send}
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={() => void shareCard()}
+          className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2 text-sm font-medium text-primary-foreground shadow-warm transition hover:opacity-95 disabled:opacity-60"
+        >
+          {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {canFileShare ? t("sh_share_image") : labels.send}
         </button>
-        <button className="inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm text-white transition hover:bg-white/10">
-          <Download className="h-4 w-4" /> {labels.download}
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={() => void downloadCard()}
+          className="inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm text-white transition hover:bg-white/10 disabled:opacity-60"
+        >
+          {busy === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {labels.download}
         </button>
         <button className="inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2 text-sm text-white transition hover:bg-white/10">
           <Heart className="h-4 w-4" /> {labels.favorite}

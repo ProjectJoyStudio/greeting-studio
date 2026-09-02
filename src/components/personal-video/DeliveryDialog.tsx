@@ -42,6 +42,7 @@ export function DeliveryDialog({
     const res = await fetch(videoUrl);
     if (!res.ok) throw new Error("download_failed");
     const blob = await res.blob();
+    if (!blob.size) throw new Error("download_failed");
     return new File([blob], "project-joy-greeting.mp4", {
       type: blob.type || "video/mp4",
     });
