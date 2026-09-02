@@ -117,7 +117,7 @@ function CreateCardPage() {
 
   const runBuyPack = useServerFn(buyCardAttemptPack);
   const runSessionStatus = useServerFn(getCardSessionStatus);
-  const runOpenSession = useServerFn(getOpenPaidCardSession);
+  const runFindInterrupted = useServerFn(findInterruptedPaidCardSession);
   const runDelivered = useServerFn(markCardDelivered);
   const runStartFree = useServerFn(startFreeFirstCard);
   const runReleaseFree = useServerFn(releaseFreeFirstCard);
