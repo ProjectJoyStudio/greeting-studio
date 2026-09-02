@@ -268,7 +268,7 @@ function CreateCardPage() {
   useEffect(() => {
     if (!user || !sessionKey || search.cardId) return;
     let active = true;
-    void runAttempts({ data: { sessionKey } })
+    void withAuthRetry(() => runAttempts({ data: { sessionKey } }))
       .then((state) => {
         if (!active) return;
         setAttempts(attemptState(state.used, state.packs, state.freeGrant ? 1 : 0));
