@@ -237,3 +237,122 @@ export const getOpenPaidCardSession = createServerFn({ method: "POST" })
       };
     },
   );
+
+/**
+ * First free Greeting Card of a newly registered account.
+ *
+ * The account-level entitlement (public.user_entitlements) stays the single
+ * source of truth: the atomic `claim_first_free_greeting` database function
+ * decides who may start, so rapid taps, reloads or a second device can never
+ * produce two free cards. The grant unlocks exactly ONE generation for this
+ * card creation and costs zero credits.
+ */
+export const startFreeFirstCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionKey: string; language?: string }) => {
+    const sessionKey = String(input?.sessionKey ?? "").slice(0, 64);
+    if (!sessionKey) throw new Error("session_required");
+    return { sessionKey, language: String(input?.language ?? "en").slice(0, 5) };
+  })
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<
+      { ok: true; attempts: CardAttemptState } | { ok: false; errorCode: string }
+    > => {
+      const { data: session } = await context.supabase
+        .from("user_card_attempt_sessions")
+        .select("id, attempts_used, extra_packs, closed_at, free_grant")
+        .eq("user_id", context.userId)
+        .eq("session_key", data.sessionKey)
+        .maybeSingle();
+      if (session?.closed_at) return { ok: false, errorCode: "session_closed" };
+
+      // Idempotent: a second tap on the same card creation never claims twice.
+      if (session?.free_grant) {
+        return {
+          ok: true,
+          attempts: attemptState(
+            session.attempts_used,
+            session.extra_packs,
+            FREE_FIRST_CARD_ATTEMPTS,
+          ),
+        };
+      }
+
+      const { data: rows, error } = await context.supabase.rpc("claim_first_free_greeting", {
+        _product_type: "card",
+        _language: data.language,
+        _configuration: { source: "create_card_free_first", product_type: "card" },
+      });
+      if (error) {
+        return {
+          ok: false,
+          errorCode: error.message.includes("already_used") ? "already_used" : "claim_failed",
+        };
+      }
+      const orderId = (Array.isArray(rows) ? rows[0]?.order_id : null) ?? null;
+
+      if (session?.id) {
+        await context.supabase
+          .from("user_card_attempt_sessions")
+          .update({
+            free_grant: true,
+            free_order_id: orderId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", session.id);
+      } else {
+        await context.supabase.from("user_card_attempt_sessions").insert({
+          user_id: context.userId,
+          session_key: data.sessionKey,
+          free_grant: true,
+          free_order_id: orderId,
+        });
+      }
+
+      return {
+        ok: true,
+        attempts: attemptState(
+          session?.attempts_used ?? 0,
+          session?.extra_packs ?? 0,
+          FREE_FIRST_CARD_ATTEMPTS,
+        ),
+      };
+    },
+  );
+
+/**
+ * A technical generation failure must never burn the one free card: as long as
+ * no picture was successfully stored for this creation, the account-level
+ * entitlement is released again and the customer can simply retry for free.
+ */
+export const releaseFreeFirstCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sessionKey: string }) => ({
+    sessionKey: String(input?.sessionKey ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data, context }): Promise<{ released: boolean }> => {
+    if (!data.sessionKey) return { released: false };
+    const { data: session } = await context.supabase
+      .from("user_card_attempt_sessions")
+      .select("id, attempts_used, free_grant, free_order_id")
+      .eq("user_id", context.userId)
+      .eq("session_key", data.sessionKey)
+      .maybeSingle();
+    // A successful picture already exists: the free right stays used.
+    if (!session?.free_grant || session.attempts_used > 0) return { released: false };
+
+    if (session.free_order_id) {
+      const { error } = await context.supabase.rpc("release_first_free_greeting", {
+        _order_id: session.free_order_id,
+      });
+      if (error) return { released: false };
+    }
+    await context.supabase
+      .from("user_card_attempt_sessions")
+      .update({ free_grant: false, free_order_id: null, updated_at: new Date().toISOString() })
+      .eq("id", session.id);
+    return { released: true };
+  });
