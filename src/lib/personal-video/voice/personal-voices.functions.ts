@@ -10,6 +10,9 @@ interface SampleInput {
   extension: string;
   durationSeconds: number;
   textId: string;
+  /** Studio-readable WAV rendition of the very same recording. */
+  renditionBase64?: string;
+  renditionMime?: string;
 }
 
 /** Clones a new reusable voice profile from 1-2 short enrollment samples. */
