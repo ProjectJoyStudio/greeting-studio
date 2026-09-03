@@ -85,6 +85,9 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [keywords, setKeywords] = useState("");
   const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
   const [action, setAction] = useState("");
+  // Lets the free "Edit description" choice bring the customer straight back
+  // to the animation description they already wrote.
+  const actionRef = useRef<HTMLTextAreaElement | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [readOnly, setReadOnly] = useState(false);
@@ -393,6 +396,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
               {/* What happens in the video */}
               <Panel icon={<Clapperboard className="h-4 w-4" />} title={t("pvr_action_title")}>
                 <textarea
+                  ref={actionRef}
                   value={action}
                   onChange={(e) => setAction(e.target.value)}
                   disabled={readOnly}
@@ -494,6 +498,13 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 music={music}
                 disabled={readOnly}
                 onChanged={() => void query.refetch()}
+                onEditDescription={() => {
+                  const field = actionRef.current;
+                  if (!field) return;
+                  field.scrollIntoView({ behavior: "smooth", block: "center" });
+                  field.focus({ preventScroll: true });
+                  field.setSelectionRange(field.value.length, field.value.length);
+                }}
               />
             </div>
           </div>
