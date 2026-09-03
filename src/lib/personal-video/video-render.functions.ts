@@ -219,10 +219,18 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         addedPersons[0] ??
         null;
 
-      // Automatic routing. A designated speaker gives the speaking film; a
-      // scene without an added person is animated and the prepared greeting
-      // is heard over it. The customer never chooses between the two.
-      const route: "person" | "scene" = speaker ? "person" : "scene";
+      // Personal Video Greeting is a talking-person product. Without an added
+      // person there is nobody to speak the greeting, so the order is stopped
+      // here — before any credit is taken and before any engine is asked.
+      if (!speaker) {
+        return {
+          ok: false,
+          error: "pvr_err_no_person_engine",
+          video: null,
+          balance: await balanceOf(),
+        };
+      }
+      const route = "person" as const;
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       const isAgain = ready.length > 0;
@@ -309,16 +317,14 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         project.action_description ?? "",
         "animation",
       );
-      const { buildVideoPrompt, buildScenePrompt } = await import("./generator/video-prompt");
-      const prompt = speaker
-        ? buildVideoPrompt({
-            actionDescription: translatedAction.english,
-            speakerName: named(speaker, addedPersons.indexOf(speaker)),
-            speakerIndex: addedPersons.indexOf(speaker),
-            totalPeople: addedPersons.length,
-            silentNames: [],
-          })
-        : buildScenePrompt(translatedAction.english);
+      const { buildVideoPrompt } = await import("./generator/video-prompt");
+      const prompt = buildVideoPrompt({
+        actionDescription: translatedAction.english,
+        speakerName: named(speaker, addedPersons.indexOf(speaker)),
+        speakerIndex: addedPersons.indexOf(speaker),
+        totalPeople: addedPersons.length,
+        silentNames: [],
+      });
 
       const variantIndex =
         ready.length > 0 ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1 : 1;
@@ -339,7 +345,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           action_description: project.action_description ?? "",
           seed,
           audio_seconds: audioSeconds,
-          speaker_person_id: speaker?.id ?? null,
+          speaker_person_id: speaker.id,
         } as never)
         .select(VIDEO_COLUMNS)
         .single();
