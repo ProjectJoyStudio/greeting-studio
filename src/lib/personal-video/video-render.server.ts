@@ -172,7 +172,15 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
       error_message: progress.errorMessage,
       completed_at: new Date().toISOString(),
     });
-    await refundVideo(row, progress.errorCode);
+    // The refund is attempted here and nowhere else for this film. If it
+    // cannot be completed the charge stays visible on the film, so nobody is
+    // ever told that credits came back when they did not.
+    try {
+      await refundVideo(row, progress.errorCode);
+    } catch {
+      // Left charged on purpose; the next reconcile pass tries again.
+    }
+
     await supabaseAdmin
       .from("pvg_projects")
       .update({ status: "video_failed" } as never)
