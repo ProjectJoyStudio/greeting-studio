@@ -310,14 +310,16 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         project.action_description ?? "",
         "animation",
       );
-      const { buildVideoPrompt } = await import("./generator/video-prompt");
-      const prompt = buildVideoPrompt({
-        actionDescription: translatedAction.english,
-        speakerName: named(speaker, addedPersons.indexOf(speaker)),
-        speakerIndex: addedPersons.indexOf(speaker),
-        totalPeople: addedPersons.length,
-        silentNames: [],
-      });
+      const { buildVideoPrompt, buildScenePrompt } = await import("./generator/video-prompt");
+      const prompt = speaker
+        ? buildVideoPrompt({
+            actionDescription: translatedAction.english,
+            speakerName: named(speaker, addedPersons.indexOf(speaker)),
+            speakerIndex: addedPersons.indexOf(speaker),
+            totalPeople: addedPersons.length,
+            silentNames: [],
+          })
+        : buildScenePrompt(translatedAction.english);
 
       const variantIndex =
         ready.length > 0 ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1 : 1;
