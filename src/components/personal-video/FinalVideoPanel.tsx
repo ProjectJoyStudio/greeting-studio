@@ -382,7 +382,11 @@ export function FinalVideoPanel({
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
-          <p className="text-sm text-destructive">{t("pvr_status_failed")}</p>
+          {/* Only a film whose charge really came back says so. */}
+          <p className="text-sm text-destructive">
+            {t(video.creditsCharged > 0 ? "pvr_status_failed" : "pvr_status_failed_refunded")}
+          </p>
+
           <button
             type="button"
             disabled={disabled || starting}
