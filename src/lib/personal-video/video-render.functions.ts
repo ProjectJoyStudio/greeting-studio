@@ -399,13 +399,24 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           } as never)
           .eq("id", videoRow.id);
         const { refundVideo } = await import("./video-render.server");
-        await refundVideo(videoRow, "engine_error");
+        // The customer is only told about a return that really happened.
+        let refunded = 0;
+        try {
+          refunded = await refundVideo(videoRow, "engine_error");
+        } catch {
+          refunded = 0;
+        }
         return {
           ok: false,
-          error: "pvr_err_generic",
-          video: await toVideoJob({ ...videoRow, status: "failed", credits_charged: 0 }),
+          error: refunded > 0 ? "pvr_err_generic" : "pvr_err_refund_pending",
+          video: await toVideoJob({
+            ...videoRow,
+            status: "failed",
+            credits_charged: refunded > 0 ? 0 : videoRow.credits_charged,
+          }),
           balance: await balanceOf(),
         };
+
       }
 
       const fresh = await loadRow(supabase, videoRow.id);
