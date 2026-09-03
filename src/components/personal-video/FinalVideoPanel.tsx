@@ -43,11 +43,14 @@ export function FinalVideoPanel({
   music,
   disabled,
   onChanged,
+  onEditDescription,
 }: {
   projectId: string;
   music: PvgMusicSettings;
   disabled?: boolean;
   onChanged?: () => void;
+  /** Takes the customer back to the free animation-description field. */
+  onEditDescription?: () => void;
 }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -67,7 +70,12 @@ export function FinalVideoPanel({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [delivering, setDelivering] = useState(false);
   const [mixing, setMixing] = useState(false);
+  // The question is asked once per regeneration; after the customer has
+  // chosen to edit the description it is not asked again for that edit.
+  const [askAgain, setAskAgain] = useState(false);
+  const [descriptionEdited, setDescriptionEdited] = useState(false);
   const mixAttempts = useRef<Set<string>>(new Set());
+
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -201,6 +209,7 @@ export function FinalVideoPanel({
         toast.error(t(res.error ?? "pvr_err_generic"));
       } else if (again) {
         toast.success(t("pvr_again_started"));
+        setDescriptionEdited(false);
       }
       refreshCredits(res.balance);
       await query.refetch();
@@ -211,6 +220,22 @@ export function FinalVideoPanel({
       setStarting(false);
     }
   }
+
+  /**
+   * Another film costs credits, so the customer is first asked whether the
+   * animation description should be changed. Nothing is charged or started
+   * until they answer. Once they have chosen to edit, the question is not
+   * repeated for that edit.
+   */
+  function requestAgain() {
+    if (starting || running || disabled) return;
+    if (descriptionEdited) {
+      void create(true);
+      return;
+    }
+    setAskAgain(true);
+  }
+
 
   async function pick(videoId: string) {
     setActiveId(videoId);
@@ -331,7 +356,7 @@ export function FinalVideoPanel({
               <button
                 type="button"
                 disabled={disabled || starting || balance < PVR_REGENERATION_CREDITS}
-                onClick={() => void create(true)}
+                onClick={requestAgain}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/50 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
               >
                 {starting ? (
@@ -344,8 +369,41 @@ export function FinalVideoPanel({
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                 {balance < PVR_REGENERATION_CREDITS ? t("pvr_err_credits") : t("pvr_again_note")}
               </p>
+
+              {askAgain && (
+                <div className="rounded-2xl border border-primary/40 bg-background/80 p-4">
+                  <p className="text-sm font-medium">{t("pvr_again_confirm_title")}</p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {t("pvr_again_confirm_note")}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAskAgain(false);
+                        setDescriptionEdited(true);
+                        onEditDescription?.();
+                      }}
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-border/60 px-4 py-2.5 text-xs font-medium transition hover:border-primary/50"
+                    >
+                      {t("pvr_again_edit")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAskAgain(false);
+                        void create(true);
+                      }}
+                      className="inline-flex flex-1 items-center justify-center rounded-full bg-gold-gradient px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-warm"
+                    >
+                      {t("pvr_again_now")} — {PVR_REGENERATION_CREDITS} {word}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
           {trackUrl && (
             <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
@@ -382,7 +440,11 @@ export function FinalVideoPanel({
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
-          <p className="text-sm text-destructive">{t("pvr_status_failed")}</p>
+          {/* Only a film whose charge really came back says so. */}
+          <p className="text-sm text-destructive">
+            {t(video.creditsCharged > 0 ? "pvr_status_failed" : "pvr_status_failed_refunded")}
+          </p>
+
           <button
             type="button"
             disabled={disabled || starting}

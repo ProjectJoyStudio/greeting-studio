@@ -112,20 +112,26 @@ export async function markSelectedVariant(projectId: string, videoId: string): P
     .eq("id", videoId);
 }
 
-/** Gives back exactly what one failed film took, and never more. */
-export async function refundVideo(row: VideoRow, reason: string): Promise<void> {
-  if (row.credits_charged <= 0) return;
+/**
+ * Gives back exactly what one failed film took, and never more. Returns the
+ * number of credits that really went back to the wallet: 0 means there was
+ * nothing left to return, because the same film was already refunded once.
+ */
+export async function refundVideo(row: VideoRow, reason: string): Promise<number> {
+  if (row.credits_charged <= 0) return 0;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const rpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
     name: string,
     args: Record<string, unknown>,
-  ) => Promise<{ error: { message: string } | null }>;
-  const { error } = await rpc("refund_pvg_video_credits", {
+  ) => Promise<{ data: number | null; error: { message: string } | null }>;
+  const { data, error } = await rpc("refund_pvg_video_credits", {
     _video_id: row.id,
     _reason: reason,
   });
   if (error) throw new Error(error.message);
+  return Number(data ?? 0);
 }
+
 
 /**
  * Moves one running film forward. It runs with service rights, so the work
@@ -166,7 +172,15 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
       error_message: progress.errorMessage,
       completed_at: new Date().toISOString(),
     });
-    await refundVideo(row, progress.errorCode);
+    // The refund is attempted here and nowhere else for this film. If it
+    // cannot be completed the charge stays visible on the film, so nobody is
+    // ever told that credits came back when they did not.
+    try {
+      await refundVideo(row, progress.errorCode);
+    } catch {
+      // Left charged on purpose; the next reconcile pass tries again.
+    }
+
     await supabaseAdmin
       .from("pvg_projects")
       .update({ status: "video_failed" } as never)
