@@ -275,16 +275,6 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         defaultBackup: null,
         defaultAutoFailover: false,
       },
-      {
-        // Scenes without a specially added speaking person: the picture is
-        // animated and the prepared greeting is heard over it.
-        id: "personal_video.no_person_video",
-        titleKey: "gc_fn_no_person_video",
-        candidates: [RUNWARE("rw_wan26_flash", "alibaba:wan@2.6-flash")],
-        defaultPrimary: "rw_wan26_flash",
-        defaultBackup: null,
-        defaultAutoFailover: false,
-      },
     ],
   },
   {
