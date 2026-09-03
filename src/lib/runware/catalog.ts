@@ -90,6 +90,20 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
     minDuration: 3,
     maxDuration: 15,
   },
+  rw_pvideo_avatar: {
+    key: "rw_pvideo_avatar",
+    air: "prunaai:p-video@avatar",
+    label: "P-Video-Avatar",
+    // A speaking-avatar engine: it accepts the prepared greeting track and
+    // lip-synchronises the person in the starting picture to it.
+    supportsAudioInput: true,
+    supportsPreparedAudio: true,
+    // The film lasts exactly as long as the greeting that is handed in; the
+    // engine takes no duration of its own.
+    acceptsDuration: false,
+    minDuration: 1,
+    maxDuration: 60,
+  },
 };
 
 /** Engines offered for the Live Cards start picture and greeting-card artwork. */
