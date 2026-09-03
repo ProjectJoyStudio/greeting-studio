@@ -474,7 +474,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {main ? 1 : 0}/{PVG_MAX_ADDED_PEOPLE}
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("pvg_person_hint")}</p>
 
             {main ? (
               <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
