@@ -30,13 +30,13 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
-        scene_sounds: sceneSounds,
+        scene_sounds: false,
         ...(data.actionDescription === undefined
           ? {}
           : { action_description: data.actionDescription.slice(0, 2000) }),
         ...(data.music ? { music_settings: music as unknown as Record<string, never> } : {}),
         workflow_step: "video",
-        order_cost: videoCredits(seconds) + (sceneSounds ? sceneSoundCredits(seconds) : 0),
+        order_cost: videoCredits(seconds),
       })
       .eq("id", data.projectId)
       .is("deleted_at", null);
