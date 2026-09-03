@@ -245,7 +245,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const spokenSeconds = Number(voiceover?.durationSeconds ?? 0);
       const audioSeconds = Math.max(spokenSeconds, duration);
       const { maxGreetingAudioSeconds } = await import("./generator/pipeline.server");
-      const maxAudio = maxGreetingAudioSeconds();
+      const maxAudio = maxGreetingAudioSeconds(route);
       if (audioSeconds > maxAudio) {
         return {
           ok: false,
