@@ -571,11 +571,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                   </MiniButton>
                 </div>
               </div>
-            ) : (
-              <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-                {t("pvg_person_none")}
-              </p>
-            )}
+            ) : null}
 
             {issueFor("people") && (
               <p className="mt-4 text-xs text-destructive">{t(issueFor("people")!.key)}</p>
