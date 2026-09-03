@@ -131,11 +131,19 @@ export function maxGreetingAudioSeconds(route: FinalVideoRoute = "person"): numb
  * The engines of the group, in the order this job should try them: the
  * administrator's primary first, then any allowed alternative.
  */
-export async function finalVideoOrder(): Promise<string[]> {
-  const keys = Object.keys(FINAL_VIDEO_ENGINES);
+export async function finalVideoOrder(route: FinalVideoRoute = "person"): Promise<string[]> {
+  const usable = enginesFor(route).map((e) => e.key);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, keys);
+    if (route === "scene") {
+      const own = await generatorOrder(SCENE_VIDEO_FUNCTION_ID, usable);
+      if (own.length) return own;
+      // The scene route may not be configured separately yet; in that case the
+      // engines of the film group that can animate a scene are used.
+      const shared = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
+      return shared.length ? shared : usable.slice(0, 1);
+    }
+    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, Object.keys(FINAL_VIDEO_ENGINES));
   } catch {
     return [];
   }
