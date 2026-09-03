@@ -11,7 +11,6 @@ import {
   PenLine,
   Clapperboard,
   Sparkles,
-  Waves,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +38,6 @@ import {
   clampDuration,
   costSummary,
   greetingFit,
-  sceneSoundCredits,
   type PvsGreetingMode,
 } from "@/lib/personal-video/video-setup";
 
@@ -86,7 +84,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   const [greeting, setGreeting] = useState("");
   const [keywords, setKeywords] = useState("");
   const [music, setMusic] = useState<PvgMusicSettings>(DEFAULT_MUSIC_SETTINGS);
-  const [sceneSounds, setSceneSounds] = useState(false);
   const [action, setAction] = useState("");
   const [working, setWorking] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -127,7 +124,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     setGreeting(project.videoSetup.greetingText);
     setKeywords(project.videoSetup.greetingKeywords);
     setMusic(project.music);
-    setSceneSounds(project.sceneSounds);
     setAction(project.actionDescription);
   }, [project]);
 
@@ -143,7 +139,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
         greetingText: greeting,
         greetingKeywords: keywords,
         music,
-        sceneSounds,
         actionDescription: action,
       },
     })
@@ -157,7 +152,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
     greeting,
     keywords,
     music,
-    sceneSounds,
     action,
     saveSetup,
   ]);
@@ -189,7 +183,7 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
   );
 
   const fit = greetingFit(greeting, duration);
-  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance, sceneSounds);
+  const cost = costSummary(project?.creditsCharged ?? 0, duration, balance);
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
 
   async function runCompose(task: "compose" | "shorten" | "expand") {
@@ -440,31 +434,6 @@ export function VideoSetupPage({ projectId }: { projectId?: string | undefined }
                 onChange={setMusic}
               />
 
-              {/* The quiet life of the picture */}
-              <Panel icon={<Waves className="h-4 w-4" />} title={t("pvr_sounds_title")}>
-                <div className="flex flex-wrap gap-2">
-                  {[false, true].map((value) => (
-                    <button
-                      key={String(value)}
-                      type="button"
-                      disabled={readOnly}
-                      onClick={() => setSceneSounds(value)}
-                      className={`rounded-full border px-4 py-2 text-xs font-medium transition disabled:opacity-60 ${
-                        sceneSounds === value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/60 hover:border-primary/40"
-                      }`}
-                    >
-                      {value
-                        ? `${t("pvr_sounds_on")} · +${sceneSoundCredits(duration)} ${word}`
-                        : t("pvr_sounds_off")}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-                  {t("pvr_sounds_hint")}
-                </p>
-              </Panel>
             </div>
 
             {/* RIGHT — the approved picture and the live cost -------------- */}
