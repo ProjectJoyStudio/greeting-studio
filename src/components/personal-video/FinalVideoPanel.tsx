@@ -43,11 +43,14 @@ export function FinalVideoPanel({
   music,
   disabled,
   onChanged,
+  onEditDescription,
 }: {
   projectId: string;
   music: PvgMusicSettings;
   disabled?: boolean;
   onChanged?: () => void;
+  /** Takes the customer back to the free animation-description field. */
+  onEditDescription?: () => void;
 }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -67,7 +70,12 @@ export function FinalVideoPanel({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [delivering, setDelivering] = useState(false);
   const [mixing, setMixing] = useState(false);
+  // The question is asked once per regeneration; after the customer has
+  // chosen to edit the description it is not asked again for that edit.
+  const [askAgain, setAskAgain] = useState(false);
+  const [descriptionEdited, setDescriptionEdited] = useState(false);
   const mixAttempts = useRef<Set<string>>(new Set());
+
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
