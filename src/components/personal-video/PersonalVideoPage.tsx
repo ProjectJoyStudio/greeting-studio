@@ -332,30 +332,36 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     }
   }
 
-  /** Pays one credit for three more starting-scene attempts, never twice. */
-  async function runBuyPack() {
-    if (!project || busy !== null) return;
+  /**
+   * One press of the paid action: the scene input is checked first, the
+   * package is paid for only when no paid attempt is left, and the first
+   * starting scene begins immediately afterwards. A package that already
+   * holds unused attempts is never paid for twice.
+   */
+  async function runStartScene() {
+    if (!project || busy !== null || hasRunning) return;
+    // Nothing is charged while a required input is still missing.
+    const missing = blocking[0];
+    if (missing) {
+      toast.error(t(missing.key));
+      return;
+    }
     setBusy("pack");
     try {
-      const res = await buyPack({ data: { projectId: project.id } });
-      if (res.project) setProject(res.project);
-      if (typeof res.balance === "number") {
-        setBalance(res.balance);
-        pushBalance(res.balance);
+      if (needsExtraCredit) {
+        const bought = await buyPack({ data: { projectId: project.id } });
+        if (bought.project) setProject(bought.project);
+        if (typeof bought.balance === "number") {
+          setBalance(bought.balance);
+          pushBalance(bought.balance);
+        }
+        if (!bought.ok) {
+          toast.error(t("pvg_err_credits"));
+          return;
+        }
+        toast.success(t("pvg_attempts_bought"));
       }
-      if (!res.ok) toast.error(t("pvg_err_credits"));
-      else toast.success(t("pvg_attempts_bought"));
-    } catch {
-      toast.error(t("pvg_scene_failed"));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function runGenerate() {
-    if (!project || busy !== null) return;
-    setBusy("generate");
-    try {
+      setBusy("generate");
       const res = await generate({ data: { projectId: project.id } });
       if (res.project) setProject(res.project);
       if (typeof res.balance === "number") setBalance(res.balance);
@@ -368,6 +374,10 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
     } finally {
       setBusy(null);
     }
+  }
+
+  async function runGenerate() {
+    await runStartScene();
   }
 
   if (!isAuthenticated) {
