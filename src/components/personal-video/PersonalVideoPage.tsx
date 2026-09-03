@@ -474,7 +474,6 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 {main ? 1 : 0}/{PVG_MAX_ADDED_PEOPLE}
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("pvg_person_hint")}</p>
 
             {main ? (
               <div className="mt-5 rounded-2xl border border-border/60 bg-background/60 p-4">
@@ -572,11 +571,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                   </MiniButton>
                 </div>
               </div>
-            ) : (
-              <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-                {t("pvg_person_none")}
-              </p>
-            )}
+            ) : null}
 
             {issueFor("people") && (
               <p className="mt-4 text-xs text-destructive">{t(issueFor("people")!.key)}</p>
