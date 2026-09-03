@@ -356,7 +356,7 @@ export function FinalVideoPanel({
               <button
                 type="button"
                 disabled={disabled || starting || balance < PVR_REGENERATION_CREDITS}
-                onClick={() => void create(true)}
+                onClick={requestAgain}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/50 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
               >
                 {starting ? (
@@ -369,8 +369,41 @@ export function FinalVideoPanel({
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                 {balance < PVR_REGENERATION_CREDITS ? t("pvr_err_credits") : t("pvr_again_note")}
               </p>
+
+              {askAgain && (
+                <div className="rounded-2xl border border-primary/40 bg-background/80 p-4">
+                  <p className="text-sm font-medium">{t("pvr_again_confirm_title")}</p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {t("pvr_again_confirm_note")}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAskAgain(false);
+                        setDescriptionEdited(true);
+                        onEditDescription?.();
+                      }}
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-border/60 px-4 py-2.5 text-xs font-medium transition hover:border-primary/50"
+                    >
+                      {t("pvr_again_edit")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAskAgain(false);
+                        void create(true);
+                      }}
+                      className="inline-flex flex-1 items-center justify-center rounded-full bg-gold-gradient px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-warm"
+                    >
+                      {t("pvr_again_now")} — {PVR_REGENERATION_CREDITS} {word}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
           {trackUrl && (
             <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
