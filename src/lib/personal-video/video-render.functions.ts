@@ -369,6 +369,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           audioUrl: renderAudioUrl,
           audioSeconds,
           seed,
+          route,
         });
         await supabaseAdmin
           .from("pvg_videos")
