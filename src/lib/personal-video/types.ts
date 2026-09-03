@@ -192,6 +192,11 @@ export function validatePvgProject(
   if (project.sceneDescription.trim().length < 15) {
     issues.push({ field: "sceneDescription", key: "pvg_err_description" });
   }
+  // The greeting is spoken by a person, so this order needs its own uploaded
+  // person before the very first starting scene can be created.
+  if (people.length === 0) {
+    issues.push({ field: "people", key: "pvg_err_person_required" });
+  }
   if (people.length > PVG_MAX_ADDED_PEOPLE) {
     issues.push({ field: "people", key: "pvg_err_people_max" });
   }
