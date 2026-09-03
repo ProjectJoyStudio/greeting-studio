@@ -165,6 +165,7 @@ export async function synthesizeTrack(args: {
       voiceProvider: provider,
       selection: args.voiceId,
       userId: args.userId,
+      projectId: args.projectId,
       request: {
         text,
         voiceId: voice.id,
@@ -333,6 +334,7 @@ export async function generateVoiceover(args: {
       voiceProvider: provider,
       selection: args.voiceId,
       userId: args.userId,
+      projectId: args.projectId,
       request: {
         text,
         voiceId: voice.id,

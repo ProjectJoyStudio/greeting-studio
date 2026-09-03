@@ -50,6 +50,8 @@ export async function speak(args: {
   selection?: string;
   /** Owner of a personal voice, needed to read their own recording. */
   userId?: string;
+  /** The order this greeting belongs to, so a failure can be looked up later. */
+  projectId?: string;
 }): Promise<SpokenResult> {
   const order: string[] = [];
   const cloneKey = args.voiceProvider === "elevenlabs" ? "elevenlabs_tts" : args.voiceProvider;
@@ -112,7 +114,25 @@ export async function speak(args: {
       };
     } catch (error) {
       lastError = error;
+      const message = error instanceof Error ? error.message : "unknown_error";
       console.error(`[pvg-voice] engine "${key}" failed:`, error);
+      // Every studio that could not speak is written down, so a failure of the
+      // first studio stays visible even when the backup succeeds. Only the
+      // engine, the voice and a plain message are kept — never keys or audio.
+      if (args.projectId && args.userId) {
+        const { logVoiceRequest } = await import("./voice.server");
+        await logVoiceRequest({
+          projectId: args.projectId,
+          userId: args.userId,
+          provider: key,
+          voiceId: args.request.voiceId,
+          language: args.request.language,
+          characterCount: args.request.text.length,
+          generationMs: 0,
+          success: false,
+          errorMessage: message.slice(0, 300),
+        }).catch(() => undefined);
+      }
     }
   }
 

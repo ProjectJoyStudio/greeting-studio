@@ -115,6 +115,25 @@ async function upload(path: string, base64: string, mimeType: string): Promise<v
   if (res.error) throw new Error(res.error.message);
 }
 
+/**
+ * Keeps the studio-readable WAV rendition of one recording next to the
+ * original. The original is never touched; when no rendition was prepared the
+ * sample is simply stored without one.
+ */
+async function storeRendition(args: {
+  userId: string;
+  voiceId: string;
+  index: number;
+  base64?: string;
+  mime?: string;
+}): Promise<Pick<StoredSample, "renditionBucket" | "renditionPath" | "renditionMime">> {
+  if (!args.base64) return {};
+  const mime = args.mime || "audio/wav";
+  const path = `${args.userId}/personal-voices/${args.voiceId}-sample${args.index + 1}-${Date.now()}-rendition.wav`;
+  await upload(path, args.base64, mime);
+  return { renditionBucket: VOICE_BUCKET, renditionPath: path, renditionMime: mime };
+}
+
 async function readOwned(userId: string, voiceId: string) {
   const db = await admin();
   const { data } = await db
@@ -218,6 +237,8 @@ export async function createVoiceProfile(args: {
     extension: string;
     durationSeconds: number;
     textId: string;
+    renditionBase64?: string;
+    renditionMime?: string;
   }[];
 }): Promise<PersonalVoice> {
   if (!args.consentConfirmed) throw new Error("consent_required");
@@ -260,6 +281,13 @@ export async function createVoiceProfile(args: {
         mime: sample.mimeType || "audio/webm",
         seconds: sample.durationSeconds,
         textId: sample.textId,
+        ...(await storeRendition({
+          userId: args.userId,
+          voiceId,
+          index,
+          base64: sample.renditionBase64,
+          mime: sample.renditionMime,
+        })),
       });
     }
 
@@ -321,6 +349,8 @@ export async function addVoiceSample(args: {
     extension: string;
     durationSeconds: number;
     textId: string;
+    renditionBase64?: string;
+    renditionMime?: string;
   };
 }): Promise<PersonalVoice> {
   const db = await admin();
@@ -345,6 +375,13 @@ export async function addVoiceSample(args: {
         mime: args.sample.mimeType || "audio/webm",
         seconds: args.sample.durationSeconds,
         textId: args.sample.textId,
+        ...(await storeRendition({
+          userId: args.userId,
+          voiceId: args.voiceId,
+          index: existing.length,
+          base64: args.sample.renditionBase64,
+          mime: args.sample.renditionMime,
+        })),
       },
     ];
     const totalSeconds = stored.reduce((sum, sample) => sum + sample.seconds, 0);
@@ -593,4 +630,67 @@ export async function deletePersonalVoice(
   if (error) throw new Error(error.message);
 
   return { affectedProjects: affected.size };
+}
+
+/**
+ * Own Voice recordings of one person that still have no studio-readable WAV
+ * rendition. Nothing is changed here: the list simply names the recordings the
+ * browser may prepare a rendition from.
+ */
+export async function listRepairableSamples(
+  userId: string,
+): Promise<{ voiceId: string; index: number; url: string; mime: string }[]> {
+  const db = await admin();
+  const { data } = await db.from("pvg_personal_voices").select("*").eq("user_id", userId);
+  if (!Array.isArray(data)) return [];
+  const items: { voiceId: string; index: number; url: string; mime: string }[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of data as Record<string, any>[]) {
+    const samples = samplesOf(row);
+    for (const [index, sample] of samples.entries()) {
+      if (sample.renditionPath) continue;
+      const url = await signed(sample.bucket || VOICE_BUCKET, sample.path);
+      if (!url) continue;
+      items.push({ voiceId: row["id"], index, url, mime: sample.mime || "audio/webm" });
+    }
+  }
+  return items;
+}
+
+/**
+ * Keeps one prepared WAV rendition beside the original recording of the same
+ * Own Voice profile. A rendition that already exists is never overwritten and
+ * no new profile is ever created.
+ */
+export async function saveSampleRendition(args: {
+  userId: string;
+  voiceId: string;
+  index: number;
+  base64: string;
+  mimeType: string;
+}): Promise<{ saved: boolean }> {
+  const db = await admin();
+  const row = await readOwned(args.userId, args.voiceId);
+  const samples = samplesOf(row);
+  const sample = samples[args.index];
+  if (!sample || sample.renditionPath) return { saved: false };
+  if (!args.base64) return { saved: false };
+
+  const rendition = await storeRendition({
+    userId: args.userId,
+    voiceId: args.voiceId,
+    index: args.index,
+    base64: args.base64,
+    mime: args.mimeType || "audio/wav",
+  });
+  if (!rendition.renditionPath) return { saved: false };
+
+  const next = samples.map((entry, i) => (i === args.index ? { ...entry, ...rendition } : entry));
+  const { error } = await db
+    .from("pvg_personal_voices")
+    .update({ samples: next as unknown as import("@/integrations/supabase/types").Json })
+    .eq("id", args.voiceId)
+    .eq("user_id", args.userId);
+  if (error) throw new Error(error.message);
+  return { saved: true };
 }
