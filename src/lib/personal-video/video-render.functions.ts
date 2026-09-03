@@ -219,16 +219,10 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         addedPersons[0] ??
         null;
 
-      // Automatic routing. No designated speaker means the film belongs to the
-      // scene route, whose engine slot is prepared but not connected yet.
-      if (!speaker) {
-        return {
-          ok: false,
-          error: "pvr_err_no_person_engine",
-          video: null,
-          balance: await balanceOf(),
-        };
-      }
+      // Automatic routing. A designated speaker gives the speaking film; a
+      // scene without an added person is animated and the prepared greeting
+      // is heard over it. The customer never chooses between the two.
+      const route: "person" | "scene" = speaker ? "person" : "scene";
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       const sceneSounds = Boolean(project.scene_sounds);
