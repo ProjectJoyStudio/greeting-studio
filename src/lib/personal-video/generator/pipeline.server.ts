@@ -114,11 +114,16 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
 /** Prefix of a film that runs at Runware instead of Replicate. */
 const RUNWARE_PREFIX = "runware:";
 
-/** The longest greeting voice the active engines can speak. */
-export function maxGreetingAudioSeconds(): number {
-  const values = Object.values(FINAL_VIDEO_ENGINES)
-    .filter((e) => e.keepsPreparedVoice)
-    .map((e) => e.maxAudioSeconds);
+/** Engines able to serve one route with the prepared greeting inside. */
+function enginesFor(route: FinalVideoRoute): FinalVideoEngine[] {
+  return Object.values(FINAL_VIDEO_ENGINES).filter(
+    (e) => e.keepsPreparedVoice && (route === "person" || !e.requiresPerson),
+  );
+}
+
+/** The longest greeting voice the active engines of one route can speak. */
+export function maxGreetingAudioSeconds(route: FinalVideoRoute = "person"): number {
+  const values = enginesFor(route).map((e) => e.maxAudioSeconds);
   return values.length ? Math.max(...values) : 0;
 }
 
