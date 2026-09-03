@@ -214,12 +214,20 @@ async function createPrediction(model: string, input: Record<string, unknown>): 
  * refused openly instead.
  */
 export async function startFinalVideo(
-  input: FinalVideoInput & { audioSeconds: number },
+  input: FinalVideoInput & { audioSeconds: number; route?: FinalVideoRoute },
 ): Promise<FinalVideoStartResult> {
+  const route: FinalVideoRoute = input.route ?? "person";
   let lastError: unknown = null;
-  for (const key of await finalVideoOrder()) {
+  for (const key of await finalVideoOrder(route)) {
     const engine = FINAL_VIDEO_ENGINES[key];
     if (!engine) continue;
+    if (route === "scene" && engine.requiresPerson) {
+      lastError = new PvgStageError(
+        "engine_incompatible",
+        `${engine.model} animates a speaking person and cannot animate a scene without one.`,
+      );
+      continue;
+    }
     if (!engine.keepsPreparedVoice) {
       lastError = new PvgStageError(
         "engine_incompatible",
