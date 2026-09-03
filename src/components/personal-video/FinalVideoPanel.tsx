@@ -209,6 +209,7 @@ export function FinalVideoPanel({
         toast.error(t(res.error ?? "pvr_err_generic"));
       } else if (again) {
         toast.success(t("pvr_again_started"));
+        setDescriptionEdited(false);
       }
       refreshCredits(res.balance);
       await query.refetch();
@@ -219,6 +220,22 @@ export function FinalVideoPanel({
       setStarting(false);
     }
   }
+
+  /**
+   * Another film costs credits, so the customer is first asked whether the
+   * animation description should be changed. Nothing is charged or started
+   * until they answer. Once they have chosen to edit, the question is not
+   * repeated for that edit.
+   */
+  function requestAgain() {
+    if (starting || running || disabled) return;
+    if (descriptionEdited) {
+      void create(true);
+      return;
+    }
+    setAskAgain(true);
+  }
+
 
   async function pick(videoId: string) {
     setActiveId(videoId);
