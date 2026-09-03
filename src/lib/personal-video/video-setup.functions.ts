@@ -23,7 +23,6 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
     // Music belongs to the whole video and never changes the credit cost.
     const music = normalizeMusicSettings(data.music);
     const seconds = clampDuration(data.durationSeconds);
-    const sceneSounds = data.sceneSounds === true;
     const { error } = await context.supabase
       .from("pvg_projects")
       .update({
