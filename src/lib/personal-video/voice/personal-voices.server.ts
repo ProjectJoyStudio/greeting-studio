@@ -373,6 +373,13 @@ export async function addVoiceSample(args: {
         mime: args.sample.mimeType || "audio/webm",
         seconds: args.sample.durationSeconds,
         textId: args.sample.textId,
+        ...(await storeRendition({
+          userId: args.userId,
+          voiceId: args.voiceId,
+          index: existing.length,
+          base64: args.sample.renditionBase64,
+          mime: args.sample.renditionMime,
+        })),
       },
     ];
     const totalSeconds = stored.reduce((sum, sample) => sum + sample.seconds, 0);
