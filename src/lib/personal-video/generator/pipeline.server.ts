@@ -132,18 +132,15 @@ export function maxGreetingAudioSeconds(route: FinalVideoRoute = "person"): numb
  * administrator's primary first, then any allowed alternative.
  */
 export async function finalVideoOrder(route: FinalVideoRoute = "person"): Promise<string[]> {
+  // One single administrator choice serves both routes. A scene without a
+  // person simply cannot use an avatar engine, so those are filtered out of
+  // the very same order the administrator configured.
   const usable = enginesFor(route).map((e) => e.key);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    if (route === "scene") {
-      const own = await generatorOrder(SCENE_VIDEO_FUNCTION_ID, usable);
-      if (own.length) return own;
-      // The scene route may not be configured separately yet; in that case the
-      // engines of the film group that can animate a scene are used.
-      const shared = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
-      return shared.length ? shared : usable.slice(0, 1);
-    }
-    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, Object.keys(FINAL_VIDEO_ENGINES));
+    const order = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
+    if (order.length) return order;
+    return route === "scene" ? usable.slice(0, 1) : [];
   } catch {
     return [];
   }
