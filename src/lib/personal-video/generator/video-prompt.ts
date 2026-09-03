@@ -76,3 +76,25 @@ export function buildVideoPrompt(input: PvgVideoPromptInput): string {
     .filter(Boolean)
     .join(" ");
 }
+
+/**
+ * The English scene control for a film whose picture contains no added
+ * speaking participant. The scene itself is animated and the finished
+ * greeting is simply heard over it; nobody in the picture speaks.
+ */
+export function buildScenePrompt(actionDescription: string): string {
+  const action = motionOnly(actionDescription.trim()) || PVG_DEFAULT_SCENE_ACTION_DESCRIPTION;
+  return [
+    action,
+    "Animate the approved source picture gently and naturally: soft camera motion, light, air, water, foliage, fabric and other elements of the scene move calmly and believably from beginning to end. The video never freezes, never cuts and never ends early.",
+    "Nobody in the picture speaks and no mouth moves as if speaking. The audio is a voice heard over the scene, not spoken by anyone visible.",
+    "Preserve every visual element of the approved source picture exactly, with no new visual elements.",
+    "No added music.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** How a picture without a speaking participant behaves by default. */
+export const PVG_DEFAULT_SCENE_ACTION_DESCRIPTION =
+  "The scene comes gently to life with calm, natural movement and a slow, subtle camera motion.";

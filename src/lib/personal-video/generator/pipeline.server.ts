@@ -17,6 +17,12 @@ const API_BASE = "https://api.replicate.com/v1";
 /** The admin function id of the final-video group. */
 export const FINAL_VIDEO_FUNCTION_ID = "personal_video.final_video";
 
+/** The admin function id of films whose scene has no added speaking person. */
+export const SCENE_VIDEO_FUNCTION_ID = "personal_video.no_person_video";
+
+/** Which of the two films is being made. */
+export type FinalVideoRoute = "person" | "scene";
+
 export interface FinalVideoInput {
   /** The approved starting scene, exactly as page one produced it. */
   imageUrl: string;
@@ -45,6 +51,11 @@ export interface FinalVideoEngine {
    * moving lips and no greeting is a failure, not a result.
    */
   keepsPreparedVoice: boolean;
+  /**
+   * True for avatar engines that animate a speaking human face. They cannot
+   * serve a scene that contains no added person.
+   */
+  requiresPerson?: boolean;
   buildInput: (input: FinalVideoInput) => Record<string, unknown>;
 }
 
@@ -60,6 +71,7 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     provider: "replicate",
     variant: klingMode(),
     keepsPreparedVoice: true,
+    requiresPerson: true,
     // The film lasts as long as the greeting voice; the engine accepts a
     // voice of at most one minute.
     maxAudioSeconds: Number(process.env["PVG_KLING_AVATAR_MAX_AUDIO_SECONDS"] || 60),
@@ -102,11 +114,16 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
 /** Prefix of a film that runs at Runware instead of Replicate. */
 const RUNWARE_PREFIX = "runware:";
 
-/** The longest greeting voice the active engines can speak. */
-export function maxGreetingAudioSeconds(): number {
-  const values = Object.values(FINAL_VIDEO_ENGINES)
-    .filter((e) => e.keepsPreparedVoice)
-    .map((e) => e.maxAudioSeconds);
+/** Engines able to serve one route with the prepared greeting inside. */
+function enginesFor(route: FinalVideoRoute): FinalVideoEngine[] {
+  return Object.values(FINAL_VIDEO_ENGINES).filter(
+    (e) => e.keepsPreparedVoice && (route === "person" || !e.requiresPerson),
+  );
+}
+
+/** The longest greeting voice the active engines of one route can speak. */
+export function maxGreetingAudioSeconds(route: FinalVideoRoute = "person"): number {
+  const values = enginesFor(route).map((e) => e.maxAudioSeconds);
   return values.length ? Math.max(...values) : 0;
 }
 
@@ -114,11 +131,19 @@ export function maxGreetingAudioSeconds(): number {
  * The engines of the group, in the order this job should try them: the
  * administrator's primary first, then any allowed alternative.
  */
-export async function finalVideoOrder(): Promise<string[]> {
-  const keys = Object.keys(FINAL_VIDEO_ENGINES);
+export async function finalVideoOrder(route: FinalVideoRoute = "person"): Promise<string[]> {
+  const usable = enginesFor(route).map((e) => e.key);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, keys);
+    if (route === "scene") {
+      const own = await generatorOrder(SCENE_VIDEO_FUNCTION_ID, usable);
+      if (own.length) return own;
+      // The scene route may not be configured separately yet; in that case the
+      // engines of the film group that can animate a scene are used.
+      const shared = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
+      return shared.length ? shared : usable.slice(0, 1);
+    }
+    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, Object.keys(FINAL_VIDEO_ENGINES));
   } catch {
     return [];
   }
@@ -189,12 +214,20 @@ async function createPrediction(model: string, input: Record<string, unknown>): 
  * refused openly instead.
  */
 export async function startFinalVideo(
-  input: FinalVideoInput & { audioSeconds: number },
+  input: FinalVideoInput & { audioSeconds: number; route?: FinalVideoRoute },
 ): Promise<FinalVideoStartResult> {
+  const route: FinalVideoRoute = input.route ?? "person";
   let lastError: unknown = null;
-  for (const key of await finalVideoOrder()) {
+  for (const key of await finalVideoOrder(route)) {
     const engine = FINAL_VIDEO_ENGINES[key];
     if (!engine) continue;
+    if (route === "scene" && engine.requiresPerson) {
+      lastError = new PvgStageError(
+        "engine_incompatible",
+        `${engine.model} animates a speaking person and cannot animate a scene without one.`,
+      );
+      continue;
+    }
     if (!engine.keepsPreparedVoice) {
       lastError = new PvgStageError(
         "engine_incompatible",

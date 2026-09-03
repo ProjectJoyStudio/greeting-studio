@@ -276,12 +276,12 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
         defaultAutoFailover: false,
       },
       {
-        // Scenes without a specially added speaking person. The slot is
-        // prepared; no engine is connected to it yet.
+        // Scenes without a specially added speaking person: the picture is
+        // animated and the prepared greeting is heard over it.
         id: "personal_video.no_person_video",
         titleKey: "gc_fn_no_person_video",
-        candidates: [],
-        defaultPrimary: null,
+        candidates: [RUNWARE("rw_wan26_flash", "alibaba:wan@2.6-flash")],
+        defaultPrimary: "rw_wan26_flash",
         defaultBackup: null,
         defaultAutoFailover: false,
       },

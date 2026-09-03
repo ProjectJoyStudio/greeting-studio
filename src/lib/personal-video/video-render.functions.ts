@@ -219,16 +219,10 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         addedPersons[0] ??
         null;
 
-      // Automatic routing. No designated speaker means the film belongs to the
-      // scene route, whose engine slot is prepared but not connected yet.
-      if (!speaker) {
-        return {
-          ok: false,
-          error: "pvr_err_no_person_engine",
-          video: null,
-          balance: await balanceOf(),
-        };
-      }
+      // Automatic routing. A designated speaker gives the speaking film; a
+      // scene without an added person is animated and the prepared greeting
+      // is heard over it. The customer never chooses between the two.
+      const route: "person" | "scene" = speaker ? "person" : "scene";
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       const sceneSounds = Boolean(project.scene_sounds);
@@ -251,7 +245,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const spokenSeconds = Number(voiceover?.durationSeconds ?? 0);
       const audioSeconds = Math.max(spokenSeconds, duration);
       const { maxGreetingAudioSeconds } = await import("./generator/pipeline.server");
-      const maxAudio = maxGreetingAudioSeconds();
+      const maxAudio = maxGreetingAudioSeconds(route);
       if (audioSeconds > maxAudio) {
         return {
           ok: false,
@@ -316,14 +310,16 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         project.action_description ?? "",
         "animation",
       );
-      const { buildVideoPrompt } = await import("./generator/video-prompt");
-      const prompt = buildVideoPrompt({
-        actionDescription: translatedAction.english,
-        speakerName: named(speaker, addedPersons.indexOf(speaker)),
-        speakerIndex: addedPersons.indexOf(speaker),
-        totalPeople: addedPersons.length,
-        silentNames: [],
-      });
+      const { buildVideoPrompt, buildScenePrompt } = await import("./generator/video-prompt");
+      const prompt = speaker
+        ? buildVideoPrompt({
+            actionDescription: translatedAction.english,
+            speakerName: named(speaker, addedPersons.indexOf(speaker)),
+            speakerIndex: addedPersons.indexOf(speaker),
+            totalPeople: addedPersons.length,
+            silentNames: [],
+          })
+        : buildScenePrompt(translatedAction.english);
 
       const variantIndex =
         ready.length > 0 ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1 : 1;
@@ -373,6 +369,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           audioUrl: renderAudioUrl,
           audioSeconds,
           seed,
+          route,
         });
         await supabaseAdmin
           .from("pvg_videos")
