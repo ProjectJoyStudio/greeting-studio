@@ -4,7 +4,7 @@ import { Check, Loader2, Mic, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import { audioDuration, fileToBase64 } from "@/lib/personal-video/voice/mixdown";
+import { audioDuration, fileToBase64, mergeInOrder } from "@/lib/personal-video/voice/mixdown";
 import {
   isAcceptedRecording,
   PVG_RECORDING_MAX_BYTES,
@@ -39,6 +39,9 @@ interface Sample {
   durationSeconds: number;
   objectUrl: string;
   textId: "sample1" | "sample2";
+  /** Studio-readable WAV rendition of the very same recording. */
+  renditionBase64?: string;
+  renditionMime?: string;
 }
 
 /**
@@ -104,6 +107,13 @@ export function VoiceProfileStudio({
     try {
       const base64 = await fileToBase64(blob);
       const durationSeconds = await audioDuration({ base64, mimeType });
+      // The browser records WebM/Opus, which voice studios cannot read as a
+      // reference. A WAV rendition of the very same recording is prepared once
+      // here; the original recording is kept untouched. If the preparation
+      // fails, the recording is still accepted as it is.
+      const rendition = await mergeInOrder([{ base64, mimeType }], { compress: false }).catch(
+        () => null,
+      );
       const objectUrl = URL.createObjectURL(blob);
       setSample((old) => {
         if (old) URL.revokeObjectURL(old.objectUrl);
@@ -114,6 +124,9 @@ export function VoiceProfileStudio({
           durationSeconds,
           objectUrl,
           textId: extra ? "sample2" : textId,
+          ...(rendition
+            ? { renditionBase64: rendition.base64, renditionMime: rendition.mimeType }
+            : {}),
         };
       });
       const result = await checkVoiceSample({
@@ -216,6 +229,12 @@ export function VoiceProfileStudio({
         extension: sample.extension,
         durationSeconds: sample.durationSeconds,
         textId: sample.textId,
+        ...(sample.renditionBase64
+          ? {
+              renditionBase64: sample.renditionBase64,
+              renditionMime: sample.renditionMime ?? "audio/wav",
+            }
+          : {}),
       };
       const target = updateVoice ?? profile;
       const res = target
