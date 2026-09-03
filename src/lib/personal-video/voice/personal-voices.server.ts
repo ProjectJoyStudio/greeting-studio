@@ -349,6 +349,8 @@ export async function addVoiceSample(args: {
     extension: string;
     durationSeconds: number;
     textId: string;
+    renditionBase64?: string;
+    renditionMime?: string;
   };
 }): Promise<PersonalVoice> {
   const db = await admin();
