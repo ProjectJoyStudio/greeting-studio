@@ -942,7 +942,7 @@ export function PersonalVideoPage({ projectId }: { projectId?: string | undefine
                 type="button"
                 onClick={() => {
                   setConfirmExtra(false);
-                  void runBuyPack();
+                  void runStartScene();
                 }}
                 className="rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
               >
