@@ -126,3 +126,30 @@ export const savePersonalVoiceStyle = createServerFn({ method: "POST" })
     );
     return { saved: true as const };
   });
+
+/**
+ * Own Voice recordings kept without a studio-readable WAV rendition. The
+ * browser prepares the missing rendition from the very same recording, so
+ * nobody is ever asked to record their voice a second time.
+ */
+export const listOwnVoiceRepairs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{ items: { voiceId: string; index: number; url: string; mime: string }[] }> => {
+      const { listRepairableSamples } = await import("./personal-voices.server");
+      return { items: await listRepairableSamples(context.userId) };
+    },
+  );
+
+/** Keeps one prepared WAV rendition next to the original recording. */
+export const saveOwnVoiceRendition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { voiceId: string; index: number; base64: string; mimeType: string }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ saved: boolean }> => {
+    const { saveSampleRendition } = await import("./personal-voices.server");
+    return saveSampleRendition({ ...data, userId: context.userId });
+  });
