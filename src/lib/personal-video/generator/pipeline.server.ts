@@ -17,9 +17,6 @@ const API_BASE = "https://api.replicate.com/v1";
 /** The admin function id of the final-video group. */
 export const FINAL_VIDEO_FUNCTION_ID = "personal_video.final_video";
 
-/** The admin function id of films whose scene has no added speaking person. */
-export const SCENE_VIDEO_FUNCTION_ID = "personal_video.no_person_video";
-
 /** Which of the two films is being made. */
 export type FinalVideoRoute = "person" | "scene";
 
