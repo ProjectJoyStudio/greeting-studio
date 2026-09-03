@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { clampDuration, sceneSoundCredits, videoCredits } from "./video-setup";
+import { clampDuration, videoCredits } from "./video-setup";
 import type { PvsVideoSetup } from "./video-setup";
 import { normalizeMusicSettings, type PvgMusicSettings } from "@/lib/music/types";
 import { writeGreeting, type GreetingTask } from "./video-setup.server";
@@ -15,7 +15,6 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
       input: {
         projectId: string;
         music?: PvgMusicSettings | undefined;
-        sceneSounds?: boolean | undefined;
         actionDescription?: string | undefined;
       } & Partial<PvsVideoSetup>,
     ) => input,
@@ -24,7 +23,6 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
     // Music belongs to the whole video and never changes the credit cost.
     const music = normalizeMusicSettings(data.music);
     const seconds = clampDuration(data.durationSeconds);
-    const sceneSounds = data.sceneSounds === true;
     const { error } = await context.supabase
       .from("pvg_projects")
       .update({
@@ -32,13 +30,13 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
         greeting_mode: data.greetingMode === "keywords" ? "keywords" : "manual",
         greeting_text: data.greetingText ?? "",
         greeting_keywords: data.greetingKeywords ?? "",
-        scene_sounds: sceneSounds,
+        scene_sounds: false,
         ...(data.actionDescription === undefined
           ? {}
           : { action_description: data.actionDescription.slice(0, 2000) }),
         ...(data.music ? { music_settings: music as unknown as Record<string, never> } : {}),
         workflow_step: "video",
-        order_cost: videoCredits(seconds) + (sceneSounds ? sceneSoundCredits(seconds) : 0),
+        order_cost: videoCredits(seconds),
       })
       .eq("id", data.projectId)
       .is("deleted_at", null);
