@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { clampDuration, sceneSoundCredits, videoCredits } from "./video-setup";
+import { clampDuration, videoCredits } from "./video-setup";
 import type { PvsVideoSetup } from "./video-setup";
 import { normalizeMusicSettings, type PvgMusicSettings } from "@/lib/music/types";
 import { writeGreeting, type GreetingTask } from "./video-setup.server";
@@ -15,7 +15,6 @@ export const savePvgVideoSetup = createServerFn({ method: "POST" })
       input: {
         projectId: string;
         music?: PvgMusicSettings | undefined;
-        sceneSounds?: boolean | undefined;
         actionDescription?: string | undefined;
       } & Partial<PvsVideoSetup>,
     ) => input,
