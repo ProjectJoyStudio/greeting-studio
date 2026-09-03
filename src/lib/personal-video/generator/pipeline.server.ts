@@ -51,6 +51,11 @@ export interface FinalVideoEngine {
    * moving lips and no greeting is a failure, not a result.
    */
   keepsPreparedVoice: boolean;
+  /**
+   * True for avatar engines that animate a speaking human face. They cannot
+   * serve a scene that contains no added person.
+   */
+  requiresPerson?: boolean;
   buildInput: (input: FinalVideoInput) => Record<string, unknown>;
 }
 
