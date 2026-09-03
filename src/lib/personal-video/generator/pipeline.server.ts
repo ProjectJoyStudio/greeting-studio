@@ -71,6 +71,7 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     provider: "replicate",
     variant: klingMode(),
     keepsPreparedVoice: true,
+    requiresPerson: true,
     // The film lasts as long as the greeting voice; the engine accepts a
     // voice of at most one minute.
     maxAudioSeconds: Number(process.env["PVG_KLING_AVATAR_MAX_AUDIO_SECONDS"] || 60),
