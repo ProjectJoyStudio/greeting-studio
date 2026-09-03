@@ -166,6 +166,7 @@ const ENGINE_VIDEO_SIZES: Record<string, Record<string, { width: number; height:
 /** Engines that choose the shape from the picture and only take a quality. */
 const ENGINE_VIDEO_RESOLUTION: Record<string, string> = {
   rw_kling3_standard: "720p",
+  rw_pvideo_avatar: "720p",
 };
 
 export function runwareVideoSize(
@@ -316,7 +317,10 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     // Kling takes a quality and keeps the shape of the starting picture; the
     // other engines take an exact size from their own supported list.
     ...(resolution ? { resolution } : { width: size!.width, height: size!.height }),
-    duration: clampDuration(model, input.durationSeconds),
+    // Engines that read the length from the prepared greeting take no duration.
+    ...(model.acceptsDuration === false
+      ? {}
+      : { duration: clampDuration(model, input.durationSeconds) }),
     numberResults: 1,
     outputType: "URL",
     outputFormat: "MP4",

@@ -28,6 +28,8 @@ export interface RunwareVideoModel {
    * Video final film, whose greeting voice must be heard.
    */
   supportsPreparedAudio: boolean;
+  /** False when the engine takes no duration (the audio decides the length). */
+  acceptsDuration?: boolean;
   /** Shortest / longest length the model accepts, in seconds. */
   minDuration: number;
   maxDuration: number;
@@ -123,7 +125,7 @@ export const RUNWARE_SCENE_IMAGE_KEYS = Object.values(RUNWARE_IMAGE_MODELS)
 export const RUNWARE_ANIMATION_KEYS = Object.keys(RUNWARE_VIDEO_MODELS);
 
 /** The final Personal Video film never uses PixVerse V6. */
-export const RUNWARE_FINAL_VIDEO_KEYS = ["rw_wan26_flash", "rw_kling3_standard"];
+export const RUNWARE_FINAL_VIDEO_KEYS = ["rw_wan26_flash", "rw_pvideo_avatar"];
 
 export function isRunwareImageKey(key: string): boolean {
   return Boolean(RUNWARE_IMAGE_MODELS[key]);
