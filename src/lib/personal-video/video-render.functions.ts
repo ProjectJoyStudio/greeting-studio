@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { PvgVideoJob } from "./video-render";
 import { PVR_REGENERATION_CREDITS } from "./video-render";
-import { clampDuration, sceneSoundCredits, videoCredits } from "./video-setup";
+import { clampDuration, videoCredits } from "./video-setup";
 
 interface ProjectRowLite {
   id: string;
@@ -225,11 +225,10 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const route: "person" | "scene" = speaker ? "person" : "scene";
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
-      const sceneSounds = Boolean(project.scene_sounds);
       const isAgain = ready.length > 0;
       const price = isAgain
         ? PVR_REGENERATION_CREDITS
-        : videoCredits(duration) + (sceneSounds ? sceneSoundCredits(duration) : 0);
+        : videoCredits(duration);
 
       // The finished greeting voice from page two is what the film is built
       // on. It is sent once, and never laid over the result again.
@@ -288,7 +287,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         metadata: {
           project_id: project.id,
           seconds: duration,
-          scene_sounds: sceneSounds,
+          scene_sounds: false,
           regeneration: isAgain,
         },
       });
@@ -334,7 +333,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           job_id: `pvg-${project.id}-${Date.now()}`,
           status: "pending",
           duration_seconds: duration,
-          scene_sounds: sceneSounds,
+          scene_sounds: false,
           credits_charged: price,
           variant_index: variantIndex,
           action_description: project.action_description ?? "",
