@@ -43,8 +43,11 @@ import {
 } from "@/lib/voice-library/types";
 import {
   assignPersonalVoice,
+  listOwnVoiceRepairs,
   listProjectPersonalVoices,
+  saveOwnVoiceRendition,
 } from "@/lib/personal-video/voice/personal-voices.functions";
+import { repairOwnVoiceRenditions } from "@/lib/personal-video/voice/rendition-repair";
 import { VoiceProfileStudio } from "./voice/VoiceProfileStudio";
 import {
   SELF_RECORDING_PROVIDER,
@@ -116,6 +119,17 @@ export function VoicePanel({
   const saveSpeech = useServerFn(savePvgSpeechSettings);
   const applyPersonalVoice = useServerFn(assignPersonalVoice);
   const loadPersonalVoices = useServerFn(listProjectPersonalVoices);
+  const listRepairs = useServerFn(listOwnVoiceRepairs);
+  const saveRendition = useServerFn(saveOwnVoiceRendition);
+
+  // Own Voice profiles recorded before Project Joy kept a studio-readable
+  // rendition are quietly completed here, so nobody records their voice twice.
+  useEffect(() => {
+    void repairOwnVoiceRenditions(
+      () => listRepairs({ data: undefined }) as never,
+      (input) => saveRendition(input),
+    );
+  }, [listRepairs, saveRendition]);
 
   /** The person's own voices: saved permanently or kept in this project. */
   const personalVoices = useQuery({
