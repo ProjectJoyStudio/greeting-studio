@@ -136,9 +136,13 @@ const RUNWARE_ANIMATIONS: GeneratorDef[] = [
 ];
 
 /** The final Personal Video film never uses PixVerse V6. */
+// Personal Video Greeting is a talking-person product: only engines that keep
+// the prepared greeting voice and animate a speaking person belong here.
+// Kling Video 3 Standard is deliberately absent — it cannot carry the
+// prepared greeting audio.
 const RUNWARE_FINAL_VIDEOS: GeneratorDef[] = [
   RUNWARE("rw_wan26_flash", "alibaba:wan@2.6-flash"),
-  RUNWARE("rw_kling3_standard", "klingai:kling-video@3-standard"),
+  RUNWARE("rw_pvideo_avatar", "prunaai:p-video@avatar"),
 ];
 
 export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [

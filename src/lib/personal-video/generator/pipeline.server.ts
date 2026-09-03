@@ -17,8 +17,11 @@ const API_BASE = "https://api.replicate.com/v1";
 /** The admin function id of the final-video group. */
 export const FINAL_VIDEO_FUNCTION_ID = "personal_video.final_video";
 
-/** Which of the two films is being made. */
-export type FinalVideoRoute = "person" | "scene";
+/**
+ * Personal Video Greeting is a talking-person product; the only film made
+ * here is the one with the added person speaking the greeting.
+ */
+export type FinalVideoRoute = "person";
 
 export interface FinalVideoInput {
   /** The approved starting scene, exactly as page one produced it. */
@@ -85,6 +88,17 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     }),
   },
   // --- Runware engines (official Runware API, never through Replicate) ------
+  rw_pvideo_avatar: {
+    key: "rw_pvideo_avatar",
+    model: "prunaai:p-video@avatar",
+    provider: "runware",
+    // The film lasts as long as the prepared greeting handed to the engine.
+    maxAudioSeconds: Number(process.env["PVG_PVIDEO_AVATAR_MAX_AUDIO_SECONDS"] || 60),
+    usdPerSecond: Number(process.env["PVG_PVIDEO_AVATAR_USD_PER_SECOND"] || 0.09),
+    keepsPreparedVoice: true,
+    requiresPerson: true,
+    buildInput: () => ({}),
+  },
   rw_wan26_flash: {
     key: "rw_wan26_flash",
     model: "alibaba:wan@2.6-flash",
@@ -95,27 +109,14 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
     keepsPreparedVoice: true,
     buildInput: () => ({}),
   },
-  rw_kling3_standard: {
-    key: "rw_kling3_standard",
-    model: "klingai:kling-video@3-standard",
-    provider: "runware",
-    maxAudioSeconds: Number(process.env["PVG_RUNWARE_MAX_AUDIO_SECONDS"] || 15),
-    usdPerSecond: Number(process.env["PVG_RUNWARE_KLING_USD_PER_SECOND"] || 0.09),
-    // The provider refuses a prepared voice track for this model, so it can
-    // only produce a silent film. It stays listed but is never used here.
-    keepsPreparedVoice: false,
-    buildInput: () => ({}),
-  },
 };
 
 /** Prefix of a film that runs at Runware instead of Replicate. */
 const RUNWARE_PREFIX = "runware:";
 
-/** Engines able to serve one route with the prepared greeting inside. */
-function enginesFor(route: FinalVideoRoute): FinalVideoEngine[] {
-  return Object.values(FINAL_VIDEO_ENGINES).filter(
-    (e) => e.keepsPreparedVoice && (route === "person" || !e.requiresPerson),
-  );
+/** Engines able to serve the talking-person film with the greeting inside. */
+function enginesFor(_route: FinalVideoRoute = "person"): FinalVideoEngine[] {
+  return Object.values(FINAL_VIDEO_ENGINES).filter((e) => e.keepsPreparedVoice);
 }
 
 /** The longest greeting voice the active engines of one route can speak. */
@@ -129,15 +130,12 @@ export function maxGreetingAudioSeconds(route: FinalVideoRoute = "person"): numb
  * administrator's primary first, then any allowed alternative.
  */
 export async function finalVideoOrder(route: FinalVideoRoute = "person"): Promise<string[]> {
-  // One single administrator choice serves both routes. A scene without a
-  // person simply cannot use an avatar engine, so those are filtered out of
-  // the very same order the administrator configured.
+  // The administrator's own choice decides which engine is called: primary
+  // first, then the configured reserve. No engine is ever chosen implicitly.
   const usable = enginesFor(route).map((e) => e.key);
   try {
     const { generatorOrder } = await import("@/lib/admin/generators/runtime.server");
-    const order = await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
-    if (order.length) return order;
-    return route === "scene" ? usable.slice(0, 1) : [];
+    return await generatorOrder(FINAL_VIDEO_FUNCTION_ID, usable);
   } catch {
     return [];
   }
@@ -215,13 +213,6 @@ export async function startFinalVideo(
   for (const key of await finalVideoOrder(route)) {
     const engine = FINAL_VIDEO_ENGINES[key];
     if (!engine) continue;
-    if (route === "scene" && engine.requiresPerson) {
-      lastError = new PvgStageError(
-        "engine_incompatible",
-        `${engine.model} animates a speaking person and cannot animate a scene without one.`,
-      );
-      continue;
-    }
     if (!engine.keepsPreparedVoice) {
       lastError = new PvgStageError(
         "engine_incompatible",

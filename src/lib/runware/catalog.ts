@@ -28,6 +28,8 @@ export interface RunwareVideoModel {
    * Video final film, whose greeting voice must be heard.
    */
   supportsPreparedAudio: boolean;
+  /** False when the engine takes no duration (the audio decides the length). */
+  acceptsDuration?: boolean;
   /** Shortest / longest length the model accepts, in seconds. */
   minDuration: number;
   maxDuration: number;
@@ -90,6 +92,20 @@ export const RUNWARE_VIDEO_MODELS: Record<string, RunwareVideoModel> = {
     minDuration: 3,
     maxDuration: 15,
   },
+  rw_pvideo_avatar: {
+    key: "rw_pvideo_avatar",
+    air: "prunaai:p-video@avatar",
+    label: "P-Video-Avatar",
+    // A speaking-avatar engine: it accepts the prepared greeting track and
+    // lip-synchronises the person in the starting picture to it.
+    supportsAudioInput: true,
+    supportsPreparedAudio: true,
+    // The film lasts exactly as long as the greeting that is handed in; the
+    // engine takes no duration of its own.
+    acceptsDuration: false,
+    minDuration: 1,
+    maxDuration: 60,
+  },
 };
 
 /** Engines offered for the Live Cards start picture and greeting-card artwork. */
@@ -109,7 +125,7 @@ export const RUNWARE_SCENE_IMAGE_KEYS = Object.values(RUNWARE_IMAGE_MODELS)
 export const RUNWARE_ANIMATION_KEYS = Object.keys(RUNWARE_VIDEO_MODELS);
 
 /** The final Personal Video film never uses PixVerse V6. */
-export const RUNWARE_FINAL_VIDEO_KEYS = ["rw_wan26_flash", "rw_kling3_standard"];
+export const RUNWARE_FINAL_VIDEO_KEYS = ["rw_wan26_flash", "rw_pvideo_avatar"];
 
 export function isRunwareImageKey(key: string): boolean {
   return Boolean(RUNWARE_IMAGE_MODELS[key]);
