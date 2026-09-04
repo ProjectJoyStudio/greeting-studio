@@ -30,7 +30,6 @@ export const HERO_LINK_OPTIONS: { value: string; labelKey: string }[] = [
   { value: "/showcase", labelKey: "hs_link_showcase" },
   { value: "/daily", labelKey: "hs_link_daily" },
   { value: "/calendar", labelKey: "hs_link_calendar" },
-  { value: "/corporate-orders", labelKey: "hs_link_corporate" },
   { value: "/personal-orders", labelKey: "hs_link_personal" },
   { value: "/create-card", labelKey: "hs_link_free" },
   { value: "/pricing", labelKey: "hs_link_pricing" },
