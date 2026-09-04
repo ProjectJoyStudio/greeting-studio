@@ -18,15 +18,12 @@ const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/calendar", key: "nav_calendar" },
 ];
 
-const BUSINESS_MENU: NavLeaf[] = [
-  { to: "/pricing", key: "nav_pricing" },
-];
-
 export function Header() {
   const { t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [open, setOpen] = useState<null | "occasions" | "business">(null);
+  const [open, setOpen] = useState<null | "occasions">(null);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,15 +77,8 @@ export function Header() {
           />
           <TopLink to="/studio">{t("nav_studio")}</TopLink>
           <TopLink to="/live-cards">{t("lc_nav")}</TopLink>
-          <Dropdown
-            label={t("nav_business")}
-            id="business"
-            open={open === "business"}
-            onToggle={(v) => setOpen(v ? "business" : null)}
-            items={BUSINESS_MENU}
-            t={t}
-            onNavigate={() => setOpen(null)}
-          />
+          <TopLink to="/memory-book">{t("nav_memory_book")}</TopLink>
+
           <TopLink to="/about">{t("nav_about")}</TopLink>
           <TopLink to="/contact">{t("nav_contact")}</TopLink>
         </nav>
@@ -159,18 +149,10 @@ export function Header() {
             <MobileLink to="/live-cards" onNav={() => setMobileOpen(false)}>
               {t("lc_nav")}
             </MobileLink>
-            <MobileGroup label={t("nav_business")}>
-              {BUSINESS_MENU.map((n) => (
-                <MobileLink
-                  key={`b-${n.key}`}
-                  to={n.to}
-                  onNav={() => setMobileOpen(false)}
-                  nested
-                >
-                  {t(n.key)}
-                </MobileLink>
-              ))}
-            </MobileGroup>
+            <MobileLink to="/memory-book" onNav={() => setMobileOpen(false)}>
+              {t("nav_memory_book")}
+            </MobileLink>
+
             <MobileLink to="/about" onNav={() => setMobileOpen(false)}>
               {t("nav_about")}
             </MobileLink>

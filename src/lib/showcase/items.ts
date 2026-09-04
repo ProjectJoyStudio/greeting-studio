@@ -37,11 +37,14 @@ export interface ShowcaseCategory {
   createKey: string;
   /** Studio product preselected when the create button is pressed. */
   gift: StudioGiftId;
+  /** Optional direct destination replacing the Studio link. */
+  to?: string;
   /** Admin-managed order of the category blocks (ascending). */
   sortOrder?: number;
   hidden?: boolean;
   items: ShowcaseItem[];
 }
+
 
 const g = (a: string, b: string) => `linear-gradient(150deg, ${a}, ${b})`;
 
@@ -89,4 +92,15 @@ export const SHOWCASE: ShowcaseCategory[] = [
       { id: "vid-2", altKey: "cat_thanks", thumb: g("oklch(0.88 0.07 150)", "oklch(0.5 0.11 160)") },
     ],
   },
+  {
+    id: "memory-book",
+    titleKey: "sc_memory_book",
+    createKey: "sc_create_memory_book",
+    gift: "card",
+    to: "/memory-book",
+    items: [
+      { id: "book-1", altKey: "cat_anniversary", thumb: g("oklch(0.9 0.06 60)", "oklch(0.55 0.1 40)") },
+    ],
+  },
 ];
+
