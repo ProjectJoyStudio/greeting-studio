@@ -1,18 +1,13 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Mail, Sparkles, Video, Coins, Clock, Gift, type LucideIcon } from "lucide-react";
+import { Mail, Sparkles, Video, Coins, Gift, type LucideIcon } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditLabel } from "@/lib/credits/i18n";
 import { StudioPromoShowcase } from "@/components/studio/StudioPromoShowcase";
-import {
-  STUDIO_PRICING,
-  computeEstimate,
-  humanizeSeconds,
-  type Estimate,
-  type StudioGiftId,
-} from "@/lib/studio/pricing";
+import { STUDIO_PRICING, type StudioGiftId } from "@/lib/studio/pricing";
+
 
 export const Route = createFileRoute("/studio")({
   validateSearch: (search: Record<string, unknown>): { gift?: StudioGiftId } => {
