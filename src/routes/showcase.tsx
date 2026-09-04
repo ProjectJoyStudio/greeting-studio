@@ -95,14 +95,25 @@ function ShowcasePage() {
                       <Play className="h-3.5 w-3.5 text-primary" />
                       {t("showcase_view")}
                     </button>
-                    <Link
-                      to="/studio"
-                      search={{ gift: cat.gift }}
-                      className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
-                    >
-                      {t("showcase_create")}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                    {cat.to ? (
+                      <Link
+                        to={cat.to}
+                        className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
+                      >
+                        {t(cat.createKey)}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/studio"
+                        search={{ gift: cat.gift }}
+                        className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-4 py-2 text-sm font-medium text-primary-foreground shadow-warm"
+                      >
+                        {t("showcase_create")}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
+
                   </div>
                 </div>
               </article>
