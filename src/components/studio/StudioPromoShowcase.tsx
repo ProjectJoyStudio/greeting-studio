@@ -61,8 +61,8 @@ export function StudioPromoShowcase() {
       </header>
 
       <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
-        {windows.map((w) => (
-          <PromoWindow key={w.id} item={w} />
+        {windows.map((w, i) => (
+          <PromoWindow key={w.id} item={w} label={i < 4 ? t(`spw_win_${i + 1}`) : ""} />
         ))}
       </div>
     </section>
