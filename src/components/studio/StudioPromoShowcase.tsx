@@ -69,7 +69,7 @@ export function StudioPromoShowcase() {
   );
 }
 
-function PromoWindow({ item }: { item: StudioPromoWindow }) {
+function PromoWindow({ item, label }: { item: StudioPromoWindow; label: string }) {
   const { t } = useI18n();
   return (
     <figure className="flex min-h-[13rem] flex-col overflow-hidden rounded-2xl border border-border bg-background">
