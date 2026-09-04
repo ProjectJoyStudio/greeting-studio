@@ -174,11 +174,6 @@ function GiftCards() {
       <div className="mt-6 grid auto-rows-fr gap-4 sm:grid-cols-2">
         {GIFTS.map((g) => {
           const Icon = g.icon;
-          const est = baselineEstimateForCard(g.id);
-          const isPremium = g.id === "premium";
-          const prepLabel = isPremium
-            ? t("studio_premium_custom_estimate")
-            : formatEstimatePrep(est, t);
           const cardClass =
             "group relative flex flex-col rounded-2xl border border-border bg-background p-5 text-left transition hover:border-primary/40 hover:bg-secondary/40";
           const body = (
@@ -192,16 +187,12 @@ function GiftCards() {
                 </h3>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">{t(g.descKey)}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                {!isPremium && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 font-medium text-foreground/80">
-                    <Coins className="h-3 w-3 text-primary" />
-                    {est.credits} {t("studio_credits_word")}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {prepLabel}
+              <div className="mt-4 flex items-center gap-2 text-xs">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-gold-gradient shadow-warm">
+                  <Sparkles className="h-3 w-3 text-primary-foreground" />
+                </span>
+                <span className="font-display font-semibold tracking-tight text-foreground/70">
+                  {t("brand")}
                 </span>
               </div>
             </>
@@ -221,7 +212,7 @@ function GiftCards() {
           );
         })}
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">{t("studio_calc_final_note")}</p>
+
     </section>
   );
 }
