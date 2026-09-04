@@ -37,11 +37,14 @@ export interface ShowcaseCategory {
   createKey: string;
   /** Studio product preselected when the create button is pressed. */
   gift: StudioGiftId;
+  /** Optional direct destination replacing the Studio link. */
+  to?: string;
   /** Admin-managed order of the category blocks (ascending). */
   sortOrder?: number;
   hidden?: boolean;
   items: ShowcaseItem[];
 }
+
 
 const g = (a: string, b: string) => `linear-gradient(150deg, ${a}, ${b})`;
 
