@@ -89,9 +89,11 @@ function PromoWindow({ item, label }: { item: StudioPromoWindow; label: string }
           <Placeholder label={t("spw_coming_soon")} />
         )}
       </div>
-      <figcaption className="border-t border-border/70 px-4 py-3 text-center font-display text-sm font-semibold tracking-tight">
-        {item.title}
-      </figcaption>
+      {label ? (
+        <figcaption className="border-t border-border/70 px-4 py-3 text-center font-display text-sm font-semibold tracking-tight">
+          {label}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }
