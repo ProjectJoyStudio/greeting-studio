@@ -61,15 +61,15 @@ export function StudioPromoShowcase() {
       </header>
 
       <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
-        {windows.map((w) => (
-          <PromoWindow key={w.id} item={w} />
+        {windows.map((w, i) => (
+          <PromoWindow key={w.id} item={w} label={i < 4 ? t(`spw_win_${i + 1}`) : ""} />
         ))}
       </div>
     </section>
   );
 }
 
-function PromoWindow({ item }: { item: StudioPromoWindow }) {
+function PromoWindow({ item, label }: { item: StudioPromoWindow; label: string }) {
   const { t } = useI18n();
   return (
     <figure className="flex min-h-[13rem] flex-col overflow-hidden rounded-2xl border border-border bg-background">
@@ -89,9 +89,11 @@ function PromoWindow({ item }: { item: StudioPromoWindow }) {
           <Placeholder label={t("spw_coming_soon")} />
         )}
       </div>
-      <figcaption className="border-t border-border/70 px-4 py-3 text-center font-display text-sm font-semibold tracking-tight">
-        {item.title}
-      </figcaption>
+      {label ? (
+        <figcaption className="border-t border-border/70 px-4 py-3 text-center font-display text-sm font-semibold tracking-tight">
+          {label}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

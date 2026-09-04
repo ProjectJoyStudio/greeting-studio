@@ -3,6 +3,10 @@ import type { Dict, Lang } from "../types";
 /** Studio promotional showcase — public windows and the admin manager. */
 export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
   en: {
+    spw_win_1: "Greeting Cards",
+    spw_win_2: "Live Greeting Cards",
+    spw_win_3: "Personal Video Greeting",
+    spw_win_4: "Book of Memories and Greetings",
     spw_showcase_eyebrow: "Showcase",
     spw_showcase_title: "See what we create",
     spw_coming_soon: "Coming soon",
@@ -24,6 +28,10 @@ export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
     spw_error: "Something went wrong.",
   },
   ru: {
+    spw_win_1: "Открытки",
+    spw_win_2: "Живые открытки",
+    spw_win_3: "Персональное видео поздравление",
+    spw_win_4: "Книга воспоминаний и поздравлений",
     spw_showcase_eyebrow: "Витрина",
     spw_showcase_title: "Посмотрите, что мы создаём",
     spw_coming_soon: "Скоро",
@@ -45,6 +53,10 @@ export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
     spw_error: "Что-то пошло не так.",
   },
   de: {
+    spw_win_1: "Grußkarten",
+    spw_win_2: "Lebendige Grußkarten",
+    spw_win_3: "Persönlicher Video-Gruß",
+    spw_win_4: "Buch der Erinnerungen und Grüße",
     spw_showcase_eyebrow: "Schaufenster",
     spw_showcase_title: "Sehen Sie, was wir erschaffen",
     spw_coming_soon: "Demnächst",
@@ -66,6 +78,10 @@ export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
     spw_error: "Etwas ist schiefgelaufen.",
   },
   uk: {
+    spw_win_1: "Листівки",
+    spw_win_2: "Живі листівки",
+    spw_win_3: "Персональне відеопривітання",
+    spw_win_4: "Книга спогадів і привітань",
     spw_showcase_eyebrow: "Вітрина",
     spw_showcase_title: "Подивіться, що ми створюємо",
     spw_coming_soon: "Незабаром",
@@ -87,6 +103,10 @@ export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
     spw_error: "Щось пішло не так.",
   },
   fr: {
+    spw_win_1: "Cartes de vœux",
+    spw_win_2: "Cartes de vœux animées",
+    spw_win_3: "Vœu vidéo personnel",
+    spw_win_4: "Livre de souvenirs et de vœux",
     spw_showcase_eyebrow: "Vitrine",
     spw_showcase_title: "Découvrez ce que nous créons",
     spw_coming_soon: "Bientôt disponible",
@@ -108,6 +128,10 @@ export const STUDIO_PROMOS_I18N: Record<Lang, Dict> = {
     spw_error: "Une erreur est survenue.",
   },
   pl: {
+    spw_win_1: "Kartki",
+    spw_win_2: "Żywe kartki",
+    spw_win_3: "Osobiste wideo-życzenia",
+    spw_win_4: "Księga wspomnień i życzeń",
     spw_showcase_eyebrow: "Witryna",
     spw_showcase_title: "Zobacz, co tworzymy",
     spw_coming_soon: "Wkrótce",
