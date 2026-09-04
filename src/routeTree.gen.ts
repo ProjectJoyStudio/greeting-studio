@@ -29,7 +29,6 @@ import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CreditsRouteImport } from './routes/credits'
 import { Route as CreateCardRouteImport } from './routes/create-card'
 import { Route as CreateRouteImport } from './routes/create'
-import { Route as CorporateOrdersRouteImport } from './routes/corporate-orders'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -193,11 +192,6 @@ const CreateCardRoute = CreateCardRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CorporateOrdersRoute = CorporateOrdersRouteImport.update({
-  id: '/corporate-orders',
-  path: '/corporate-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -536,7 +530,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/contact': typeof ContactRoute
-  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
@@ -622,7 +615,6 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/calendar': typeof CalendarRoute
   '/contact': typeof ContactRoute
-  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
@@ -708,7 +700,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/contact': typeof ContactRoute
-  '/corporate-orders': typeof CorporateOrdersRoute
   '/create': typeof CreateRoute
   '/create-card': typeof CreateCardRoute
   '/credits': typeof CreditsRoute
@@ -797,7 +788,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/contact'
-    | '/corporate-orders'
     | '/create'
     | '/create-card'
     | '/credits'
@@ -883,7 +873,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/calendar'
     | '/contact'
-    | '/corporate-orders'
     | '/create'
     | '/create-card'
     | '/credits'
@@ -968,7 +957,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/contact'
-    | '/corporate-orders'
     | '/create'
     | '/create-card'
     | '/credits'
@@ -1056,7 +1044,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   CalendarRoute: typeof CalendarRoute
   ContactRoute: typeof ContactRoute
-  CorporateOrdersRoute: typeof CorporateOrdersRoute
   CreateRoute: typeof CreateRoute
   CreateCardRoute: typeof CreateCardRoute
   CreditsRoute: typeof CreditsRoute
@@ -1227,13 +1214,6 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/corporate-orders': {
-      id: '/corporate-orders'
-      path: '/corporate-orders'
-      fullPath: '/corporate-orders'
-      preLoaderRoute: typeof CorporateOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1835,7 +1815,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   CalendarRoute: CalendarRoute,
   ContactRoute: ContactRoute,
-  CorporateOrdersRoute: CorporateOrdersRoute,
   CreateRoute: CreateRoute,
   CreateCardRoute: CreateCardRoute,
   CreditsRoute: CreditsRoute,
