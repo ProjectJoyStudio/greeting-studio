@@ -20,6 +20,7 @@ import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as MemoryBookRouteImport } from './routes/memory-book'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LiveCardsRouteImport } from './routes/live-cards'
 import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
@@ -147,6 +148,11 @@ const PricingRoute = PricingRouteImport.update({
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookRoute = MemoryBookRouteImport.update({
+  id: '/memory-book',
+  path: '/memory-book',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -539,6 +545,7 @@ export interface FileRoutesByFullPath {
   '/free-greeting': typeof FreeGreetingRoute
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
+  '/memory-book': typeof MemoryBookRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -623,6 +630,7 @@ export interface FileRoutesByTo {
   '/free-greeting': typeof FreeGreetingRoute
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
+  '/memory-book': typeof MemoryBookRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -709,6 +717,7 @@ export interface FileRoutesById {
   '/free-greeting': typeof FreeGreetingRoute
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
+  '/memory-book': typeof MemoryBookRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -797,6 +806,7 @@ export interface FileRouteTypes {
     | '/free-greeting'
     | '/live-cards'
     | '/login'
+    | '/memory-book'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -881,6 +891,7 @@ export interface FileRouteTypes {
     | '/free-greeting'
     | '/live-cards'
     | '/login'
+    | '/memory-book'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -966,6 +977,7 @@ export interface FileRouteTypes {
     | '/free-greeting'
     | '/live-cards'
     | '/login'
+    | '/memory-book'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -1053,6 +1065,7 @@ export interface RootRouteChildren {
   FreeGreetingRoute: typeof FreeGreetingRoute
   LiveCardsRoute: typeof LiveCardsRoute
   LoginRoute: typeof LoginRoute
+  MemoryBookRoute: typeof MemoryBookRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
@@ -1151,6 +1164,13 @@ declare module '@tanstack/react-router' {
       path: '/personal-orders'
       fullPath: '/personal-orders'
       preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book': {
+      id: '/memory-book'
+      path: '/memory-book'
+      fullPath: '/memory-book'
+      preLoaderRoute: typeof MemoryBookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1824,6 +1844,7 @@ const rootRouteChildren: RootRouteChildren = {
   FreeGreetingRoute: FreeGreetingRoute,
   LiveCardsRoute: LiveCardsRoute,
   LoginRoute: LoginRoute,
+  MemoryBookRoute: MemoryBookRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,

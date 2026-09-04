@@ -18,15 +18,12 @@ const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/calendar", key: "nav_calendar" },
 ];
 
-const BUSINESS_MENU: NavLeaf[] = [
-  { to: "/pricing", key: "nav_pricing" },
-];
-
 export function Header() {
   const { t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [open, setOpen] = useState<null | "occasions" | "business">(null);
+  const [open, setOpen] = useState<null | "occasions">(null);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
