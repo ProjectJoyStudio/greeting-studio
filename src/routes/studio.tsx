@@ -63,27 +63,7 @@ const GIFTS: GiftOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Format helpers
-// ---------------------------------------------------------------------------
 
-function formatDurationForPreparation(seconds: number, t: (k: string) => string): string {
-  const { value, unitKey } = humanizeSeconds(seconds);
-  return `${t("prep_about")} ${value} ${t(unitKey)}`;
-}
-
-function formatEstimatePrep(estimate: Estimate, t: (k: string) => string): string {
-  if (estimate.humanCraft) {
-    const min = estimate.humanCraftDaysMin ?? 3;
-    const max = estimate.humanCraftDaysMax ?? 5;
-    return `${t("prep_within_days")} ${min}–${max} ${t("unit_days")}`;
-  }
-  return formatDurationForPreparation(estimate.processingSeconds, t);
-}
-
-function baselineEstimateForCard(id: GiftId): Estimate {
-  const spec = STUDIO_PRICING[id];
-  return computeEstimate(id, spec.duration ? spec.duration.default : null, "standard");
-}
 
 // ---------------------------------------------------------------------------
 // Page
