@@ -12,13 +12,10 @@ const FALLBACK: { slot: string; title: string }[] = [
   { slot: "card", title: "Greeting Cards" },
   { slot: "animated", title: "Live Greeting Cards" },
   { slot: "video-greeting", title: "Personal Video Greeting" },
-  { slot: "video-clip", title: "Personal Music Video" },
-  { slot: "cartoon", title: "Personal Video" },
-  { slot: "premium", title: "Premium Personal Request" },
 ];
 
 /**
- * Six promotional video windows shown beside the Studio cards. The windows are
+ * Promotional video windows shown beside the Studio cards. The windows are
  * purely decorative: they never navigate and never accept clicks.
  */
 export function StudioPromoShowcase() {

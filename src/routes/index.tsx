@@ -9,11 +9,9 @@ import {
   ArrowRight,
   Sparkles,
   Gift,
-  Briefcase,
   HandHeart,
   Wand2,
   Send,
-  Coffee,
   Bell,
   CalendarClock,
   CalendarDays,
@@ -54,7 +52,6 @@ function Index() {
       <Showcase />
       <HowItWorks />
       <CustomOrderCTA />
-      <CorporateCTA />
       <ImportantDates />
     </SiteLayout>
   );
@@ -339,57 +336,3 @@ function CustomOrderCTA() {
   );
 }
 
-function CorporateCTA() {
-  const { t } = useI18n();
-  return (
-    <section className="mx-auto max-w-7xl px-5 pb-20 lg:px-8 lg:pb-24">
-      <div className="grid gap-5 overflow-hidden rounded-3xl border border-border/70 bg-card md:grid-cols-[1.1fr_1fr]">
-        <div className="p-10 md:p-14">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            <Briefcase className="h-3.5 w-3.5 text-primary" />
-            {t("nav_corporate")}
-          </span>
-          <h3 className="mt-6 font-display text-3xl font-semibold md:text-4xl">
-            {t("section_corp")}
-          </h3>
-          <p className="mt-4 text-muted-foreground md:text-lg">{t("section_corp_sub")}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              to="/studio"
-              search={{ gift: "premium" as const }}
-              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-medium text-primary-foreground shadow-warm"
-            >
-              {t("cta_create_corporate")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium backdrop-blur"
-            >
-              {t("nav_pricing")}
-            </Link>
-          </div>
-        </div>
-        <div
-          className="relative min-h-[280px]"
-          style={{
-            backgroundImage:
-              "linear-gradient(160deg, oklch(0.45 0.11 30), oklch(0.28 0.08 20))",
-          }}
-        >
-          <div className="absolute inset-0 flex flex-col justify-between p-8 text-primary-foreground">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
-              <Coffee className="h-3.5 w-3.5" /> for teams & clients
-            </div>
-            <div>
-              <div className="font-display text-2xl italic leading-tight opacity-95">
-                „Спасибо, что вы с нами."
-              </div>
-              <div className="mt-3 text-xs opacity-80">— your brand, delivered warmly</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}

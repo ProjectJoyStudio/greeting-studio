@@ -19,7 +19,6 @@ const OCCASIONS_MENU: NavLeaf[] = [
 ];
 
 const BUSINESS_MENU: NavLeaf[] = [
-  { to: "/corporate-orders", key: "nav_corporate" },
   { to: "/pricing", key: "nav_pricing" },
 ];
 

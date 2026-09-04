@@ -89,44 +89,4 @@ export const SHOWCASE: ShowcaseCategory[] = [
       { id: "vid-2", altKey: "cat_thanks", thumb: g("oklch(0.88 0.07 150)", "oklch(0.5 0.11 160)") },
     ],
   },
-  {
-    id: "clip",
-    titleKey: "sc_clip",
-    createKey: "sc_create_clip",
-    gift: "video-clip",
-    items: [
-      { id: "clip-1", altKey: "cat_love", thumb: g("oklch(0.8 0.1 330)", "oklch(0.45 0.13 320)") },
-      { id: "clip-2", altKey: "cat_anniversary", thumb: g("oklch(0.85 0.08 40)", "oklch(0.48 0.12 25)") },
-    ],
-  },
-  {
-    id: "cartoon",
-    titleKey: "sc_cartoon",
-    createKey: "sc_create_cartoon",
-    gift: "cartoon",
-    items: [
-      { id: "toon-1", altKey: "cat_newborn", thumb: g("oklch(0.92 0.06 220)", "oklch(0.72 0.1 205)") },
-      { id: "toon-2", altKey: "cat_kids", thumb: g("oklch(0.93 0.08 120)", "oklch(0.68 0.13 140)") },
-    ],
-  },
-  {
-    id: "corporate",
-    titleKey: "sc_corporate",
-    createKey: "sc_create_corporate",
-    gift: "premium",
-    items: [
-      { id: "corp-1", altKey: "cat_corporate", thumb: g("oklch(0.6 0.07 265)", "oklch(0.32 0.08 265)") },
-      { id: "corp-2", altKey: "cat_holiday", thumb: g("oklch(0.55 0.09 30)", "oklch(0.3 0.08 20)") },
-    ],
-  },
-  {
-    id: "premium",
-    titleKey: "sc_premium",
-    createKey: "sc_create_premium",
-    gift: "premium",
-    items: [
-      { id: "prem-1", altKey: "cat_wedding", thumb: g("oklch(0.9 0.1 85)", "oklch(0.55 0.15 45)") },
-      { id: "prem-2", altKey: "cat_anniversary", thumb: g("oklch(0.82 0.09 350)", "oklch(0.42 0.12 340)") },
-    ],
-  },
 ];
