@@ -1,18 +1,13 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Mail, Sparkles, Video, Coins, Clock, Gift, type LucideIcon } from "lucide-react";
+import { Mail, Sparkles, Video, Coins, Gift, type LucideIcon } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import { creditLabel } from "@/lib/credits/i18n";
 import { StudioPromoShowcase } from "@/components/studio/StudioPromoShowcase";
-import {
-  STUDIO_PRICING,
-  computeEstimate,
-  humanizeSeconds,
-  type Estimate,
-  type StudioGiftId,
-} from "@/lib/studio/pricing";
+import { STUDIO_PRICING, type StudioGiftId } from "@/lib/studio/pricing";
+
 
 export const Route = createFileRoute("/studio")({
   validateSearch: (search: Record<string, unknown>): { gift?: StudioGiftId } => {
@@ -63,27 +58,7 @@ const GIFTS: GiftOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Format helpers
-// ---------------------------------------------------------------------------
 
-function formatDurationForPreparation(seconds: number, t: (k: string) => string): string {
-  const { value, unitKey } = humanizeSeconds(seconds);
-  return `${t("prep_about")} ${value} ${t(unitKey)}`;
-}
-
-function formatEstimatePrep(estimate: Estimate, t: (k: string) => string): string {
-  if (estimate.humanCraft) {
-    const min = estimate.humanCraftDaysMin ?? 3;
-    const max = estimate.humanCraftDaysMax ?? 5;
-    return `${t("prep_within_days")} ${min}–${max} ${t("unit_days")}`;
-  }
-  return formatDurationForPreparation(estimate.processingSeconds, t);
-}
-
-function baselineEstimateForCard(id: GiftId): Estimate {
-  const spec = STUDIO_PRICING[id];
-  return computeEstimate(id, spec.duration ? spec.duration.default : null, "standard");
-}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -174,11 +149,6 @@ function GiftCards() {
       <div className="mt-6 grid auto-rows-fr gap-4 sm:grid-cols-2">
         {GIFTS.map((g) => {
           const Icon = g.icon;
-          const est = baselineEstimateForCard(g.id);
-          const isPremium = g.id === "premium";
-          const prepLabel = isPremium
-            ? t("studio_premium_custom_estimate")
-            : formatEstimatePrep(est, t);
           const cardClass =
             "group relative flex flex-col rounded-2xl border border-border bg-background p-5 text-left transition hover:border-primary/40 hover:bg-secondary/40";
           const body = (
@@ -192,16 +162,12 @@ function GiftCards() {
                 </h3>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">{t(g.descKey)}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                {!isPremium && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 font-medium text-foreground/80">
-                    <Coins className="h-3 w-3 text-primary" />
-                    {est.credits} {t("studio_credits_word")}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {prepLabel}
+              <div className="mt-4 flex items-center gap-2 text-xs">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-gold-gradient shadow-warm">
+                  <Sparkles className="h-3 w-3 text-primary-foreground" />
+                </span>
+                <span className="font-display font-semibold tracking-tight text-foreground/70">
+                  {t("brand")}
                 </span>
               </div>
             </>
@@ -221,7 +187,7 @@ function GiftCards() {
           );
         })}
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">{t("studio_calc_final_note")}</p>
+
     </section>
   );
 }
