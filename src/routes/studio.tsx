@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Mail, Sparkles, Video, Coins, Gift, type LucideIcon } from "lucide-react";
+import { Mail, Sparkles, Video, Coins, Gift, BookHeart, type LucideIcon } from "lucide-react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useI18n } from "@/lib/i18n";
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/studio")({
   component: StudioPage,
 });
 
-type GiftId = StudioGiftId;
+type GiftId = StudioGiftId | "memory-book";
 
 interface GiftOption {
   id: GiftId;
@@ -55,7 +55,9 @@ const GIFTS: GiftOption[] = [
   // unfinished one is resumed only through Personal Cabinet → Continue.
   { id: "animated", icon: Sparkles, titleKey: "gift_animated", descKey: "gift_animated_desc", to: "/live-cards?new=1" },
   { id: "video-greeting", icon: Video, titleKey: "gift_video_greeting", descKey: "gift_video_greeting_desc", to: "/video-greeting" },
+  { id: "memory-book", icon: BookHeart, titleKey: "gift_memory_book", descKey: "gift_memory_book_desc", to: "/memory-book" },
 ];
+
 
 // ---------------------------------------------------------------------------
 
