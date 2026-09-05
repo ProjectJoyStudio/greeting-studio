@@ -136,7 +136,7 @@ export const setMemoryBookDemo = createServerFn({ method: "POST" })
     const { error } = await db
       .from("app_settings")
       .upsert(
-        { key: MEMORY_BOOK_DEMO_KEY, value: stored, updated_by: context.userId },
+        { key: MEMORY_BOOK_DEMO_KEY, value: stored as unknown as Record<string, unknown>, updated_by: context.userId },
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
@@ -185,16 +185,16 @@ export const listMemoryBookDemoMaterials = createServerFn({ method: "POST" })
 
     const { data: liveCards } = await db
       .from("live_greeting_cards")
-      .select("id, title, final_bucket, final_path, finalized_at")
+      .select("id, final_bucket, final_path, finalized_at")
       .not("final_path", "is", null)
       .order("finalized_at", { ascending: false })
       .limit(25);
-    for (const row of (liveCards ?? []) as Record<string, unknown>[]) {
+    for (const row of (liveCards ?? []) as unknown as Record<string, unknown>[]) {
       const bucket = text(row.final_bucket) ?? "live-greeting-card-videos";
       const path = text(row.final_path);
       if (!path) continue;
       out.push({
-        label: text(row.title) ?? String(row.id).slice(0, 8),
+        label: `Live Card · ${String(row.id).slice(0, 8)}`,
         kind: "video",
         bucket,
         path,
