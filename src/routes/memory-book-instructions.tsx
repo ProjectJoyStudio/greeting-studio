@@ -4,6 +4,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { useI18n } from "@/lib/i18n";
+import { MEMORY_BOOK_INSTRUCTIONS } from "@/lib/memory-book/instructions-content";
 
 export const Route = createFileRoute("/memory-book-instructions")({
   head: () => ({
