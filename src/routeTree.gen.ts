@@ -48,6 +48,7 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settin
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
+import { Route as DashboardMemoryBooksRouteImport } from './routes/dashboard.memory-books'
 import { Route as DashboardLiveCardsRouteImport } from './routes/dashboard.live-cards'
 import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
 import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
@@ -292,6 +293,11 @@ const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
 const DashboardNotificationsRoute = DashboardNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMemoryBooksRoute = DashboardMemoryBooksRouteImport.update({
+  id: '/memory-books',
+  path: '/memory-books',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardLiveCardsRoute = DashboardLiveCardsRouteImport.update({
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -702,6 +709,7 @@ export interface FileRoutesByTo {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -794,6 +802,7 @@ export interface FileRoutesById {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -887,6 +896,7 @@ export interface FileRouteTypes {
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/live-cards'
+    | '/dashboard/memory-books'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/live-cards'
+    | '/dashboard/memory-books'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -1066,6 +1077,7 @@ export interface FileRouteTypes {
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/live-cards'
+    | '/dashboard/memory-books'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -1411,6 +1423,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/dashboard/notifications'
       preLoaderRoute: typeof DashboardNotificationsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/memory-books': {
+      id: '/dashboard/memory-books'
+      path: '/memory-books'
+      fullPath: '/dashboard/memory-books'
+      preLoaderRoute: typeof DashboardMemoryBooksRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/live-cards': {
@@ -1883,6 +1902,7 @@ interface DashboardRouteChildren {
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
   DashboardLiveCardsRoute: typeof DashboardLiveCardsRoute
+  DashboardMemoryBooksRoute: typeof DashboardMemoryBooksRoute
   DashboardNotificationsRoute: typeof DashboardNotificationsRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
@@ -1897,6 +1917,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardFavoritesRoute: DashboardFavoritesRoute,
   DashboardLiveCardsRoute: DashboardLiveCardsRoute,
+  DashboardMemoryBooksRoute: DashboardMemoryBooksRoute,
   DashboardNotificationsRoute: DashboardNotificationsRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProfileRoute: DashboardProfileRoute,
