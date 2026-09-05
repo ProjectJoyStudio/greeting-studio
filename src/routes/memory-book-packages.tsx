@@ -144,6 +144,45 @@ function MemoryBookPackagesPage() {
             : t("mbp_balance_sign_in")}
         </div>
 
+        {/* Buy credits */}
+        <div className="mb-6 rounded-2xl border border-border/70 bg-card p-5">
+          <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold">
+            <Coins className="h-5 w-5 text-primary" aria-hidden />
+            {t("mbp_buy_credits_title")}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t("mbp_credit_rate")}</p>
+
+          <div className="mt-4">
+            <Slider
+              value={[creditAmount]}
+              min={CREDIT_MIN}
+              max={CREDIT_MAX}
+              step={CREDIT_STEP}
+              onValueChange={(v) => setCreditAmount(v[0] ?? CREDIT_MIN)}
+              aria-label={t("mbp_buy_credits_title")}
+            />
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="font-display text-lg font-semibold">
+                {fill(t("mbp_selected"), { c: creditAmount, e: formatEuro(euroForSlider) })}
+              </p>
+              <Button onClick={() => void buyCredits()} disabled={creditBusy}>
+                {creditBusy ? t("mbp_buying") : t("mbp_buy")}
+              </Button>
+            </div>
+          </div>
+
+          <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
+            <Gift className="mt-0.5 h-4 w-4 text-primary" aria-hidden />
+            {t("mbp_gift")}
+          </p>
+
+          {creditNotice ? (
+            <p className="mt-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm">
+              {creditNotice}
+            </p>
+          ) : null}
+        </div>
+
         {/* Three main packages */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {MEMORY_BOOK_PACKAGES.map((pkg) => (
@@ -198,10 +237,7 @@ function MemoryBookPackagesPage() {
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_std")}</p>
               <p className="mt-1 font-display text-base font-semibold">
-                {fill(t("mbp_price"), {
-                  c: EXTRA_LEAF_STANDARD.credits,
-                  e: formatEuro(EXTRA_LEAF_STANDARD.euro),
-                })}
+                {fill(t("mbp_price_credits"), { c: EXTRA_LEAF_STANDARD.credits })}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>{t("mbp_extra_leaf_std_1")}</li>
@@ -212,10 +248,7 @@ function MemoryBookPackagesPage() {
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_video")}</p>
               <p className="mt-1 font-display text-base font-semibold">
-                {fill(t("mbp_price"), {
-                  c: EXTRA_LEAF_VIDEO.credits,
-                  e: formatEuro(EXTRA_LEAF_VIDEO.euro),
-                })}
+                {fill(t("mbp_price_credits"), { c: EXTRA_LEAF_VIDEO.credits })}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>{t("mbp_extra_leaf_video_1")}</li>
@@ -237,60 +270,16 @@ function MemoryBookPackagesPage() {
           <ul className="mt-2 space-y-1 text-sm">
             <li>
               {t("mbp_storage_week")}:{" "}
-              {fill(t("mbp_price"), {
-                c: EXTRA_STORAGE_WEEK.credits,
-                e: formatEuro(EXTRA_STORAGE_WEEK.euro),
-              })}
+              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_WEEK.credits })}
             </li>
             <li>
               {t("mbp_storage_month")}:{" "}
-              {fill(t("mbp_price"), {
-                c: EXTRA_STORAGE_MONTH.credits,
-                e: formatEuro(EXTRA_STORAGE_MONTH.euro),
-              })}
+              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_MONTH.credits })}
             </li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
         </div>
 
-        {/* Buy credits */}
-        <div className="mt-6 rounded-2xl border border-border/70 bg-card p-5">
-          <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold">
-            <Coins className="h-5 w-5 text-primary" aria-hidden />
-            {t("mbp_buy_credits_title")}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t("mbp_credit_rate")}</p>
-
-          <div className="mt-4">
-            <Slider
-              value={[creditAmount]}
-              min={CREDIT_MIN}
-              max={CREDIT_MAX}
-              step={CREDIT_STEP}
-              onValueChange={(v) => setCreditAmount(v[0] ?? CREDIT_MIN)}
-              aria-label={t("mbp_buy_credits_title")}
-            />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="font-display text-lg font-semibold">
-                {fill(t("mbp_selected"), { c: creditAmount, e: formatEuro(euroForSlider) })}
-              </p>
-              <Button onClick={() => void buyCredits()} disabled={creditBusy}>
-                {creditBusy ? t("mbp_buying") : t("mbp_buy")}
-              </Button>
-            </div>
-          </div>
-
-          <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
-            <Gift className="mt-0.5 h-4 w-4 text-primary" aria-hidden />
-            {t("mbp_gift")}
-          </p>
-
-          {creditNotice ? (
-            <p className="mt-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm">
-              {creditNotice}
-            </p>
-          ) : null}
-        </div>
       </section>
     </SiteLayout>
   );
