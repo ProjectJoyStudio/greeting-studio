@@ -33,12 +33,15 @@ function MemoryBookPage() {
   const router = useRouter();
   const loadDemo = useServerFn(getMemoryBookDemo);
   const [demoUrl, setDemoUrl] = useState<string | null>(null);
+  const [demoKind, setDemoKind] = useState<"book" | "video" | "image">("book");
 
   useEffect(() => {
     let active = true;
     loadDemo()
       .then((res) => {
-        if (active) setDemoUrl(res.url);
+        if (!active) return;
+        setDemoUrl(res.url);
+        setDemoKind(res.kind);
       })
       .catch(() => {
         /* the placeholder stays visible */
@@ -47,6 +50,7 @@ function MemoryBookPage() {
       active = false;
     };
   }, [loadDemo]);
+
 
   return (
     <SiteLayout>
@@ -59,13 +63,28 @@ function MemoryBookPage() {
           style={{ height: "min(72vh, 72dvh)", minHeight: "260px" }}
           aria-label={t("mb_demo_area")}
         >
-          {demoUrl ? (
+          {demoUrl && demoKind === "video" ? (
+            <video
+              src={demoUrl}
+              controls
+              playsInline
+              className="h-full w-full bg-black object-contain"
+              aria-label={t("mb_demo_area")}
+            />
+          ) : demoUrl && demoKind === "image" ? (
+            <img
+              src={demoUrl}
+              alt={t("mb_demo_area")}
+              className="h-full w-full object-contain"
+            />
+          ) : demoUrl ? (
             <iframe
               src={demoUrl}
               title={t("mb_demo_area")}
               className="h-full w-full border-0"
               allow="fullscreen; autoplay"
             />
+
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
               <BookOpen className="h-10 w-10 text-primary/60" aria-hidden />
