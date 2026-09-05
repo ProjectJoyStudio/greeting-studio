@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.extend_memory_book_storage(uuid, uuid, integer, integer, text) FROM anon, authenticated, public;
+GRANT EXECUTE ON FUNCTION public.extend_memory_book_storage(uuid, uuid, integer, integer, text) TO service_role;
