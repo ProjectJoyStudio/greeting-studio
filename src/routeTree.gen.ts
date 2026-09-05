@@ -22,6 +22,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
 import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
+import { Route as MemoryBookCreateRouteImport } from './routes/memory-book-create'
 import { Route as MemoryBookRouteImport } from './routes/memory-book'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LiveCardsRouteImport } from './routes/live-cards'
@@ -161,6 +162,11 @@ const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
 const MemoryBookInstructionsRoute = MemoryBookInstructionsRouteImport.update({
   id: '/memory-book-instructions',
   path: '/memory-book-instructions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookCreateRoute = MemoryBookCreateRouteImport.update({
+  id: '/memory-book-create',
+  path: '/memory-book-create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryBookRoute = MemoryBookRouteImport.update({
@@ -564,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
@@ -652,6 +659,7 @@ export interface FileRoutesByTo {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
@@ -742,6 +750,7 @@ export interface FileRoutesById {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
@@ -834,6 +843,7 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
     | '/personal-orders'
@@ -922,6 +932,7 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
     | '/personal-orders'
@@ -1011,6 +1022,7 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
     | '/personal-orders'
@@ -1102,6 +1114,7 @@ export interface RootRouteChildren {
   LiveCardsRoute: typeof LiveCardsRoute
   LoginRoute: typeof LoginRoute
   MemoryBookRoute: typeof MemoryBookRoute
+  MemoryBookCreateRoute: typeof MemoryBookCreateRoute
   MemoryBookInstructionsRoute: typeof MemoryBookInstructionsRoute
   MemoryBookPackagesRoute: typeof MemoryBookPackagesRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
@@ -1216,6 +1229,13 @@ declare module '@tanstack/react-router' {
       path: '/memory-book-instructions'
       fullPath: '/memory-book-instructions'
       preLoaderRoute: typeof MemoryBookInstructionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-create': {
+      id: '/memory-book-create'
+      path: '/memory-book-create'
+      fullPath: '/memory-book-create'
+      preLoaderRoute: typeof MemoryBookCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory-book': {
@@ -1906,6 +1926,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveCardsRoute: LiveCardsRoute,
   LoginRoute: LoginRoute,
   MemoryBookRoute: MemoryBookRoute,
+  MemoryBookCreateRoute: MemoryBookCreateRoute,
   MemoryBookInstructionsRoute: MemoryBookInstructionsRoute,
   MemoryBookPackagesRoute: MemoryBookPackagesRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
