@@ -64,6 +64,7 @@ import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platfo
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMusicRouteImport } from './routes/admin.music'
+import { Route as AdminMemoryBookRouteImport } from './routes/admin.memory-book'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
@@ -372,6 +373,11 @@ const AdminMusicRoute = AdminMusicRouteImport.update({
   path: '/music',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMemoryBookRoute = AdminMemoryBookRouteImport.update({
+  id: '/memory-book',
+  path: '/memory-book',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   id: '/languages',
   path: '/languages',
@@ -583,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -669,6 +676,7 @@ export interface FileRoutesByTo {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -759,6 +767,7 @@ export interface FileRoutesById {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -850,6 +859,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -936,6 +946,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1025,6 +1036,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1500,6 +1512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMusicRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/memory-book': {
+      id: '/admin/memory-book'
+      path: '/memory-book'
+      fullPath: '/admin/memory-book'
+      preLoaderRoute: typeof AdminMemoryBookRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/languages': {
       id: '/admin/languages'
       path: '/languages'
@@ -1788,6 +1807,7 @@ interface AdminRouteChildren {
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
+  AdminMemoryBookRoute: typeof AdminMemoryBookRoute
   AdminMusicRoute: typeof AdminMusicRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1818,6 +1838,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
+  AdminMemoryBookRoute: AdminMemoryBookRoute,
   AdminMusicRoute: AdminMusicRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
