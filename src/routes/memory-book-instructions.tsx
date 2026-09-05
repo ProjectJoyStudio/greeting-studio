@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { MEMORY_BOOK_INSTRUCTIONS } from "@/lib/memory-book/instructions-content";
 
