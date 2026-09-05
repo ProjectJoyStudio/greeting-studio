@@ -38,6 +38,15 @@ function MemoryBookInstructionsPage() {
       </PageHeader>
 
       <section className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6">
+        <Button
+          variant="ghost"
+          className="mb-6 -ml-3 px-3"
+          onClick={() => window.history.back()}
+          type="button"
+        >
+          ← {t("mb_back")}
+        </Button>
+
         <div className="space-y-4">
           {content.intro.map((p) => (
             <p key={p} className="text-base leading-relaxed text-muted-foreground">
