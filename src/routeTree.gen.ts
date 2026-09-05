@@ -20,6 +20,8 @@ import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
+import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
 import { Route as MemoryBookRouteImport } from './routes/memory-book'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LiveCardsRouteImport } from './routes/live-cards'
@@ -62,6 +64,7 @@ import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platfo
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMusicRouteImport } from './routes/admin.music'
+import { Route as AdminMemoryBookRouteImport } from './routes/admin.memory-book'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
@@ -148,6 +151,16 @@ const PricingRoute = PricingRouteImport.update({
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
+  id: '/memory-book-packages',
+  path: '/memory-book-packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookInstructionsRoute = MemoryBookInstructionsRouteImport.update({
+  id: '/memory-book-instructions',
+  path: '/memory-book-instructions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryBookRoute = MemoryBookRouteImport.update({
@@ -360,6 +373,11 @@ const AdminMusicRoute = AdminMusicRouteImport.update({
   path: '/music',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMemoryBookRoute = AdminMemoryBookRouteImport.update({
+  id: '/memory-book',
+  path: '/memory-book',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
   id: '/languages',
   path: '/languages',
@@ -546,6 +564,8 @@ export interface FileRoutesByFullPath {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -569,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -631,6 +652,8 @@ export interface FileRoutesByTo {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -653,6 +676,7 @@ export interface FileRoutesByTo {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -718,6 +742,8 @@ export interface FileRoutesById {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -741,6 +767,7 @@ export interface FileRoutesById {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
+  '/admin/memory-book': typeof AdminMemoryBookRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -807,6 +834,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -830,6 +859,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -892,6 +922,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -914,6 +946,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -978,6 +1011,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -1001,6 +1036,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/homepage-hero'
     | '/admin/languages'
+    | '/admin/memory-book'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1066,6 +1102,8 @@ export interface RootRouteChildren {
   LiveCardsRoute: typeof LiveCardsRoute
   LoginRoute: typeof LoginRoute
   MemoryBookRoute: typeof MemoryBookRoute
+  MemoryBookInstructionsRoute: typeof MemoryBookInstructionsRoute
+  MemoryBookPackagesRoute: typeof MemoryBookPackagesRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
@@ -1164,6 +1202,20 @@ declare module '@tanstack/react-router' {
       path: '/personal-orders'
       fullPath: '/personal-orders'
       preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-packages': {
+      id: '/memory-book-packages'
+      path: '/memory-book-packages'
+      fullPath: '/memory-book-packages'
+      preLoaderRoute: typeof MemoryBookPackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-instructions': {
+      id: '/memory-book-instructions'
+      path: '/memory-book-instructions'
+      fullPath: '/memory-book-instructions'
+      preLoaderRoute: typeof MemoryBookInstructionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory-book': {
@@ -1460,6 +1512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMusicRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/memory-book': {
+      id: '/admin/memory-book'
+      path: '/memory-book'
+      fullPath: '/admin/memory-book'
+      preLoaderRoute: typeof AdminMemoryBookRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/languages': {
       id: '/admin/languages'
       path: '/languages'
@@ -1748,6 +1807,7 @@ interface AdminRouteChildren {
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
+  AdminMemoryBookRoute: typeof AdminMemoryBookRoute
   AdminMusicRoute: typeof AdminMusicRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1778,6 +1838,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
+  AdminMemoryBookRoute: AdminMemoryBookRoute,
   AdminMusicRoute: AdminMusicRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
@@ -1845,6 +1906,8 @@ const rootRouteChildren: RootRouteChildren = {
   LiveCardsRoute: LiveCardsRoute,
   LoginRoute: LoginRoute,
   MemoryBookRoute: MemoryBookRoute,
+  MemoryBookInstructionsRoute: MemoryBookInstructionsRoute,
+  MemoryBookPackagesRoute: MemoryBookPackagesRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
