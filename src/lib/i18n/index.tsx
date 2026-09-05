@@ -39,6 +39,7 @@ import { SHARE_I18N } from "./locales/share";
 import { PERSONAL_VIDEO_RENDER_I18N } from "./locales/personal-video-render";
 import { MEMORY_BOOK_I18N } from "./locales/memory-book";
 import { MEMORY_BOOK_PACKAGES_I18N } from "./locales/memory-book-packages";
+import { MEMORY_BOOKS_DASHBOARD_I18N } from "./locales/memory-books-dashboard";
 import { CM_DICT } from "@/lib/admin/catalog-mgmt/i18n";
 
 export { LANGS };
@@ -75,6 +76,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.en,
     ...MEMORY_BOOK_I18N.en,
     ...MEMORY_BOOK_PACKAGES_I18N.en,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.en,
   },
   ru: {
     ...ru,
@@ -104,6 +106,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.ru,
     ...MEMORY_BOOK_I18N.ru,
     ...MEMORY_BOOK_PACKAGES_I18N.ru,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.ru,
   },
   de: {
     ...de,
@@ -133,6 +136,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.de,
     ...MEMORY_BOOK_I18N.de,
     ...MEMORY_BOOK_PACKAGES_I18N.de,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.de,
   },
   uk: {
     ...uk,
@@ -162,6 +166,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.uk,
     ...MEMORY_BOOK_I18N.uk,
     ...MEMORY_BOOK_PACKAGES_I18N.uk,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.uk,
   },
   fr: {
     ...fr,
@@ -191,6 +196,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.fr,
     ...MEMORY_BOOK_I18N.fr,
     ...MEMORY_BOOK_PACKAGES_I18N.fr,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.fr,
   },
   pl: {
     ...pl,
@@ -220,6 +226,7 @@ const DICTS: Record<Lang, Dict> = {
     ...PERSONAL_VIDEO_RENDER_I18N.pl,
     ...MEMORY_BOOK_I18N.pl,
     ...MEMORY_BOOK_PACKAGES_I18N.pl,
+    ...MEMORY_BOOKS_DASHBOARD_I18N.pl,
   },
 };
 

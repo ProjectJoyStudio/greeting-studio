@@ -5,6 +5,8 @@ import {
   CREDIT_EURO_CENTS,
   CREDIT_MAX,
   CREDIT_MIN,
+  EXTRA_STORAGE_MONTH,
+  EXTRA_STORAGE_WEEK,
   findPackage,
 } from "./packages";
 
@@ -17,6 +19,7 @@ export interface MemoryBookProject {
   creditsSpent: number;
   status: string;
   expiresAt: string;
+  createdAt: string;
 }
 
 /** The customer's own purchased Memory Books, newest first. */
@@ -25,7 +28,7 @@ export const listMemoryBooks = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ books: MemoryBookProject[] }> => {
     const { data } = await context.supabase
       .from("memory_book_projects")
-      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at")
+      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     const rows = (data ?? []) as Record<string, unknown>[];
@@ -39,6 +42,7 @@ export const listMemoryBooks = createServerFn({ method: "POST" })
         creditsSpent: Number(r.credits_spent ?? 0),
         status: String(r.status ?? "active"),
         expiresAt: String(r.expires_at ?? ""),
+        createdAt: String(r.created_at ?? ""),
       })),
     };
   });
@@ -53,7 +57,7 @@ export const getMemoryBookAccess = createServerFn({ method: "POST" })
     if (!data.bookId) return { allowed: false, book: null };
     const { data: row } = await context.supabase
       .from("memory_book_projects")
-      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at")
+      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at")
       .eq("user_id", context.userId)
       .eq("id", data.bookId)
       .maybeSingle();
@@ -70,6 +74,7 @@ export const getMemoryBookAccess = createServerFn({ method: "POST" })
         creditsSpent: Number(r.credits_spent ?? 0),
         status: String(r.status ?? "active"),
         expiresAt: String(r.expires_at ?? ""),
+        createdAt: String(r.created_at ?? ""),
       },
     };
   });
@@ -166,3 +171,57 @@ export const getFirstPurchaseGiftStatus = createServerFn({ method: "POST" })
       .eq("status", "paid");
     return { eligible: (count ?? 0) === 0 };
   });
+
+/**
+ * Adds paid storage time to ONE Memory Book. The extra time is always added on
+ * top of the book's current expiry date, the charge is keyed so a repeated
+ * click cannot pay twice, and it never counts as spending on creating the book.
+ */
+export const extendMemoryBookStorage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; days: number; extendKey: string }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    days: Number(input?.days ?? 0) === 30 ? 30 : 7,
+    extendKey: String(input?.extendKey ?? "").slice(0, 64),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      error?: "insufficient_credits" | "not_found" | "failed";
+      expiresAt?: string;
+      balance?: number;
+    }> => {
+      if (!data.bookId || !data.extendKey) return { ok: false, error: "failed" };
+      const price = data.days === 30 ? EXTRA_STORAGE_MONTH.credits : EXTRA_STORAGE_WEEK.credits;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: result, error } = await supabaseAdmin.rpc("extend_memory_book_storage", {
+        _user_id: context.userId,
+        _book_id: data.bookId,
+        _days: data.days,
+        _price: price,
+        _extend_key: data.extendKey,
+      });
+      const payload = (result ?? {}) as {
+        ok?: boolean;
+        error?: string;
+        expires_at?: string;
+        balance?: number;
+      };
+      if (error || !payload.ok) {
+        return {
+          ok: false,
+          error:
+            payload.error === "insufficient_credits"
+              ? "insufficient_credits"
+              : payload.error === "not_found"
+                ? "not_found"
+                : "failed",
+          balance: payload.balance,
+        };
+      }
+      return { ok: true, expiresAt: payload.expires_at, balance: payload.balance };
+    },
+  );

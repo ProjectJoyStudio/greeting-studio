@@ -12,6 +12,7 @@ import {
   Film,
   Video,
   Mic,
+  BookOpen,
 } from "lucide-react";
 
 import { Header } from "@/components/site/Header";
@@ -25,6 +26,7 @@ const items = [
   { to: "/dashboard/live-cards", key: "nav_my_live_cards", icon: Film },
   { to: "/dashboard/video-greetings", key: "nav_my_video_greetings", icon: Video },
   { to: "/dashboard/voices", key: "nav_my_voices", icon: Mic },
+  { to: "/dashboard/memory-books", key: "nav_my_memory_books", icon: BookOpen },
   { to: "/dashboard/settings", key: "nav_settings", icon: Settings },
   { to: "/dashboard/notifications", key: "nav_notifications", icon: Bell },
   { to: "/dashboard/credits", key: "nav_credits", icon: Coins },

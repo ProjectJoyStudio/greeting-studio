@@ -2211,6 +2211,47 @@ export type Database = {
         }
         Relationships: []
       }
+      memory_book_storage_extensions: {
+        Row: {
+          book_id: string
+          created_at: string
+          credits: number
+          days: number
+          expires_at: string
+          extend_key: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          credits: number
+          days: number
+          expires_at: string
+          extend_key: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          credits?: number
+          days?: number
+          expires_at?: string
+          extend_key?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_storage_extensions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_tracks: {
         Row: {
           category: string
@@ -4321,6 +4362,16 @@ export type Database = {
         Args: {
           _attempts_per_pack: number
           _session_key: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      extend_memory_book_storage: {
+        Args: {
+          _book_id: string
+          _days: number
+          _extend_key: string
+          _price: number
           _user_id: string
         }
         Returns: Json
