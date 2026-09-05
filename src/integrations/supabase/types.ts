@@ -1429,6 +1429,51 @@ export type Database = {
           },
         ]
       }
+      credit_purchase_orders: {
+        Row: {
+          amount_cents: number
+          bonus_credits_granted: number
+          confirmed_at: string | null
+          created_at: string
+          credits: number
+          currency: string
+          id: string
+          provider: string | null
+          provider_reference: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          bonus_credits_granted?: number
+          confirmed_at?: string | null
+          created_at?: string
+          credits: number
+          currency?: string
+          id?: string
+          provider?: string | null
+          provider_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          bonus_credits_granted?: number
+          confirmed_at?: string | null
+          created_at?: string
+          credits?: number
+          currency?: string
+          id?: string
+          provider?: string | null
+          provider_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -2120,6 +2165,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      memory_book_projects: {
+        Row: {
+          created_at: string
+          credits_spent: number
+          expires_at: string
+          id: string
+          internal_pages: number
+          leaves: number
+          package_code: string
+          purchase_key: string
+          status: string
+          updated_at: string
+          user_id: string
+          video_capacity: number
+        }
+        Insert: {
+          created_at?: string
+          credits_spent?: number
+          expires_at?: string
+          id?: string
+          internal_pages: number
+          leaves: number
+          package_code: string
+          purchase_key: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_capacity: number
+        }
+        Update: {
+          created_at?: string
+          credits_spent?: number
+          expires_at?: string
+          id?: string
+          internal_pages?: number
+          leaves?: number
+          package_code?: string
+          purchase_key?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_capacity?: number
+        }
+        Relationships: []
       }
       music_tracks: {
         Row: {
@@ -4219,6 +4309,14 @@ export type Database = {
           used_at: string
         }[]
       }
+      confirm_credit_purchase: {
+        Args: {
+          _order_id: string
+          _provider?: string
+          _provider_reference?: string
+        }
+        Returns: Json
+      }
       consume_live_card_attempt: {
         Args: {
           _attempts_per_pack: number
@@ -4251,6 +4349,18 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      purchase_memory_book_package: {
+        Args: {
+          _leaves: number
+          _package_code: string
+          _pages: number
+          _price: number
+          _purchase_key: string
+          _user_id: string
+          _videos: number
+        }
+        Returns: Json
+      }
       refund_live_card_animation: {
         Args: { _price: number; _reason: string; _user_id: string }
         Returns: number
