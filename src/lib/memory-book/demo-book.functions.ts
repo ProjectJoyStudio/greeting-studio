@@ -136,7 +136,7 @@ export const setMemoryBookDemo = createServerFn({ method: "POST" })
     const { error } = await db
       .from("app_settings")
       .upsert(
-        { key: MEMORY_BOOK_DEMO_KEY, value: stored as unknown as Record<string, unknown>, updated_by: context.userId },
+        { key: MEMORY_BOOK_DEMO_KEY, value: { ...stored } as unknown as never, updated_by: context.userId },
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
