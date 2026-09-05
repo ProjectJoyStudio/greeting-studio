@@ -20,6 +20,8 @@ import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
+import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
 import { Route as MemoryBookRouteImport } from './routes/memory-book'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LiveCardsRouteImport } from './routes/live-cards'
@@ -148,6 +150,16 @@ const PricingRoute = PricingRouteImport.update({
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
+  id: '/memory-book-packages',
+  path: '/memory-book-packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookInstructionsRoute = MemoryBookInstructionsRouteImport.update({
+  id: '/memory-book-instructions',
+  path: '/memory-book-instructions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryBookRoute = MemoryBookRouteImport.update({
@@ -546,6 +558,8 @@ export interface FileRoutesByFullPath {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -631,6 +645,8 @@ export interface FileRoutesByTo {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -718,6 +734,8 @@ export interface FileRoutesById {
   '/live-cards': typeof LiveCardsRoute
   '/login': typeof LoginRoute
   '/memory-book': typeof MemoryBookRoute
+  '/memory-book-instructions': typeof MemoryBookInstructionsRoute
+  '/memory-book-packages': typeof MemoryBookPackagesRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -807,6 +825,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -892,6 +912,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -978,6 +1000,8 @@ export interface FileRouteTypes {
     | '/live-cards'
     | '/login'
     | '/memory-book'
+    | '/memory-book-instructions'
+    | '/memory-book-packages'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -1066,6 +1090,8 @@ export interface RootRouteChildren {
   LiveCardsRoute: typeof LiveCardsRoute
   LoginRoute: typeof LoginRoute
   MemoryBookRoute: typeof MemoryBookRoute
+  MemoryBookInstructionsRoute: typeof MemoryBookInstructionsRoute
+  MemoryBookPackagesRoute: typeof MemoryBookPackagesRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
@@ -1164,6 +1190,20 @@ declare module '@tanstack/react-router' {
       path: '/personal-orders'
       fullPath: '/personal-orders'
       preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-packages': {
+      id: '/memory-book-packages'
+      path: '/memory-book-packages'
+      fullPath: '/memory-book-packages'
+      preLoaderRoute: typeof MemoryBookPackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-instructions': {
+      id: '/memory-book-instructions'
+      path: '/memory-book-instructions'
+      fullPath: '/memory-book-instructions'
+      preLoaderRoute: typeof MemoryBookInstructionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory-book': {
@@ -1845,6 +1885,8 @@ const rootRouteChildren: RootRouteChildren = {
   LiveCardsRoute: LiveCardsRoute,
   LoginRoute: LoginRoute,
   MemoryBookRoute: MemoryBookRoute,
+  MemoryBookInstructionsRoute: MemoryBookInstructionsRoute,
+  MemoryBookPackagesRoute: MemoryBookPackagesRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
