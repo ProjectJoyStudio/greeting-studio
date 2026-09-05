@@ -33,12 +33,15 @@ function MemoryBookPage() {
   const router = useRouter();
   const loadDemo = useServerFn(getMemoryBookDemo);
   const [demoUrl, setDemoUrl] = useState<string | null>(null);
+  const [demoKind, setDemoKind] = useState<"book" | "video" | "image">("book");
 
   useEffect(() => {
     let active = true;
     loadDemo()
       .then((res) => {
-        if (active) setDemoUrl(res.url);
+        if (!active) return;
+        setDemoUrl(res.url);
+        setDemoKind(res.kind);
       })
       .catch(() => {
         /* the placeholder stays visible */
@@ -47,6 +50,7 @@ function MemoryBookPage() {
       active = false;
     };
   }, [loadDemo]);
+
 
   return (
     <SiteLayout>
