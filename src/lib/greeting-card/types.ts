@@ -45,6 +45,12 @@ export const CARD_FONTS: { value: string; label: string }[] = [
   // character the font itself does not carry readable instead of showing boxes.
   { value: "'Caveat', 'Segoe Script', 'Bradley Hand', cursive", label: "Caveat" },
   { value: "'Bad Script', 'Segoe Script', 'Bradley Hand', cursive", label: "Bad Script" },
+  // Great Vibes carries Latin only; the Cyrillic-capable fallbacks keep Russian
+  // and Ukrainian text readable instead of showing boxes.
+  { value: "'Great Vibes', 'Marck Script', 'Segoe Script', cursive", label: "Great Vibes" },
+  { value: "'Lobster', 'Trebuchet MS', cursive", label: "Lobster" },
+  { value: "'Marck Script', 'Segoe Script', cursive", label: "Marck Script" },
+  { value: "'Playfair', 'Playfair Display', Georgia, serif", label: "Playfair" },
 ];
 
 export function normalizeTextDesign(value: unknown): CardTextDesign {
