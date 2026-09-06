@@ -29,6 +29,10 @@ import {
 } from "@/lib/memory-book/packages.functions";
 
 export const Route = createFileRoute("/memory-book-packages")({
+  // Keeps the identity of an active Memory Book while the customer buys credits.
+  validateSearch: (search: Record<string, unknown>) => ({
+    book: typeof search.book === "string" ? search.book : "",
+  }),
   head: () => ({
     meta: [
       { title: "Memory Book packages — Project Joy" },
@@ -55,6 +59,7 @@ function MemoryBookPackagesPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { total, loading, refresh } = useCreditBalance();
+  const { book: activeBookId } = Route.useSearch();
 
   const buyPackage = useServerFn(purchaseMemoryBookPackage);
   const startPurchase = useServerFn(startCreditPurchase);
@@ -143,6 +148,19 @@ function MemoryBookPackagesPage() {
             ? fill(t("mbp_balance"), { n: loading ? "…" : total })
             : t("mbp_balance_sign_in")}
         </div>
+
+        {activeBookId ? (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() =>
+                void navigate({ to: "/memory-book-create", search: { book: activeBookId } })
+              }
+            >
+              {t("mbc_back_to_book")}
+            </Button>
+          </div>
+        ) : null}
 
         {/* Buy credits */}
         <div className="mb-6 rounded-2xl border border-border/70 bg-card p-5">
