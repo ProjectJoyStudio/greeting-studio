@@ -7,6 +7,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { useI18n } from "@/lib/i18n";
+import { MemoryBookDesignStudio } from "@/components/memory-book/MemoryBookDesignStudio";
 import {
   getMemoryBookAccess,
   type MemoryBookProject,
@@ -97,7 +98,7 @@ function MemoryBookCreatePage() {
         />
       </PageHeader>
 
-      <section className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6">
+      <section className="mx-auto w-full max-w-4xl px-4 pb-16 sm:px-6">
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-card p-8 text-center">
           <BookOpen className="h-8 w-8 text-primary" aria-hidden />
           {state === "checking" ? (
@@ -117,6 +118,8 @@ function MemoryBookCreatePage() {
             <p className="text-sm text-muted-foreground">{t("mbp_access_denied")}</p>
           )}
         </div>
+
+        {state === "allowed" && book ? <MemoryBookDesignStudio bookId={book.id} /> : null}
       </section>
     </SiteLayout>
   );
