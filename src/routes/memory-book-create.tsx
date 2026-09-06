@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { useI18n } from "@/lib/i18n";
 import { MemoryBookDesignStudio } from "@/components/memory-book/MemoryBookDesignStudio";
+import { MemoryBookCreditStatus } from "@/components/memory-book/MemoryBookCreditStatus";
 import {
   getMemoryBookAccess,
   type MemoryBookProject,
@@ -119,7 +120,12 @@ function MemoryBookCreatePage() {
           )}
         </div>
 
-        {state === "allowed" && book ? <MemoryBookDesignStudio bookId={book.id} /> : null}
+        {state === "allowed" && book ? (
+          <>
+            <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
+            <MemoryBookDesignStudio bookId={book.id} />
+          </>
+        ) : null}
       </section>
     </SiteLayout>
   );
