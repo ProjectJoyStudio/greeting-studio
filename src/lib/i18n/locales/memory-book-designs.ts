@@ -3,6 +3,10 @@ import type { Dict, Lang } from "../types";
 /** Strings of the Cover Design and Leaf Design stages of the Memory Book. */
 export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
   en: {
+    mb_admin_library_title: "Ready-made design library",
+    mb_admin_library_hint: "Upload ready-made cover and leaf designs. Customers can choose them in the Memory Book creation flow.",
+    mb_admin_library_covers: "Covers",
+    mb_admin_library_leaves: "Leaves",
     mbd_cover_title: "Cover design",
     mbd_leaf_title: "Leaf design",
     mbd_cover_hint:
@@ -38,6 +42,10 @@ export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
     mbd_back_cover: "Back to the cover",
   },
   ru: {
+    mb_admin_library_title: "Библиотека готовых дизайнов",
+    mb_admin_library_hint: "Загрузите готовые дизайны обложек и листов. Клиенты смогут выбрать их при создании Книги.",
+    mb_admin_library_covers: "Обложки",
+    mb_admin_library_leaves: "Листы",
     mbd_cover_title: "Дизайн обложки",
     mbd_leaf_title: "Дизайн листа",
     mbd_cover_hint:
@@ -73,6 +81,10 @@ export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
     mbd_back_cover: "Вернуться к обложке",
   },
   uk: {
+    mb_admin_library_title: "Бібліотека готових дизайнів",
+    mb_admin_library_hint: "Завантажте готові дизайни обкладинок і аркушів. Клієнти зможуть обрати їх під час створення Книги.",
+    mb_admin_library_covers: "Обкладинки",
+    mb_admin_library_leaves: "Аркуші",
     mbd_cover_title: "Дизайн обкладинки",
     mbd_leaf_title: "Дизайн аркуша",
     mbd_cover_hint:
@@ -107,6 +119,10 @@ export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
     mbd_back_cover: "Повернутися до обкладинки",
   },
   pl: {
+    mb_admin_library_title: "Biblioteka gotowych projektów",
+    mb_admin_library_hint: "Wgraj gotowe projekty okładek i kart. Klienci wybiorą je podczas tworzenia Księgi.",
+    mb_admin_library_covers: "Okładki",
+    mb_admin_library_leaves: "Karty",
     mbd_cover_title: "Projekt okładki",
     mbd_leaf_title: "Projekt karty",
     mbd_cover_hint:
@@ -141,6 +157,10 @@ export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
     mbd_back_cover: "Wróć do okładki",
   },
   de: {
+    mb_admin_library_title: "Bibliothek fertiger Designs",
+    mb_admin_library_hint: "Laden Sie fertige Cover- und Blatt-Designs hoch. Kunden können sie beim Erstellen des Buches wählen.",
+    mb_admin_library_covers: "Cover",
+    mb_admin_library_leaves: "Blätter",
     mbd_cover_title: "Cover-Design",
     mbd_leaf_title: "Blatt-Design",
     mbd_cover_hint:
@@ -177,6 +197,10 @@ export const MEMORY_BOOK_DESIGNS_I18N: Record<Lang, Dict> = {
     mbd_back_cover: "Zurück zum Cover",
   },
   fr: {
+    mb_admin_library_title: "Bibliothèque de designs prêts",
+    mb_admin_library_hint: "Téléversez des designs de couverture et de page prêts. Les clients pourront les choisir lors de la création du Livre.",
+    mb_admin_library_covers: "Couvertures",
+    mb_admin_library_leaves: "Pages",
     mbd_cover_title: "Design de la couverture",
     mbd_leaf_title: "Design de la page",
     mbd_cover_hint:
