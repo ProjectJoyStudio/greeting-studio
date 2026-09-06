@@ -88,7 +88,11 @@ function pickUrl(output: unknown): string | null {
   return null;
 }
 
-async function renderWithRunware(key: string, prompt: string): Promise<string> {
+async function renderWithRunware(
+  key: string,
+  prompt: string,
+  stage: MemoryBookStage,
+): Promise<string> {
   const { runwareTasks } = await import("@/lib/runware/runware.server");
   const rows = await runwareTasks([
     {
