@@ -32,6 +32,20 @@ const NO_TEXT_RULE =
 
 const NEGATIVE = "text, letters, words, numbers, title, caption, watermark, signature, logo";
 
+/** Cover-only rule: the artwork itself, never a photographed or mocked-up book. */
+const COVER_FLAT_RULE =
+  "This is the flat front cover artwork itself, designed as a full-bleed graphic: " +
+  "front-facing, straight-on view, filling the entire image edge to edge. " +
+  "It is not a photograph or mockup of a physical book: no book object, no book on a " +
+  "table or any surface, no multiple books, no room or background scene, no hands, " +
+  "no surrounding props, no perspective or angled view, no visible book thickness, " +
+  "edges, spine or pages, no frame or border around the design.";
+
+const COVER_NEGATIVE =
+  `${NEGATIVE}, book mockup, physical book, closed book, open book, book on table, ` +
+  "stack of books, book spine, book pages, book thickness, 3d book render, perspective view, " +
+  "hands holding book, room scene, table, background scene, product photo, frame, border";
+
 const ASPECT: Record<MemoryBookStage, string> = { cover: "3:4", leaf: "3:4" };
 const SIZE = { width: 1024, height: 1360 };
 
