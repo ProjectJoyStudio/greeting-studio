@@ -2166,44 +2166,156 @@ export type Database = {
           },
         ]
       }
+      memory_book_designs: {
+        Row: {
+          book_id: string
+          bucket: string
+          created_at: string
+          id: string
+          path: string
+          prompt: string | null
+          source: string
+          stage: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          bucket: string
+          created_at?: string
+          id?: string
+          path: string
+          prompt?: string | null
+          source?: string
+          stage: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          bucket?: string
+          created_at?: string
+          id?: string
+          path?: string
+          prompt?: string | null
+          source?: string
+          stage?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_designs_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_book_generation_purchases: {
+        Row: {
+          book_id: string
+          created_at: string
+          credits: number
+          generations: number
+          id: string
+          purchase_key: string
+          stage: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          credits: number
+          generations: number
+          id?: string
+          purchase_key: string
+          stage: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          credits?: number
+          generations?: number
+          id?: string
+          purchase_key?: string
+          stage?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_generation_purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_projects: {
         Row: {
+          cover_generations_allowed: number
+          cover_generations_used: number
+          cover_prompt: string | null
           created_at: string
           credits_spent: number
+          design_stage: string
           expires_at: string
           id: string
           internal_pages: number
+          leaf_generations_allowed: number
+          leaf_generations_used: number
+          leaf_prompt: string | null
           leaves: number
           package_code: string
           purchase_key: string
+          selected_cover_id: string | null
+          selected_leaf_id: string | null
           status: string
           updated_at: string
           user_id: string
           video_capacity: number
         }
         Insert: {
+          cover_generations_allowed?: number
+          cover_generations_used?: number
+          cover_prompt?: string | null
           created_at?: string
           credits_spent?: number
+          design_stage?: string
           expires_at?: string
           id?: string
           internal_pages: number
+          leaf_generations_allowed?: number
+          leaf_generations_used?: number
+          leaf_prompt?: string | null
           leaves: number
           package_code: string
           purchase_key: string
+          selected_cover_id?: string | null
+          selected_leaf_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
           video_capacity: number
         }
         Update: {
+          cover_generations_allowed?: number
+          cover_generations_used?: number
+          cover_prompt?: string | null
           created_at?: string
           credits_spent?: number
+          design_stage?: string
           expires_at?: string
           id?: string
           internal_pages?: number
+          leaf_generations_allowed?: number
+          leaf_generations_used?: number
+          leaf_prompt?: string | null
           leaves?: number
           package_code?: string
           purchase_key?: string
+          selected_cover_id?: string | null
+          selected_leaf_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -4350,6 +4462,10 @@ export type Database = {
           used_at: string
         }[]
       }
+      claim_memory_book_generation: {
+        Args: { _book_id: string; _stage: string; _user_id: string }
+        Returns: Json
+      }
       confirm_credit_purchase: {
         Args: {
           _order_id: string
@@ -4400,6 +4516,17 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      purchase_memory_book_generations: {
+        Args: {
+          _book_id: string
+          _generations: number
+          _price: number
+          _purchase_key: string
+          _stage: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       purchase_memory_book_package: {
         Args: {
           _leaves: number
@@ -4423,6 +4550,10 @@ export type Database = {
       release_first_free_greeting: {
         Args: { _order_id: string }
         Returns: boolean
+      }
+      release_memory_book_generation: {
+        Args: { _book_id: string; _stage: string; _user_id: string }
+        Returns: Json
       }
     }
     Enums: {
