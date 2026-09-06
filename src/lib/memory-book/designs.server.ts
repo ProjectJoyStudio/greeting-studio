@@ -142,7 +142,8 @@ async function renderWithReplicate(
   const output = await runReplicate(REPLICATE_ENGINES[key]!, {
     prompt,
     aspect_ratio: ASPECT[stage],
-    output_format: "jpg",
+    // This one engine rejects "jpg" during input validation; others keep theirs.
+    output_format: key === "rp_seedream5_pro" ? "jpeg" : "jpg",
   });
   const url = pickUrl(output);
   if (!url) throw new Error("The engine returned no picture.");
