@@ -32,6 +32,20 @@ const NO_TEXT_RULE =
 
 const NEGATIVE = "text, letters, words, numbers, title, caption, watermark, signature, logo";
 
+/** Cover-only rule: the artwork itself, never a photographed or mocked-up book. */
+const COVER_FLAT_RULE =
+  "This is the flat front cover artwork itself, designed as a full-bleed graphic: " +
+  "front-facing, straight-on view, filling the entire image edge to edge. " +
+  "It is not a photograph or mockup of a physical book: no book object, no book on a " +
+  "table or any surface, no multiple books, no room or background scene, no hands, " +
+  "no surrounding props, no perspective or angled view, no visible book thickness, " +
+  "edges, spine or pages, no frame or border around the design.";
+
+const COVER_NEGATIVE =
+  `${NEGATIVE}, book mockup, physical book, closed book, open book, book on table, ` +
+  "stack of books, book spine, book pages, book thickness, 3d book render, perspective view, " +
+  "hands holding book, room scene, table, background scene, product photo, frame, border";
+
 const ASPECT: Record<MemoryBookStage, string> = { cover: "3:4", leaf: "3:4" };
 const SIZE = { width: 1024, height: 1360 };
 
@@ -45,9 +59,17 @@ function functionIdOf(stage: MemoryBookStage): string {
   return stage === "cover" ? "memory_book.cover" : "memory_book.leaf_design";
 }
 
-function buildPrompt(description: string): string {
+/**
+ * Turns what the person wrote in any of the six languages into the final
+ * English prompt. The shared Project Joy translation layer does the language
+ * work; only the internal design rules are added on top.
+ */
+async function buildPrompt(description: string, stage: MemoryBookStage): Promise<string> {
   const clean = description.trim().slice(0, 900);
-  return `${clean}\n\n${NO_TEXT_RULE}`;
+  const { toEnglishImagePrompt } = await import("@/lib/greeting-card/prompt-translate.server");
+  const english = await toEnglishImagePrompt(clean).catch(() => clean);
+  const rules = stage === "cover" ? `${COVER_FLAT_RULE}\n\n${NO_TEXT_RULE}` : NO_TEXT_RULE;
+  return `${english}\n\n${rules}`;
 }
 
 function pickUrl(output: unknown): string | null {
@@ -66,7 +88,11 @@ function pickUrl(output: unknown): string | null {
   return null;
 }
 
-async function renderWithRunware(key: string, prompt: string): Promise<string> {
+async function renderWithRunware(
+  key: string,
+  prompt: string,
+  stage: MemoryBookStage,
+): Promise<string> {
   const { runwareTasks } = await import("@/lib/runware/runware.server");
   const rows = await runwareTasks([
     {
@@ -74,7 +100,7 @@ async function renderWithRunware(key: string, prompt: string): Promise<string> {
       taskUUID: crypto.randomUUID(),
       model: RUNWARE_ENGINES[key],
       positivePrompt: prompt,
-      negativePrompt: NEGATIVE,
+      negativePrompt: stage === "cover" ? COVER_NEGATIVE : NEGATIVE,
       width: SIZE.width,
       height: SIZE.height,
       numberResults: 1,
@@ -132,14 +158,14 @@ export async function renderMemoryBookDesign(
     throw new Error("no_generator");
   }
 
-  const prompt = buildPrompt(description);
+  const prompt = await buildPrompt(description, stage);
   let lastError: Error | null = null;
 
   for (const key of order) {
     try {
       const url = await withGeneratorSlot(key, () =>
         RUNWARE_ENGINES[key]
-          ? renderWithRunware(key, prompt)
+          ? renderWithRunware(key, prompt, stage)
           : renderWithReplicate(key, prompt, stage),
       );
       return await download(url);
