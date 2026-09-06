@@ -72,6 +72,16 @@ async function buildPrompt(description: string, stage: MemoryBookStage): Promise
   return `${english}\n\n${rules}`;
 }
 
+/**
+ * Runware image models used by the Memory Book do not accept a separate
+ * negative prompt, so the same exclusions travel inside the English prompt.
+ */
+function promptWithExclusions(prompt: string, stage: MemoryBookStage): string {
+  const avoid = stage === "cover" ? COVER_NEGATIVE : NEGATIVE;
+  return `${prompt}\n\nDo not include any of the following in the picture: ${avoid}.`;
+}
+
+
 function pickUrl(output: unknown): string | null {
   if (typeof output === "string") return output;
   if (Array.isArray(output)) {
