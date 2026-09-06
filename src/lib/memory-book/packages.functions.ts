@@ -20,6 +20,8 @@ export interface MemoryBookProject {
   status: string;
   expiresAt: string;
   createdAt: string;
+  completedAt: string | null;
+  retentionExpiresAt: string | null;
 }
 
 /** The customer's own purchased Memory Books, newest first. */
@@ -28,7 +30,7 @@ export const listMemoryBooks = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ books: MemoryBookProject[] }> => {
     const { data } = await context.supabase
       .from("memory_book_projects")
-      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at")
+      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at, completed_at, retention_expires_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     const rows = (data ?? []) as Record<string, unknown>[];
@@ -43,6 +45,9 @@ export const listMemoryBooks = createServerFn({ method: "POST" })
         status: String(r.status ?? "active"),
         expiresAt: String(r.expires_at ?? ""),
         createdAt: String(r.created_at ?? ""),
+        completedAt: typeof r.completed_at === "string" ? r.completed_at : null,
+        retentionExpiresAt:
+          typeof r.retention_expires_at === "string" ? r.retention_expires_at : null,
       })),
     };
   });
@@ -57,7 +62,7 @@ export const getMemoryBookAccess = createServerFn({ method: "POST" })
     if (!data.bookId) return { allowed: false, book: null };
     const { data: row } = await context.supabase
       .from("memory_book_projects")
-      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at")
+      .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at, completed_at, retention_expires_at")
       .eq("user_id", context.userId)
       .eq("id", data.bookId)
       .maybeSingle();
@@ -75,6 +80,9 @@ export const getMemoryBookAccess = createServerFn({ method: "POST" })
         status: String(r.status ?? "active"),
         expiresAt: String(r.expires_at ?? ""),
         createdAt: String(r.created_at ?? ""),
+        completedAt: typeof r.completed_at === "string" ? r.completed_at : null,
+        retentionExpiresAt:
+          typeof r.retention_expires_at === "string" ? r.retention_expires_at : null,
       },
     };
   });

@@ -16,6 +16,7 @@ import {
   setMemoryBookStage,
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
+import { completeMemoryBook } from "@/lib/memory-book/lifecycle.functions";
 import type {
   MemoryBookDesignState,
   MemoryBookStage,
@@ -32,7 +33,13 @@ function fill(text: string, vars: Record<string, string | number>) {
  * Cover Design and Leaf Design of ONE already purchased Memory Book. Every
  * variant, description and allowance stays attached to that book.
  */
-export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
+export function MemoryBookDesignStudio({
+  bookId,
+  completed = false,
+}: {
+  bookId: string;
+  completed?: boolean;
+}) {
   const { t } = useI18n();
   const load = useServerFn(loadMemoryBookDesigns);
   const saveDescription = useServerFn(saveMemoryBookDescription);
@@ -42,6 +49,7 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
   const setStage = useServerFn(setMemoryBookStage);
   const loadLibrary = useServerFn(listMemoryBookLibrary);
   const chooseLibrary = useServerFn(chooseMemoryBookLibraryDesign);
+  const finish = useServerFn(completeMemoryBook);
 
   const [state, setState] = useState<MemoryBookDesignState | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -49,6 +57,7 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
+  const [done, setDone] = useState(completed);
 
   const stage: MemoryBookStage = state?.stage ?? "cover";
   const current = state ? state[stage] : null;
@@ -158,6 +167,26 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
     }
   }
 
+  /** The customer finishes the book on purpose; leaving the page never does. */
+  async function runFinish() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await finish({ data: { bookId, method: "cabinet" } });
+      if (res.ok) {
+        setDone(true);
+        const fresh = await load({ data: { bookId } });
+        if (fresh.ok) apply(fresh.state);
+      } else {
+        setMessage(t("mbd_failed"));
+      }
+    } catch {
+      setMessage(t("mbd_failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function goToStage(next: MemoryBookStage) {
     setBusy(true);
     try {
@@ -173,6 +202,27 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
 
   return (
     <section className="mt-8 space-y-6 text-left">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={stage === "cover" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || stage === "cover"}
+          onClick={() => void goToStage("cover")}
+        >
+          {t("mbk_stage_cover")}
+          {state.cover.selectedId ? <Check className="ml-1 h-3.5 w-3.5" aria-hidden /> : null}
+        </Button>
+        <Button
+          variant={stage === "leaf" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || stage === "leaf"}
+          onClick={() => void goToStage("leaf")}
+        >
+          {t("mbk_stage_leaf")}
+          {state.leaf.selectedId ? <Check className="ml-1 h-3.5 w-3.5" aria-hidden /> : null}
+        </Button>
+      </div>
+
       <div className="space-y-2">
         <h2 className="font-display text-xl font-semibold">
           {stage === "cover" ? t("mbd_cover_title") : t("mbd_leaf_title")}
@@ -183,7 +233,9 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
         <p className="text-xs text-muted-foreground">
           {stage === "cover" ? t("mbd_cover_example") : t("mbd_leaf_example")}
         </p>
+        <p className="text-xs text-muted-foreground">{t("mbk_saved")}</p>
       </div>
+
 
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="mbd-prompt">
@@ -282,6 +334,21 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
         ) : null}
         {bothReady ? <p className="text-sm text-muted-foreground">{t("mbd_ready_next")}</p> : null}
       </div>
+
+      <div className="space-y-2 border-t border-border/60 pt-4">
+        {done ? (
+          <p className="text-sm font-medium text-primary">{t("mbk_finished")}</p>
+        ) : (
+          <>
+            <Button onClick={() => void runFinish()} disabled={busy || !bothReady}>
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {t("mbk_finish")}
+            </Button>
+            <p className="text-xs text-muted-foreground">{t("mbk_finish_hint")}</p>
+          </>
+        )}
+      </div>
+
 
       {library ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
