@@ -120,8 +120,8 @@ async function renderWithRunware(
       taskUUID: crypto.randomUUID(),
       model: RUNWARE_ENGINES[key],
       positivePrompt: promptWithExclusions(prompt, stage),
-      width: SIZE.width,
-      height: SIZE.height,
+      width: size.width,
+      height: size.height,
 
       numberResults: 1,
       outputType: "URL",
