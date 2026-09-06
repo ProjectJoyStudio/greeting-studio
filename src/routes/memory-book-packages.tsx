@@ -30,9 +30,8 @@ import {
 
 export const Route = createFileRoute("/memory-book-packages")({
   // Keeps the identity of an active Memory Book while the customer buys credits.
-  validateSearch: (search: Record<string, unknown>) => ({
-    book: typeof search.book === "string" ? search.book : "",
-  }),
+  validateSearch: (search: Record<string, unknown>): { book?: string } =>
+    typeof search.book === "string" && search.book ? { book: search.book } : {},
   head: () => ({
     meta: [
       { title: "Memory Book packages — Project Joy" },
