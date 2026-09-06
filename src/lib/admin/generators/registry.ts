@@ -145,6 +145,23 @@ const RUNWARE_FINAL_VIDEOS: GeneratorDef[] = [
   RUNWARE("rw_pvideo_avatar", "prunaai:p-video@avatar"),
 ];
 
+/**
+ * Approved picture engines for the Memory Book. The same four models are
+ * offered through both providers, so an administrator can choose either one
+ * as the main or the reserve engine.
+ */
+const MEMORY_BOOK_IMAGES: GeneratorDef[] = [
+  RUNWARE("rw_flux2_pro", "bfl:5@1"),
+  RUNWARE("rw_seedream5_pro", "bytedance:seedream@5.0-pro"),
+  RUNWARE("rw_nano_banana_pro", "google:4@2"),
+  RUNWARE("rw_recraft_v4_pro", "recraft:v4-pro@0"),
+  REPLICATE("flux2_pro", "black-forest-labs/flux-2-pro"),
+  REPLICATE("rp_seedream5_pro", "bytedance/seedream-5-pro"),
+  REPLICATE("rp_nano_banana_pro", "google/nano-banana-pro"),
+  REPLICATE("rp_recraft_v4_pro", "recraft-ai/recraft-v4-pro"),
+];
+
+
 export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
   {
     id: "greeting_cards",
@@ -305,6 +322,31 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
 
     ],
   },
+  {
+    id: "memory_book",
+    titleKey: "gc_feature_memory_book",
+    functions: [
+      {
+        id: "memory_book.cover",
+        titleKey: "gc_fn_mb_cover",
+        candidates: MEMORY_BOOK_IMAGES,
+        // The administrator decides which approved engine serves this
+        // function; nothing is fixed as main or reserve in code.
+        defaultPrimary: null,
+        defaultBackup: null,
+        defaultAutoFailover: false,
+      },
+      {
+        id: "memory_book.leaf_design",
+        titleKey: "gc_fn_mb_leaf",
+        candidates: MEMORY_BOOK_IMAGES,
+        defaultPrimary: null,
+        defaultBackup: null,
+        defaultAutoFailover: false,
+      },
+    ],
+  },
+
   {
     id: "future",
     titleKey: "gc_feature_future",
