@@ -111,8 +111,8 @@ async function renderWithRunware(
       model: RUNWARE_ENGINES[key],
       positivePrompt: promptWithExclusions(prompt, stage),
       width: SIZE.width,
-
       height: SIZE.height,
+
       numberResults: 1,
       outputType: "URL",
       outputFormat: "JPG",
