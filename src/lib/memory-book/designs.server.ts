@@ -158,7 +158,7 @@ export async function renderMemoryBookDesign(
     throw new Error("no_generator");
   }
 
-  const prompt = buildPrompt(description);
+  const prompt = await buildPrompt(description, stage);
   let lastError: Error | null = null;
 
   for (const key of order) {
