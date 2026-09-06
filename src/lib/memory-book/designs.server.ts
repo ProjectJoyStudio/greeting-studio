@@ -59,9 +59,17 @@ function functionIdOf(stage: MemoryBookStage): string {
   return stage === "cover" ? "memory_book.cover" : "memory_book.leaf_design";
 }
 
-function buildPrompt(description: string): string {
+/**
+ * Turns what the person wrote in any of the six languages into the final
+ * English prompt. The shared Project Joy translation layer does the language
+ * work; only the internal design rules are added on top.
+ */
+async function buildPrompt(description: string, stage: MemoryBookStage): Promise<string> {
   const clean = description.trim().slice(0, 900);
-  return `${clean}\n\n${NO_TEXT_RULE}`;
+  const { toEnglishImagePrompt } = await import("@/lib/greeting-card/prompt-translate.server");
+  const english = await toEnglishImagePrompt(clean).catch(() => clean);
+  const rules = stage === "cover" ? `${COVER_FLAT_RULE}\n\n${NO_TEXT_RULE}` : NO_TEXT_RULE;
+  return `${english}\n\n${rules}`;
 }
 
 function pickUrl(output: unknown): string | null {
