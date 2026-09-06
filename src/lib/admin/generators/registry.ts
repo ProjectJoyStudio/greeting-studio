@@ -323,6 +323,31 @@ export const GENERATOR_FEATURES: GeneratorFeatureDef[] = [
     ],
   },
   {
+    id: "memory_book",
+    titleKey: "gc_feature_memory_book",
+    functions: [
+      {
+        id: "memory_book.cover",
+        titleKey: "gc_fn_mb_cover",
+        candidates: MEMORY_BOOK_IMAGES,
+        // The administrator decides which approved engine serves this
+        // function; nothing is fixed as main or reserve in code.
+        defaultPrimary: null,
+        defaultBackup: null,
+        defaultAutoFailover: false,
+      },
+      {
+        id: "memory_book.leaf_design",
+        titleKey: "gc_fn_mb_leaf",
+        candidates: MEMORY_BOOK_IMAGES,
+        defaultPrimary: null,
+        defaultBackup: null,
+        defaultAutoFailover: false,
+      },
+    ],
+  },
+
+  {
     id: "future",
     titleKey: "gc_feature_future",
     functions: [
