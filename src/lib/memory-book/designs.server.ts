@@ -49,6 +49,15 @@ const COVER_NEGATIVE =
 const ASPECT: Record<MemoryBookStage, string> = { cover: "3:4", leaf: "3:4" };
 const SIZE = { width: 1024, height: 1360 };
 
+/**
+ * Two engines only accept their own portrait sizes; everything else keeps the
+ * dimensions that already work today.
+ */
+const RUNWARE_SIZE_OVERRIDES: Record<string, { width: number; height: number }> = {
+  rw_nano_banana_pro: { width: 896, height: 1152 },
+  rw_recraft_v4_pro: { width: 1792, height: 2432 },
+};
+
 export interface RenderedDesign {
   bytes: Uint8Array;
   contentType: string;
@@ -104,14 +113,15 @@ async function renderWithRunware(
   stage: MemoryBookStage,
 ): Promise<string> {
   const { runwareTasks } = await import("@/lib/runware/runware.server");
+  const size = RUNWARE_SIZE_OVERRIDES[key] ?? SIZE;
   const rows = await runwareTasks([
     {
       taskType: "imageInference",
       taskUUID: crypto.randomUUID(),
       model: RUNWARE_ENGINES[key],
       positivePrompt: promptWithExclusions(prompt, stage),
-      width: SIZE.width,
-      height: SIZE.height,
+      width: size.width,
+      height: size.height,
 
       numberResults: 1,
       outputType: "URL",
@@ -132,7 +142,8 @@ async function renderWithReplicate(
   const output = await runReplicate(REPLICATE_ENGINES[key]!, {
     prompt,
     aspect_ratio: ASPECT[stage],
-    output_format: "jpg",
+    // This one engine rejects "jpg" during input validation; others keep theirs.
+    output_format: key === "rp_seedream5_pro" ? "jpeg" : "jpg",
   });
   const url = pickUrl(output);
   if (!url) throw new Error("The engine returned no picture.");
