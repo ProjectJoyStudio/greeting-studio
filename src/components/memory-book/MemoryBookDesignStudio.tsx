@@ -216,7 +216,7 @@ export function MemoryBookDesignStudio({ bookId }: { bookId: string }) {
           {stage === "cover" ? t("mbd_ready_cover") : t("mbd_ready_leaf")}
         </Button>
         <span className="text-sm text-muted-foreground">
-          {fill(t("mbd_remaining"), { n: current.remaining })}
+          {fill(t("mbd_variants_left"), { n: current.remaining })}
         </span>
       </div>
 
