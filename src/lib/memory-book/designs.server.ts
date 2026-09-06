@@ -113,6 +113,7 @@ async function renderWithRunware(
   stage: MemoryBookStage,
 ): Promise<string> {
   const { runwareTasks } = await import("@/lib/runware/runware.server");
+  const size = RUNWARE_SIZE_OVERRIDES[key] ?? SIZE;
   const rows = await runwareTasks([
     {
       taskType: "imageInference",
