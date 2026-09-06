@@ -54,7 +54,7 @@ const SIZE = { width: 1024, height: 1360 };
  * dimensions that already work today.
  */
 const RUNWARE_SIZE_OVERRIDES: Record<string, { width: number; height: number }> = {
-  rw_nano_banana_pro: { width: 896, height: 1152 },
+  rw_nano_banana_pro: { width: 928, height: 1152 },
   rw_recraft_v4_pro: { width: 1792, height: 2432 },
 };
 
