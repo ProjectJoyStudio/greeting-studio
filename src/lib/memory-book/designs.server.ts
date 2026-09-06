@@ -109,9 +109,9 @@ async function renderWithRunware(
       taskType: "imageInference",
       taskUUID: crypto.randomUUID(),
       model: RUNWARE_ENGINES[key],
-      positivePrompt: prompt,
-      negativePrompt: stage === "cover" ? COVER_NEGATIVE : NEGATIVE,
+      positivePrompt: promptWithExclusions(prompt, stage),
       width: SIZE.width,
+
       height: SIZE.height,
       numberResults: 1,
       outputType: "URL",
