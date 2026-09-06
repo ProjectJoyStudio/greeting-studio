@@ -165,7 +165,7 @@ export async function renderMemoryBookDesign(
     try {
       const url = await withGeneratorSlot(key, () =>
         RUNWARE_ENGINES[key]
-          ? renderWithRunware(key, prompt)
+          ? renderWithRunware(key, prompt, stage)
           : renderWithReplicate(key, prompt, stage),
       );
       return await download(url);
