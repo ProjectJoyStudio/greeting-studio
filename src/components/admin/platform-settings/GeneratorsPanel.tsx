@@ -287,6 +287,30 @@ const T: Dict = {
     fr: "Catalogue et traductions",
     pl: "Katalog i tłumaczenia",
   },
+  gc_feature_memory_book: {
+    en: "Memory Book",
+    ru: "Книга воспоминаний",
+    de: "Erinnerungsbuch",
+    uk: "Книга спогадів",
+    fr: "Livre de souvenirs",
+    pl: "Księga wspomnień",
+  },
+  gc_fn_mb_cover: {
+    en: "Memory Book cover",
+    ru: "Обложка книги",
+    de: "Buchcover",
+    uk: "Обкладинка книги",
+    fr: "Couverture du livre",
+    pl: "Okładka księgi",
+  },
+  gc_fn_mb_leaf: {
+    en: "Memory Book leaf design",
+    ru: "Оформление листа книги",
+    de: "Blattgestaltung",
+    uk: "Оформлення аркуша книги",
+    fr: "Design de la feuille",
+    pl: "Projekt karty księgi",
+  },
   gc_feature_future: {
     en: "Future sections",
     ru: "Будущие разделы",
@@ -295,6 +319,7 @@ const T: Dict = {
     fr: "Sections futures",
     pl: "Przyszłe sekcje",
   },
+
   // functions
   gc_fn_card_image: {
     en: "Image generation",
