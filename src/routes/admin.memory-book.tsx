@@ -12,6 +12,10 @@ import {
   type MemoryBookDemoKind,
   type MemoryBookDemoMaterial,
 } from "@/lib/memory-book/demo-book.functions";
+import {
+  getMemoryBookRetention,
+  setMemoryBookRetention,
+} from "@/lib/memory-book/lifecycle.functions";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
@@ -236,8 +240,69 @@ function AdminMemoryBookPage() {
         )}
       </section>
 
+      <RetentionSection />
+
       <LibrarySection />
     </div>
+  );
+}
+
+/** How long a finished Memory Book stays in the customer's cabinet. */
+function RetentionSection() {
+  const { t } = useI18n();
+  const read = useServerFn(getMemoryBookRetention);
+  const write = useServerFn(setMemoryBookRetention);
+  const [value, setValue] = useState("30");
+  const [note, setNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    read()
+      .then((res) => {
+        if (active) setValue(String(res.days));
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [read]);
+
+  return (
+    <section className="rounded-2xl border border-border/60 bg-card p-6">
+      <h2 className="font-display text-lg font-semibold">{t("mb_admin_retention_title")}</h2>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium" htmlFor="mb-retention">
+            {t("mb_admin_retention_label")}
+          </label>
+          <input
+            id="mb-retention"
+            type="number"
+            min={1}
+            max={3650}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-32 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setNote(null);
+            void write({ data: { days: Number(value) } })
+              .then((res) => {
+                setValue(String(res.days));
+                setNote(t("mb_admin_saved"));
+              })
+              .catch(() => setNote(null));
+          }}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          {t("mb_admin_save")}
+        </button>
+        {note && <span className="text-sm text-emerald-600">{note}</span>}
+      </div>
+    </section>
   );
 }
 

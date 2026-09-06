@@ -117,6 +117,8 @@ function MyMemoryBooksPage() {
         <ul className="grid gap-4 sm:grid-cols-2">
           {books.map((book) => {
             const left = daysLeft(book.expiresAt);
+            const done = book.status === "completed";
+            const keptLeft = book.retentionExpiresAt ? daysLeft(book.retentionExpiresAt) : 0;
             return (
               <li
                 key={book.id}
@@ -132,15 +134,34 @@ function MyMemoryBooksPage() {
                         v: book.videoCapacity,
                       })}
                     </p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-primary">
+                      {done ? t("mbd_status_completed") : t("mbd_status_unfinished")}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {t("mbd_started")}: {formatDate(book.createdAt)}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("mbd_expires")}: {formatDate(book.expiresAt)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {left > 0 ? fill(t("mbd_remaining"), { n: left }) : t("mbd_expired")}
-                    </p>
+                    {done ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          {t("mbd_completed_on")}: {formatDate(book.completedAt ?? "")}
+                        </p>
+                        {book.retentionExpiresAt && (
+                          <p className="text-sm text-muted-foreground">
+                            {t("mbd_kept_until")}: {formatDate(book.retentionExpiresAt)}
+                            {keptLeft > 0 ? ` · ${fill(t("mbd_remaining"), { n: keptLeft })}` : ""}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          {t("mbd_expires")}: {formatDate(book.expiresAt)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {left > 0 ? fill(t("mbd_remaining"), { n: left }) : t("mbd_expired")}
+                        </p>
+                      </>
+                    )}
                     <p className="mt-1 text-sm text-muted-foreground">
                       {fill(t("mbd_spent"), { n: book.creditsSpent })}
                     </p>
@@ -148,31 +169,42 @@ function MyMemoryBooksPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button asChild size="sm">
-                    <Link to="/memory-book-create" search={{ book: book.id }}>
-                      {t("mbd_continue")}
-                    </Link>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy !== null}
-                    onClick={() => void runExtend(book, 7)}
-                  >
-                    {busy === `${book.id}-7` ? t("mbd_working") : t("mbd_extend_week")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy !== null}
-                    onClick={() => void runExtend(book, 30)}
-                  >
-                    {busy === `${book.id}-30` ? t("mbd_working") : t("mbd_extend_month")}
-                  </Button>
+                  {done ? (
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/memory-book-create" search={{ book: book.id }}>
+                        {t("mbd_open")}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button asChild size="sm">
+                        <Link to="/memory-book-create" search={{ book: book.id }}>
+                          {t("mbd_continue")}
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy !== null}
+                        onClick={() => void runExtend(book, 7)}
+                      >
+                        {busy === `${book.id}-7` ? t("mbd_working") : t("mbd_extend_week")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy !== null}
+                        onClick={() => void runExtend(book, 30)}
+                      >
+                        {busy === `${book.id}-30` ? t("mbd_working") : t("mbd_extend_month")}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </li>
             );
           })}
+
         </ul>
       )}
     </>

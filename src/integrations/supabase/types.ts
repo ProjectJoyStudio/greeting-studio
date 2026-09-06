@@ -2253,6 +2253,8 @@ export type Database = {
       }
       memory_book_projects: {
         Row: {
+          completed_at: string | null
+          completion_method: string | null
           cover_generations_allowed: number
           cover_generations_used: number
           cover_prompt: string | null
@@ -2268,14 +2270,18 @@ export type Database = {
           leaves: number
           package_code: string
           purchase_key: string
+          retention_expires_at: string | null
           selected_cover_id: string | null
           selected_leaf_id: string | null
           status: string
           updated_at: string
           user_id: string
           video_capacity: number
+          working_cleaned_at: string | null
         }
         Insert: {
+          completed_at?: string | null
+          completion_method?: string | null
           cover_generations_allowed?: number
           cover_generations_used?: number
           cover_prompt?: string | null
@@ -2291,14 +2297,18 @@ export type Database = {
           leaves: number
           package_code: string
           purchase_key: string
+          retention_expires_at?: string | null
           selected_cover_id?: string | null
           selected_leaf_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
           video_capacity: number
+          working_cleaned_at?: string | null
         }
         Update: {
+          completed_at?: string | null
+          completion_method?: string | null
           cover_generations_allowed?: number
           cover_generations_used?: number
           cover_prompt?: string | null
@@ -2314,12 +2324,14 @@ export type Database = {
           leaves?: number
           package_code?: string
           purchase_key?: string
+          retention_expires_at?: string | null
           selected_cover_id?: string | null
           selected_leaf_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
           video_capacity?: number
+          working_cleaned_at?: string | null
         }
         Relationships: []
       }
