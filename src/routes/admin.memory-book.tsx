@@ -235,6 +235,68 @@ function AdminMemoryBookPage() {
           </div>
         )}
       </section>
+
+      <LibrarySection />
     </div>
   );
 }
+
+/** Ready-made cover and leaf designs offered inside the creation flow. */
+function LibrarySection() {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function upload(stage: "cover" | "leaf", file: File) {
+    setBusy(stage);
+    setNote(null);
+    setFailure(null);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const { error: upErr } = await supabase.storage
+        .from("memory-book-library")
+        .upload(`${stage}/${Date.now()}-${safe}`, file, {
+          upsert: true,
+          contentType: file.type || undefined,
+        });
+      if (upErr) throw new Error(upErr.message);
+      setNote(t("mb_admin_saved"));
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold">{t("mb_admin_library_title")}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t("mb_admin_library_hint")}</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {(["cover", "leaf"] as const).map((stage) => (
+          <label key={stage} className="space-y-2 text-sm">
+            <span className="font-medium">
+              {stage === "cover" ? t("mb_admin_library_covers") : t("mb_admin_library_leaves")}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={busy !== null}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void upload(stage, file);
+                e.target.value = "";
+              }}
+              className="block w-full text-xs"
+            />
+          </label>
+        ))}
+      </div>
+      {busy && <p className="mt-3 text-sm text-muted-foreground">{t("mb_admin_uploading")}</p>}
+      {note && <p className="mt-3 text-sm text-emerald-600">{note}</p>}
+      {failure && <p className="mt-3 text-sm text-destructive">{failure}</p>}
+    </section>
+  );
+}
+
