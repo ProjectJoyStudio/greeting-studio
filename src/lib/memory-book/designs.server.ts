@@ -100,7 +100,7 @@ async function renderWithRunware(
       taskUUID: crypto.randomUUID(),
       model: RUNWARE_ENGINES[key],
       positivePrompt: prompt,
-      negativePrompt: NEGATIVE,
+      negativePrompt: stage === "cover" ? COVER_NEGATIVE : NEGATIVE,
       width: SIZE.width,
       height: SIZE.height,
       numberResults: 1,
