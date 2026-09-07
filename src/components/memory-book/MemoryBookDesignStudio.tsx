@@ -17,6 +17,8 @@ import {
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
 import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
+import { MemoryBookPageEditor } from "@/components/memory-book/MemoryBookPageEditor";
+
 
 import type {
   MemoryBookDesignState,
@@ -58,7 +60,7 @@ export function MemoryBookDesignStudio({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
-  const [view, setView] = useState<"design" | "materials">("design");
+  const [view, setView] = useState<"design" | "materials" | "pages">("design");
 
 
   const stage: MemoryBookStage = state?.stage ?? "cover";
@@ -217,11 +219,27 @@ export function MemoryBookDesignStudio({
         >
           {t("mbm_stage")}
         </Button>
+        <Button
+          variant={view === "pages" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || view === "pages"}
+          onClick={() => setView("pages")}
+        >
+          {t("mbe_stage")}
+        </Button>
       </div>
 
-      {view === "materials" ? (
+      {view === "pages" ? (
+        <MemoryBookPageEditor
+          bookId={bookId}
+          leafBackgroundUrl={
+            state.leaf.variants.find((v) => v.id === state.leaf.selectedId)?.url ?? null
+          }
+        />
+      ) : view === "materials" ? (
         <MemoryBookMaterials bookId={bookId} videoCapacity={videoCapacity} />
       ) : (
+
         <>
       <div className="space-y-2">
 
