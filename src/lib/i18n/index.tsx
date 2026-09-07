@@ -42,6 +42,7 @@ import { MEMORY_BOOK_PACKAGES_I18N } from "./locales/memory-book-packages";
 import { MEMORY_BOOK_DESIGNS_I18N } from "./locales/memory-book-designs";
 import { MEMORY_BOOKS_DASHBOARD_I18N } from "./locales/memory-books-dashboard";
 import { MEMORY_BOOK_MATERIALS_I18N } from "./locales/memory-book-materials";
+import { MEMORY_BOOK_PAGES_I18N } from "./locales/memory-book-pages";
 import { CM_DICT } from "@/lib/admin/catalog-mgmt/i18n";
 
 export { LANGS };
@@ -81,6 +82,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.en,
     ...MEMORY_BOOKS_DASHBOARD_I18N.en,
     ...MEMORY_BOOK_MATERIALS_I18N.en,
+    ...MEMORY_BOOK_PAGES_I18N.en,
   },
   ru: {
     ...ru,
@@ -113,6 +115,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.ru,
     ...MEMORY_BOOKS_DASHBOARD_I18N.ru,
     ...MEMORY_BOOK_MATERIALS_I18N.ru,
+    ...MEMORY_BOOK_PAGES_I18N.ru,
   },
   de: {
     ...de,
@@ -145,6 +148,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.de,
     ...MEMORY_BOOKS_DASHBOARD_I18N.de,
     ...MEMORY_BOOK_MATERIALS_I18N.de,
+    ...MEMORY_BOOK_PAGES_I18N.de,
   },
   uk: {
     ...uk,
@@ -177,6 +181,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.uk,
     ...MEMORY_BOOKS_DASHBOARD_I18N.uk,
     ...MEMORY_BOOK_MATERIALS_I18N.uk,
+    ...MEMORY_BOOK_PAGES_I18N.uk,
   },
   fr: {
     ...fr,
@@ -209,6 +214,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.fr,
     ...MEMORY_BOOKS_DASHBOARD_I18N.fr,
     ...MEMORY_BOOK_MATERIALS_I18N.fr,
+    ...MEMORY_BOOK_PAGES_I18N.fr,
   },
   pl: {
     ...pl,
@@ -241,6 +247,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DESIGNS_I18N.pl,
     ...MEMORY_BOOKS_DASHBOARD_I18N.pl,
     ...MEMORY_BOOK_MATERIALS_I18N.pl,
+    ...MEMORY_BOOK_PAGES_I18N.pl,
   },
 };
 
