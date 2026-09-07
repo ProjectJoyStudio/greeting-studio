@@ -2251,6 +2251,56 @@ export type Database = {
           },
         ]
       }
+      memory_book_materials: {
+        Row: {
+          book_id: string
+          bucket: string
+          created_at: string
+          duration_seconds: number | null
+          file_name: string | null
+          id: string
+          kind: string
+          mime_type: string | null
+          path: string
+          size_bytes: number | null
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          bucket: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_name?: string | null
+          id?: string
+          kind: string
+          mime_type?: string | null
+          path: string
+          size_bytes?: number | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          bucket?: string
+          created_at?: string
+          duration_seconds?: number | null
+          file_name?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          path?: string
+          size_bytes?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_materials_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_projects: {
         Row: {
           completed_at: string | null
