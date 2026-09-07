@@ -156,8 +156,14 @@ export function MemoryBookPageEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picker, setPicker] = useState<number | null>(null);
+  /** Which of the two independent adjustments the customer is making. */
+  const [mode, setMode] = useState<"frame" | "photo">("photo");
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pageBox = useRef<HTMLDivElement | null>(null);
+  const frameDrag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const framePinch = useRef<{ distance: number; scale: number } | null>(null);
+  const framePoints = useRef(new Map<number, { x: number; y: number }>());
 
   useEffect(() => {
     let alive = true;
