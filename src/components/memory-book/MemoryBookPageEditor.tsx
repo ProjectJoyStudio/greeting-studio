@@ -235,6 +235,58 @@ export function MemoryBookPageEditor({
 
   const layout = findLayout(page.layout);
   const photoCount = layout?.count ?? 0;
+  const frame = clampFrame(page.frame ?? defaultFrame());
+
+  /** Stores position and size of the WHOLE composition; photo crops untouched. */
+  function setFrame(next: MemoryBookFrame) {
+    persist({ ...page, frame: clampFrame(next) });
+  }
+
+  function onFramePointerDown(e: React.PointerEvent) {
+    if (mode !== "frame") return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    framePoints.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (framePoints.current.size === 1) {
+      frameDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    }
+    if (framePoints.current.size === 2) {
+      const [a, b] = [...framePoints.current.values()];
+      framePinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), scale: frame.scale };
+      frameDrag.current = null;
+    }
+  }
+
+  function onFramePointerMove(e: React.PointerEvent) {
+    if (mode !== "frame" || !framePoints.current.has(e.pointerId)) return;
+    e.preventDefault();
+    framePoints.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const rect = pageBox.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (framePinch.current && framePoints.current.size >= 2) {
+      const [a, b] = [...framePoints.current.values()];
+      const distance = Math.hypot(a.x - b.x, a.y - b.y);
+      if (framePinch.current.distance > 0) {
+        setFrame({
+          ...frame,
+          scale: framePinch.current.scale * (distance / framePinch.current.distance),
+        });
+      }
+      return;
+    }
+    if (frameDrag.current && frameDrag.current.id === e.pointerId) {
+      const dx = ((e.clientX - frameDrag.current.x) / rect.width) * 100;
+      const dy = ((e.clientY - frameDrag.current.y) / rect.height) * 100;
+      setFrame({ ...frame, x: frame.x + dx, y: frame.y + dy });
+      frameDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    }
+  }
+
+  function onFramePointerUp(e: React.PointerEvent) {
+    framePoints.current.delete(e.pointerId);
+    if (framePoints.current.size < 2) framePinch.current = null;
+    if (frameDrag.current?.id === e.pointerId) frameDrag.current = null;
+  }
+
 
   function setContent(content: MemoryBookPageContent) {
     if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
