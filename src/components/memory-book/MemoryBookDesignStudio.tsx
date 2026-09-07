@@ -374,6 +374,9 @@ export function MemoryBookDesignStudio({
           </>
         )}
       </div>
+        </>
+      )}
+
 
 
       {library ? (
