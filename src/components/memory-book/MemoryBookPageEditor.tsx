@@ -246,8 +246,9 @@ export function MemoryBookPageEditor({
     persist({
       ...page,
       content,
-      layout: content === "photos" ? page.layout : null,
-      slots: content === "photos" ? page.slots : [],
+      layout: null,
+      slots: [],
+
       videoMaterialId: content === "video" ? page.videoMaterialId : null,
     });
   }
