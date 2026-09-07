@@ -217,6 +217,8 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
           content_type: page.content,
           layout: page.layout,
           slots: JSON.parse(JSON.stringify(page.slots)),
+          frame: JSON.parse(JSON.stringify(page.frame)),
+
 
           text_content: page.text,
           video_material_id: page.videoMaterialId,
