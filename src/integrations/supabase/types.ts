@@ -2301,6 +2301,63 @@ export type Database = {
           },
         ]
       }
+      memory_book_pages: {
+        Row: {
+          book_id: string
+          content_type: string
+          created_at: string
+          id: string
+          layout: string | null
+          page_index: number
+          slots: Json
+          text_content: string | null
+          updated_at: string
+          user_id: string
+          video_material_id: string | null
+        }
+        Insert: {
+          book_id: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          layout?: string | null
+          page_index: number
+          slots?: Json
+          text_content?: string | null
+          updated_at?: string
+          user_id: string
+          video_material_id?: string | null
+        }
+        Update: {
+          book_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          layout?: string | null
+          page_index?: number
+          slots?: Json
+          text_content?: string | null
+          updated_at?: string
+          user_id?: string
+          video_material_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_pages_video_material_id_fkey"
+            columns: ["video_material_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_projects: {
         Row: {
           completed_at: string | null
