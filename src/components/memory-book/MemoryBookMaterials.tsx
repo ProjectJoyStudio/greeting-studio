@@ -66,6 +66,8 @@ export function MemoryBookMaterials({
 
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
   const [busy, setBusy] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState<"photo" | "video" | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
