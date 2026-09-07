@@ -361,19 +361,6 @@ export function MemoryBookDesignStudio({
         {bothReady ? <p className="text-sm text-muted-foreground">{t("mbd_ready_next")}</p> : null}
       </div>
 
-      <div className="space-y-2 border-t border-border/60 pt-4">
-        {done ? (
-          <p className="text-sm font-medium text-primary">{t("mbk_finished")}</p>
-        ) : (
-          <>
-            <Button onClick={() => void runFinish()} disabled={busy || !bothReady}>
-              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {t("mbk_finish")}
-            </Button>
-            <p className="text-xs text-muted-foreground">{t("mbk_finish_hint")}</p>
-          </>
-        )}
-      </div>
         </>
       )}
 
