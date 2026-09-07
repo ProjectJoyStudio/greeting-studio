@@ -123,7 +123,12 @@ function MemoryBookCreatePage() {
         {state === "allowed" && book ? (
           <>
             <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
-            <MemoryBookDesignStudio bookId={book.id} completed={book.status === "completed"} />
+            <MemoryBookDesignStudio
+              bookId={book.id}
+              completed={book.status === "completed"}
+              videoCapacity={book.videoCapacity}
+            />
+
           </>
         ) : null}
       </section>
