@@ -16,7 +16,6 @@ import {
   setMemoryBookStage,
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
-import { completeMemoryBook } from "@/lib/memory-book/lifecycle.functions";
 import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
 
 import type {
@@ -37,11 +36,9 @@ function fill(text: string, vars: Record<string, string | number>) {
  */
 export function MemoryBookDesignStudio({
   bookId,
-  completed = false,
   videoCapacity,
 }: {
   bookId: string;
-  completed?: boolean;
   videoCapacity?: number;
 }) {
 
@@ -54,7 +51,6 @@ export function MemoryBookDesignStudio({
   const setStage = useServerFn(setMemoryBookStage);
   const loadLibrary = useServerFn(listMemoryBookLibrary);
   const chooseLibrary = useServerFn(chooseMemoryBookLibraryDesign);
-  const finish = useServerFn(completeMemoryBook);
 
   const [state, setState] = useState<MemoryBookDesignState | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -62,7 +58,6 @@ export function MemoryBookDesignStudio({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
-  const [done, setDone] = useState(completed);
   const [view, setView] = useState<"design" | "materials">("design");
 
 
@@ -169,26 +164,6 @@ export function MemoryBookDesignStudio({
         apply(res.state);
         setLibrary(null);
       }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  /** The customer finishes the book on purpose; leaving the page never does. */
-  async function runFinish() {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await finish({ data: { bookId, method: "cabinet" } });
-      if (res.ok) {
-        setDone(true);
-        const fresh = await load({ data: { bookId } });
-        if (fresh.ok) apply(fresh.state);
-      } else {
-        setMessage(t("mbd_failed"));
-      }
-    } catch {
-      setMessage(t("mbd_failed"));
     } finally {
       setBusy(false);
     }
