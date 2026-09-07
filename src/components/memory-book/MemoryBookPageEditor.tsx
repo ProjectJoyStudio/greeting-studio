@@ -1,0 +1,576 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
+import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
+import {
+  MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
+  clampSlot,
+  emptyPage,
+  emptySlot,
+  findLayout,
+  layoutsForCount,
+  type MemoryBookPage,
+  type MemoryBookPageContent,
+  type MemoryBookPhotoSlot,
+} from "@/lib/memory-book/pages";
+import {
+  loadMemoryBookPages,
+  saveMemoryBookPage,
+} from "@/lib/memory-book/pages.functions";
+
+function fill(text: string, vars: Record<string, string | number>) {
+  return Object.entries(vars).reduce(
+    (out, [key, value]) => out.replaceAll(`{${key}}`, String(value)),
+    text,
+  );
+}
+
+/** One photo area: the photo can be moved and zoomed, but never leaves it. */
+function PhotoArea({
+  slot,
+  photo,
+  onChange,
+  disabled,
+}: {
+  slot: MemoryBookPhotoSlot;
+  photo: MemoryBookMaterial | null;
+  onChange: (next: MemoryBookPhotoSlot) => void;
+  disabled?: boolean;
+}) {
+  const box = useRef<HTMLDivElement | null>(null);
+  const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const pinch = useRef<{ distance: number; scale: number } | null>(null);
+  const points = useRef(new Map<number, { x: number; y: number }>());
+
+  const move = (dx: number, dy: number) => {
+    const rect = box.current?.getBoundingClientRect();
+    if (!rect) return;
+    onChange(
+      clampSlot({
+        ...slot,
+        offsetX: slot.offsetX + dx / rect.width,
+        offsetY: slot.offsetY + dy / rect.height,
+      }),
+    );
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (disabled || !photo) return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    points.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (points.current.size === 1) drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    if (points.current.size === 2) {
+      const [a, b] = [...points.current.values()];
+      pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), scale: slot.scale };
+      drag.current = null;
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (disabled || !photo || !points.current.has(e.pointerId)) return;
+    e.preventDefault();
+    points.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.current && points.current.size >= 2) {
+      const [a, b] = [...points.current.values()];
+      const distance = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.current.distance > 0) {
+        onChange(
+          clampSlot({ ...slot, scale: pinch.current.scale * (distance / pinch.current.distance) }),
+        );
+      }
+      return;
+    }
+    if (drag.current && drag.current.id === e.pointerId) {
+      move(e.clientX - drag.current.x, e.clientY - drag.current.y);
+      drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    points.current.delete(e.pointerId);
+    if (points.current.size < 2) pinch.current = null;
+    if (drag.current?.id === e.pointerId) drag.current = null;
+  };
+
+  return (
+    <div
+      ref={box}
+      className="absolute overflow-hidden rounded-lg border border-border/60 bg-muted/40"
+      style={{ touchAction: "none" }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={(e) => {
+        if (disabled || !photo) return;
+        onChange(clampSlot({ ...slot, scale: slot.scale * (e.deltaY < 0 ? 1.06 : 0.94) }));
+      }}
+      data-photo-area
+    >
+      {photo ? (
+        <img
+          src={photo.url}
+          alt=""
+          draggable={false}
+          className="pointer-events-none h-full w-full select-none object-cover"
+          style={{
+            transform: `translate(${slot.offsetX * 100}%, ${slot.offsetY * 100}%) scale(${slot.scale})`,
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Manual editor of the internal pages of ONE purchased Memory Book. It only
+ * arranges material that already belongs to this book — nothing is generated
+ * and nothing is charged here.
+ */
+export function MemoryBookPageEditor({
+  bookId,
+  leafBackgroundUrl,
+}: {
+  bookId: string;
+  leafBackgroundUrl?: string | null;
+}) {
+  const { t } = useI18n();
+  const loadPages = useServerFn(loadMemoryBookPages);
+  const savePage = useServerFn(saveMemoryBookPage);
+  const loadMaterials = useServerFn(loadMemoryBookMaterials);
+
+  const [pages, setPages] = useState<Record<number, MemoryBookPage>>({});
+  const [total, setTotal] = useState(0);
+  const [videoCapacity, setVideoCapacity] = useState(0);
+  const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
+  const [index, setIndex] = useState(1);
+  const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [picker, setPicker] = useState<number | null>(null);
+
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([loadPages({ data: { bookId } }), loadMaterials({ data: { bookId } })])
+      .then(([p, m]) => {
+        if (!alive) return;
+        if (p.ok) {
+          const map: Record<number, MemoryBookPage> = {};
+          for (const page of p.pages) map[page.pageIndex] = page;
+          setPages(map);
+          setTotal(p.internalPages);
+          setVideoCapacity(p.videoCapacity);
+        }
+        if (m.ok) setMaterials(m.materials);
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+    return () => {
+      alive = false;
+    };
+  }, [bookId, loadPages, loadMaterials]);
+
+  const page = pages[index] ?? emptyPage(index);
+  const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
+  const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
+  const videoPagesUsed = useMemo(
+    () => Object.values(pages).filter((p) => p.content === "video").length,
+    [pages],
+  );
+
+  /** Stores the page after a short pause — there is no manual save button. */
+  const persist = useCallback(
+    (next: MemoryBookPage) => {
+      setPages((prev) => ({ ...prev, [next.pageIndex]: next }));
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        setSaving(true);
+        setError(null);
+        savePage({ data: { bookId, page: next } })
+          .then((res) => {
+            if (!res.ok) {
+              setError(
+                res.error === "video_capacity"
+                  ? t("mbe_video_capacity_full")
+                  : res.error === "video_too_long"
+                    ? t("mbe_video_too_long")
+                    : t("mbe_save_failed"),
+              );
+            } else if (res.page) {
+              setPages((prev) => ({ ...prev, [res.page!.pageIndex]: res.page! }));
+            }
+          })
+          .catch(() => setError(t("mbe_save_failed")))
+          .finally(() => setSaving(false));
+      }, 600);
+    },
+    [bookId, savePage, t],
+  );
+
+  useEffect(() => () => (timer.current ? clearTimeout(timer.current) : undefined), []);
+
+  if (!ready) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+      </p>
+    );
+  }
+
+  const layout = findLayout(page.layout);
+  const photoCount = layout?.count ?? 0;
+
+  function setContent(content: MemoryBookPageContent) {
+    if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
+      setError(t("mbe_video_capacity_full"));
+      return;
+    }
+    if (content === "photos") {
+      const first = layoutsForCount(1)[0];
+      persist({
+        ...page,
+        content,
+        layout: page.layout ?? first?.id ?? null,
+        slots: page.slots.length ? page.slots : [emptySlot()],
+        videoMaterialId: null,
+      });
+      return;
+    }
+    persist({
+      ...page,
+      content,
+      layout: content === "photos" ? page.layout : null,
+      slots: content === "photos" ? page.slots : [],
+      videoMaterialId: content === "video" ? page.videoMaterialId : null,
+    });
+  }
+
+  function setLayout(id: string) {
+    const next = findLayout(id);
+    if (!next) return;
+    const slots = next.areas.map((_, i) => page.slots[i] ?? emptySlot());
+    persist({ ...page, content: "photos", layout: id, slots });
+  }
+
+  function setCount(count: number) {
+    const first = layoutsForCount(count)[0];
+    if (first) setLayout(first.id);
+  }
+
+  return (
+    <section className="space-y-6 text-left">
+      <div className="space-y-2">
+        <h2 className="font-display text-xl font-semibold">{t("mbe_title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("mbe_hint")}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={index <= 1}
+          onClick={() => setIndex((i) => Math.max(1, i - 1))}
+        >
+          <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
+          {t("mbe_prev")}
+        </Button>
+        <span className="text-sm font-medium">{fill(t("mbe_page"), { n: index, t: total })}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={index >= total}
+          onClick={() => setIndex((i) => Math.min(total, i + 1))}
+        >
+          {t("mbe_next")}
+          <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {saving ? t("mbe_saving") : t("mbe_saved")}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(["empty", "photos", "text", "video"] as MemoryBookPageContent[]).map((type) => (
+          <Button
+            key={type}
+            size="sm"
+            variant={page.content === type ? "default" : "outline"}
+            onClick={() => setContent(type)}
+          >
+            {t(`mbe_type_${type}`)}
+          </Button>
+        ))}
+      </div>
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {page.content === "photos" ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
+            {[1, 2, 3, 4].map((n) => (
+              <Button
+                key={n}
+                size="sm"
+                variant={photoCount === n ? "default" : "outline"}
+                onClick={() => setCount(n)}
+              >
+                {n}
+              </Button>
+            ))}
+          </div>
+          {photoCount ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">{t("mbe_layout")}</span>
+              {layoutsForCount(photoCount).map((option) => (
+                <Button
+                  key={option.id}
+                  size="sm"
+                  variant={page.layout === option.id ? "default" : "outline"}
+                  onClick={() => setLayout(option.id)}
+                >
+                  {t(`mbe_layout_${option.id}`)}
+                </Button>
+              ))}
+            </div>
+          ) : null}
+          <p className="text-xs text-muted-foreground">{t("mbe_drag_hint")}</p>
+          {photos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* The page itself */}
+      <div
+        className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-border/70 bg-card"
+        style={{
+          aspectRatio: "3 / 4",
+          backgroundImage: leafBackgroundUrl ? `url(${leafBackgroundUrl})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {page.content === "photos" && layout
+          ? layout.areas.map((area, i) => {
+              const slot = page.slots[i] ?? emptySlot();
+              const photo = photos.find((p) => p.id === slot.materialId) ?? null;
+              return (
+                <div
+                  key={i}
+                  className="absolute"
+                  style={{
+                    left: `${area.left}%`,
+                    top: `${area.top}%`,
+                    width: `${area.width}%`,
+                    height: `${area.height}%`,
+                  }}
+                >
+                  <div className="relative h-full w-full">
+                    <div className="absolute inset-0">
+                      <PhotoArea
+                        slot={slot}
+                        photo={photo}
+                        onChange={(next) => {
+                          const slots = layout.areas.map((_, k) =>
+                            k === i ? next : (page.slots[k] ?? emptySlot()),
+                          );
+                          persist({ ...page, slots });
+                        }}
+                      />
+                    </div>
+                    <div className="absolute inset-x-1 bottom-1 flex flex-wrap justify-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setPicker(i)}
+                      >
+                        {photo ? t("mbe_replace_photo") : t("mbe_choose_photo")}
+                      </Button>
+                      {photo ? (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-7 w-7"
+                            aria-label={t("mbe_zoom_out")}
+                            onClick={() => {
+                              const slots = layout.areas.map((_, k) =>
+                                k === i
+                                  ? clampSlot({ ...slot, scale: slot.scale - 0.2 })
+                                  : (page.slots[k] ?? emptySlot()),
+                              );
+                              persist({ ...page, slots });
+                            }}
+                          >
+                            <Minus className="h-3.5 w-3.5" aria-hidden />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-7 w-7"
+                            aria-label={t("mbe_zoom_in")}
+                            onClick={() => {
+                              const slots = layout.areas.map((_, k) =>
+                                k === i
+                                  ? clampSlot({ ...slot, scale: slot.scale + 0.2 })
+                                  : (page.slots[k] ?? emptySlot()),
+                              );
+                              persist({ ...page, slots });
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5" aria-hidden />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-7 w-7"
+                            aria-label={t("mbe_remove_photo")}
+                            onClick={() => {
+                              const slots = layout.areas.map((_, k) =>
+                                k === i ? emptySlot() : (page.slots[k] ?? emptySlot()),
+                              );
+                              persist({ ...page, slots });
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" aria-hidden />
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          : null}
+
+        {page.content === "text" ? (
+          <p className="absolute inset-6 overflow-hidden whitespace-pre-wrap break-words text-center text-base leading-relaxed">
+            {page.text}
+          </p>
+        ) : null}
+
+        {page.content === "video" && page.videoMaterialId ? (
+          <video
+            src={videos.find((v) => v.id === page.videoMaterialId)?.url}
+            controls
+            preload="metadata"
+            className="absolute inset-4 h-auto w-auto max-w-[calc(100%-2rem)] bg-black object-contain"
+          />
+        ) : null}
+      </div>
+
+      {page.content === "text" ? (
+        <div className="space-y-2">
+          <label className="text-sm font-medium" htmlFor="mbe-text">
+            {t("mbe_text_label")}
+          </label>
+          <Textarea
+            id="mbe-text"
+            rows={5}
+            value={page.text}
+            placeholder={t("mbe_text_placeholder")}
+            onChange={(e) => persist({ ...page, text: e.target.value })}
+          />
+        </div>
+      ) : null}
+
+      {page.content === "video" ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium">{t("mbe_video_label")}</p>
+          <p className="text-xs text-muted-foreground">
+            {fill(t("mbe_video_capacity"), { n: videoPagesUsed, t: videoCapacity })}
+          </p>
+          {videos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("mbe_no_videos")}</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {videos.map((video) => {
+                const tooLong =
+                  !video.durationSeconds ||
+                  video.durationSeconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS;
+                const chosen = page.videoMaterialId === video.id;
+                return (
+                  <div
+                    key={video.id}
+                    className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-2"
+                  >
+                    <p className="truncate text-xs text-muted-foreground">{video.fileName}</p>
+                    {tooLong ? (
+                      <p className="text-xs text-destructive">{t("mbe_video_needs_prep")}</p>
+                    ) : null}
+                    <Button
+                      size="sm"
+                      variant={chosen ? "secondary" : "default"}
+                      disabled={tooLong || chosen}
+                      onClick={() => persist({ ...page, videoMaterialId: video.id })}
+                    >
+                      {t("mbe_video_choose")}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {page.videoMaterialId ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => persist({ ...page, videoMaterialId: null })}
+            >
+              {t("mbe_video_clear")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {picker != null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <div className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border/70 bg-card p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold">
+                {fill(t("mbe_area"), { n: picker + 1 })}
+              </h3>
+              <Button variant="ghost" onClick={() => setPicker(null)}>
+                {t("mbe_close_picker")}
+              </Button>
+            </div>
+            {photos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {photos.map((photo) => (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    className="overflow-hidden rounded-lg border border-border/60"
+                    onClick={() => {
+                      const areas = findLayout(page.layout)?.areas ?? [];
+                      const slots = areas.map((_, k) =>
+                        k === picker
+                          ? clampSlot({ ...emptySlot(), materialId: photo.id })
+                          : (page.slots[k] ?? emptySlot()),
+                      );
+                      persist({ ...page, content: "photos", slots });
+                      setPicker(null);
+                    }}
+                  >
+                    <img src={photo.url} alt="" className="h-24 w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
