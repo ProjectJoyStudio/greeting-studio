@@ -63,6 +63,8 @@ export function MemoryBookDesignStudio({
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
   const [done, setDone] = useState(completed);
+  const [view, setView] = useState<"design" | "materials">("design");
+
 
   const stage: MemoryBookStage = state?.stage ?? "cover";
   const current = state ? state[stage] : null;
@@ -209,26 +211,45 @@ export function MemoryBookDesignStudio({
     <section className="mt-8 space-y-6 text-left">
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={stage === "cover" ? "default" : "outline"}
+          variant={view === "design" && stage === "cover" ? "default" : "outline"}
           size="sm"
-          disabled={busy || stage === "cover"}
-          onClick={() => void goToStage("cover")}
+          disabled={busy || (view === "design" && stage === "cover")}
+          onClick={() => {
+            setView("design");
+            void goToStage("cover");
+          }}
         >
           {t("mbk_stage_cover")}
           {state.cover.selectedId ? <Check className="ml-1 h-3.5 w-3.5" aria-hidden /> : null}
         </Button>
         <Button
-          variant={stage === "leaf" ? "default" : "outline"}
+          variant={view === "design" && stage === "leaf" ? "default" : "outline"}
           size="sm"
-          disabled={busy || stage === "leaf"}
-          onClick={() => void goToStage("leaf")}
+          disabled={busy || (view === "design" && stage === "leaf")}
+          onClick={() => {
+            setView("design");
+            void goToStage("leaf");
+          }}
         >
           {t("mbk_stage_leaf")}
           {state.leaf.selectedId ? <Check className="ml-1 h-3.5 w-3.5" aria-hidden /> : null}
         </Button>
+        <Button
+          variant={view === "materials" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || view === "materials"}
+          onClick={() => setView("materials")}
+        >
+          {t("mbm_stage")}
+        </Button>
       </div>
 
+      {view === "materials" ? (
+        <MemoryBookMaterials bookId={bookId} videoCapacity={videoCapacity} />
+      ) : (
+        <>
       <div className="space-y-2">
+
         <h2 className="font-display text-xl font-semibold">
           {stage === "cover" ? t("mbd_cover_title") : t("mbd_leaf_title")}
         </h2>
