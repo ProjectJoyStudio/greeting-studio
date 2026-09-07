@@ -202,10 +202,8 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
         if (used >= book.videoCapacity) return { ok: false, error: "video_capacity" };
       } else {
         page.videoMaterialId = null;
-        if (page.content !== "photos") {
-          page.slots = [];
-          page.layout = null;
-        }
+        page.slots = [];
+        page.layout = null;
       }
 
       const { error } = await db.from("memory_book_pages").upsert(
@@ -215,7 +213,8 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
           page_index: index,
           content_type: page.content,
           layout: page.layout,
-          slots: page.slots,
+          slots: page.slots as unknown as Record<string, unknown>[],
+
           text_content: page.text,
           video_material_id: page.videoMaterialId,
           updated_at: new Date().toISOString(),
