@@ -403,7 +403,49 @@ export function MemoryBookPageEditor({
               ))}
             </div>
           ) : null}
-          <p className="text-xs text-muted-foreground">{t("mbe_drag_hint")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">{t("mbe_mode")}</span>
+            <Button
+              size="sm"
+              variant={mode === "photo" ? "default" : "outline"}
+              onClick={() => setMode("photo")}
+            >
+              {t("mbe_mode_photo")}
+            </Button>
+            <Button
+              size="sm"
+              variant={mode === "frame" ? "default" : "outline"}
+              onClick={() => setMode("frame")}
+            >
+              {t("mbe_mode_frame")}
+            </Button>
+          </div>
+          {mode === "frame" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFrame({ ...frame, scale: frame.scale - 0.05 })}
+              >
+                <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                {t("mbe_frame_smaller")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFrame({ ...frame, scale: frame.scale + 0.05 })}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                {t("mbe_frame_bigger")}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setFrame(defaultFrame())}>
+                {t("mbe_frame_reset")}
+              </Button>
+            </div>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            {mode === "frame" ? t("mbe_frame_hint") : t("mbe_drag_hint")}
+          </p>
           {photos.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
           ) : null}
@@ -412,6 +454,7 @@ export function MemoryBookPageEditor({
 
       {/* The page itself */}
       <div
+        ref={pageBox}
         className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-border/70 bg-card"
         style={{
           aspectRatio: "3 / 4",
