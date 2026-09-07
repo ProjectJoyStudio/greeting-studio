@@ -9,11 +9,14 @@ import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
+  clampFrame,
   clampSlot,
+  defaultFrame,
   emptyPage,
   emptySlot,
   findLayout,
   layoutsForCount,
+  type MemoryBookFrame,
   type MemoryBookPage,
   type MemoryBookPageContent,
   type MemoryBookPhotoSlot,
