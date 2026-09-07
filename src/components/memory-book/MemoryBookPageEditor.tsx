@@ -9,11 +9,14 @@ import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
+  clampFrame,
   clampSlot,
+  defaultFrame,
   emptyPage,
   emptySlot,
   findLayout,
   layoutsForCount,
+  type MemoryBookFrame,
   type MemoryBookPage,
   type MemoryBookPageContent,
   type MemoryBookPhotoSlot,
@@ -153,8 +156,14 @@ export function MemoryBookPageEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picker, setPicker] = useState<number | null>(null);
+  /** Which of the two independent adjustments the customer is making. */
+  const [mode, setMode] = useState<"frame" | "photo">("photo");
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pageBox = useRef<HTMLDivElement | null>(null);
+  const frameDrag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const framePinch = useRef<{ distance: number; scale: number } | null>(null);
+  const framePoints = useRef(new Map<number, { x: number; y: number }>());
 
   useEffect(() => {
     let alive = true;
@@ -226,6 +235,58 @@ export function MemoryBookPageEditor({
 
   const layout = findLayout(page.layout);
   const photoCount = layout?.count ?? 0;
+  const frame = clampFrame(page.frame ?? defaultFrame());
+
+  /** Stores position and size of the WHOLE composition; photo crops untouched. */
+  function setFrame(next: MemoryBookFrame) {
+    persist({ ...page, frame: clampFrame(next) });
+  }
+
+  function onFramePointerDown(e: React.PointerEvent) {
+    if (mode !== "frame") return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    framePoints.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (framePoints.current.size === 1) {
+      frameDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    }
+    if (framePoints.current.size === 2) {
+      const [a, b] = [...framePoints.current.values()];
+      framePinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), scale: frame.scale };
+      frameDrag.current = null;
+    }
+  }
+
+  function onFramePointerMove(e: React.PointerEvent) {
+    if (mode !== "frame" || !framePoints.current.has(e.pointerId)) return;
+    e.preventDefault();
+    framePoints.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const rect = pageBox.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (framePinch.current && framePoints.current.size >= 2) {
+      const [a, b] = [...framePoints.current.values()];
+      const distance = Math.hypot(a.x - b.x, a.y - b.y);
+      if (framePinch.current.distance > 0) {
+        setFrame({
+          ...frame,
+          scale: framePinch.current.scale * (distance / framePinch.current.distance),
+        });
+      }
+      return;
+    }
+    if (frameDrag.current && frameDrag.current.id === e.pointerId) {
+      const dx = ((e.clientX - frameDrag.current.x) / rect.width) * 100;
+      const dy = ((e.clientY - frameDrag.current.y) / rect.height) * 100;
+      setFrame({ ...frame, x: frame.x + dx, y: frame.y + dy });
+      frameDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    }
+  }
+
+  function onFramePointerUp(e: React.PointerEvent) {
+    framePoints.current.delete(e.pointerId);
+    if (framePoints.current.size < 2) framePinch.current = null;
+    if (frameDrag.current?.id === e.pointerId) frameDrag.current = null;
+  }
+
 
   function setContent(content: MemoryBookPageContent) {
     if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
@@ -342,7 +403,49 @@ export function MemoryBookPageEditor({
               ))}
             </div>
           ) : null}
-          <p className="text-xs text-muted-foreground">{t("mbe_drag_hint")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">{t("mbe_mode")}</span>
+            <Button
+              size="sm"
+              variant={mode === "photo" ? "default" : "outline"}
+              onClick={() => setMode("photo")}
+            >
+              {t("mbe_mode_photo")}
+            </Button>
+            <Button
+              size="sm"
+              variant={mode === "frame" ? "default" : "outline"}
+              onClick={() => setMode("frame")}
+            >
+              {t("mbe_mode_frame")}
+            </Button>
+          </div>
+          {mode === "frame" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFrame({ ...frame, scale: frame.scale - 0.05 })}
+              >
+                <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                {t("mbe_frame_smaller")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFrame({ ...frame, scale: frame.scale + 0.05 })}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                {t("mbe_frame_bigger")}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setFrame(defaultFrame())}>
+                {t("mbe_frame_reset")}
+              </Button>
+            </div>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            {mode === "frame" ? t("mbe_frame_hint") : t("mbe_drag_hint")}
+          </p>
           {photos.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
           ) : null}
@@ -351,6 +454,7 @@ export function MemoryBookPageEditor({
 
       {/* The page itself */}
       <div
+        ref={pageBox}
         className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-border/70 bg-card"
         style={{
           aspectRatio: "3 / 4",
@@ -359,8 +463,27 @@ export function MemoryBookPageEditor({
           backgroundPosition: "center",
         }}
       >
-        {page.content === "photos" && layout
-          ? layout.areas.map((area, i) => {
+        {page.content === "photos" && layout ? (
+          <div
+            className={`absolute inset-0 ${mode === "frame" ? "cursor-move" : ""}`}
+            style={{
+              transform: `translate(${frame.x}%, ${frame.y}%) scale(${frame.scale})`,
+              transformOrigin: "center center",
+              touchAction: mode === "frame" ? "none" : undefined,
+            }}
+            onPointerDown={onFramePointerDown}
+            onPointerMove={onFramePointerMove}
+            onPointerUp={onFramePointerUp}
+            onPointerCancel={onFramePointerUp}
+            onWheel={(e) => {
+              if (mode !== "frame") return;
+              setFrame(clampFrame({ ...frame, scale: frame.scale * (e.deltaY < 0 ? 1.05 : 0.95) }));
+            }}
+          >
+            {mode === "frame" ? (
+              <div className="pointer-events-none absolute inset-[6%] rounded-lg border-2 border-dashed border-primary/70" />
+            ) : null}
+            {layout.areas.map((area, i) => {
               const slot = page.slots[i] ?? emptySlot();
               const photo = photos.find((p) => p.id === slot.materialId) ?? null;
               return (
@@ -379,6 +502,7 @@ export function MemoryBookPageEditor({
                       <PhotoArea
                         slot={slot}
                         photo={photo}
+                        disabled={mode === "frame"}
                         onChange={(next) => {
                           const slots = layout.areas.map((_, k) =>
                             k === i ? next : (page.slots[k] ?? emptySlot()),
@@ -387,71 +511,74 @@ export function MemoryBookPageEditor({
                         }}
                       />
                     </div>
-                    <div className="absolute inset-x-1 bottom-1 flex flex-wrap justify-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setPicker(i)}
-                      >
-                        {photo ? t("mbe_replace_photo") : t("mbe_choose_photo")}
-                      </Button>
-                      {photo ? (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="secondary"
-                            className="h-7 w-7"
-                            aria-label={t("mbe_zoom_out")}
-                            onClick={() => {
-                              const slots = layout.areas.map((_, k) =>
-                                k === i
-                                  ? clampSlot({ ...slot, scale: slot.scale - 0.2 })
-                                  : (page.slots[k] ?? emptySlot()),
-                              );
-                              persist({ ...page, slots });
-                            }}
-                          >
-                            <Minus className="h-3.5 w-3.5" aria-hidden />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="secondary"
-                            className="h-7 w-7"
-                            aria-label={t("mbe_zoom_in")}
-                            onClick={() => {
-                              const slots = layout.areas.map((_, k) =>
-                                k === i
-                                  ? clampSlot({ ...slot, scale: slot.scale + 0.2 })
-                                  : (page.slots[k] ?? emptySlot()),
-                              );
-                              persist({ ...page, slots });
-                            }}
-                          >
-                            <Plus className="h-3.5 w-3.5" aria-hidden />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="secondary"
-                            className="h-7 w-7"
-                            aria-label={t("mbe_remove_photo")}
-                            onClick={() => {
-                              const slots = layout.areas.map((_, k) =>
-                                k === i ? emptySlot() : (page.slots[k] ?? emptySlot()),
-                              );
-                              persist({ ...page, slots });
-                            }}
-                          >
-                            <X className="h-3.5 w-3.5" aria-hidden />
-                          </Button>
-                        </>
-                      ) : null}
-                    </div>
+                    {mode === "photo" ? (
+                      <div className="absolute inset-x-1 bottom-1 flex flex-wrap justify-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setPicker(i)}
+                        >
+                          {photo ? t("mbe_replace_photo") : t("mbe_choose_photo")}
+                        </Button>
+                        {photo ? (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="h-7 w-7"
+                              aria-label={t("mbe_zoom_out")}
+                              onClick={() => {
+                                const slots = layout.areas.map((_, k) =>
+                                  k === i
+                                    ? clampSlot({ ...slot, scale: slot.scale - 0.2 })
+                                    : (page.slots[k] ?? emptySlot()),
+                                );
+                                persist({ ...page, slots });
+                              }}
+                            >
+                              <Minus className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="h-7 w-7"
+                              aria-label={t("mbe_zoom_in")}
+                              onClick={() => {
+                                const slots = layout.areas.map((_, k) =>
+                                  k === i
+                                    ? clampSlot({ ...slot, scale: slot.scale + 0.2 })
+                                    : (page.slots[k] ?? emptySlot()),
+                                );
+                                persist({ ...page, slots });
+                              }}
+                            >
+                              <Plus className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="h-7 w-7"
+                              aria-label={t("mbe_remove_photo")}
+                              onClick={() => {
+                                const slots = layout.areas.map((_, k) =>
+                                  k === i ? emptySlot() : (page.slots[k] ?? emptySlot()),
+                                );
+                                persist({ ...page, slots });
+                              }}
+                            >
+                              <X className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               );
-            })
-          : null}
+            })}
+          </div>
+        ) : null}
 
         {page.content === "text" ? (
           <p className="absolute inset-6 overflow-hidden whitespace-pre-wrap break-words text-center text-base leading-relaxed">

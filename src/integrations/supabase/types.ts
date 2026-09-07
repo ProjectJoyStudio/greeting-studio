@@ -2306,6 +2306,7 @@ export type Database = {
           book_id: string
           content_type: string
           created_at: string
+          frame: Json
           id: string
           layout: string | null
           page_index: number
@@ -2319,6 +2320,7 @@ export type Database = {
           book_id: string
           content_type?: string
           created_at?: string
+          frame?: Json
           id?: string
           layout?: string | null
           page_index: number
@@ -2332,6 +2334,7 @@ export type Database = {
           book_id?: string
           content_type?: string
           created_at?: string
+          frame?: Json
           id?: string
           layout?: string | null
           page_index?: number

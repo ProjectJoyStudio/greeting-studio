@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   MEMORY_BOOK_MAX_PHOTOS_PER_PAGE,
+  clampFrame,
   clampSlot,
   findLayout,
   type MemoryBookPage,
@@ -63,6 +64,7 @@ function rowToPage(row: Row): MemoryBookPage {
     content,
     layout: typeof row.layout === "string" ? row.layout : null,
     slots: readSlots(row.slots),
+    frame: clampFrame((row.frame ?? null) as Record<string, number> | null),
     text: typeof row.text_content === "string" ? row.text_content : "",
     videoMaterialId:
       typeof row.video_material_id === "string" ? row.video_material_id : null,
@@ -90,7 +92,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       const db = await admin();
       const { data: rows } = await db
         .from("memory_book_pages")
-        .select("page_index, content_type, layout, slots, text_content, video_material_id")
+        .select("page_index, content_type, layout, slots, frame, text_content, video_material_id")
         .eq("book_id", data.bookId)
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
@@ -122,6 +124,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
         : "empty",
       layout: typeof input?.page?.layout === "string" ? input.page.layout : null,
       slots: readSlots(input?.page?.slots),
+      frame: clampFrame(input?.page?.frame),
       text: String(input?.page?.text ?? "").slice(0, 4000),
       videoMaterialId:
         typeof input?.page?.videoMaterialId === "string" ? input.page.videoMaterialId : null,
@@ -214,6 +217,8 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
           content_type: page.content,
           layout: page.layout,
           slots: JSON.parse(JSON.stringify(page.slots)),
+          frame: JSON.parse(JSON.stringify(page.frame)),
+
 
           text_content: page.text,
           video_material_id: page.videoMaterialId,
