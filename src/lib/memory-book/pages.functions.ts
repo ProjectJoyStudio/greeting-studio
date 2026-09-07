@@ -124,6 +124,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
         : "empty",
       layout: typeof input?.page?.layout === "string" ? input.page.layout : null,
       slots: readSlots(input?.page?.slots),
+      frame: clampFrame(input?.page?.frame),
       text: String(input?.page?.text ?? "").slice(0, 4000),
       videoMaterialId:
         typeof input?.page?.videoMaterialId === "string" ? input.page.videoMaterialId : null,
