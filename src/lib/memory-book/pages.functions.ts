@@ -92,7 +92,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       const db = await admin();
       const { data: rows } = await db
         .from("memory_book_pages")
-        .select("page_index, content_type, layout, slots, text_content, video_material_id")
+        .select("page_index, content_type, layout, slots, frame, text_content, video_material_id")
         .eq("book_id", data.bookId)
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
