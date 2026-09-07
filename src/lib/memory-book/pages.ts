@@ -20,11 +20,25 @@ export interface MemoryBookPhotoSlot {
   scale: number;
 }
 
+/**
+ * Position and size of the WHOLE photo composition on the page. The photo
+ * crop inside every frame is stored separately in the slots.
+ */
+export interface MemoryBookFrame {
+  /** Horizontal shift of the composition, in percent of the page width. */
+  x: number;
+  /** Vertical shift of the composition, in percent of the page height. */
+  y: number;
+  /** Size of the composition, 1 = the full designed area. */
+  scale: number;
+}
+
 export interface MemoryBookPage {
   pageIndex: number;
   content: MemoryBookPageContent;
   layout: string | null;
   slots: MemoryBookPhotoSlot[];
+  frame: MemoryBookFrame;
   text: string;
   videoMaterialId: string | null;
 }
@@ -110,11 +124,33 @@ export const emptySlot = (): MemoryBookPhotoSlot => ({
   scale: 1,
 });
 
+/** The composition fills the designed page area by default. */
+export const MEMORY_BOOK_FRAME_MIN_SCALE = 0.35;
+export const MEMORY_BOOK_FRAME_MAX_SCALE = 1;
+
+export const defaultFrame = (): MemoryBookFrame => ({ x: 0, y: 0, scale: 1 });
+
+/** Keeps the whole composition inside the usable page area. */
+export function clampFrame(frame: Partial<MemoryBookFrame> | null | undefined): MemoryBookFrame {
+  const raw = Number(frame?.scale);
+  const scale = Math.min(
+    MEMORY_BOOK_FRAME_MAX_SCALE,
+    Math.max(MEMORY_BOOK_FRAME_MIN_SCALE, Number.isFinite(raw) && raw > 0 ? raw : 1),
+  );
+  const limit = 50 * (1 - scale);
+  const bound = (value: unknown) => {
+    const n = Number(value);
+    return Math.min(limit, Math.max(-limit, Number.isFinite(n) ? n : 0));
+  };
+  return { x: bound(frame?.x), y: bound(frame?.y), scale };
+}
+
 export const emptyPage = (pageIndex: number): MemoryBookPage => ({
   pageIndex,
   content: "empty",
   layout: null,
   slots: [],
+  frame: defaultFrame(),
   text: "",
   videoMaterialId: null,
 });
