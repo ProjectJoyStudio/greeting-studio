@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   MEMORY_BOOK_MAX_PHOTOS_PER_PAGE,
+  clampFrame,
   clampSlot,
   findLayout,
   type MemoryBookPage,
@@ -63,6 +64,7 @@ function rowToPage(row: Row): MemoryBookPage {
     content,
     layout: typeof row.layout === "string" ? row.layout : null,
     slots: readSlots(row.slots),
+    frame: clampFrame((row.frame ?? null) as Record<string, number> | null),
     text: typeof row.text_content === "string" ? row.text_content : "",
     videoMaterialId:
       typeof row.video_material_id === "string" ? row.video_material_id : null,
