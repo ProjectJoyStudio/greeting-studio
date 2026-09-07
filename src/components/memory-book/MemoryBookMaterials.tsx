@@ -87,7 +87,13 @@ export function MemoryBookMaterials({
       if (uploadingRef.current || files.length === 0) return;
       uploadingRef.current = true;
       setBusy(true);
+      setUploadingKind(kind);
       setError(null);
+      if (kind === "video") setVideoError(null);
+      const fail = (msg: string) => {
+        if (kind === "video") setVideoError(msg);
+        else setError(msg);
+      };
       try {
         const { data: session } = await supabase.auth.getUser();
         const userId = session.user?.id;
