@@ -17,6 +17,8 @@ import {
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
 import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
+import { MemoryBookPageEditor } from "@/components/memory-book/MemoryBookPageEditor";
+
 
 import type {
   MemoryBookDesignState,
