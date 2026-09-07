@@ -17,6 +17,8 @@ import {
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
 import { completeMemoryBook } from "@/lib/memory-book/lifecycle.functions";
+import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
+
 import type {
   MemoryBookDesignState,
   MemoryBookStage,
@@ -36,10 +38,13 @@ function fill(text: string, vars: Record<string, string | number>) {
 export function MemoryBookDesignStudio({
   bookId,
   completed = false,
+  videoCapacity,
 }: {
   bookId: string;
   completed?: boolean;
+  videoCapacity?: number;
 }) {
+
   const { t } = useI18n();
   const load = useServerFn(loadMemoryBookDesigns);
   const saveDescription = useServerFn(saveMemoryBookDescription);
