@@ -66,6 +66,8 @@ export function MemoryBookMaterials({
 
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
   const [busy, setBusy] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState<"photo" | "video" | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,7 +87,13 @@ export function MemoryBookMaterials({
       if (uploadingRef.current || files.length === 0) return;
       uploadingRef.current = true;
       setBusy(true);
+      setUploadingKind(kind);
       setError(null);
+      if (kind === "video") setVideoError(null);
+      const fail = (msg: string) => {
+        if (kind === "video") setVideoError(msg);
+        else setError(msg);
+      };
       try {
         const { data: session } = await supabase.auth.getUser();
         const userId = session.user?.id;
@@ -96,11 +104,11 @@ export function MemoryBookMaterials({
           if (kind === "video") {
             duration = await readDuration(file);
             if (duration == null) {
-              setError(t("mbm_video_unreadable"));
+              fail(t("mbm_video_unreadable"));
               continue;
             }
             if (duration > MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS) {
-              setError(t("mbm_video_too_long"));
+              fail(t("mbm_video_too_long"));
               continue;
             }
           }
@@ -110,7 +118,7 @@ export function MemoryBookMaterials({
             .from(MEMORY_BOOK_MATERIALS_BUCKET)
             .upload(path, file, { upsert: false, contentType: file.type || undefined });
           if (upErr) {
-            setError(t("mbm_failed"));
+            fail(kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
             continue;
           }
 
@@ -126,13 +134,14 @@ export function MemoryBookMaterials({
             },
           });
           if (res.ok) setMaterials(res.materials);
-          else setError(res.error === "too_long" ? t("mbm_video_too_long") : t("mbm_failed"));
+          else fail(res.error === "too_long" ? t("mbm_video_too_long") : kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
         }
       } catch {
-        setError(t("mbm_failed"));
+        fail(kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
       } finally {
         uploadingRef.current = false;
         setBusy(false);
+        setUploadingKind(null);
         if (photoInput.current) photoInput.current.value = "";
         if (videoInput.current) videoInput.current.value = "";
       }
@@ -233,8 +242,17 @@ export function MemoryBookMaterials({
             onChange={(e) => void upload(Array.from(e.target.files ?? []), "video")}
           />
         </div>
+        {uploadingKind === "video" ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            {t("mbm_video_uploading")}
+          </p>
+        ) : null}
+        {videoError ? <p className="text-sm text-destructive">{videoError}</p> : null}
         {videos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("mbm_empty_videos")}</p>
+          uploadingKind === "video" ? null : (
+            <p className="text-sm text-muted-foreground">{t("mbm_empty_videos")}</p>
+          )
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {videos.map((video) => (

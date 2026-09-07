@@ -125,7 +125,7 @@ function MemoryBookCreatePage() {
             <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
             <MemoryBookDesignStudio
               bookId={book.id}
-              completed={book.status === "completed"}
+              
               videoCapacity={book.videoCapacity}
             />
 
