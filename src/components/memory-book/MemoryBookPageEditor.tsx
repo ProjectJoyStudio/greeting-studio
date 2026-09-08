@@ -318,7 +318,9 @@ export function MemoryBookPageEditor({
     if (mode !== "frame" || !framePoints.current.has(e.pointerId)) return;
     e.preventDefault();
     framePoints.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const rect = pageBox.current?.getBoundingClientRect();
+    // The page surface is the direct parent, so dragging behaves identically
+    // in the small working preview and in the large preview.
+    const rect = (e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect();
     if (!rect) return;
     if (framePinch.current && framePoints.current.size >= 2) {
       const [a, b] = [...framePoints.current.values()];
@@ -387,6 +389,86 @@ export function MemoryBookPageEditor({
     if (first) setLayout(first.id);
   }
 
+  /** The existing photo controls, unchanged — only their place moved. */
+  const photoControls = (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
+        {[1, 2, 3, 4].map((n) => (
+          <Button
+            key={n}
+            size="sm"
+            variant={photoCount === n ? "default" : "outline"}
+            onClick={() => setCount(n)}
+          >
+            {n}
+          </Button>
+        ))}
+      </div>
+      {photoCount ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">{t("mbe_layout")}</span>
+          {layoutsForCount(photoCount).map((option) => (
+            <Button
+              key={option.id}
+              size="sm"
+              variant={page.layout === option.id ? "default" : "outline"}
+              onClick={() => setLayout(option.id)}
+            >
+              {t(`mbe_layout_${option.id}`)}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">{t("mbe_mode")}</span>
+        <Button
+          size="sm"
+          variant={mode === "photo" ? "default" : "outline"}
+          onClick={() => setMode("photo")}
+        >
+          {t("mbe_mode_photo")}
+        </Button>
+        <Button
+          size="sm"
+          variant={mode === "frame" ? "default" : "outline"}
+          onClick={() => setMode("frame")}
+        >
+          {t("mbe_mode_frame")}
+        </Button>
+      </div>
+      {mode === "frame" ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setFrame({ ...frame, scale: frame.scale - 0.05 })}
+          >
+            <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
+            {t("mbe_frame_smaller")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setFrame({ ...frame, scale: frame.scale + 0.05 })}
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
+            {t("mbe_frame_bigger")}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setFrame(defaultFrame())}>
+            {t("mbe_frame_reset")}
+          </Button>
+        </div>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        {mode === "frame" ? t("mbe_frame_hint") : t("mbe_drag_hint")}
+      </p>
+      {photos.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
+      ) : null}
+    </div>
+  );
+
   return (
     <section className="space-y-6 text-left">
       <div className="space-y-2">
@@ -448,84 +530,6 @@ export function MemoryBookPageEditor({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {tool === "photos" ? (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
-            {[1, 2, 3, 4].map((n) => (
-              <Button
-                key={n}
-                size="sm"
-                variant={photoCount === n ? "default" : "outline"}
-                onClick={() => setCount(n)}
-              >
-                {n}
-              </Button>
-            ))}
-          </div>
-          {photoCount ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium">{t("mbe_layout")}</span>
-              {layoutsForCount(photoCount).map((option) => (
-                <Button
-                  key={option.id}
-                  size="sm"
-                  variant={page.layout === option.id ? "default" : "outline"}
-                  onClick={() => setLayout(option.id)}
-                >
-                  {t(`mbe_layout_${option.id}`)}
-                </Button>
-              ))}
-            </div>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">{t("mbe_mode")}</span>
-            <Button
-              size="sm"
-              variant={mode === "photo" ? "default" : "outline"}
-              onClick={() => setMode("photo")}
-            >
-              {t("mbe_mode_photo")}
-            </Button>
-            <Button
-              size="sm"
-              variant={mode === "frame" ? "default" : "outline"}
-              onClick={() => setMode("frame")}
-            >
-              {t("mbe_mode_frame")}
-            </Button>
-          </div>
-          {mode === "frame" ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setFrame({ ...frame, scale: frame.scale - 0.05 })}
-              >
-                <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
-                {t("mbe_frame_smaller")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setFrame({ ...frame, scale: frame.scale + 0.05 })}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
-                {t("mbe_frame_bigger")}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setFrame(defaultFrame())}>
-                {t("mbe_frame_reset")}
-              </Button>
-            </div>
-          ) : null}
-          <p className="text-xs text-muted-foreground">
-            {mode === "frame" ? t("mbe_frame_hint") : t("mbe_drag_hint")}
-          </p>
-          {photos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("mbe_no_photos")}</p>
-          ) : null}
-        </div>
-      ) : null}
 
       {/* The page itself — the same state is shown in every preview size. */}
       {(() => {
@@ -706,6 +710,19 @@ export function MemoryBookPageEditor({
         ) : null}
       </div>
         );
+        if (tool === "photos") {
+          // Same workspace principle as the text editor: a small working page
+          // on the left, the existing controls on the right, the big page below.
+          return (
+            <div className="space-y-6">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
+                <div className="lg:sticky lg:top-4">{pageSurface({ sizeClass: "max-w-[16rem]" })}</div>
+                {photoControls}
+              </div>
+              {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
+            </div>
+          );
+        }
         if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         return (
           <div className="space-y-6">
