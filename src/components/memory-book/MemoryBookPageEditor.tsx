@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import type { CardTextDesign } from "@/lib/greeting-card/types";
+import { MemoryBookDecorations } from "@/components/memory-book/MemoryBookDecorations";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   clampFrame,
