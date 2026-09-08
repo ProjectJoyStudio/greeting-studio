@@ -706,7 +706,7 @@ export function MemoryBookPageEditor({
         ) : null}
       </div>
         );
-        if (page.content !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
+        if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         return (
           <div className="space-y-6">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
