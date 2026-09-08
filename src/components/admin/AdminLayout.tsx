@@ -26,6 +26,7 @@ import {
   FlaskConical,
   Mic2,
   Music2,
+  Sparkles,
   X,
 } from "lucide-react";
 
