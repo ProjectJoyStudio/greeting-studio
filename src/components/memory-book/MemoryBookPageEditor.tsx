@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CardPreview, hexToRgba } from "@/components/greeting-card/CardPreview";
+import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
