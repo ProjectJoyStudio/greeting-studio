@@ -163,6 +163,8 @@ export function MemoryBookPageEditor({
   const [picker, setPicker] = useState<number | null>(null);
   /** Which of the two independent adjustments the customer is making. */
   const [mode, setMode] = useState<"frame" | "photo">("photo");
+  /** Which layer of the SAME page the customer is editing right now. */
+  const [tool, setTool] = useState<MemoryBookPageContent>("photos");
   /** Stage 1 decorations library: browsing only, page content is untouched. */
   const [decorationsOpen, setDecorationsOpen] = useState(false);
 
@@ -195,6 +197,25 @@ export function MemoryBookPageEditor({
   }, [bookId, loadPages, loadMaterials]);
 
   const page = pages[index] ?? emptyPage(index);
+
+  // Opening another page starts with the tool that fits its saved content;
+  // nothing on the page is changed by this.
+  useEffect(() => {
+    const stored = pages[index];
+    if (!stored) {
+      setTool("photos");
+      return;
+    }
+    setTool(
+      stored.content === "empty"
+        ? stored.text.trim()
+          ? "text"
+          : "photos"
+        : stored.content,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, ready]);
+
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
   const videoPagesUsed = useMemo(
@@ -325,9 +346,18 @@ export function MemoryBookPageEditor({
   }
 
 
+  /**
+   * Chooses which layer of the page is being edited. Photos and text live on
+   * the same page, so switching never removes anything already placed.
+   */
   function setContent(content: MemoryBookPageContent) {
     if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
       setError(t("mbe_video_capacity_full"));
+      return;
+    }
+    setTool(content);
+    if (content === "video") {
+      persist({ ...page, content, layout: null, slots: [] });
       return;
     }
     if (content === "photos") {
@@ -341,14 +371,8 @@ export function MemoryBookPageEditor({
       });
       return;
     }
-    persist({
-      ...page,
-      content,
-      layout: null,
-      slots: [],
-
-      videoMaterialId: content === "video" ? page.videoMaterialId : null,
-    });
+    // Text or empty: the photo composition stays exactly where it is.
+    persist({ ...page, content, videoMaterialId: null });
   }
 
   function setLayout(id: string) {
@@ -400,7 +424,7 @@ export function MemoryBookPageEditor({
           <Button
             key={type}
             size="sm"
-            variant={page.content === type ? "default" : "outline"}
+            variant={tool === type ? "default" : "outline"}
             onClick={() => setContent(type)}
           >
             {t(`mbe_type_${type}`)}
@@ -424,7 +448,7 @@ export function MemoryBookPageEditor({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {page.content === "photos" ? (
+      {tool === "photos" ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
@@ -518,24 +542,27 @@ export function MemoryBookPageEditor({
           backgroundPosition: "center",
         }}
       >
-        {page.content === "photos" && layout ? (
+        {page.content !== "video" && layout ? (
           <div
-            className={`absolute inset-0 ${mode === "frame" ? "cursor-move" : ""}`}
+            className={`absolute inset-0 ${tool === "photos" && mode === "frame" ? "cursor-move" : ""}`}
             style={{
               transform: `translate(${frame.x}%, ${frame.y}%) scale(${frame.scale})`,
               transformOrigin: "center center",
-              touchAction: mode === "frame" ? "none" : undefined,
+              touchAction: tool === "photos" && mode === "frame" ? "none" : undefined,
+              // While the text layer is being edited the photos stay visible
+              // but are not touched by pointer actions.
+              pointerEvents: tool === "photos" ? undefined : "none",
             }}
             onPointerDown={onFramePointerDown}
             onPointerMove={onFramePointerMove}
             onPointerUp={onFramePointerUp}
             onPointerCancel={onFramePointerUp}
             onWheel={(e) => {
-              if (mode !== "frame") return;
+              if (tool !== "photos" || mode !== "frame") return;
               setFrame(clampFrame({ ...frame, scale: frame.scale * (e.deltaY < 0 ? 1.05 : 0.95) }));
             }}
           >
-            {mode === "frame" ? (
+            {tool === "photos" && mode === "frame" ? (
               <div className="pointer-events-none absolute inset-[6%] rounded-lg border-2 border-dashed border-primary/70" />
             ) : null}
             {layout.areas.map((area, i) => {
@@ -557,7 +584,7 @@ export function MemoryBookPageEditor({
                       <PhotoArea
                         slot={slot}
                         photo={photo}
-                        disabled={mode === "frame"}
+                        disabled={tool !== "photos" || mode === "frame"}
                         onChange={(next) => {
                           const slots = layout.areas.map((_, k) =>
                             k === i ? next : (page.slots[k] ?? emptySlot()),
@@ -566,7 +593,7 @@ export function MemoryBookPageEditor({
                         }}
                       />
                     </div>
-                    {mode === "photo" ? (
+                    {tool === "photos" && mode === "photo" ? (
                       <div className="absolute inset-x-1 bottom-1 flex flex-wrap justify-center gap-1">
                         <Button
                           size="sm"
@@ -635,10 +662,10 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "text" && page.text.trim() ? (
+        {page.content !== "video" && page.text.trim() ? (
           <div
             role="presentation"
-            className="absolute cursor-move select-none"
+            className={`absolute select-none ${tool === "text" ? "cursor-move" : "pointer-events-none"}`}
             style={{
               left: `${textDesign.x}%`,
               top: `${textDesign.y}%`,
@@ -679,7 +706,7 @@ export function MemoryBookPageEditor({
         ) : null}
       </div>
         );
-        if (page.content !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
+        if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         return (
           <div className="space-y-6">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
