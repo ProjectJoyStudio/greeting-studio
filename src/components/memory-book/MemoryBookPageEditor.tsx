@@ -255,14 +255,17 @@ export function MemoryBookPageEditor({
 
   function onTextPointerMove(e: React.PointerEvent) {
     if (!textDrag.current || textDrag.current.id !== e.pointerId) return;
-    const rect = pageBox.current?.getBoundingClientRect();
-    if (!rect) return;
+    // The page box is the direct parent of the text block, so dragging works
+    // identically in the small working preview and in the large preview.
+    const rect = (e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return;
     e.preventDefault();
     const dx = ((e.clientX - textDrag.current.x) / rect.width) * 100;
     const dy = ((e.clientY - textDrag.current.y) / rect.height) * 100;
     textDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setTextDesign({ x: textDesign.x + dx, y: textDesign.y + dy });
   }
+
 
   function onTextPointerUp(e: React.PointerEvent) {
     if (textDrag.current?.id === e.pointerId) textDrag.current = null;
@@ -483,10 +486,13 @@ export function MemoryBookPageEditor({
         </div>
       ) : null}
 
-      {/* The page itself */}
+      {/* The page itself — the same state is shown in every preview size. */}
+      {(() => {
+        const pageSurface = (opts: { attachRef?: boolean; sizeClass: string }) => (
       <div
-        ref={pageBox}
-        className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-border/70 bg-card"
+        ref={opts.attachRef ? pageBox : undefined}
+        className={`relative mx-auto w-full ${opts.sizeClass} overflow-hidden rounded-2xl border border-border/70 bg-card`}
+
         style={{
           containerType: "inline-size",
           aspectRatio: "3 / 4",
@@ -655,24 +661,35 @@ export function MemoryBookPageEditor({
           />
         ) : null}
       </div>
+        );
+        if (page.content !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
+        return (
+          <div className="space-y-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
+              <div className="lg:sticky lg:top-4">
+                {pageSurface({ sizeClass: "max-w-[16rem]" })}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="mbe-text">
+                  {t("mbe_text_label")}
+                </label>
+                <Textarea
+                  id="mbe-text"
+                  rows={4}
+                  value={page.text}
+                  placeholder={t("mbe_text_placeholder")}
+                  onChange={(e) => persist({ ...page, text: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">{t("mbe_text_drag_hint")}</p>
+                <p className="pt-2 text-sm font-medium">{t("mbe_text_style")}</p>
+                <TextStylePanel design={textDesign} onChange={setTextDesign} />
+              </div>
+            </div>
+            {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
+          </div>
+        );
+      })()}
 
-      {page.content === "text" ? (
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="mbe-text">
-            {t("mbe_text_label")}
-          </label>
-          <Textarea
-            id="mbe-text"
-            rows={5}
-            value={page.text}
-            placeholder={t("mbe_text_placeholder")}
-            onChange={(e) => persist({ ...page, text: e.target.value })}
-          />
-          <p className="text-xs text-muted-foreground">{t("mbe_text_drag_hint")}</p>
-          <p className="pt-2 text-sm font-medium">{t("mbe_text_style")}</p>
-          <TextStylePanel design={textDesign} onChange={setTextDesign} />
-        </div>
-      ) : null}
 
       {page.content === "video" ? (
         <div className="space-y-3">
