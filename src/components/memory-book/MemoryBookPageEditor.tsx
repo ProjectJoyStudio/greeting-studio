@@ -346,9 +346,18 @@ export function MemoryBookPageEditor({
   }
 
 
+  /**
+   * Chooses which layer of the page is being edited. Photos and text live on
+   * the same page, so switching never removes anything already placed.
+   */
   function setContent(content: MemoryBookPageContent) {
     if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
       setError(t("mbe_video_capacity_full"));
+      return;
+    }
+    setTool(content);
+    if (content === "video") {
+      persist({ ...page, content, layout: null, slots: [] });
       return;
     }
     if (content === "photos") {
@@ -362,14 +371,8 @@ export function MemoryBookPageEditor({
       });
       return;
     }
-    persist({
-      ...page,
-      content,
-      layout: null,
-      slots: [],
-
-      videoMaterialId: content === "video" ? page.videoMaterialId : null,
-    });
+    // Text or empty: the photo composition stays exactly where it is.
+    persist({ ...page, content, videoMaterialId: null });
   }
 
   function setLayout(id: string) {
