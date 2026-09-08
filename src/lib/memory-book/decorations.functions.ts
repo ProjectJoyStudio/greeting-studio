@@ -150,7 +150,7 @@ export const adminUpdateMemoryBookDecoration = createServerFn({ method: "POST" }
       const db = await admin();
       const { error } = await db
         .from("memory_book_decorations")
-        .update(patch)
+        .update(patch as never)
         .eq("id", data.id);
       return { ok: !error, decorations: await listAll(false) };
     },
