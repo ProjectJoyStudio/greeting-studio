@@ -580,10 +580,38 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "text" ? (
-          <p className="absolute inset-6 overflow-hidden whitespace-pre-wrap break-words text-center text-base leading-relaxed">
+        {page.content === "text" && page.text.trim() ? (
+          <div
+            role="presentation"
+            className="absolute cursor-move select-none"
+            style={{
+              left: `${textDesign.x}%`,
+              top: `${textDesign.y}%`,
+              width: `${textDesign.width}%`,
+              transform: "translate(-50%, -50%)",
+              touchAction: "none",
+              textAlign: textDesign.align,
+              color: textDesign.color,
+              fontFamily: textDesign.fontFamily,
+              fontSize: `${textDesign.fontSize}cqw`,
+              lineHeight: 1.25,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              textShadow: textDesign.shadow ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
+              WebkitTextStroke: textDesign.outline ? `0.02em ${textDesign.outlineColor}` : undefined,
+              background: textDesign.background
+                ? hexToRgba(textDesign.backgroundColor, textDesign.backgroundOpacity)
+                : undefined,
+              padding: textDesign.background ? "0.6em 0.8em" : undefined,
+              borderRadius: textDesign.background ? "0.6em" : undefined,
+            }}
+            onPointerDown={onTextPointerDown}
+            onPointerMove={onTextPointerMove}
+            onPointerUp={onTextPointerUp}
+            onPointerCancel={onTextPointerUp}
+          >
             {page.text}
-          </p>
+          </div>
         ) : null}
 
         {page.content === "video" && page.videoMaterialId ? (
