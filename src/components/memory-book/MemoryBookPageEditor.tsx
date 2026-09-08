@@ -593,7 +593,7 @@ export function MemoryBookPageEditor({
                         }}
                       />
                     </div>
-                    {mode === "photo" ? (
+                    {tool === "photos" && mode === "photo" ? (
                       <div className="absolute inset-x-1 bottom-1 flex flex-wrap justify-center gap-1">
                         <Button
                           size="sm"
