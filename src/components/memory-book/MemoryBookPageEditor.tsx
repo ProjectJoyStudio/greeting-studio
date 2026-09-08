@@ -162,6 +162,8 @@ export function MemoryBookPageEditor({
   const [picker, setPicker] = useState<number | null>(null);
   /** Which of the two independent adjustments the customer is making. */
   const [mode, setMode] = useState<"frame" | "photo">("photo");
+  /** Stage 1 decorations library: browsing only, page content is untouched. */
+  const [decorationsOpen, setDecorationsOpen] = useState(false);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageBox = useRef<HTMLDivElement | null>(null);
@@ -404,6 +406,20 @@ export function MemoryBookPageEditor({
           </Button>
         ))}
       </div>
+
+      <div>
+        <Button size="sm" variant="outline" onClick={() => setDecorationsOpen((v) => !v)}>
+          {decorationsOpen ? t("mbdec_close") : t("mbdec_open")}
+        </Button>
+      </div>
+
+      {decorationsOpen ? (
+        <MemoryBookDecorations
+          bookId={bookId}
+          pageIndex={index - 1}
+          onClose={() => setDecorationsOpen(false)}
+        />
+      ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
