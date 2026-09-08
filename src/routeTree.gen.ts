@@ -66,6 +66,7 @@ import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platfo
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMusicRouteImport } from './routes/admin.music'
+import { Route as AdminMemoryBookDecorationsRouteImport } from './routes/admin.memory-book-decorations'
 import { Route as AdminMemoryBookRouteImport } from './routes/admin.memory-book'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
@@ -385,6 +386,12 @@ const AdminMusicRoute = AdminMusicRouteImport.update({
   path: '/music',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMemoryBookDecorationsRoute =
+  AdminMemoryBookDecorationsRouteImport.update({
+    id: '/memory-book-decorations',
+    path: '/memory-book-decorations',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminMemoryBookRoute = AdminMemoryBookRouteImport.update({
   id: '/memory-book',
   path: '/memory-book',
@@ -603,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/memory-book': typeof AdminMemoryBookRoute
+  '/admin/memory-book-decorations': typeof AdminMemoryBookDecorationsRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -692,6 +700,7 @@ export interface FileRoutesByTo {
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/memory-book': typeof AdminMemoryBookRoute
+  '/admin/memory-book-decorations': typeof AdminMemoryBookDecorationsRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -785,6 +794,7 @@ export interface FileRoutesById {
   '/admin/homepage-hero': typeof AdminHomepageHeroRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/memory-book': typeof AdminMemoryBookRoute
+  '/admin/memory-book-decorations': typeof AdminMemoryBookDecorationsRoute
   '/admin/music': typeof AdminMusicRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -879,6 +889,7 @@ export interface FileRouteTypes {
     | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/memory-book'
+    | '/admin/memory-book-decorations'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/memory-book'
+    | '/admin/memory-book-decorations'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1060,6 +1072,7 @@ export interface FileRouteTypes {
     | '/admin/homepage-hero'
     | '/admin/languages'
     | '/admin/memory-book'
+    | '/admin/memory-book-decorations'
     | '/admin/music'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1551,6 +1564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMusicRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/memory-book-decorations': {
+      id: '/admin/memory-book-decorations'
+      path: '/memory-book-decorations'
+      fullPath: '/admin/memory-book-decorations'
+      preLoaderRoute: typeof AdminMemoryBookDecorationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/memory-book': {
       id: '/admin/memory-book'
       path: '/memory-book'
@@ -1847,6 +1867,7 @@ interface AdminRouteChildren {
   AdminHomepageHeroRoute: typeof AdminHomepageHeroRoute
   AdminLanguagesRoute: typeof AdminLanguagesRoute
   AdminMemoryBookRoute: typeof AdminMemoryBookRoute
+  AdminMemoryBookDecorationsRoute: typeof AdminMemoryBookDecorationsRoute
   AdminMusicRoute: typeof AdminMusicRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1878,6 +1899,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHomepageHeroRoute: AdminHomepageHeroRoute,
   AdminLanguagesRoute: AdminLanguagesRoute,
   AdminMemoryBookRoute: AdminMemoryBookRoute,
+  AdminMemoryBookDecorationsRoute: AdminMemoryBookDecorationsRoute,
   AdminMusicRoute: AdminMusicRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
