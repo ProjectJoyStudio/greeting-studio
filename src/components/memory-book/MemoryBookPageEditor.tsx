@@ -424,7 +424,7 @@ export function MemoryBookPageEditor({
           <Button
             key={type}
             size="sm"
-            variant={page.content === type ? "default" : "outline"}
+            variant={tool === type ? "default" : "outline"}
             onClick={() => setContent(type)}
           >
             {t(`mbe_type_${type}`)}
