@@ -3,13 +3,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { hexToRgba } from "@/components/greeting-card/CardPreview";
+import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
+import type { CardTextDesign } from "@/lib/greeting-card/types";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   clampFrame,
+  clampTextDesign,
   clampSlot,
   defaultFrame,
   emptyPage,
@@ -164,6 +168,7 @@ export function MemoryBookPageEditor({
   const frameDrag = useRef<{ id: number; x: number; y: number } | null>(null);
   const framePinch = useRef<{ distance: number; scale: number } | null>(null);
   const framePoints = useRef(new Map<number, { x: number; y: number }>());
+  const textDrag = useRef<{ id: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -236,6 +241,32 @@ export function MemoryBookPageEditor({
   const layout = findLayout(page.layout);
   const photoCount = layout?.count ?? 0;
   const frame = clampFrame(page.frame ?? defaultFrame());
+  const textDesign = clampTextDesign(page.textDesign);
+
+  /** Look and position of the page text; the page design itself is untouched. */
+  function setTextDesign(patch: Partial<CardTextDesign>) {
+    persist({ ...page, textDesign: clampTextDesign({ ...textDesign, ...patch }) });
+  }
+
+  function onTextPointerDown(e: React.PointerEvent) {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    textDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  }
+
+  function onTextPointerMove(e: React.PointerEvent) {
+    if (!textDrag.current || textDrag.current.id !== e.pointerId) return;
+    const rect = pageBox.current?.getBoundingClientRect();
+    if (!rect) return;
+    e.preventDefault();
+    const dx = ((e.clientX - textDrag.current.x) / rect.width) * 100;
+    const dy = ((e.clientY - textDrag.current.y) / rect.height) * 100;
+    textDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setTextDesign({ x: textDesign.x + dx, y: textDesign.y + dy });
+  }
+
+  function onTextPointerUp(e: React.PointerEvent) {
+    if (textDrag.current?.id === e.pointerId) textDrag.current = null;
+  }
 
   /** Stores position and size of the WHOLE composition; photo crops untouched. */
   function setFrame(next: MemoryBookFrame) {
@@ -457,6 +488,7 @@ export function MemoryBookPageEditor({
         ref={pageBox}
         className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-border/70 bg-card"
         style={{
+          containerType: "inline-size",
           aspectRatio: "3 / 4",
           backgroundImage: leafBackgroundUrl ? `url(${leafBackgroundUrl})` : undefined,
           backgroundSize: "cover",
@@ -580,10 +612,38 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "text" ? (
-          <p className="absolute inset-6 overflow-hidden whitespace-pre-wrap break-words text-center text-base leading-relaxed">
+        {page.content === "text" && page.text.trim() ? (
+          <div
+            role="presentation"
+            className="absolute cursor-move select-none"
+            style={{
+              left: `${textDesign.x}%`,
+              top: `${textDesign.y}%`,
+              width: `${textDesign.width}%`,
+              transform: "translate(-50%, -50%)",
+              touchAction: "none",
+              textAlign: textDesign.align,
+              color: textDesign.color,
+              fontFamily: textDesign.fontFamily,
+              fontSize: `${textDesign.fontSize}cqw`,
+              lineHeight: 1.25,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              textShadow: textDesign.shadow ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
+              WebkitTextStroke: textDesign.outline ? `0.02em ${textDesign.outlineColor}` : undefined,
+              background: textDesign.background
+                ? hexToRgba(textDesign.backgroundColor, textDesign.backgroundOpacity)
+                : undefined,
+              padding: textDesign.background ? "0.6em 0.8em" : undefined,
+              borderRadius: textDesign.background ? "0.6em" : undefined,
+            }}
+            onPointerDown={onTextPointerDown}
+            onPointerMove={onTextPointerMove}
+            onPointerUp={onTextPointerUp}
+            onPointerCancel={onTextPointerUp}
+          >
             {page.text}
-          </p>
+          </div>
         ) : null}
 
         {page.content === "video" && page.videoMaterialId ? (
@@ -608,6 +668,9 @@ export function MemoryBookPageEditor({
             placeholder={t("mbe_text_placeholder")}
             onChange={(e) => persist({ ...page, text: e.target.value })}
           />
+          <p className="text-xs text-muted-foreground">{t("mbe_text_drag_hint")}</p>
+          <p className="pt-2 text-sm font-medium">{t("mbe_text_style")}</p>
+          <TextStylePanel design={textDesign} onChange={setTextDesign} />
         </div>
       ) : null}
 

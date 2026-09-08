@@ -2312,6 +2312,7 @@ export type Database = {
           page_index: number
           slots: Json
           text_content: string | null
+          text_design: Json
           updated_at: string
           user_id: string
           video_material_id: string | null
@@ -2326,6 +2327,7 @@ export type Database = {
           page_index: number
           slots?: Json
           text_content?: string | null
+          text_design?: Json
           updated_at?: string
           user_id: string
           video_material_id?: string | null
@@ -2340,6 +2342,7 @@ export type Database = {
           page_index?: number
           slots?: Json
           text_content?: string | null
+          text_design?: Json
           updated_at?: string
           user_id?: string
           video_material_id?: string | null

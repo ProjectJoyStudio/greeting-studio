@@ -1,6 +1,12 @@
 // Client-safe constants and types of the Internal Page Editor of one
 // purchased Memory Book. No prices and no provider names live here.
 
+import {
+  DEFAULT_TEXT_DESIGN,
+  normalizeTextDesign,
+  type CardTextDesign,
+} from "@/lib/greeting-card/types";
+
 export type MemoryBookPageContent = "empty" | "photos" | "text" | "video";
 
 /** A finished video placed on a book page may be at most 5 minutes long. */
@@ -40,7 +46,32 @@ export interface MemoryBookPage {
   slots: MemoryBookPhotoSlot[];
   frame: MemoryBookFrame;
   text: string;
+  /** Look and position of the page text — the shared Project Joy text design. */
+  textDesign: CardTextDesign;
   videoMaterialId: string | null;
+}
+
+/** Page text starts in the middle of the page, dark on a light leaf design. */
+export const memoryBookDefaultTextDesign = (): CardTextDesign => ({
+  ...DEFAULT_TEXT_DESIGN,
+  color: "#2b2118",
+  shadow: false,
+  fontSize: 5,
+  y: 50,
+});
+
+/** Keeps the text block inside the usable page area. */
+export function clampTextDesign(value: unknown): CardTextDesign {
+  const design = normalizeTextDesign({ ...memoryBookDefaultTextDesign(), ...(value as object ?? {}) });
+  const bound = (n: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, Number.isFinite(n) ? n : min));
+  return {
+    ...design,
+    x: bound(Number(design.x), 5, 95),
+    y: bound(Number(design.y), 5, 95),
+    width: bound(Number(design.width), 20, 95),
+    fontSize: bound(Number(design.fontSize), 2, 14),
+  };
 }
 
 export interface MemoryBookLayout {
@@ -152,6 +183,7 @@ export const emptyPage = (pageIndex: number): MemoryBookPage => ({
   slots: [],
   frame: defaultFrame(),
   text: "",
+  textDesign: memoryBookDefaultTextDesign(),
   videoMaterialId: null,
 });
 
