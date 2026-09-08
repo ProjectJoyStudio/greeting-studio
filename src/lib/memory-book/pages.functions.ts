@@ -152,32 +152,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
       const db = await admin();
       const page: MemoryBookPage = { ...data.page };
 
-      if (page.content === "photos") {
-        const layout = findLayout(page.layout);
-        if (!layout) return { ok: false, error: "bad_page" };
-        // Only photos of THIS book may be placed.
-        const ids = page.slots.map((s) => s.materialId).filter(Boolean) as string[];
-        let allowed: string[] = [];
-        if (ids.length) {
-          const { data: mats } = await db
-            .from("memory_book_materials")
-            .select("id")
-            .eq("book_id", data.bookId)
-            .eq("user_id", context.userId)
-            .eq("kind", "photo")
-            .in("id", ids);
-          allowed = ((mats ?? []) as unknown as Row[]).map((m) => String(m.id));
-        }
-        page.slots = layout.areas.map((_, i) => {
-          const slot = page.slots[i] ?? { materialId: null, offsetX: 0, offsetY: 0, scale: 1 };
-          return clampSlot({
-            ...slot,
-            materialId:
-              slot.materialId && allowed.includes(slot.materialId) ? slot.materialId : null,
-          });
-        });
-        page.videoMaterialId = null;
-      } else if (page.content === "video") {
+      if (page.content === "video") {
         page.slots = [];
         page.layout = null;
         if (page.videoMaterialId) {
@@ -207,9 +182,36 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
         ).length;
         if (used >= book.videoCapacity) return { ok: false, error: "video_capacity" };
       } else {
+        // Photos and text are independent layers of the SAME page: keeping a
+        // photo composition never depends on which tool the customer uses.
         page.videoMaterialId = null;
-        page.slots = [];
-        page.layout = null;
+        const layout = findLayout(page.layout);
+        if (!layout) {
+          page.layout = null;
+          page.slots = [];
+        } else {
+          // Only photos of THIS book may be placed.
+          const ids = page.slots.map((s) => s.materialId).filter(Boolean) as string[];
+          let allowed: string[] = [];
+          if (ids.length) {
+            const { data: mats } = await db
+              .from("memory_book_materials")
+              .select("id")
+              .eq("book_id", data.bookId)
+              .eq("user_id", context.userId)
+              .eq("kind", "photo")
+              .in("id", ids);
+            allowed = ((mats ?? []) as unknown as Row[]).map((m) => String(m.id));
+          }
+          page.slots = layout.areas.map((_, i) => {
+            const slot = page.slots[i] ?? { materialId: null, offsetX: 0, offsetY: 0, scale: 1 };
+            return clampSlot({
+              ...slot,
+              materialId:
+                slot.materialId && allowed.includes(slot.materialId) ? slot.materialId : null,
+            });
+          });
+        }
       }
 
       const { error } = await db.from("memory_book_pages").upsert(
