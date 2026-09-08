@@ -197,6 +197,25 @@ export function MemoryBookPageEditor({
   }, [bookId, loadPages, loadMaterials]);
 
   const page = pages[index] ?? emptyPage(index);
+
+  // Opening another page starts with the tool that fits its saved content;
+  // nothing on the page is changed by this.
+  useEffect(() => {
+    const stored = pages[index];
+    if (!stored) {
+      setTool("photos");
+      return;
+    }
+    setTool(
+      stored.content === "empty"
+        ? stored.text.trim()
+          ? "text"
+          : "photos"
+        : stored.content,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, ready]);
+
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
   const videoPagesUsed = useMemo(
