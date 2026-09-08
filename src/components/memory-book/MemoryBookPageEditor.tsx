@@ -542,24 +542,27 @@ export function MemoryBookPageEditor({
           backgroundPosition: "center",
         }}
       >
-        {page.content === "photos" && layout ? (
+        {page.content !== "video" && layout ? (
           <div
-            className={`absolute inset-0 ${mode === "frame" ? "cursor-move" : ""}`}
+            className={`absolute inset-0 ${tool === "photos" && mode === "frame" ? "cursor-move" : ""}`}
             style={{
               transform: `translate(${frame.x}%, ${frame.y}%) scale(${frame.scale})`,
               transformOrigin: "center center",
-              touchAction: mode === "frame" ? "none" : undefined,
+              touchAction: tool === "photos" && mode === "frame" ? "none" : undefined,
+              // While the text layer is being edited the photos stay visible
+              // but are not touched by pointer actions.
+              pointerEvents: tool === "photos" ? undefined : "none",
             }}
             onPointerDown={onFramePointerDown}
             onPointerMove={onFramePointerMove}
             onPointerUp={onFramePointerUp}
             onPointerCancel={onFramePointerUp}
             onWheel={(e) => {
-              if (mode !== "frame") return;
+              if (tool !== "photos" || mode !== "frame") return;
               setFrame(clampFrame({ ...frame, scale: frame.scale * (e.deltaY < 0 ? 1.05 : 0.95) }));
             }}
           >
-            {mode === "frame" ? (
+            {tool === "photos" && mode === "frame" ? (
               <div className="pointer-events-none absolute inset-[6%] rounded-lg border-2 border-dashed border-primary/70" />
             ) : null}
             {layout.areas.map((area, i) => {
