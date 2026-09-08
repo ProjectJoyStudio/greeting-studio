@@ -67,6 +67,7 @@ function rowToPage(row: Row): MemoryBookPage {
     slots: readSlots(row.slots),
     frame: clampFrame((row.frame ?? null) as Record<string, number> | null),
     text: typeof row.text_content === "string" ? row.text_content : "",
+    textDesign: clampTextDesign(row.text_design ?? null),
     videoMaterialId:
       typeof row.video_material_id === "string" ? row.video_material_id : null,
   };
@@ -93,7 +94,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       const db = await admin();
       const { data: rows } = await db
         .from("memory_book_pages")
-        .select("page_index, content_type, layout, slots, frame, text_content, video_material_id")
+        .select("page_index, content_type, layout, slots, frame, text_content, text_design, video_material_id")
         .eq("book_id", data.bookId)
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
@@ -127,6 +128,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
       slots: readSlots(input?.page?.slots),
       frame: clampFrame(input?.page?.frame),
       text: String(input?.page?.text ?? "").slice(0, 4000),
+      textDesign: clampTextDesign(input?.page?.textDesign),
       videoMaterialId:
         typeof input?.page?.videoMaterialId === "string" ? input.page.videoMaterialId : null,
     } satisfies MemoryBookPage,
@@ -222,6 +224,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
 
 
           text_content: page.text,
+          text_design: JSON.parse(JSON.stringify(page.textDesign)),
           video_material_id: page.videoMaterialId,
           updated_at: new Date().toISOString(),
         },
