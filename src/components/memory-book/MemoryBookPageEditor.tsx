@@ -584,7 +584,7 @@ export function MemoryBookPageEditor({
                       <PhotoArea
                         slot={slot}
                         photo={photo}
-                        disabled={mode === "frame"}
+                        disabled={tool !== "photos" || mode === "frame"}
                         onChange={(next) => {
                           const slots = layout.areas.map((_, k) =>
                             k === i ? next : (page.slots[k] ?? emptySlot()),
