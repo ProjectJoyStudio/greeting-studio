@@ -255,14 +255,17 @@ export function MemoryBookPageEditor({
 
   function onTextPointerMove(e: React.PointerEvent) {
     if (!textDrag.current || textDrag.current.id !== e.pointerId) return;
-    const rect = pageBox.current?.getBoundingClientRect();
-    if (!rect) return;
+    // The page box is the direct parent of the text block, so dragging works
+    // identically in the small working preview and in the large preview.
+    const rect = (e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return;
     e.preventDefault();
     const dx = ((e.clientX - textDrag.current.x) / rect.width) * 100;
     const dy = ((e.clientY - textDrag.current.y) / rect.height) * 100;
     textDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setTextDesign({ x: textDesign.x + dx, y: textDesign.y + dy });
   }
+
 
   function onTextPointerUp(e: React.PointerEvent) {
     if (textDrag.current?.id === e.pointerId) textDrag.current = null;
