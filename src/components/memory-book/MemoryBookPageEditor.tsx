@@ -448,7 +448,7 @@ export function MemoryBookPageEditor({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {page.content === "photos" ? (
+      {tool === "photos" ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
