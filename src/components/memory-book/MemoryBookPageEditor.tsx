@@ -662,10 +662,10 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "text" && page.text.trim() ? (
+        {page.content !== "video" && page.text.trim() ? (
           <div
             role="presentation"
-            className="absolute cursor-move select-none"
+            className={`absolute select-none ${tool === "text" ? "cursor-move" : "pointer-events-none"}`}
             style={{
               left: `${textDesign.x}%`,
               top: `${textDesign.y}%`,
