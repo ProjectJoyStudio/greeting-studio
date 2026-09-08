@@ -48,6 +48,7 @@ const NAV: NavItem[] = [
   { to: "/admin/users", key: "admin_nav_users", icon: Users },
   { to: "/admin/catalog", key: "admin_nav_catalog", icon: BookOpen },
   { to: "/admin/memory-book", key: "mb_admin_title", icon: BookOpen },
+  { to: "/admin/memory-book-decorations", key: "mbdec_admin_nav", icon: Sparkles },
   { to: "/admin/user-drafts", key: "ud_title", icon: ImageOff },
   { to: "/admin/user-live-cards", key: "admin_nav_user_live_cards", icon: Film },
   { to: "/admin/deleted-cards", key: "dc_title", icon: Trash2 },
