@@ -1,6 +1,12 @@
 // Client-safe constants and types of the Internal Page Editor of one
 // purchased Memory Book. No prices and no provider names live here.
 
+import {
+  DEFAULT_TEXT_DESIGN,
+  normalizeTextDesign,
+  type CardTextDesign,
+} from "@/lib/greeting-card/types";
+
 export type MemoryBookPageContent = "empty" | "photos" | "text" | "video";
 
 /** A finished video placed on a book page may be at most 5 minutes long. */
