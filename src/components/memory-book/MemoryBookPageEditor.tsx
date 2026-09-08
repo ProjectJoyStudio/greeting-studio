@@ -163,6 +163,8 @@ export function MemoryBookPageEditor({
   const [picker, setPicker] = useState<number | null>(null);
   /** Which of the two independent adjustments the customer is making. */
   const [mode, setMode] = useState<"frame" | "photo">("photo");
+  /** Which layer of the SAME page the customer is editing right now. */
+  const [tool, setTool] = useState<MemoryBookPageContent>("photos");
   /** Stage 1 decorations library: browsing only, page content is untouched. */
   const [decorationsOpen, setDecorationsOpen] = useState(false);
 
