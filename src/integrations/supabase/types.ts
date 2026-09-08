@@ -2166,6 +2166,48 @@ export type Database = {
           },
         ]
       }
+      memory_book_decorations: {
+        Row: {
+          bucket: string
+          category: string
+          created_at: string
+          enabled: boolean
+          file_type: string
+          id: string
+          name: string
+          path: string
+          recolorable: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bucket?: string
+          category: string
+          created_at?: string
+          enabled?: boolean
+          file_type: string
+          id?: string
+          name?: string
+          path: string
+          recolorable?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bucket?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          file_type?: string
+          id?: string
+          name?: string
+          path?: string
+          recolorable?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memory_book_designs: {
         Row: {
           book_id: string
