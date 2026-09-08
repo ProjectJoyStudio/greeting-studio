@@ -7,6 +7,7 @@ import {
   MEMORY_BOOK_MAX_PHOTOS_PER_PAGE,
   clampFrame,
   clampSlot,
+  clampTextDesign,
   findLayout,
   type MemoryBookPage,
   type MemoryBookPageContent,

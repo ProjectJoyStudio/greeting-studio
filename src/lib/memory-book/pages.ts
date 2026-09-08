@@ -183,6 +183,7 @@ export const emptyPage = (pageIndex: number): MemoryBookPage => ({
   slots: [],
   frame: defaultFrame(),
   text: "",
+  textDesign: memoryBookDefaultTextDesign(),
   videoMaterialId: null,
 });
 
