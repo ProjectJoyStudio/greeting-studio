@@ -223,16 +223,6 @@ export function MemoryBookMaterials({
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </Button>
                 </figcaption>
-                <div className="px-2 pb-2">
-                  <Button asChild size="sm" variant="outline" className="w-full">
-                    <Link
-                      to="/memory-book-video"
-                      search={{ book: bookId, material: video.id, from: "materials" as const }}
-                    >
-                      {t("mbv_process")}
-                    </Link>
-                  </Button>
-                </div>
               </figure>
             ))}
           </div>
@@ -291,6 +281,16 @@ export function MemoryBookMaterials({
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </Button>
                 </figcaption>
+                <div className="px-2 pb-2">
+                  <Button asChild size="sm" variant="outline" className="w-full">
+                    <Link
+                      to="/memory-book-video"
+                      search={{ book: bookId, material: video.id, from: "materials" as const }}
+                    >
+                      {t("mbv_process")}
+                    </Link>
+                  </Button>
+                </div>
               </figure>
             ))}
           </div>

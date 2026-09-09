@@ -25,11 +25,19 @@ import {
 } from "@/lib/memory-book/video-prep.functions";
 
 export const Route = createFileRoute("/memory-book-video")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    book: string;
+    material: string;
+    from: "materials" | "pages";
+    /** The exact internal page to return to, when the customer came from one. */
+    page?: number;
+  } => ({
     book: typeof search.book === "string" ? search.book : "",
     material: typeof search.material === "string" ? search.material : "",
-    from: search.from === "pages" ? ("pages" as const) : ("materials" as const),
-    page: Number(search.page) > 0 ? Number(search.page) : 0,
+    from: search.from === "pages" ? "pages" : "materials",
+    page: Number(search.page) > 0 ? Number(search.page) : undefined,
   }),
   head: () => ({
     meta: [
