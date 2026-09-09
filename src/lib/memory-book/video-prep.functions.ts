@@ -183,7 +183,12 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
     async ({
       data,
       context,
-    }): Promise<{ ok: boolean; error?: "not_found" | "too_long" | "failed"; materialId?: string }> => {
+    }): Promise<{
+      ok: boolean;
+      error?: "not_found" | "too_long" | "failed";
+      materialId?: string;
+      sourceRemoved?: boolean;
+    }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "not_found" };
       const source = await sourceMaterial(data.bookId, context.userId, data.sourceMaterialId);
@@ -200,32 +205,88 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
       }
 
       const db = await admin();
+
+      // The prepared file must really exist in storage before anything is
+      // treated as saved — a missing upload must never look successful.
+      const { data: check } = await db.storage
+        .from(MEMORY_BOOK_MATERIALS_BUCKET)
+        .createSignedUrl(data.path, 60);
+      if (!check?.signedUrl) return { ok: false, error: "failed" };
+
       const { data: existing } = await db
         .from("memory_book_materials")
         .select("id")
         .eq("bucket", MEMORY_BOOK_MATERIALS_BUCKET)
         .eq("path", data.path)
         .maybeSingle();
-      if (existing) return { ok: true, materialId: String((existing as unknown as Row).id) };
 
-      const { data: inserted, error } = await db
+      let materialId = existing ? String((existing as unknown as Row).id) : "";
+
+      if (!materialId) {
+        const { data: inserted, error } = await db
+          .from("memory_book_materials")
+          .insert({
+            book_id: data.bookId,
+            user_id: context.userId,
+            kind: "video",
+            bucket: MEMORY_BOOK_MATERIALS_BUCKET,
+            path: data.path,
+            file_name: data.fileName || null,
+            mime_type: data.mimeType || null,
+            size_bytes: data.sizeBytes || null,
+            duration_seconds: Math.min(data.durationSeconds, MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS),
+            prepared_from_material_id: data.sourceMaterialId,
+          })
+          .select("id")
+          .maybeSingle();
+        if (error || !inserted) return { ok: false, error: "failed" };
+        materialId = String((inserted as unknown as Row).id);
+      }
+
+      // Read the stored record back: only a verified record counts as saved.
+      const { data: verified } = await db
         .from("memory_book_materials")
-        .insert({
-          book_id: data.bookId,
-          user_id: context.userId,
-          kind: "video",
-          bucket: MEMORY_BOOK_MATERIALS_BUCKET,
-          path: data.path,
-          file_name: data.fileName || null,
-          mime_type: data.mimeType || null,
-          size_bytes: data.sizeBytes || null,
-          duration_seconds: Math.min(data.durationSeconds, MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS),
-          prepared_from_material_id: data.sourceMaterialId,
-        })
-        .select("id")
+        .select("id, book_id, user_id, path")
+        .eq("id", materialId)
+        .eq("book_id", data.bookId)
+        .eq("user_id", context.userId)
         .maybeSingle();
-      if (error || !inserted) return { ok: false, error: "failed" };
+      if (!verified) return { ok: false, error: "failed" };
 
-      return { ok: true, materialId: String((inserted as unknown as Row).id) };
+      // Only now the long original working video may be removed.
+      let sourceRemoved = false;
+      try {
+        const { data: sourceRow } = await db
+          .from("memory_book_materials")
+          .select("id, bucket, path")
+          .eq("id", data.sourceMaterialId)
+          .eq("book_id", data.bookId)
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        const row = sourceRow as unknown as Row | null;
+        if (row) {
+          await db.storage.from(text(row.bucket)).remove([text(row.path)]);
+          const { error: delError } = await db
+            .from("memory_book_materials")
+            .delete()
+            .eq("id", data.sourceMaterialId)
+            .eq("book_id", data.bookId)
+            .eq("user_id", context.userId);
+          if (!delError) {
+            sourceRemoved = true;
+            await db
+              .from("memory_book_video_edits")
+              .delete()
+              .eq("book_id", data.bookId)
+              .eq("source_material_id", data.sourceMaterialId)
+              .eq("user_id", context.userId);
+          }
+        }
+      } catch {
+        // The prepared video is already safe; cleanup can be retried later.
+      }
+
+      return { ok: true, materialId, sourceRemoved };
     },
   );
+
