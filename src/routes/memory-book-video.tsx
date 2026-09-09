@@ -155,6 +155,21 @@ function MemoryBookVideoPage() {
     );
   }
 
+  /** Moves one boundary by exactly one second, never past the 5 minute total. */
+  function nudge(fragment: MemoryBookVideoFragment, edge: "start" | "end", delta: 1 | -1) {
+    const value = fragment[edge] + delta;
+    const others = total - (fragment.end - fragment.start);
+    const room = MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS - others;
+    const wanted =
+      edge === "start"
+        ? { start: Math.min(Math.max(0, value), fragment.end - MEMORY_BOOK_FRAGMENT_MIN_SECONDS) }
+        : { end: Math.min(value, sourceSeconds, fragment.start + Math.max(0, room)) };
+    if (edge === "start" && fragment.end - (wanted.start ?? 0) > room) {
+      wanted.start = Math.max(wanted.start ?? 0, fragment.end - Math.max(0, room));
+    }
+    updateFragment(fragment.id, wanted);
+  }
+
   function playFragment(fragment: MemoryBookVideoFragment) {
     const el = player.current;
     if (!el) return;
