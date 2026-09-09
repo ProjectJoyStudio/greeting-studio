@@ -155,6 +155,21 @@ function MemoryBookVideoPage() {
     );
   }
 
+  /** Moves one boundary by exactly one second, never past the 5 minute total. */
+  function nudge(fragment: MemoryBookVideoFragment, edge: "start" | "end", delta: 1 | -1) {
+    const value = fragment[edge] + delta;
+    const others = total - (fragment.end - fragment.start);
+    const room = MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS - others;
+    const wanted =
+      edge === "start"
+        ? { start: Math.min(Math.max(0, value), fragment.end - MEMORY_BOOK_FRAGMENT_MIN_SECONDS) }
+        : { end: Math.min(value, sourceSeconds, fragment.start + Math.max(0, room)) };
+    if (edge === "start" && fragment.end - (wanted.start ?? 0) > room) {
+      wanted.start = Math.max(wanted.start ?? 0, fragment.end - Math.max(0, room));
+    }
+    updateFragment(fragment.id, wanted);
+  }
+
   function playFragment(fragment: MemoryBookVideoFragment) {
     const el = player.current;
     if (!el) return;
@@ -238,7 +253,7 @@ function MemoryBookVideoPage() {
     <SiteLayout>
       <PageHeader eyebrow={t("brand")} title={t("mbv_title")} />
 
-      <section className="mx-auto w-full max-w-4xl space-y-6 px-4 pb-16 sm:px-6">
+      <section className="mx-auto w-full max-w-6xl space-y-6 px-4 pb-16 sm:px-6">
         <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
           {t("mbv_back")}
         </Button>
@@ -254,143 +269,192 @@ function MemoryBookVideoPage() {
           <>
             <p className="text-sm text-muted-foreground">{t("mbv_hint")}</p>
 
-            <div className="space-y-2">
-              <h2 className="text-sm font-semibold">{t("mbv_source")}</h2>
-              <video
-                ref={player}
-                src={source.url}
-                controls
-                playsInline
-                preload="metadata"
-                className="w-full rounded-xl bg-black"
-                onLoadedMetadata={(e) => {
-                  const value = e.currentTarget.duration;
-                  if (Number.isFinite(value) && value > 0) setSourceSeconds(value);
-                }}
-                onTimeUpdate={(e) => {
-                  const el = e.currentTarget;
-                  setCurrent(el.currentTime);
-                  if (stopAt.current != null && el.currentTime >= stopAt.current) {
-                    stopAt.current = null;
-                    el.pause();
-                  }
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                {formatClock(current)} / {formatClock(sourceSeconds)}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold">{t("mbv_fragments")}</h2>
-                <Button size="sm" disabled={working} onClick={addFragment}>
-                  <Plus className="mr-1 h-4 w-4" aria-hidden />
-                  {t("mbv_add")}
-                </Button>
+            {/* Editing workspace: source on the left, chosen parts on the right. */}
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+              <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
+                <div className="rounded-xl border border-border/70 bg-card p-3">
+                  <p
+                    className={`text-sm font-medium ${overLimit ? "text-destructive" : ""}`}
+                  >
+                    {fill(t("mbv_total"), {
+                      a: formatClock(total),
+                      b: formatClock(MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS),
+                    })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {fill(t("mbv_left"), {
+                      a: formatClock(Math.max(0, MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS - total)),
+                    })}
+                  </p>
+                </div>
+                <h2 className="text-sm font-semibold">{t("mbv_source")}</h2>
+                <video
+                  ref={player}
+                  src={source.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full rounded-xl bg-black"
+                  onLoadedMetadata={(e) => {
+                    const value = e.currentTarget.duration;
+                    if (Number.isFinite(value) && value > 0) setSourceSeconds(value);
+                  }}
+                  onTimeUpdate={(e) => {
+                    const el = e.currentTarget;
+                    setCurrent(el.currentTime);
+                    if (stopAt.current != null && el.currentTime >= stopAt.current) {
+                      stopAt.current = null;
+                      el.pause();
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formatClock(current)} / {formatClock(sourceSeconds)}
+                </p>
               </div>
 
-              <p className={`text-sm ${overLimit ? "text-destructive" : "text-muted-foreground"}`}>
-                {fill(t("mbv_total"), {
-                  a: formatClock(total),
-                  b: formatClock(MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS),
-                })}
-              </p>
-              {overLimit ? <p className="text-sm text-destructive">{t("mbv_too_long")}</p> : null}
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-sm font-semibold">{t("mbv_fragments")}</h2>
+                  <Button size="sm" disabled={working} onClick={addFragment}>
+                    <Plus className="mr-1 h-4 w-4" aria-hidden />
+                    {t("mbv_add")}
+                  </Button>
+                </div>
 
-              {fragments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("mbv_empty")}</p>
-              ) : (
-                <ul className="space-y-3">
-                  {fragments.map((fragment, index) => (
-                    <li
-                      key={fragment.id}
-                      className="space-y-3 rounded-xl border border-border/70 bg-card p-3"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium">
-                          {fill(t("mbv_fragment"), { n: index + 1 })} ·{" "}
-                          {formatClock(fragment.end - fragment.start)}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label={t("mbv_remove")}
-                          disabled={working}
-                          onClick={() =>
-                            persist(fragments.filter((item) => item.id !== fragment.id))
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden />
-                        </Button>
-                      </div>
+                {overLimit ? <p className="text-sm text-destructive">{t("mbv_too_long")}</p> : null}
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">
-                            {t("mbv_start")}: {formatClock(fragment.start)}
-                          </label>
-                          <input
-                            type="range"
-                            min={0}
-                            max={Math.max(0, sourceSeconds)}
-                            step={0.1}
-                            value={fragment.start}
-                            disabled={working}
-                            className="w-full"
-                            onChange={(e) =>
-                              updateFragment(fragment.id, { start: Number(e.target.value) })
-                            }
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={working}
-                            onClick={() => updateFragment(fragment.id, { start: current })}
-                          >
-                            {t("mbv_set_start")}
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">
-                            {t("mbv_end")}: {formatClock(fragment.end)}
-                          </label>
-                          <input
-                            type="range"
-                            min={0}
-                            max={Math.max(0, sourceSeconds)}
-                            step={0.1}
-                            value={fragment.end}
-                            disabled={working}
-                            className="w-full"
-                            onChange={(e) =>
-                              updateFragment(fragment.id, { end: Number(e.target.value) })
-                            }
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={working}
-                            onClick={() => updateFragment(fragment.id, { end: current })}
-                          >
-                            {t("mbv_set_end")}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={working}
-                        onClick={() => playFragment(fragment)}
+                {fragments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("mbv_empty")}</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {fragments.map((fragment, index) => (
+                      <li
+                        key={fragment.id}
+                        className="space-y-3 rounded-xl border border-border/70 bg-card p-3"
                       >
-                        {t("mbv_play")}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium">
+                            {fill(t("mbv_fragment"), { n: index + 1 })} ·{" "}
+                            {formatClock(fragment.end - fragment.start)}
+                          </span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={t("mbv_remove")}
+                            disabled={working}
+                            onClick={() =>
+                              persist(fragments.filter((item) => item.id !== fragment.id))
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden />
+                          </Button>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">
+                              {t("mbv_start")}: {formatClock(fragment.start)}
+                            </label>
+                            <input
+                              type="range"
+                              min={0}
+                              max={Math.max(0, sourceSeconds)}
+                              step={0.1}
+                              value={fragment.start}
+                              disabled={working}
+                              className="w-full"
+                              onChange={(e) =>
+                                updateFragment(fragment.id, { start: Number(e.target.value) })
+                              }
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => nudge(fragment, "start", -1)}
+                              >
+                                {t("mbv_minus1")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => nudge(fragment, "start", 1)}
+                              >
+                                {t("mbv_plus1")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => updateFragment(fragment.id, { start: current })}
+                              >
+                                {t("mbv_set_start")}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">
+                              {t("mbv_end")}: {formatClock(fragment.end)}
+                            </label>
+                            <input
+                              type="range"
+                              min={0}
+                              max={Math.max(0, sourceSeconds)}
+                              step={0.1}
+                              value={fragment.end}
+                              disabled={working}
+                              className="w-full"
+                              onChange={(e) =>
+                                updateFragment(fragment.id, { end: Number(e.target.value) })
+                              }
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => nudge(fragment, "end", -1)}
+                              >
+                                {t("mbv_minus1")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => nudge(fragment, "end", 1)}
+                              >
+                                {t("mbv_plus1")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={working}
+                                onClick={() => updateFragment(fragment.id, { end: current })}
+                              >
+                                {t("mbv_set_end")}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={working}
+                          onClick={() => playFragment(fragment)}
+                        >
+                          {t("mbv_play")}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
+
 
             {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
