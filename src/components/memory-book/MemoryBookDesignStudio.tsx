@@ -39,9 +39,15 @@ function fill(text: string, vars: Record<string, string | number>) {
 export function MemoryBookDesignStudio({
   bookId,
   videoCapacity,
+  initialView,
+  initialPage,
 }: {
   bookId: string;
   videoCapacity?: number;
+  /** Which part opens first, e.g. when returning from video preparation. */
+  initialView?: "design" | "materials" | "pages";
+  /** The internal page the customer was working on before leaving. */
+  initialPage?: number;
 }) {
 
   const { t } = useI18n();
@@ -60,7 +66,7 @@ export function MemoryBookDesignStudio({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
-  const [view, setView] = useState<"design" | "materials" | "pages">("design");
+  const [view, setView] = useState<"design" | "materials" | "pages">(initialView ?? "design");
 
 
   const stage: MemoryBookStage = state?.stage ?? "cover";
@@ -232,6 +238,7 @@ export function MemoryBookDesignStudio({
       {view === "pages" ? (
         <MemoryBookPageEditor
           bookId={bookId}
+          initialPage={initialPage}
           leafBackgroundUrl={
             state.leaf.variants.find((v) => v.id === state.leaf.selectedId)?.url ?? null
           }

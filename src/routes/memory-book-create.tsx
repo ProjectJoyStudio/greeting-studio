@@ -15,8 +15,19 @@ import {
 } from "@/lib/memory-book/packages.functions";
 
 export const Route = createFileRoute("/memory-book-create")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    book: string;
+    /** Which part of the creation area should open first. */
+    view?: "design" | "materials" | "pages";
+    /** The internal page the customer was working on, when returning. */
+    page?: number;
+  } => ({
     book: typeof search.book === "string" ? search.book : "",
+    view:
+      search.view === "materials" || search.view === "pages" ? search.view : undefined,
+    page: Number(search.page) > 0 ? Number(search.page) : undefined,
   }),
   head: () => ({
     meta: [
@@ -48,7 +59,7 @@ function fill(text: string, vars: Record<string, string | number>) {
 
 function MemoryBookCreatePage() {
   const { t } = useI18n();
-  const { book: bookId } = Route.useSearch();
+  const { book: bookId, view, page } = Route.useSearch();
   const navigate = useNavigate();
   const checkAccess = useServerFn(getMemoryBookAccess);
   const [state, setState] = useState<"checking" | "allowed" | "denied">("checking");
@@ -125,6 +136,8 @@ function MemoryBookCreatePage() {
             <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
             <MemoryBookDesignStudio
               bookId={book.id}
+              initialView={view}
+              initialPage={page}
               
               videoCapacity={book.videoCapacity}
             />
