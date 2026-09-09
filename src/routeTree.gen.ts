@@ -20,6 +20,7 @@ import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as MemoryBookVideoRouteImport } from './routes/memory-book-video'
 import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
 import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
 import { Route as MemoryBookCreateRouteImport } from './routes/memory-book-create'
@@ -154,6 +155,11 @@ const PricingRoute = PricingRouteImport.update({
 const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
   id: '/personal-orders',
   path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookVideoRoute = MemoryBookVideoRouteImport.update({
+  id: '/memory-book-video',
+  path: '/memory-book-video',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
@@ -586,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -677,6 +684,7 @@ export interface FileRoutesByTo {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -770,6 +778,7 @@ export interface FileRoutesById {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
@@ -865,6 +874,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -956,6 +966,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -1048,6 +1059,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
     | '/register'
@@ -1142,6 +1154,7 @@ export interface RootRouteChildren {
   MemoryBookCreateRoute: typeof MemoryBookCreateRoute
   MemoryBookInstructionsRoute: typeof MemoryBookInstructionsRoute
   MemoryBookPackagesRoute: typeof MemoryBookPackagesRoute
+  MemoryBookVideoRoute: typeof MemoryBookVideoRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
@@ -1240,6 +1253,13 @@ declare module '@tanstack/react-router' {
       path: '/personal-orders'
       fullPath: '/personal-orders'
       preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-video': {
+      id: '/memory-book-video'
+      path: '/memory-book-video'
+      fullPath: '/memory-book-video'
+      preLoaderRoute: typeof MemoryBookVideoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory-book-packages': {
@@ -1972,6 +1992,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryBookCreateRoute: MemoryBookCreateRoute,
   MemoryBookInstructionsRoute: MemoryBookInstructionsRoute,
   MemoryBookPackagesRoute: MemoryBookPackagesRoute,
+  MemoryBookVideoRoute: MemoryBookVideoRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
