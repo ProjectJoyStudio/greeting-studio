@@ -231,10 +231,12 @@ function MemoryBookVideoPage() {
           durationSeconds: result.seconds,
         },
       });
-      if (!res.ok) {
+      // Nothing is treated as saved until the stored record comes back.
+      if (!res.ok || !res.materialId) {
         setMessage(res.error === "too_long" ? t("mbv_too_long") : t("mbv_failed"));
         return;
       }
+      URL.revokeObjectURL(result.url);
       await navigate({
         to: "/memory-book-create",
         search:
@@ -271,7 +273,7 @@ function MemoryBookVideoPage() {
 
             {/* Editing workspace: source on the left, chosen parts on the right. */}
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-              <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
+              <div className="space-y-2 lg:sticky lg:top-24 lg:self-start">
                 <div className="rounded-xl border border-border/70 bg-card p-3">
                   <p
                     className={`text-sm font-medium ${overLimit ? "text-destructive" : ""}`}

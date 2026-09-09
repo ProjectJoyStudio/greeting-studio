@@ -145,11 +145,14 @@ export function MemoryBookPageEditor({
   bookId,
   leafBackgroundUrl,
   initialPage,
+  onPageChange,
 }: {
   bookId: string;
   leafBackgroundUrl?: string | null;
   /** Page to open first, e.g. when returning from video preparation. */
   initialPage?: number;
+  /** Reports the page the customer is on, so Continue can return here. */
+  onPageChange?: (page: number) => void;
 }) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
@@ -178,6 +181,11 @@ export function MemoryBookPageEditor({
   const framePinch = useRef<{ distance: number; scale: number } | null>(null);
   const framePoints = useRef(new Map<number, { x: number; y: number }>());
   const textDrag = useRef<{ id: number; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+    onPageChange?.(index);
+  }, [ready, index, onPageChange]);
 
   useEffect(() => {
     let alive = true;

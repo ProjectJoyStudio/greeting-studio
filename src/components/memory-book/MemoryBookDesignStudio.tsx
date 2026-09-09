@@ -16,6 +16,7 @@ import {
   setMemoryBookStage,
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
+import { saveMemoryBookPosition } from "@/lib/memory-book/position.functions";
 import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
 import { MemoryBookPageEditor } from "@/components/memory-book/MemoryBookPageEditor";
 
@@ -67,6 +68,22 @@ export function MemoryBookDesignStudio({
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
   const [view, setView] = useState<"design" | "materials" | "pages">(initialView ?? "design");
+  const savePosition = useServerFn(saveMemoryBookPosition);
+
+  /** Remembers the working position only — no page content is touched. */
+  const rememberPosition = useCallback(
+    (nextView: "design" | "materials" | "pages", page?: number) => {
+      void savePosition({ data: { bookId, view: nextView, page: page ?? null } }).catch(
+        () => undefined,
+      );
+    },
+    [bookId, savePosition],
+  );
+
+  const rememberPage = useCallback(
+    (page: number) => rememberPosition("pages", page),
+    [rememberPosition],
+  );
 
 
   const stage: MemoryBookStage = state?.stage ?? "cover";
@@ -199,6 +216,7 @@ export function MemoryBookDesignStudio({
           disabled={busy || (view === "design" && stage === "cover")}
           onClick={() => {
             setView("design");
+            rememberPosition("design");
             void goToStage("cover");
           }}
         >
@@ -211,6 +229,7 @@ export function MemoryBookDesignStudio({
           disabled={busy || (view === "design" && stage === "leaf")}
           onClick={() => {
             setView("design");
+            rememberPosition("design");
             void goToStage("leaf");
           }}
         >
@@ -221,7 +240,10 @@ export function MemoryBookDesignStudio({
           variant={view === "materials" ? "default" : "outline"}
           size="sm"
           disabled={busy || view === "materials"}
-          onClick={() => setView("materials")}
+          onClick={() => {
+            setView("materials");
+            rememberPosition("materials");
+          }}
         >
           {t("mbm_stage")}
         </Button>
@@ -229,7 +251,10 @@ export function MemoryBookDesignStudio({
           variant={view === "pages" ? "default" : "outline"}
           size="sm"
           disabled={busy || view === "pages"}
-          onClick={() => setView("pages")}
+          onClick={() => {
+            setView("pages");
+            rememberPosition("pages");
+          }}
         >
           {t("mbe_stage")}
         </Button>
@@ -239,6 +264,7 @@ export function MemoryBookDesignStudio({
         <MemoryBookPageEditor
           bookId={bookId}
           initialPage={initialPage}
+          onPageChange={rememberPage}
           leafBackgroundUrl={
             state.leaf.variants.find((v) => v.id === state.leaf.selectedId)?.url ?? null
           }
