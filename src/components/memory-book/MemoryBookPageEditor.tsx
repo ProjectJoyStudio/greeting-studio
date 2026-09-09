@@ -391,7 +391,7 @@ export function MemoryBookPageEditor({
 
   /** The existing photo controls, unchanged — only their place moved. */
   const photoControls = (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">{t("mbe_photo_count")}</span>
         {[1, 2, 3, 4].map((n) => (
@@ -470,13 +470,13 @@ export function MemoryBookPageEditor({
   );
 
   return (
-    <section className="space-y-6 text-left">
+    <section className="space-y-4 text-left sm:space-y-6">
       <div className="space-y-2">
         <h2 className="font-display text-xl font-semibold">{t("mbe_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("mbe_hint")}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Button
           variant="outline"
           size="sm"
