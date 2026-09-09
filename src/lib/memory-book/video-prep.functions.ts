@@ -147,7 +147,7 @@ export const saveMemoryBookVideoFragments = createServerFn({ method: "POST" })
         user_id: context.userId,
         book_id: data.bookId,
         source_material_id: data.materialId,
-        fragments: data.fragments,
+        fragments: data.fragments as unknown as Record<string, unknown>[],
       },
       { onConflict: "book_id,source_material_id" },
     );
