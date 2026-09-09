@@ -2304,6 +2304,7 @@ export type Database = {
           kind: string
           mime_type: string | null
           path: string
+          prepared_from_material_id: string | null
           size_bytes: number | null
           user_id: string
         }
@@ -2317,6 +2318,7 @@ export type Database = {
           kind: string
           mime_type?: string | null
           path: string
+          prepared_from_material_id?: string | null
           size_bytes?: number | null
           user_id: string
         }
@@ -2330,6 +2332,7 @@ export type Database = {
           kind?: string
           mime_type?: string | null
           path?: string
+          prepared_from_material_id?: string | null
           size_bytes?: number | null
           user_id?: string
         }
@@ -2339,6 +2342,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_materials_prepared_from_material_id_fkey"
+            columns: ["prepared_from_material_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_materials"
             referencedColumns: ["id"]
           },
         ]
@@ -2527,6 +2537,51 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_book_video_edits: {
+        Row: {
+          book_id: string
+          created_at: string
+          fragments: Json
+          id: string
+          source_material_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          fragments?: Json
+          id?: string
+          source_material_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          fragments?: Json
+          id?: string
+          source_material_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_video_edits_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_video_edits_source_material_id_fkey"
+            columns: ["source_material_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_materials"
             referencedColumns: ["id"]
           },
         ]
