@@ -217,7 +217,7 @@ function MemoryBookVideoPage() {
         search:
           from === "pages"
             ? { book: bookId, view: "pages", page: page || 1 }
-            : { book: bookId, view: "materials", page: 0 },
+            : { book: bookId, view: "materials" as const },
       });
     } catch {
       setMessage(t("mbv_failed"));
