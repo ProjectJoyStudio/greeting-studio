@@ -715,7 +715,10 @@ export function MemoryBookPageEditor({
         // already approved tablet/desktop arrangement is kept unchanged.
         const workspaceGrid =
           "grid gap-3 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] items-start sm:grid-cols-1 sm:gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start";
-        const workingPreview = "min-w-0 lg:sticky lg:top-4";
+        // On phones the small working page stays pinned inside the workspace
+        // while the controls beside it scroll; it stops with its container.
+        const workingPreview =
+          "min-w-0 sticky top-16 self-start sm:static sm:top-auto sm:self-auto lg:sticky lg:top-4 lg:self-start";
         const workingSize = "max-w-full sm:max-w-[16rem]";
         if (tool === "photos") {
           // Same workspace principle as the text editor: a small working page
