@@ -15,15 +15,19 @@ import {
 } from "@/lib/memory-book/packages.functions";
 
 export const Route = createFileRoute("/memory-book-create")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    book: typeof search.book === "string" ? search.book : "",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    book: string;
     /** Which part of the creation area should open first. */
-    view:
-      search.view === "materials" || search.view === "pages"
-        ? (search.view as "materials" | "pages")
-        : ("design" as const),
+    view?: "design" | "materials" | "pages";
     /** The internal page the customer was working on, when returning. */
-    page: Number(search.page) > 0 ? Number(search.page) : 0,
+    page?: number;
+  } => ({
+    book: typeof search.book === "string" ? search.book : "",
+    view:
+      search.view === "materials" || search.view === "pages" ? search.view : undefined,
+    page: Number(search.page) > 0 ? Number(search.page) : undefined,
   }),
   head: () => ({
     meta: [
