@@ -2429,6 +2429,8 @@ export type Database = {
           expires_at: string
           id: string
           internal_pages: number
+          last_page: number | null
+          last_view: string | null
           leaf_generations_allowed: number
           leaf_generations_used: number
           leaf_prompt: string | null
@@ -2456,6 +2458,8 @@ export type Database = {
           expires_at?: string
           id?: string
           internal_pages: number
+          last_page?: number | null
+          last_view?: string | null
           leaf_generations_allowed?: number
           leaf_generations_used?: number
           leaf_prompt?: string | null
@@ -2483,6 +2487,8 @@ export type Database = {
           expires_at?: string
           id?: string
           internal_pages?: number
+          last_page?: number | null
+          last_view?: string | null
           leaf_generations_allowed?: number
           leaf_generations_used?: number
           leaf_prompt?: string | null
