@@ -710,14 +710,21 @@ export function MemoryBookPageEditor({
         ) : null}
       </div>
         );
+        // On phones the working preview and its controls sit side by side so
+        // the customer does not scroll between them; from sm upwards the
+        // already approved tablet/desktop arrangement is kept unchanged.
+        const workspaceGrid =
+          "grid gap-3 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] items-start sm:grid-cols-1 sm:gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start";
+        const workingPreview = "min-w-0 lg:sticky lg:top-4";
+        const workingSize = "max-w-full sm:max-w-[16rem]";
         if (tool === "photos") {
           // Same workspace principle as the text editor: a small working page
           // on the left, the existing controls on the right, the big page below.
           return (
-            <div className="space-y-6">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
-                <div className="lg:sticky lg:top-4">{pageSurface({ sizeClass: "max-w-[16rem]" })}</div>
-                {photoControls}
+            <div className="space-y-4 sm:space-y-6">
+              <div className={workspaceGrid}>
+                <div className={workingPreview}>{pageSurface({ sizeClass: workingSize })}</div>
+                <div className="min-w-0">{photoControls}</div>
               </div>
               {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
             </div>
@@ -725,12 +732,12 @@ export function MemoryBookPageEditor({
         }
         if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         return (
-          <div className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
-              <div className="lg:sticky lg:top-4">
-                {pageSurface({ sizeClass: "max-w-[16rem]" })}
+          <div className="space-y-4 sm:space-y-6">
+            <div className={workspaceGrid}>
+              <div className={workingPreview}>
+                {pageSurface({ sizeClass: workingSize })}
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <label className="text-sm font-medium" htmlFor="mbe-text">
                   {t("mbe_text_label")}
                 </label>
