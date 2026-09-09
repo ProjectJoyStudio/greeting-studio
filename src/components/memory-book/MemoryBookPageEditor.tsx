@@ -183,6 +183,11 @@ export function MemoryBookPageEditor({
   const textDrag = useRef<{ id: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
+    onPageChange?.(index);
+  }, [ready, index, onPageChange]);
+
+  useEffect(() => {
     let alive = true;
     void Promise.all([loadPages({ data: { bookId } }), loadMaterials({ data: { bookId } })])
       .then(([p, m]) => {
