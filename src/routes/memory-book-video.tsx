@@ -216,7 +216,7 @@ function MemoryBookVideoPage() {
         to: "/memory-book-create",
         search:
           from === "pages"
-            ? { book: bookId, view: "pages", page: page || 1 }
+            ? { book: bookId, view: "pages" as const, page: page || 1 }
             : { book: bookId, view: "materials" as const },
       });
     } catch {

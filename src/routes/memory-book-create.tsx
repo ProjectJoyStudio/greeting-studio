@@ -59,7 +59,7 @@ function fill(text: string, vars: Record<string, string | number>) {
 
 function MemoryBookCreatePage() {
   const { t } = useI18n();
-  const { book: bookId } = Route.useSearch();
+  const { book: bookId, view, page } = Route.useSearch();
   const navigate = useNavigate();
   const checkAccess = useServerFn(getMemoryBookAccess);
   const [state, setState] = useState<"checking" | "allowed" | "denied">("checking");
@@ -136,6 +136,8 @@ function MemoryBookCreatePage() {
             <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
             <MemoryBookDesignStudio
               bookId={book.id}
+              initialView={view}
+              initialPage={page}
               
               videoCapacity={book.videoCapacity}
             />
