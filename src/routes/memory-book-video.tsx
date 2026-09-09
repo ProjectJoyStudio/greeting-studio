@@ -253,7 +253,7 @@ function MemoryBookVideoPage() {
     <SiteLayout>
       <PageHeader eyebrow={t("brand")} title={t("mbv_title")} />
 
-      <section className="mx-auto w-full max-w-4xl space-y-6 px-4 pb-16 sm:px-6">
+      <section className="mx-auto w-full max-w-6xl space-y-6 px-4 pb-16 sm:px-6">
         <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
           {t("mbv_back")}
         </Button>
