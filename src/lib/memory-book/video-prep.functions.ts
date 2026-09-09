@@ -280,6 +280,14 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
               .eq("book_id", data.bookId)
               .eq("source_material_id", data.sourceMaterialId)
               .eq("user_id", context.userId);
+            // A book page that still pointed at the removed working video now
+            // points at the prepared video instead.
+            await db
+              .from("memory_book_pages")
+              .update({ video_material_id: materialId })
+              .eq("book_id", data.bookId)
+              .eq("user_id", context.userId)
+              .eq("video_material_id", data.sourceMaterialId);
           }
         }
       } catch {
