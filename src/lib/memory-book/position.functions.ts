@@ -25,7 +25,16 @@ export const saveMemoryBookPosition = createServerFn({ method: "POST" })
     if (!data.bookId) return { ok: false };
     const patch: Record<string, unknown> = { last_view: data.view };
     if (data.view === "pages" && data.page) patch.last_page = data.page;
-    const { error } = await context.supabase
+    const db = context.supabase as unknown as {
+      from: (table: string) => {
+        update: (values: Record<string, unknown>) => {
+          eq: (a: string, b: string) => {
+            eq: (a: string, b: string) => Promise<{ error: unknown }>;
+          };
+        };
+      };
+    };
+    const { error } = await db
       .from("memory_book_projects")
       .update(patch)
       .eq("id", data.bookId)
