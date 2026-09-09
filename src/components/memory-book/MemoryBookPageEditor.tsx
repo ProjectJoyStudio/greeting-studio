@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -143,9 +144,12 @@ function PhotoArea({
 export function MemoryBookPageEditor({
   bookId,
   leafBackgroundUrl,
+  initialPage,
 }: {
   bookId: string;
   leafBackgroundUrl?: string | null;
+  /** Page to open first, e.g. when returning from video preparation. */
+  initialPage?: number;
 }) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
@@ -156,7 +160,7 @@ export function MemoryBookPageEditor({
   const [total, setTotal] = useState(0);
   const [videoCapacity, setVideoCapacity] = useState(0);
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
-  const [index, setIndex] = useState(1);
+  const [index, setIndex] = useState(initialPage && initialPage > 0 ? initialPage : 1);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -784,7 +788,22 @@ export function MemoryBookPageEditor({
                   >
                     <p className="truncate text-xs text-muted-foreground">{video.fileName}</p>
                     {tooLong ? (
-                      <p className="text-xs text-destructive">{t("mbe_video_needs_prep")}</p>
+                      <>
+                        <p className="text-xs text-destructive">{t("mbe_video_needs_prep")}</p>
+                        <Button asChild size="sm" variant="outline">
+                          <Link
+                            to="/memory-book-video"
+                            search={{
+                              book: bookId,
+                              material: video.id,
+                              from: "pages" as const,
+                              page: index,
+                            }}
+                          >
+                            {t("mbv_process")}
+                          </Link>
+                        </Button>
+                      </>
                     ) : null}
                     <Button
                       size="sm"
