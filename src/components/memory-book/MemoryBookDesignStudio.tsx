@@ -175,10 +175,11 @@ export function MemoryBookDesignStudio({
     }
   }
 
-  async function openLibrary() {
+  async function openLibrary(target: "front" | "back" = "front") {
     setBusy(true);
+    setLibraryTarget(target);
     try {
-      const res = await loadLibrary({ data: { stage } });
+      const res = await loadLibrary({ data: { stage: target === "back" ? "cover" : stage } });
       setLibrary(res.items);
     } catch {
       setLibrary([]);
@@ -190,11 +191,29 @@ export function MemoryBookDesignStudio({
   async function useLibraryItem(path: string) {
     setBusy(true);
     try {
-      const res = await chooseLibrary({ data: { bookId, stage, path } });
+      const res = await chooseLibrary({
+        data: {
+          bookId,
+          stage: libraryTarget === "back" ? "cover" : stage,
+          path,
+          target: libraryTarget,
+        },
+      });
       if (res.ok) {
         apply(res.state);
         setLibrary(null);
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Back cover only: pick one of the saved designs, or follow the front again. */
+  async function chooseBackCover(designId: string | null) {
+    setBusy(true);
+    try {
+      const res = await setBackCover({ data: { bookId, designId } });
+      if (res.ok && res.state) setState(res.state);
     } finally {
       setBusy(false);
     }
