@@ -40,7 +40,12 @@ import {
   loadMemoryBookPages,
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
-import { improveMemoryBookPage } from "@/lib/memory-book/improve.functions";
+import {
+  improveMemoryBookPage,
+  listMemoryBookPageBackgrounds,
+  selectMemoryBookPageBackground,
+  type MemoryBookPageBackground,
+} from "@/lib/memory-book/improve.functions";
 import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS } from "@/lib/memory-book/pages";
 
 /**
@@ -198,6 +203,11 @@ export function MemoryBookPageEditor({
   const [videoPlaying, setVideoPlaying] = useState(false);
   /** Improve Page: how many different pages this book may still improve free. */
   const improve = useServerFn(improveMemoryBookPage);
+  const listBackgrounds = useServerFn(listMemoryBookPageBackgrounds);
+  const selectBackground = useServerFn(selectMemoryBookPageBackground);
+  /** Every background this page created successfully, oldest first. */
+  const [backgrounds, setBackgrounds] = useState<MemoryBookPageBackground[]>([]);
+  const [switchingBackground, setSwitchingBackground] = useState(false);
   const [improveAllowance, setImproveAllowance] = useState(0);
   const [improveDistinctUsed, setImproveDistinctUsed] = useState(0);
   const [improvePrompt, setImprovePrompt] = useState("");
