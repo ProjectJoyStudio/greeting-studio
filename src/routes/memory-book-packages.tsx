@@ -64,9 +64,23 @@ function MemoryBookPackagesPage() {
 
   const buyPackage = useServerFn(purchaseMemoryBookPackage);
   const startPurchase = useServerFn(startCreditPurchase);
+  const buyLeaf = useServerFn(purchaseMemoryBookExtraLeaf);
+  const bookAccess = useServerFn(getMemoryBookAccess);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Live state of the book the customer came from, so the additional leaves
+  // section can show what is still possible for THIS exact book.
+  const bookQuery = useQuery({
+    queryKey: ["memory-book", "access", activeBookId],
+    queryFn: () => bookAccess({ data: { bookId: activeBookId ?? "" } }),
+    enabled: Boolean(activeBookId) && isAuthenticated,
+  });
+  const activeBook = bookQuery.data?.book ?? null;
+  const leavesFull = activeBook ? activeBook.leaves >= MEMORY_BOOK_MAX_LEAVES : false;
+  const videosFull = activeBook ? activeBook.videoCapacity >= MEMORY_BOOK_MAX_VIDEOS : false;
+  const [leafBusy, setLeafBusy] = useState<string | null>(null);
+  const [leafNotice, setLeafNotice] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState(CREDIT_MIN);
   const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState(false);
