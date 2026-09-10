@@ -21,6 +21,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
 import { Route as MemoryBookVideoRouteImport } from './routes/memory-book-video'
+import { Route as MemoryBookPreviewRouteImport } from './routes/memory-book-preview'
 import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
 import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
 import { Route as MemoryBookCreateRouteImport } from './routes/memory-book-create'
@@ -160,6 +161,11 @@ const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
 const MemoryBookVideoRoute = MemoryBookVideoRouteImport.update({
   id: '/memory-book-video',
   path: '/memory-book-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookPreviewRoute = MemoryBookPreviewRouteImport.update({
+  id: '/memory-book-preview',
+  path: '/memory-book-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
@@ -592,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-preview': typeof MemoryBookPreviewRoute
   '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-preview': typeof MemoryBookPreviewRoute
   '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -778,6 +786,7 @@ export interface FileRoutesById {
   '/memory-book-create': typeof MemoryBookCreateRoute
   '/memory-book-instructions': typeof MemoryBookInstructionsRoute
   '/memory-book-packages': typeof MemoryBookPackagesRoute
+  '/memory-book-preview': typeof MemoryBookPreviewRoute
   '/memory-book-video': typeof MemoryBookVideoRoute
   '/personal-orders': typeof PersonalOrdersRoute
   '/pricing': typeof PricingRoute
@@ -874,6 +883,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-preview'
     | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
@@ -966,6 +976,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-preview'
     | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
@@ -1059,6 +1070,7 @@ export interface FileRouteTypes {
     | '/memory-book-create'
     | '/memory-book-instructions'
     | '/memory-book-packages'
+    | '/memory-book-preview'
     | '/memory-book-video'
     | '/personal-orders'
     | '/pricing'
@@ -1154,6 +1166,7 @@ export interface RootRouteChildren {
   MemoryBookCreateRoute: typeof MemoryBookCreateRoute
   MemoryBookInstructionsRoute: typeof MemoryBookInstructionsRoute
   MemoryBookPackagesRoute: typeof MemoryBookPackagesRoute
+  MemoryBookPreviewRoute: typeof MemoryBookPreviewRoute
   MemoryBookVideoRoute: typeof MemoryBookVideoRoute
   PersonalOrdersRoute: typeof PersonalOrdersRoute
   PricingRoute: typeof PricingRoute
@@ -1260,6 +1273,13 @@ declare module '@tanstack/react-router' {
       path: '/memory-book-video'
       fullPath: '/memory-book-video'
       preLoaderRoute: typeof MemoryBookVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-preview': {
+      id: '/memory-book-preview'
+      path: '/memory-book-preview'
+      fullPath: '/memory-book-preview'
+      preLoaderRoute: typeof MemoryBookPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory-book-packages': {
@@ -1992,6 +2012,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryBookCreateRoute: MemoryBookCreateRoute,
   MemoryBookInstructionsRoute: MemoryBookInstructionsRoute,
   MemoryBookPackagesRoute: MemoryBookPackagesRoute,
+  MemoryBookPreviewRoute: MemoryBookPreviewRoute,
   MemoryBookVideoRoute: MemoryBookVideoRoute,
   PersonalOrdersRoute: PersonalOrdersRoute,
   PricingRoute: PricingRoute,
