@@ -764,7 +764,6 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     };
     const onStop = (e: Event) => {
       if (!(e.target instanceof HTMLVideoElement)) return;
-      if (document.querySelector("video:not([paused])") && !e.target.paused) return;
       if (!musicOnRef.current) return;
       void music.current?.play().catch(() => undefined);
     };
@@ -777,6 +776,12 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       document.removeEventListener("ended", onStop, true);
     };
   }, []);
+
+  // Closing the enlarged video also gives the sound back to the music.
+  useEffect(() => {
+    if (videoUrl || !musicOnRef.current) return;
+    void music.current?.play().catch(() => undefined);
+  }, [videoUrl]);
 
   const current = faces[position] ?? null;
   // A closed book shows the cover alone, centered; the open book is a

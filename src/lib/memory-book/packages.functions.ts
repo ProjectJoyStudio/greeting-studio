@@ -25,7 +25,7 @@ export interface MemoryBookProject {
   completedAt: string | null;
   retentionExpiresAt: string | null;
   /** Where the customer stopped working, used by Continue. */
-  lastView: "design" | "materials" | "pages" | null;
+  lastView: "design" | "materials" | "pages" | "music" | null;
   lastPage: number | null;
 }
 
