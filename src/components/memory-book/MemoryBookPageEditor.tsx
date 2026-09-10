@@ -378,15 +378,11 @@ export function MemoryBookPageEditor({
    * the same page, so switching never removes anything already placed.
    */
   function setContent(content: MemoryBookPageContent) {
-    if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
+    if (content === "video" && !page.videoMaterialId && videoPagesUsed >= videoCapacity) {
       setError(t("mbe_video_capacity_full"));
       return;
     }
     setTool(content);
-    if (content === "video") {
-      persist({ ...page, content, layout: null, slots: [] });
-      return;
-    }
     if (content === "photos") {
       const first = layoutsForCount(1)[0];
       persist({
@@ -394,12 +390,12 @@ export function MemoryBookPageEditor({
         content,
         layout: page.layout ?? first?.id ?? null,
         slots: page.slots.length ? page.slots : [emptySlot()],
-        videoMaterialId: null,
       });
       return;
     }
-    // Text or empty: the photo composition stays exactly where it is.
-    persist({ ...page, content, videoMaterialId: null });
+    // Every other tool only changes what is being edited: the photo, text and
+    // video layers already on the page all stay exactly as they are.
+    persist({ ...page, content });
   }
 
   function setLayout(id: string) {
