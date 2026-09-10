@@ -669,50 +669,6 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [flipNext, flipPrev, photoPage, videoUrl]);
 
-  async function moveLeaf(index: number, direction: -1 | 1) {
-    const next = [...order];
-    const target = index + direction;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target]!, next[index]!];
-    setOrder(next);
-    setOrderMessage(null);
-    try {
-      const res = await saveOrder({ data: { bookId, order: next } });
-      setOrderMessage(res.ok ? t("mbpv_order_saved") : t("mbpv_order_failed"));
-      if (res.ok) setOrder(res.order);
-    } catch {
-      setOrderMessage(t("mbpv_order_failed"));
-    }
-  }
-
-  if (!ready) {
-    return (
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        {t("mbpv_loading")}
-      </p>
-    );
-  }
-  if (!ok) return <p className="text-sm text-muted-foreground">{t("mbpv_not_found")}</p>;
-
-  const faceProps = {
-    coverUrl,
-    backCoverUrl,
-    leafBackgroundUrl,
-    photos,
-    videos,
-    library,
-    onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
-    onOpenVideo: (url: string) => setVideoUrl(url),
-    onCancelTurn: settleBook,
-  };
-
-  const pageWidth = Math.max(
-    220,
-    Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
-  );
-  const pageHeight = Math.round((pageWidth * 4) / 3);
-
   // The chosen composition of this book, if there is one.
   useEffect(() => {
     let active = true;
@@ -782,6 +738,53 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     if (videoUrl || !musicOnRef.current) return;
     void music.current?.play().catch(() => undefined);
   }, [videoUrl]);
+
+  async function moveLeaf(index: number, direction: -1 | 1) {
+    const next = [...order];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    setOrder(next);
+    setOrderMessage(null);
+    try {
+      const res = await saveOrder({ data: { bookId, order: next } });
+      setOrderMessage(res.ok ? t("mbpv_order_saved") : t("mbpv_order_failed"));
+      if (res.ok) setOrder(res.order);
+    } catch {
+      setOrderMessage(t("mbpv_order_failed"));
+    }
+  }
+
+  if (!ready) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        {t("mbpv_loading")}
+      </p>
+    );
+  }
+  if (!ok) return <p className="text-sm text-muted-foreground">{t("mbpv_not_found")}</p>;
+
+  const faceProps = {
+    coverUrl,
+    backCoverUrl,
+    leafBackgroundUrl,
+    photos,
+    videos,
+    library,
+    onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
+    onOpenVideo: (url: string) => setVideoUrl(url),
+    onCancelTurn: settleBook,
+  };
+
+  const pageWidth = Math.max(
+    220,
+    Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
+  );
+  const pageHeight = Math.round((pageWidth * 4) / 3);
+
+
+
 
   const current = faces[position] ?? null;
   // A closed book shows the cover alone, centered; the open book is a
