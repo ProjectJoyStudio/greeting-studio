@@ -36,7 +36,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, internal_pages, video_capacity, credits_spent")
+    .select("id, internal_pages, video_capacity, credits_spent, package_code")
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
@@ -44,6 +44,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   return {
     internalPages: Number(data.internal_pages ?? 0),
     videoCapacity: Number(data.video_capacity ?? 0),
+    packageCode: String(data.package_code ?? ""),
   };
 }
 
@@ -74,6 +75,8 @@ function rowToPage(row: Row): MemoryBookPage {
       typeof row.video_material_id === "string" ? row.video_material_id : null,
     videoFrame: clampVideoFrame((row.video_frame ?? null) as Record<string, number> | null),
     decorations: readPlacedDecorations(row.decorations),
+    improvePrompt: typeof row.improve_prompt === "string" ? row.improve_prompt : "",
+    improveIncludedUsed: row.improve_included_used === true,
   };
 }
 
@@ -92,23 +95,56 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       pages: MemoryBookPage[];
       internalPages: number;
       videoCapacity: number;
+      /** How many different pages this package may still improve for free. */
+      improveAllowance: number;
+      improveDistinctUsed: number;
     }> => {
       const book = await ownedBook(context, data.bookId);
-      if (!book) return { ok: false, pages: [], internalPages: 0, videoCapacity: 0 };
+      if (!book) {
+        return {
+          ok: false,
+          pages: [],
+          internalPages: 0,
+          videoCapacity: 0,
+          improveAllowance: 0,
+          improveDistinctUsed: 0,
+        };
+      }
       const db = await admin();
       const { data: rows } = await db
         .from("memory_book_pages")
-        .select("page_index, content_type, layout, slots, frame, text_content, text_design, video_material_id, video_frame, decorations")
+        .select(
+          "page_index, content_type, layout, slots, frame, text_content, text_design, video_material_id, video_frame, decorations, improve_prompt, improve_included_used, background_bucket, background_path",
+        )
         .eq("book_id", data.bookId)
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
+
+      const raw = ((rows ?? []) as unknown as Row[]).filter((r) => {
+        const i = Number(r.page_index);
+        return i >= 1 && i <= book.internalPages;
+      });
+
+      const pages: MemoryBookPage[] = [];
+      for (const row of raw) {
+        const page = rowToPage(row);
+        const bucket = typeof row.background_bucket === "string" ? row.background_bucket : "";
+        const path = typeof row.background_path === "string" ? row.background_path : "";
+        if (bucket && path) {
+          const { data: signed } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60);
+          page.backgroundUrl = signed?.signedUrl ?? null;
+        }
+        pages.push(page);
+      }
+
+      const { improveAllowanceOf } = await import("./improve.functions");
       return {
         ok: true,
-        pages: ((rows ?? []) as unknown as Row[])
-          .map(rowToPage)
-          .filter((p) => p.pageIndex >= 1 && p.pageIndex <= book.internalPages),
+        pages,
         internalPages: book.internalPages,
         videoCapacity: book.videoCapacity,
+        improveAllowance: improveAllowanceOf(book.packageCode),
+        improveDistinctUsed: pages.filter((p) => p.improveIncludedUsed).length,
       };
     },
   );

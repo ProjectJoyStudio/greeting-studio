@@ -75,6 +75,21 @@ export interface MemoryBookPlacedDecoration {
   color: string | null;
 }
 
+/** One extra improvement of an already improved page costs one credit. */
+export const MEMORY_BOOK_IMPROVE_PAGE_CREDITS = 1;
+
+/** What this book may still do with "Improve Page". */
+export interface MemoryBookImproveState {
+  /** Different pages the purchased package may improve for free. */
+  allowance: number;
+  /** Different pages that already used their included improvement. */
+  distinctUsed: number;
+  /** Whether the page being looked at already used its included improvement. */
+  pageIncludedUsed: boolean;
+  /** Credits charged for one more improvement of an already improved page. */
+  priceCredits: number;
+}
+
 export interface MemoryBookPage {
   pageIndex: number;
   content: MemoryBookPageContent;
@@ -89,6 +104,12 @@ export interface MemoryBookPage {
   videoFrame: MemoryBookVideoFrame;
   /** Decorations placed on THIS page only. */
   decorations: MemoryBookPlacedDecoration[];
+  /** Background created for THIS page by "Improve Page", when there is one. */
+  backgroundUrl?: string | null;
+  /** The description the customer wrote for this page background. */
+  improvePrompt?: string;
+  /** Whether this page already used its included improvement. */
+  improveIncludedUsed?: boolean;
 }
 
 export const MEMORY_BOOK_DECORATION_MIN_SIZE = 4;
