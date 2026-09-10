@@ -2293,6 +2293,47 @@ export type Database = {
           },
         ]
       }
+      memory_book_leaf_purchases: {
+        Row: {
+          book_id: string
+          created_at: string
+          credits: number
+          id: string
+          kind: string
+          purchase_key: string
+          user_id: string
+          video_added: boolean
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          credits: number
+          id?: string
+          kind: string
+          purchase_key: string
+          user_id: string
+          video_added?: boolean
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          kind?: string
+          purchase_key?: string
+          user_id?: string
+          video_added?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_leaf_purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_materials: {
         Row: {
           book_id: string
@@ -4866,6 +4907,16 @@ export type Database = {
       memory_book_improve_allowance: {
         Args: { _package_code: string }
         Returns: number
+      }
+      purchase_memory_book_extra_leaf: {
+        Args: {
+          _book_id: string
+          _kind: string
+          _price: number
+          _purchase_key: string
+          _user_id: string
+        }
+        Returns: Json
       }
       purchase_memory_book_generations: {
         Args: {
