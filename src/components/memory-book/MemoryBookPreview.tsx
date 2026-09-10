@@ -132,12 +132,16 @@ function PhotoTapLayer({
       if (!s) return;
       if (Math.abs(x - s.x) > 8 || Math.abs(y - s.y) > 8) moved.current = true;
     };
-    /** A press that never moved is photo business only — the book must not turn. */
-    const finish = (e: Event) => {
+    /**
+     * A press that never moved is photo business only. The started press is
+     * cancelled inside the turn engine itself, so no turn can be waiting to
+     * happen later — for example while the enlarged photo is being closed.
+     */
+    const finish = () => {
       if (!start.current) return;
       start.current = null;
       if (moved.current) return;
-      e.stopPropagation();
+      cancelRef.current();
       const now = Date.now();
       if (now - lastTap.current < 400) {
         lastTap.current = 0;
