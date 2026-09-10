@@ -471,6 +471,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     for (const type of types) window.addEventListener(type, block, true);
     return () => {
       for (const type of types) window.removeEventListener(type, block, true);
+      // Closing the enlarged view must leave nothing pending either.
+      settleBook();
     };
   }, [frozen, settleBook]);
 
