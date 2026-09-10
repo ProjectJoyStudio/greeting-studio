@@ -127,6 +127,45 @@ function MemoryBookPackagesPage() {
     }
   }
 
+  /**
+   * Buys one additional leaf for the book the customer is working on. The key
+   * is stable per option until it succeeds, so repeated clicks cannot pay twice.
+   */
+  async function buyExtraLeaf(kind: "standard" | "video") {
+    if (leafBusy || !activeBookId) return;
+    setLeafNotice(null);
+    if (!isAuthenticated) {
+      setLeafNotice(t("mbp_err_auth"));
+      return;
+    }
+    setLeafBusy(kind);
+    try {
+      const res = await buyLeaf({
+        data: { bookId: activeBookId, kind, purchaseKey: keyFor(`leaf-${kind}`) },
+      });
+      if (res.ok) {
+        purchaseKeys.current[`leaf-${kind}`] = "";
+        delete purchaseKeys.current[`leaf-${kind}`];
+        setLeafNotice(t("mbl_added"));
+        await Promise.all([refresh(), bookQuery.refetch()]);
+      } else {
+        setLeafNotice(
+          res.error === "insufficient_credits"
+            ? t("mbl_err_credits")
+            : res.error === "max_leaves"
+              ? t("mbl_max_leaves")
+              : res.error === "max_videos"
+                ? t("mbl_max_videos")
+                : t("mbl_err_failed"),
+        );
+      }
+    } catch {
+      setLeafNotice(t("mbl_err_failed"));
+    } finally {
+      setLeafBusy(null);
+    }
+  }
+
   async function buyCredits() {
     if (creditBusy) return;
     setCreditNotice(null);
@@ -280,6 +319,19 @@ function MemoryBookPackagesPage() {
                 <li>{t("mbp_extra_leaf_std_2")}</li>
                 <li>{t("mbp_extra_leaf_std_3")}</li>
               </ul>
+              {activeBookId ? (
+                <Button
+                  className="mt-3 w-full sm:w-auto"
+                  disabled={leafBusy !== null || leavesFull || !activeBook}
+                  onClick={() => void buyExtraLeaf("standard")}
+                >
+                  {leafBusy === "standard"
+                    ? t("mbl_buying")
+                    : leavesFull
+                      ? t("mbl_unavailable")
+                      : t("mbl_buy")}
+                </Button>
+              ) : null}
             </div>
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_video")}</p>
@@ -291,9 +343,45 @@ function MemoryBookPackagesPage() {
                 <li>{t("mbp_extra_leaf_video_2")}</li>
                 <li>{t("mbp_extra_leaf_video_3")}</li>
               </ul>
+              {activeBookId ? (
+                <Button
+                  className="mt-3 w-full sm:w-auto"
+                  disabled={leafBusy !== null || leavesFull || videosFull || !activeBook}
+                  onClick={() => void buyExtraLeaf("video")}
+                >
+                  {leafBusy === "video"
+                    ? t("mbl_buying")
+                    : leavesFull || videosFull
+                      ? t("mbl_unavailable")
+                      : t("mbl_buy")}
+                </Button>
+              ) : null}
             </div>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
+          {activeBook ? (
+            <>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {fill(t("mbl_current"), {
+                  l: activeBook.leaves,
+                  p: activeBook.internalPages,
+                  v: activeBook.videoCapacity,
+                })}
+              </p>
+              {leavesFull ? (
+                <p className="mt-1 text-sm text-muted-foreground">{t("mbl_max_leaves")}</p>
+              ) : null}
+              {videosFull ? (
+                <p className="mt-1 text-sm text-muted-foreground">{t("mbl_max_videos")}</p>
+              ) : null}
+              {leafNotice ? (
+                <p className="mt-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm">
+                  {leafNotice}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
+          )}
         </div>
 
         {/* Additional storage — information only in this stage */}
