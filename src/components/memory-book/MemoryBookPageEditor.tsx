@@ -826,17 +826,8 @@ export function MemoryBookPageEditor({
         </Button>
       </div>
 
-      {tool === "decorations" ? (
-        <div className="space-y-4">
-          <MemoryBookDecorations
-            bookId={bookId}
-            pageIndex={index - 1}
-            onClose={() => setTool(page.layout ? "photos" : "text")}
-            onPick={addDecoration}
-          />
-          {decorationControls}
-        </div>
-      ) : null}
+
+
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
