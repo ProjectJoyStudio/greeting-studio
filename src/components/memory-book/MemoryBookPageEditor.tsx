@@ -1186,9 +1186,9 @@ export function MemoryBookPageEditor({
           );
         }
         if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
-
-
+        return (
           <div className="space-y-4 sm:space-y-6">
+
             <div className={workspaceGrid}>
               <div className={workingPreview}>
                 {pageSurface({ sizeClass: workingSize })}
