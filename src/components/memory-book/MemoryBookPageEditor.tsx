@@ -429,7 +429,11 @@ export function MemoryBookPageEditor({
 
   function onVideoPointerDown(e: React.PointerEvent) {
     if (videoPlaying) return;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    if (videoResize.current) return;
+    e.preventDefault();
+    // Capturing on the frame itself keeps every move event on the same
+    // element, so the drag survives the video and the play overlay.
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     videoDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
   }
 
