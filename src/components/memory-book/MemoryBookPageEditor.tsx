@@ -40,12 +40,14 @@ import {
   loadMemoryBookPages,
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
+import { improveMemoryBookPage } from "@/lib/memory-book/improve.functions";
+import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS } from "@/lib/memory-book/pages";
 
 /**
  * Which layer of the SAME page is being edited. Decorations are one more
  * editing tool, never a page type that replaces the other layers.
  */
-type EditorTool = MemoryBookPageContent | "decorations";
+type EditorTool = MemoryBookPageContent | "decorations" | "improve";
 
 function fill(text: string, vars: Record<string, string | number>) {
   return Object.entries(vars).reduce(
@@ -194,6 +196,13 @@ export function MemoryBookPageEditor({
   const [pickedDecoration, setPickedDecoration] = useState<string | null>(null);
   /** The page video only starts when the customer asks for it. */
   const [videoPlaying, setVideoPlaying] = useState(false);
+  /** Improve Page: how many different pages this book may still improve free. */
+  const improve = useServerFn(improveMemoryBookPage);
+  const [improveAllowance, setImproveAllowance] = useState(0);
+  const [improveDistinctUsed, setImproveDistinctUsed] = useState(0);
+  const [improvePrompt, setImprovePrompt] = useState("");
+  const [improving, setImproving] = useState(false);
+  const [improveMessage, setImproveMessage] = useState<string | null>(null);
 
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,6 +220,7 @@ export function MemoryBookPageEditor({
   useEffect(() => {
     setVideoPlaying(false);
     setPickedDecoration(null);
+    setImproveMessage(null);
   }, [index]);
 
   // The shared library is only read, so placed decorations can be drawn.
@@ -242,6 +252,8 @@ export function MemoryBookPageEditor({
           setPages(map);
           setTotal(p.internalPages);
           setVideoCapacity(p.videoCapacity);
+          setImproveAllowance(p.improveAllowance);
+          setImproveDistinctUsed(p.improveDistinctUsed);
         }
         if (m.ok) setMaterials(m.materials);
         setReady(true);
@@ -258,6 +270,7 @@ export function MemoryBookPageEditor({
   // nothing on the page is changed by this.
   useEffect(() => {
     const stored = pages[index];
+    setImprovePrompt(stored?.improvePrompt ?? "");
     if (!stored) {
       setTool("photos");
       return;
@@ -298,7 +311,12 @@ export function MemoryBookPageEditor({
                     : t("mbe_save_failed"),
               );
             } else if (res.page) {
-              setPages((prev) => ({ ...prev, [res.page!.pageIndex]: res.page! }));
+              // The stored page comes back without the background of this
+              // page, so the improved background already shown is kept.
+              setPages((prev) => ({
+                ...prev,
+                [res.page!.pageIndex]: { ...prev[res.page!.pageIndex], ...res.page! },
+              }));
             }
           })
           .catch(() => setError(t("mbe_save_failed")))
@@ -322,6 +340,63 @@ export function MemoryBookPageEditor({
   const photoCount = layout?.count ?? 0;
   const frame = clampFrame(page.frame ?? defaultFrame());
   const textDesign = clampTextDesign(page.textDesign);
+
+  /** The background of THIS page: its improved design, else the book design. */
+  const pageBackgroundUrl = page.backgroundUrl ?? leafBackgroundUrl ?? null;
+  const improveIncludedUsed = page.improveIncludedUsed === true;
+  const improveFreeLeft = Math.max(improveAllowance - improveDistinctUsed, 0);
+  const improveBlocked = !improveIncludedUsed && improveFreeLeft <= 0;
+
+  /**
+   * Creates a new background for THIS page only. Photos, video, text and
+   * decorations of the page are never sent and never changed.
+   */
+  async function runImprove() {
+    if (improving || !improvePrompt.trim() || improveBlocked) return;
+    setImproving(true);
+    setImproveMessage(null);
+    try {
+      const res = await improve({
+        data: {
+          bookId,
+          pageIndex: index,
+          prompt: improvePrompt,
+          claimKey: crypto.randomUUID(),
+        },
+      });
+      if (res.improve) {
+        setImproveAllowance(res.improve.allowance);
+        setImproveDistinctUsed(res.improve.distinctUsed);
+      }
+      if (res.ok) {
+        setPages((prev) => ({
+          ...prev,
+          [index]: {
+            ...(prev[index] ?? emptyPage(index)),
+            backgroundUrl: res.backgroundUrl ?? null,
+            improvePrompt,
+            improveIncludedUsed: true,
+          },
+        }));
+        setImproveMessage(t("mbi_done"));
+      } else {
+        setImproveMessage(
+          res.error === "page_limit"
+            ? t("mbi_limit_reached")
+            : res.error === "insufficient_credits"
+              ? t("mbi_no_credits")
+              : res.error === "empty_prompt"
+                ? t("mbi_needs_description")
+                : t("mbi_failed"),
+        );
+      }
+    } catch {
+      setImproveMessage(t("mbi_failed"));
+    } finally {
+      setImproving(false);
+    }
+  }
+
 
   /** Look and position of the page text; the page design itself is untouched. */
   function setTextDesign(patch: Partial<CardTextDesign>) {
@@ -824,6 +899,13 @@ export function MemoryBookPageEditor({
         >
           {t("mbdec_open")}
         </Button>
+        <Button
+          size="sm"
+          variant={tool === "improve" ? "default" : "outline"}
+          onClick={() => setTool("improve")}
+        >
+          {t("mbi_open")}
+        </Button>
       </div>
 
 
@@ -843,7 +925,7 @@ export function MemoryBookPageEditor({
         style={{
           containerType: "inline-size",
           aspectRatio: "3 / 4",
-          backgroundImage: leafBackgroundUrl ? `url(${leafBackgroundUrl})` : undefined,
+          backgroundImage: pageBackgroundUrl ? `url(${pageBackgroundUrl})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

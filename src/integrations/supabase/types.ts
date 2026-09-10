@@ -2353,14 +2353,66 @@ export type Database = {
           },
         ]
       }
+      memory_book_page_improvements: {
+        Row: {
+          book_id: string
+          claim_key: string
+          created_at: string
+          credits: number
+          id: string
+          mode: string
+          page_index: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          claim_key: string
+          created_at?: string
+          credits?: number
+          id?: string
+          mode: string
+          page_index: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          claim_key?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          mode?: string
+          page_index?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_page_improvements_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_pages: {
         Row: {
+          background_bucket: string | null
+          background_path: string | null
           book_id: string
           content_type: string
           created_at: string
           decorations: Json
           frame: Json
           id: string
+          improve_included_used: boolean
+          improve_paid_count: number
+          improve_prompt: string | null
           layout: string | null
           page_index: number
           slots: Json
@@ -2372,12 +2424,17 @@ export type Database = {
           video_material_id: string | null
         }
         Insert: {
+          background_bucket?: string | null
+          background_path?: string | null
           book_id: string
           content_type?: string
           created_at?: string
           decorations?: Json
           frame?: Json
           id?: string
+          improve_included_used?: boolean
+          improve_paid_count?: number
+          improve_prompt?: string | null
           layout?: string | null
           page_index: number
           slots?: Json
@@ -2389,12 +2446,17 @@ export type Database = {
           video_material_id?: string | null
         }
         Update: {
+          background_bucket?: string | null
+          background_path?: string | null
           book_id?: string
           content_type?: string
           created_at?: string
           decorations?: Json
           frame?: Json
           id?: string
+          improve_included_used?: boolean
+          improve_paid_count?: number
+          improve_prompt?: string | null
           layout?: string | null
           page_index?: number
           slots?: Json
@@ -4700,6 +4762,16 @@ export type Database = {
         Args: { _book_id: string; _stage: string; _user_id: string }
         Returns: Json
       }
+      claim_memory_book_page_improvement: {
+        Args: {
+          _book_id: string
+          _claim_key: string
+          _page_index: number
+          _price: number
+          _user_id: string
+        }
+        Returns: Json
+      }
       confirm_credit_purchase: {
         Args: {
           _order_id: string
@@ -4750,6 +4822,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      memory_book_improve_allowance: {
+        Args: { _package_code: string }
+        Returns: number
+      }
       purchase_memory_book_generations: {
         Args: {
           _book_id: string
@@ -4787,6 +4863,10 @@ export type Database = {
       }
       release_memory_book_generation: {
         Args: { _book_id: string; _stage: string; _user_id: string }
+        Returns: Json
+      }
+      release_memory_book_page_improvement: {
+        Args: { _book_id: string; _claim_key: string; _user_id: string }
         Returns: Json
       }
     }
