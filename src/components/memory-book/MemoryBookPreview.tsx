@@ -386,6 +386,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
   const [library, setLibrary] = useState<MemoryBookDecoration[]>([]);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [backCoverUrl, setBackCoverUrl] = useState<string | null>(null);
   const [leafBackgroundUrl, setLeafBackgroundUrl] = useState<string | null>(null);
   const [order, setOrder] = useState<number[]>([]);
   const [orderMessage, setOrderMessage] = useState<string | null>(null);
@@ -513,6 +514,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           setCoverUrl(
             state.cover.variants.find((v) => v.id === state.cover.selectedId)?.url ?? null,
           );
+          setBackCoverUrl(state.backCover.url);
           setLeafBackgroundUrl(
             state.leaf.variants.find((v) => v.id === state.leaf.selectedId)?.url ?? null,
           );
@@ -539,8 +541,9 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
         list.push({ kind: "page", page, number: pageIndex });
       }
     }
-    list.push({ kind: "blank" });
-    if (list.length % 2 !== 0) list.push({ kind: "blank" });
+    // The back cover is the very last physical face of the book.
+    list.push({ kind: "back", page: pages[-1] ?? null });
+    if (list.length % 2 !== 0) list.splice(list.length - 1, 0, { kind: "blank" });
     return list;
   }, [order, pages]);
 
@@ -604,6 +607,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
   const faceProps = {
     coverUrl,
+    backCoverUrl,
     leafBackgroundUrl,
     photos,
     videos,
