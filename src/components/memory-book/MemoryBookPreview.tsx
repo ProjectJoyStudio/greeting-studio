@@ -94,6 +94,54 @@ function PhotoComposition({
   );
 }
 
+/**
+ * A photo frame only enlarges on a deliberate double click / double tap.
+ * A press that moves is a page-turn gesture and never opens the photo, and
+ * the press is passed on to the book so the leaf can be dragged from here.
+ */
+function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void }) {
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const moved = useRef(false);
+  const lastTap = useRef(0);
+
+  return (
+    <div
+      role="button"
+      tabIndex={-1}
+      aria-label={label}
+      className="absolute inset-0"
+      onPointerDown={(e) => {
+        start.current = { x: e.clientX, y: e.clientY };
+        moved.current = false;
+      }}
+      onPointerMove={(e) => {
+        const s = start.current;
+        if (!s) return;
+        if (Math.abs(e.clientX - s.x) > 8 || Math.abs(e.clientY - s.y) > 8) moved.current = true;
+      }}
+      onPointerCancel={() => {
+        start.current = null;
+        moved.current = true;
+      }}
+      onPointerUp={() => {
+        if (!start.current) return;
+        start.current = null;
+        if (moved.current) {
+          lastTap.current = 0;
+          return;
+        }
+        const now = Date.now();
+        if (now - lastTap.current < 400) {
+          lastTap.current = 0;
+          onOpen();
+        } else {
+          lastTap.current = now;
+        }
+      }}
+    />
+  );
+}
+
 /** One face of the book: the cover, one saved internal page, or the back. */
 function BookFace({
   face,
@@ -164,16 +212,7 @@ function BookFace({
             photos={photos}
           />
           {onOpenPhotos ? (
-            <button
-              type="button"
-              aria-label={t("mbpv_open_photos")}
-              className="absolute inset-0"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenPhotos(page);
-              }}
-            />
+            <PhotoTapLayer label={t("mbpv_open_photos")} onOpen={() => onOpenPhotos(page)} />
           ) : null}
         </>
       ) : null}
@@ -344,6 +383,73 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     return () => observer.disconnect();
   }, [ready]);
 
+  // Turning a leaf by hand should not require dragging it across the whole
+  // book: after a short, clear drag, letting go finishes the turn. The leaf
+  // itself still follows the finger or mouse exactly as before.
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el || !ready) return;
+
+    let from: { x: number; y: number } | null = null;
+    let now: { x: number; y: number } | null = null;
+
+    const point = (e: Event) => {
+      const touch = (e as TouchEvent).changedTouches?.[0];
+      if (touch) return { x: touch.clientX, y: touch.clientY };
+      const mouse = e as MouseEvent;
+      return { x: mouse.clientX, y: mouse.clientY };
+    };
+
+    const onDown = (e: Event) => {
+      if (!(e.target instanceof Node) || !el.contains(e.target)) return;
+      from = point(e);
+      now = from;
+    };
+    const onMove = (e: Event) => {
+      if (from) now = point(e);
+    };
+    const onUp = (e: Event) => {
+      const started = from;
+      const ended = now;
+      from = null;
+      now = null;
+      if (!started || !ended) return;
+      const dx = ended.x - started.x;
+      const dy = ended.y - started.y;
+      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) * 1.5) return;
+      const page = el.querySelector(".stf__parent");
+      if (!page) return;
+      const rect = page.getBoundingClientRect();
+      // Nudge the book's own physics past its commit point, so the turn it is
+      // already animating simply finishes.
+      const x = dx < 0 ? rect.left - 60 : rect.right + 60;
+      const type = (e as TouchEvent).changedTouches ? "touchmove" : "mousemove";
+      const synthetic = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(synthetic, "clientX", { value: x });
+      Object.defineProperty(synthetic, "clientY", { value: ended.y });
+      Object.defineProperty(synthetic, "changedTouches", {
+        value: [{ clientX: x, clientY: ended.y }],
+      });
+      window.dispatchEvent(synthetic);
+    };
+
+    window.addEventListener("mousedown", onDown, true);
+    window.addEventListener("touchstart", onDown, true);
+    window.addEventListener("mousemove", onMove, true);
+    window.addEventListener("touchmove", onMove, true);
+    window.addEventListener("mouseup", onUp, true);
+    window.addEventListener("touchend", onUp, true);
+    return () => {
+      window.removeEventListener("mousedown", onDown, true);
+      window.removeEventListener("touchstart", onDown, true);
+      window.removeEventListener("mousemove", onMove, true);
+      window.removeEventListener("touchmove", onMove, true);
+      window.removeEventListener("mouseup", onUp, true);
+      window.removeEventListener("touchend", onUp, true);
+    };
+  }, [ready]);
+
+
   // The preview always reads the CURRENT saved book. Opening it changes
   // nothing about the project's lifecycle.
   useEffect(() => {
@@ -506,6 +612,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
             showCover
             usePortrait={isMobile}
             mobileScrollSupport
+            swipeDistance={20}
             useMouseEvents
             drawShadow
             maxShadowOpacity={0.5}
