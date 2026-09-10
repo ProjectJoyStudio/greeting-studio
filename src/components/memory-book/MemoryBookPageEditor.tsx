@@ -271,9 +271,9 @@ export function MemoryBookPageEditor({
   }, [loadLibrary]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || coverMode) return;
     onPageChange?.(index);
-  }, [ready, index, onPageChange]);
+  }, [ready, index, onPageChange, coverMode]);
 
   useEffect(() => {
     let alive = true;
