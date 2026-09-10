@@ -922,37 +922,49 @@ export function MemoryBookPageEditor({
   return (
     <section className="space-y-4 text-left sm:space-y-6">
       <div className="space-y-2">
-        <h2 className="font-display text-xl font-semibold">{t("mbe_title")}</h2>
-        <p className="text-sm text-muted-foreground">{t("mbe_hint")}</p>
+        <h2 className="font-display text-xl font-semibold">
+          {coverMode ? t("mbe_cover_title") : t("mbe_title")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {coverMode ? t("mbe_cover_hint") : t("mbe_hint")}
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={index <= 1}
-          onClick={() => setIndex((i) => Math.max(1, i - 1))}
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
-          {t("mbe_prev")}
-        </Button>
-        <span className="text-sm font-medium">{fill(t("mbe_page"), { n: index, t: total })}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={index >= total}
-          onClick={() => setIndex((i) => Math.min(total, i + 1))}
-        >
-          {t("mbe_next")}
-          <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
-        </Button>
+        {coverMode ? null : (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index <= 1}
+              onClick={() => setIndex((i) => Math.max(1, i - 1))}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbe_prev")}
+            </Button>
+            <span className="text-sm font-medium">
+              {fill(t("mbe_page"), { n: index, t: total })}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index >= total}
+              onClick={() => setIndex((i) => Math.min(total, i + 1))}
+            >
+              {t("mbe_next")}
+              <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
+            </Button>
+          </>
+        )}
         <span className="text-xs text-muted-foreground">
           {saving ? t("mbe_saving") : t("mbe_saved")}
         </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {(["empty", "photos", "text", "video"] as MemoryBookPageContent[]).map((type) => (
+        {((coverMode
+          ? ["photos", "text"]
+          : ["empty", "photos", "text", "video"]) as MemoryBookPageContent[]).map((type) => (
           <Button
             key={type}
             size="sm"
@@ -969,13 +981,15 @@ export function MemoryBookPageEditor({
         >
           {t("mbdec_open")}
         </Button>
-        <Button
-          size="sm"
-          variant={tool === "improve" ? "default" : "outline"}
-          onClick={() => setTool("improve")}
-        >
-          {t("mbi_open")}
-        </Button>
+        {coverMode ? null : (
+          <Button
+            size="sm"
+            variant={tool === "improve" ? "default" : "outline"}
+            onClick={() => setTool("improve")}
+          >
+            {t("mbi_open")}
+          </Button>
+        )}
       </div>
 
 
