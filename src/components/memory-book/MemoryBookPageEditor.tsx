@@ -241,10 +241,12 @@ export function MemoryBookPageEditor({
     setImproveMessage(null);
   }, [index]);
 
-  // Saved backgrounds belong to THIS exact page of THIS exact book.
+  // Saved backgrounds belong to THIS exact page of THIS exact book. The front
+  // cover keeps its own selected design, so nothing is looked up for it.
   useEffect(() => {
     let alive = true;
     setBackgrounds([]);
+    if (coverMode) return;
     void listBackgrounds({ data: { bookId, pageIndex: index } })
       .then((res) => {
         if (alive && res.ok) setBackgrounds(res.backgrounds);
