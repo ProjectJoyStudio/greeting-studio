@@ -635,7 +635,7 @@ export function MemoryBookPageEditor({
           backgroundPosition: "center",
         }}
       >
-        {page.content !== "video" && layout ? (
+        {layout ? (
           <div
             className={`absolute inset-0 ${tool === "photos" && mode === "frame" ? "cursor-move" : ""}`}
             style={{
@@ -755,7 +755,7 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content !== "video" && page.text.trim() ? (
+        {page.text.trim() ? (
           <div
             role="presentation"
             className={`absolute select-none ${tool === "text" ? "cursor-move" : "pointer-events-none"}`}
@@ -789,7 +789,7 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "video" && page.videoMaterialId ? (
+        {page.videoMaterialId ? (
           <div
             className="absolute overflow-hidden rounded-xl border-2 border-primary/60 bg-black shadow-lg"
             style={{
@@ -899,7 +899,7 @@ export function MemoryBookPageEditor({
       })()}
 
 
-      {page.content === "video" ? (
+      {tool === "video" ? (
         <div className="space-y-3">
           <p className="text-sm font-medium">{t("mbe_video_label")}</p>
           <p className="text-xs text-muted-foreground">
