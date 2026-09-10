@@ -24,6 +24,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "The new order could not be saved. Please try again.",
     mbpv_open_photos: "Enlarge photos",
     mbpv_play: "Play video",
+    mbpv_auto_play: "Play the book",
+    mbpv_auto_pause: "Pause",
     mbpv_close: "Close",
   },
   ru: {
@@ -49,6 +51,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "Не удалось сохранить новый порядок. Попробуйте ещё раз.",
     mbpv_open_photos: "Увеличить фотографии",
     mbpv_play: "Воспроизвести видео",
+    mbpv_auto_play: "Листать автоматически",
+    mbpv_auto_pause: "Пауза",
     mbpv_close: "Закрыть",
   },
   uk: {
@@ -74,6 +78,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "Не вдалося зберегти новий порядок. Спробуйте ще раз.",
     mbpv_open_photos: "Збільшити фотографії",
     mbpv_play: "Відтворити відео",
+    mbpv_auto_play: "Гортати автоматично",
+    mbpv_auto_pause: "Пауза",
     mbpv_close: "Закрити",
   },
   pl: {
@@ -99,6 +105,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "Nie udało się zapisać nowej kolejności. Spróbuj ponownie.",
     mbpv_open_photos: "Powiększ zdjęcia",
     mbpv_play: "Odtwórz wideo",
+    mbpv_auto_play: "Przewracaj automatycznie",
+    mbpv_auto_pause: "Pauza",
     mbpv_close: "Zamknij",
   },
   de: {
@@ -124,6 +132,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "Die neue Reihenfolge konnte nicht gespeichert werden. Bitte erneut versuchen.",
     mbpv_open_photos: "Fotos vergrößern",
     mbpv_play: "Video abspielen",
+    mbpv_auto_play: "Automatisch blättern",
+    mbpv_auto_pause: "Pause",
     mbpv_close: "Schließen",
   },
   fr: {
@@ -149,6 +159,8 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_order_failed: "Le nouvel ordre n'a pas pu être enregistré. Veuillez réessayer.",
     mbpv_open_photos: "Agrandir les photos",
     mbpv_play: "Lire la vidéo",
+    mbpv_auto_play: "Tourner automatiquement",
+    mbpv_auto_pause: "Pause",
     mbpv_close: "Fermer",
   },
 };
