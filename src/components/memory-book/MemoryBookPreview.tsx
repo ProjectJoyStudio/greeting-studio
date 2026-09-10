@@ -101,13 +101,23 @@ function PhotoComposition({
  * A press that moves is a page-turn gesture and never opens the photo, and
  * the press is passed on to the book so the leaf can be dragged from here.
  */
-function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void }) {
+function PhotoTapLayer({
+  label,
+  onOpen,
+  onCancelTurn,
+}: {
+  label: string;
+  onOpen: () => void;
+  onCancelTurn: () => void;
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
   const lastTap = useRef(0);
   const openRef = useRef(onOpen);
   openRef.current = onOpen;
+  const cancelRef = useRef(onCancelTurn);
+  cancelRef.current = onCancelTurn;
 
   useEffect(() => {
     const el = ref.current;
