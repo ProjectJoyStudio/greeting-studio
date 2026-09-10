@@ -363,6 +363,9 @@ type FlipBookApi = {
   flipNext: () => void;
   flipPrev: () => void;
   getCurrentPageIndex: () => number;
+  /** Ends a started press WITHOUT turning anything (second argument = handled). */
+  userStop?: (point: { x: number; y: number }, handled?: boolean) => void;
+  getUI?: () => { touchPoint?: unknown } | null;
 };
 
 /**
