@@ -62,6 +62,7 @@ export function MemoryBookDesignStudio({
   const setStage = useServerFn(setMemoryBookStage);
   const loadLibrary = useServerFn(listMemoryBookLibrary);
   const chooseLibrary = useServerFn(chooseMemoryBookLibraryDesign);
+  const setBackCover = useServerFn(setMemoryBookBackCoverDesign);
 
   const [state, setState] = useState<MemoryBookDesignState | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -69,6 +70,9 @@ export function MemoryBookDesignStudio({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
+  const [libraryTarget, setLibraryTarget] = useState<"front" | "back">("front");
+  /** Which face of the physical cover the customer is working on. */
+  const [side, setSide] = useState<"front" | "back">("front");
   const [view, setView] = useState<"design" | "materials" | "pages">(initialView ?? "design");
   const savePosition = useServerFn(saveMemoryBookPosition);
 
