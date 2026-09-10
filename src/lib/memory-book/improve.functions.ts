@@ -186,6 +186,17 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
         .eq("page_index", data.pageIndex);
       if (error) throw new Error(error.message);
 
+      // The new background is ADDED to the history of this exact page; older
+      // successful backgrounds stay available.
+      await db.from("memory_book_page_backgrounds").insert({
+        user_id: context.userId,
+        book_id: data.bookId,
+        page_index: data.pageIndex,
+        bucket: MEMORY_BOOK_DESIGN_BUCKET,
+        path,
+        prompt: data.prompt,
+      } as never);
+
       const url = await signedBackground(MEMORY_BOOK_DESIGN_BUCKET, path);
       const fresh = await ownedBook(context, data.bookId);
       return {
