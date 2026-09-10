@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Loader2, Pause, Play, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { useI18n } from "@/lib/i18n";
+import { loadMemoryBookMusic, setMemoryBookMusicPlayback } from "@/lib/memory-book/music.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
@@ -401,6 +402,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const loadLibrary = useServerFn(listMemoryBookDecorations);
   const loadDesigns = useServerFn(loadMemoryBookDesigns);
   const loadOrder = useServerFn(loadMemoryBookLeafOrder);
+  const loadMusic = useServerFn(loadMemoryBookMusic);
+  const saveMusicPlayback = useServerFn(setMemoryBookMusicPlayback);
   const saveOrder = useServerFn(saveMemoryBookLeafOrder);
 
   const [ready, setReady] = useState(false);
@@ -419,6 +422,13 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [position, setPosition] = useState(0);
   const [width, setWidth] = useState(0);
   const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
+  // Background music of this exact book: one composition, playing in a loop.
+  const [musicUrl, setMusicUrl] = useState<string | null>(null);
+  const [musicOn, setMusicOn] = useState(true);
+  const [musicVolume, setMusicVolume] = useState(0.35);
+  const music = useRef<HTMLAudioElement | null>(null);
+  const musicOnRef = useRef(true);
+  const musicVolumeRef = useRef(0.35);
   const wrapper = useRef<HTMLDivElement | null>(null);
   const book = useRef<{ pageFlip: () => FlipBookApi } | null>(null);
   const overlay = useRef<HTMLDivElement | null>(null);
@@ -427,6 +437,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const frozen = photoPage !== null || videoUrl !== null;
   const frozenRef = useRef(frozen);
   frozenRef.current = frozen;
+  musicOnRef.current = musicOn;
+  musicVolumeRef.current = musicVolume;
 
   /**
    * Cancels any started press inside the book so nothing can turn later. The
@@ -700,6 +712,77 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
   );
   const pageHeight = Math.round((pageWidth * 4) / 3);
+
+  // The chosen composition of this book, if there is one.
+  useEffect(() => {
+    let active = true;
+    void loadMusic({ data: { bookId } })
+      .then((res) => {
+        if (!active || !res.state) return;
+        setMusicUrl(res.state.selectedUrl);
+        setMusicOn(res.state.enabled);
+        setMusicVolume(res.state.volume);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [bookId, loadMusic]);
+
+  // The music plays in a loop while the book is open and the sound is on.
+  useEffect(() => {
+    if (!musicUrl) return;
+    const audio = new Audio(musicUrl);
+    audio.loop = true;
+    audio.volume = musicVolumeRef.current;
+    music.current = audio;
+    return () => {
+      audio.pause();
+      music.current = null;
+    };
+  }, [musicUrl]);
+
+  useEffect(() => {
+    const audio = music.current;
+    if (!audio) return;
+    audio.volume = musicVolume;
+  }, [musicVolume, musicUrl]);
+
+  useEffect(() => {
+    const audio = music.current;
+    if (!audio) return;
+    if (musicOn) void audio.play().catch(() => undefined);
+    else audio.pause();
+  }, [musicOn, musicUrl]);
+
+  // A page video always takes the sound: the music waits and then continues
+  // from exactly the same moment, unless it was switched off by hand.
+  useEffect(() => {
+    const onPlay = (e: Event) => {
+      if (!(e.target instanceof HTMLVideoElement)) return;
+      music.current?.pause();
+    };
+    const onStop = (e: Event) => {
+      if (!(e.target instanceof HTMLVideoElement)) return;
+      if (!musicOnRef.current) return;
+      void music.current?.play().catch(() => undefined);
+    };
+    document.addEventListener("play", onPlay, true);
+    document.addEventListener("pause", onStop, true);
+    document.addEventListener("ended", onStop, true);
+    return () => {
+      document.removeEventListener("play", onPlay, true);
+      document.removeEventListener("pause", onStop, true);
+      document.removeEventListener("ended", onStop, true);
+    };
+  }, []);
+
+  // Closing the enlarged video also gives the sound back to the music.
+  useEffect(() => {
+    if (videoUrl || !musicOnRef.current) return;
+    void music.current?.play().catch(() => undefined);
+  }, [videoUrl]);
+
   const current = faces[position] ?? null;
   // A closed book shows the cover alone, centered; the open book is a
   // two-page spread, so the whole block slides half a page sideways.
@@ -802,6 +885,40 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
               </>
             )}
           </Button>
+          {musicUrl ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const next = !musicOn;
+                  setMusicOn(next);
+                  void saveMusicPlayback({ data: { bookId, enabled: next } }).catch(
+                    () => undefined,
+                  );
+                }}
+              >
+                {musicOn ? t("mbpv_music_on") : t("mbpv_music_off")}
+              </Button>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                {t("mbpv_music_volume")}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(musicVolume * 100)}
+                  onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
+                  onPointerUp={() =>
+                    void saveMusicPlayback({ data: { bookId, volume: musicVolume } }).catch(
+                      () => undefined,
+                    )
+                  }
+                  className="h-1 w-28 cursor-pointer"
+                  aria-label={t("mbpv_music_volume")}
+                />
+              </label>
+            </>
+          ) : null}
         </div>
       </div>
 

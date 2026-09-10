@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_music_drafts: {
+        Row: {
+          bucket: string
+          category: string
+          created_at: string
+          created_by: string | null
+          duration_seconds: number
+          id: string
+          path: string
+          prompt: string
+          published_track_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bucket: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number
+          id?: string
+          path: string
+          prompt?: string
+          published_track_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          bucket?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number
+          id?: string
+          path?: string
+          prompt?: string
+          published_track_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -2394,6 +2436,88 @@ export type Database = {
           },
         ]
       }
+      memory_book_music_claims: {
+        Row: {
+          book_id: string
+          claim_key: string
+          created_at: string
+          credits: number
+          id: string
+          mode: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          claim_key: string
+          created_at?: string
+          credits?: number
+          id?: string
+          mode: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          claim_key?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          mode?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_music_claims_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_book_music_variants: {
+        Row: {
+          book_id: string
+          bucket: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          path: string
+          prompt: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          bucket: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          path: string
+          prompt?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          bucket?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          path?: string
+          prompt?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_music_variants_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_page_backgrounds: {
         Row: {
           book_id: string
@@ -2588,6 +2712,15 @@ export type Database = {
           leaf_order: Json | null
           leaf_prompt: string | null
           leaves: number
+          music_enabled: boolean
+          music_included_used: number
+          music_source: string | null
+          music_track_bucket: string | null
+          music_track_id: string | null
+          music_track_path: string | null
+          music_track_title: string | null
+          music_variant_id: string | null
+          music_volume: number
           package_code: string
           purchase_key: string
           retention_expires_at: string | null
@@ -2620,6 +2753,15 @@ export type Database = {
           leaf_order?: Json | null
           leaf_prompt?: string | null
           leaves: number
+          music_enabled?: boolean
+          music_included_used?: number
+          music_source?: string | null
+          music_track_bucket?: string | null
+          music_track_id?: string | null
+          music_track_path?: string | null
+          music_track_title?: string | null
+          music_variant_id?: string | null
+          music_volume?: number
           package_code: string
           purchase_key: string
           retention_expires_at?: string | null
@@ -2652,6 +2794,15 @@ export type Database = {
           leaf_order?: Json | null
           leaf_prompt?: string | null
           leaves?: number
+          music_enabled?: boolean
+          music_included_used?: number
+          music_source?: string | null
+          music_track_bucket?: string | null
+          music_track_id?: string | null
+          music_track_path?: string | null
+          music_track_title?: string | null
+          music_variant_id?: string | null
+          music_volume?: number
           package_code?: string
           purchase_key?: string
           retention_expires_at?: string | null
@@ -4853,6 +5004,16 @@ export type Database = {
         Args: { _book_id: string; _stage: string; _user_id: string }
         Returns: Json
       }
+      claim_memory_book_music: {
+        Args: {
+          _book_id: string
+          _claim_key: string
+          _included?: number
+          _price: number
+          _user_id: string
+        }
+        Returns: Json
+      }
       claim_memory_book_page_improvement: {
         Args: {
           _book_id: string
@@ -4964,6 +5125,10 @@ export type Database = {
       }
       release_memory_book_generation: {
         Args: { _book_id: string; _stage: string; _user_id: string }
+        Returns: Json
+      }
+      release_memory_book_music: {
+        Args: { _book_id: string; _claim_key: string; _user_id: string }
         Returns: Json
       }
       release_memory_book_page_improvement: {

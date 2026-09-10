@@ -20,13 +20,15 @@ export const Route = createFileRoute("/memory-book-create")({
   ): {
     book: string;
     /** Which part of the creation area should open first. */
-    view?: "design" | "materials" | "pages";
+    view?: "design" | "materials" | "pages" | "music";
     /** The internal page the customer was working on, when returning. */
     page?: number;
   } => ({
     book: typeof search.book === "string" ? search.book : "",
     view:
-      search.view === "materials" || search.view === "pages" ? search.view : undefined,
+      search.view === "materials" || search.view === "pages" || search.view === "music"
+        ? search.view
+        : undefined,
     page: Number(search.page) > 0 ? Number(search.page) : undefined,
   }),
   head: () => ({

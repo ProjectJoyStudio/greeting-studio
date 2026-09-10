@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { deleteTrack, fetchAllTracks, updateTrack, uploadLibraryTrack } from "@/lib/music/library";
 import { MUSIC_CATEGORIES, type MusicTrack } from "@/lib/music/types";
+import { AdminMusicCreate } from "@/components/admin/music/AdminMusicCreate";
 
 export function MusicPage() {
   const { t } = useI18n();
@@ -122,6 +123,9 @@ export function MusicPage() {
           <p className="text-xs text-muted-foreground">{t("mus_admin_rights")}</p>
         </div>
       </div>
+
+      {/* Create music for the same library */}
+      <AdminMusicCreate onPublished={refresh} />
 
       {/* Library */}
       {tracks.isLoading ? (
