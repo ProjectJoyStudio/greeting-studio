@@ -192,7 +192,9 @@ export function MemoryBookPageEditor({
   const [total, setTotal] = useState(0);
   const [videoCapacity, setVideoCapacity] = useState(0);
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
-  const [index, setIndex] = useState(initialPage && initialPage > 0 ? initialPage : 1);
+  const [index, setIndex] = useState(
+    coverMode ? 0 : initialPage && initialPage > 0 ? initialPage : 1,
+  );
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
