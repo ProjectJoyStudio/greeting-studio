@@ -612,6 +612,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
             showCover
             usePortrait={isMobile}
             mobileScrollSupport
+            swipeDistance={20}
+            clickEventForward={false}
             useMouseEvents
             drawShadow
             maxShadowOpacity={0.5}
