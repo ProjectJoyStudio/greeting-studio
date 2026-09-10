@@ -233,6 +233,20 @@ export function MemoryBookPageEditor({
     setImproveMessage(null);
   }, [index]);
 
+  // Saved backgrounds belong to THIS exact page of THIS exact book.
+  useEffect(() => {
+    let alive = true;
+    setBackgrounds([]);
+    void listBackgrounds({ data: { bookId, pageIndex: index } })
+      .then((res) => {
+        if (alive && res.ok) setBackgrounds(res.backgrounds);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [bookId, index, listBackgrounds]);
+
   // The shared library is only read, so placed decorations can be drawn.
   useEffect(() => {
     let alive = true;
