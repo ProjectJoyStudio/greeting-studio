@@ -255,7 +255,7 @@ export function MemoryBookPageEditor({
     return () => {
       alive = false;
     };
-  }, [bookId, index, listBackgrounds]);
+  }, [bookId, index, listBackgrounds, coverMode]);
 
   // The shared library is only read, so placed decorations can be drawn.
   useEffect(() => {
