@@ -302,8 +302,8 @@ function MemoryBookPackagesPage() {
           </ul>
         </div>
 
-        {/* Additional leaves — information only in this stage */}
-        <div className="mt-6 rounded-2xl border border-border/70 bg-card p-5">
+        {/* Additional leaves for the book the customer is working on */}
+        <div id="extra-leaves" className="mt-6 scroll-mt-24 rounded-2xl border border-border/70 bg-card p-5">
           <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
             <Layers className="h-5 w-5 text-primary" aria-hidden />
             {t("mbp_extra_leaves_title")}
