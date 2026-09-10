@@ -42,7 +42,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   const { data } = await db
     .from("memory_book_projects")
     .select(
-      "id, credits_spent, cover_prompt, leaf_prompt, design_stage, selected_cover_id, selected_leaf_id, cover_generations_used, cover_generations_allowed, leaf_generations_used, leaf_generations_allowed",
+      "id, credits_spent, cover_prompt, leaf_prompt, design_stage, selected_cover_id, selected_leaf_id, cover_generations_used, cover_generations_allowed, leaf_generations_used, leaf_generations_allowed, back_cover_design_id, back_cover_overridden",
     )
     .eq("user_id", context.userId)
     .eq("id", bookId)
@@ -115,11 +115,21 @@ async function buildState(book: Row): Promise<MemoryBookDesignState> {
     variantsOf(bookId, "cover"),
     variantsOf(bookId, "leaf"),
   ]);
+  const coverState = stageState(book, "cover", cover);
+  const frontUrl = cover.find((v) => v.id === coverState.selectedId)?.url ?? null;
+  const overridden = book.back_cover_overridden === true;
+  const backId = typeof book.back_cover_design_id === "string" ? book.back_cover_design_id : null;
+  // Until the customer chooses otherwise, the back simply follows the front.
+  const backUrl =
+    overridden && backId
+      ? ([...cover, ...leaf].find((v) => v.id === backId)?.url ?? frontUrl)
+      : frontUrl;
   return {
     bookId,
     stage: toStage(book.design_stage),
-    cover: stageState(book, "cover", cover),
+    cover: coverState,
     leaf: stageState(book, "leaf", leaf),
+    backCover: { designId: overridden ? backId : null, overridden, url: backUrl },
     creditsSpent: Number(book.credits_spent ?? 0),
   };
 }
