@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Minus, Play, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
@@ -17,7 +17,10 @@ import {
   clampFrame,
   clampTextDesign,
   clampSlot,
+  clampVideoFrame,
   defaultFrame,
+  defaultVideoFrame,
+  MEMORY_BOOK_VIDEO_MIN_SIZE,
   emptyPage,
   emptySlot,
   findLayout,
@@ -26,6 +29,7 @@ import {
   type MemoryBookPage,
   type MemoryBookPageContent,
   type MemoryBookPhotoSlot,
+  type MemoryBookVideoFrame,
 } from "@/lib/memory-book/pages";
 import {
   loadMemoryBookPages,
@@ -174,6 +178,8 @@ export function MemoryBookPageEditor({
   const [tool, setTool] = useState<MemoryBookPageContent>("photos");
   /** Stage 1 decorations library: browsing only, page content is untouched. */
   const [decorationsOpen, setDecorationsOpen] = useState(false);
+  /** The page video only starts when the customer asks for it. */
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageBox = useRef<HTMLDivElement | null>(null);
@@ -181,6 +187,13 @@ export function MemoryBookPageEditor({
   const framePinch = useRef<{ distance: number; scale: number } | null>(null);
   const framePoints = useRef(new Map<number, { x: number; y: number }>());
   const textDrag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const videoEl = useRef<HTMLVideoElement | null>(null);
+  const videoDrag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const videoResize = useRef<{ id: number; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    setVideoPlaying(false);
+  }, [index]);
 
   useEffect(() => {
     if (!ready) return;
@@ -401,6 +414,69 @@ export function MemoryBookPageEditor({
     if (first) setLayout(first.id);
   }
 
+
+  /** Place and size of the video window; the video itself never distorts. */
+  const videoFrame = clampVideoFrame(page.videoFrame ?? defaultVideoFrame());
+
+  function setVideoFrame(next: Partial<MemoryBookVideoFrame>) {
+    persist({ ...page, videoFrame: clampVideoFrame({ ...videoFrame, ...next }) });
+  }
+
+  function pageRectOf(target: EventTarget | null) {
+    const box = (target as HTMLElement | null)?.closest?.("[data-page-surface]");
+    return box?.getBoundingClientRect() ?? null;
+  }
+
+  function onVideoPointerDown(e: React.PointerEvent) {
+    if (videoPlaying) return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    videoDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  }
+
+  function onVideoPointerMove(e: React.PointerEvent) {
+    if (!videoDrag.current || videoDrag.current.id !== e.pointerId) return;
+    const rect = pageRectOf(e.currentTarget);
+    if (!rect?.width || !rect.height) return;
+    e.preventDefault();
+    const dx = ((e.clientX - videoDrag.current.x) / rect.width) * 100;
+    const dy = ((e.clientY - videoDrag.current.y) / rect.height) * 100;
+    videoDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setVideoFrame({ x: videoFrame.x + dx, y: videoFrame.y + dy });
+  }
+
+  function onVideoPointerUp(e: React.PointerEvent) {
+    if (videoDrag.current?.id === e.pointerId) videoDrag.current = null;
+  }
+
+  function onVideoResizeDown(e: React.PointerEvent) {
+    e.stopPropagation();
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    videoResize.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  }
+
+  function onVideoResizeMove(e: React.PointerEvent) {
+    if (!videoResize.current || videoResize.current.id !== e.pointerId) return;
+    const rect = pageRectOf(e.currentTarget);
+    if (!rect?.width || !rect.height) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const dx = ((e.clientX - videoResize.current.x) / rect.width) * 100;
+    const dy = ((e.clientY - videoResize.current.y) / rect.height) * 100;
+    videoResize.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setVideoFrame({ width: videoFrame.width + dx, height: videoFrame.height + dy });
+  }
+
+  function onVideoResizeUp(e: React.PointerEvent) {
+    if (videoResize.current?.id === e.pointerId) videoResize.current = null;
+  }
+
+  function resizeVideoBy(step: number) {
+    setVideoFrame({
+      width: Math.max(MEMORY_BOOK_VIDEO_MIN_SIZE, videoFrame.width + step),
+      height: Math.max(MEMORY_BOOK_VIDEO_MIN_SIZE, videoFrame.height + step),
+    });
+  }
+
   /** The existing photo controls, unchanged — only their place moved. */
   const photoControls = (
     <div className="space-y-2 sm:space-y-3">
@@ -549,6 +625,7 @@ export function MemoryBookPageEditor({
       <div
         ref={opts.attachRef ? pageBox : undefined}
         className={`relative mx-auto w-full ${opts.sizeClass} overflow-hidden rounded-2xl border border-border/70 bg-card`}
+        data-page-surface
 
         style={{
           containerType: "inline-size",
@@ -713,12 +790,56 @@ export function MemoryBookPageEditor({
         ) : null}
 
         {page.content === "video" && page.videoMaterialId ? (
-          <video
-            src={videos.find((v) => v.id === page.videoMaterialId)?.url}
-            controls
-            preload="metadata"
-            className="absolute inset-4 h-auto w-auto max-w-[calc(100%-2rem)] bg-black object-contain"
-          />
+          <div
+            className="absolute overflow-hidden rounded-xl border-2 border-primary/60 bg-black shadow-lg"
+            style={{
+              left: `${videoFrame.x}%`,
+              top: `${videoFrame.y}%`,
+              width: `${videoFrame.width}%`,
+              height: `${videoFrame.height}%`,
+              touchAction: "none",
+              cursor: videoPlaying ? undefined : "move",
+            }}
+            onPointerDown={onVideoPointerDown}
+            onPointerMove={onVideoPointerMove}
+            onPointerUp={onVideoPointerUp}
+            onPointerCancel={onVideoPointerUp}
+          >
+            <video
+              ref={videoEl}
+              src={videos.find((v) => v.id === page.videoMaterialId)?.url}
+              controls={videoPlaying}
+              preload="metadata"
+              playsInline
+              className="h-full w-full bg-black object-cover"
+            />
+            {!videoPlaying ? (
+              <button
+                type="button"
+                aria-label={t("mbe_video_play")}
+                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  setVideoPlaying(true);
+                  void videoEl.current?.play().catch(() => undefined);
+                }}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85">
+                  <Play className="h-6 w-6" aria-hidden />
+                </span>
+              </button>
+            ) : null}
+            <span
+              role="presentation"
+              aria-label={t("mbe_video_resize")}
+              className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
+              style={{ touchAction: "none" }}
+              onPointerDown={onVideoResizeDown}
+              onPointerMove={onVideoResizeMove}
+              onPointerUp={onVideoResizeUp}
+              onPointerCancel={onVideoResizeUp}
+            />
+          </div>
         ) : null}
       </div>
         );
@@ -827,13 +948,33 @@ export function MemoryBookPageEditor({
             </div>
           )}
           {page.videoMaterialId ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => persist({ ...page, videoMaterialId: null })}
-            >
-              {t("mbe_video_clear")}
-            </Button>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("mbe_video_place_hint")}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => resizeVideoBy(-6)}>
+                  <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                  {t("mbe_video_smaller")}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => resizeVideoBy(6)}>
+                  <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
+                  {t("mbe_video_bigger")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => persist({ ...page, videoFrame: defaultVideoFrame() })}
+                >
+                  {t("mbe_video_reset")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => persist({ ...page, videoMaterialId: null })}
+                >
+                  {t("mbe_video_clear")}
+                </Button>
+              </div>
+            </div>
           ) : null}
         </div>
       ) : null}
