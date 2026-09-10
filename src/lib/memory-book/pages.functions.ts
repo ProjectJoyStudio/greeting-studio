@@ -120,9 +120,10 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
 
+      // Page 0 is the front cover composition of the SAME book.
       const raw = ((rows ?? []) as unknown as Row[]).filter((r) => {
         const i = Number(r.page_index);
-        return i >= 1 && i <= book.internalPages;
+        return i >= 0 && i <= book.internalPages;
       });
 
       const pages: MemoryBookPage[] = [];
