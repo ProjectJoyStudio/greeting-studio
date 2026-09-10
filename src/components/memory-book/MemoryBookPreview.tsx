@@ -149,7 +149,8 @@ function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void })
     el.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     el.addEventListener("mouseup", finish);
-    el.addEventListener("click", (e) => e.stopPropagation());
+    const swallowClick = (e: Event) => e.stopPropagation();
+    el.addEventListener("click", swallowClick);
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     el.addEventListener("touchend", finish);
@@ -158,6 +159,7 @@ function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void })
       el.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       el.removeEventListener("mouseup", finish);
+      el.removeEventListener("click", swallowClick);
       el.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", finish);
