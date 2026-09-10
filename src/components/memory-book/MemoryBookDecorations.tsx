@@ -26,10 +26,13 @@ export function MemoryBookDecorations({
   bookId,
   pageIndex,
   onClose,
+  onPick,
 }: {
   bookId: string;
   pageIndex: number;
   onClose: () => void;
+  /** Adds the chosen decoration to the page the customer is working on. */
+  onPick?: (decoration: MemoryBookDecoration) => void;
 }) {
   const { t } = useI18n();
   const load = useServerFn(listMemoryBookDecorations);
@@ -102,14 +105,19 @@ export function MemoryBookDecorations({
       ) : (
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-6">
           {shown.map((d) => (
-            <li
-              key={d.id}
-              className="flex aspect-square items-center justify-center rounded-xl border border-border/60 bg-background p-2"
-              title={d.name}
-            >
-              {d.url ? (
-                <img src={d.url} alt={d.name} className="max-h-full max-w-full object-contain" />
-              ) : null}
+            <li key={d.id}>
+              <button
+                type="button"
+                disabled={!onPick}
+                onClick={() => onPick?.(d)}
+                title={d.name}
+                aria-label={d.name}
+                className="flex aspect-square w-full items-center justify-center rounded-xl border border-border/60 bg-background p-2 transition hover:border-primary disabled:cursor-default"
+              >
+                {d.url ? (
+                  <img src={d.url} alt={d.name} className="max-h-full max-w-full object-contain" />
+                ) : null}
+              </button>
             </li>
           ))}
         </ul>

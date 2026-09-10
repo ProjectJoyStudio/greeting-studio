@@ -12,7 +12,12 @@ import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import type { CardTextDesign } from "@/lib/greeting-card/types";
 import { MemoryBookDecorations } from "@/components/memory-book/MemoryBookDecorations";
+import type { MemoryBookDecoration } from "@/lib/memory-book/decorations";
+import { listMemoryBookDecorations } from "@/lib/memory-book/decorations.functions";
 import {
+  MEMORY_BOOK_MAX_DECORATIONS_PER_PAGE,
+  clampPlacedDecoration,
+  type MemoryBookPlacedDecoration,
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   clampFrame,
   clampTextDesign,
@@ -35,6 +40,12 @@ import {
   loadMemoryBookPages,
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
+
+/**
+ * Which layer of the SAME page is being edited. Decorations are one more
+ * editing tool, never a page type that replaces the other layers.
+ */
+type EditorTool = MemoryBookPageContent | "decorations";
 
 function fill(text: string, vars: Record<string, string | number>) {
   return Object.entries(vars).reduce(
@@ -162,6 +173,7 @@ export function MemoryBookPageEditor({
   const loadPages = useServerFn(loadMemoryBookPages);
   const savePage = useServerFn(saveMemoryBookPage);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
+  const loadLibrary = useServerFn(listMemoryBookDecorations);
 
   const [pages, setPages] = useState<Record<number, MemoryBookPage>>({});
   const [total, setTotal] = useState(0);
@@ -175,11 +187,14 @@ export function MemoryBookPageEditor({
   /** Which of the two independent adjustments the customer is making. */
   const [mode, setMode] = useState<"frame" | "photo">("photo");
   /** Which layer of the SAME page the customer is editing right now. */
-  const [tool, setTool] = useState<MemoryBookPageContent>("photos");
-  /** Stage 1 decorations library: browsing only, page content is untouched. */
-  const [decorationsOpen, setDecorationsOpen] = useState(false);
+  const [tool, setTool] = useState<EditorTool>("photos");
+  /** The enabled decorations of the shared library, used to draw placed ones. */
+  const [library, setLibrary] = useState<MemoryBookDecoration[]>([]);
+  /** Which placed decoration of THIS page is being edited. */
+  const [pickedDecoration, setPickedDecoration] = useState<string | null>(null);
   /** The page video only starts when the customer asks for it. */
   const [videoPlaying, setVideoPlaying] = useState(false);
+
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageBox = useRef<HTMLDivElement | null>(null);
@@ -190,10 +205,26 @@ export function MemoryBookPageEditor({
   const videoEl = useRef<HTMLVideoElement | null>(null);
   const videoDrag = useRef<{ id: number; x: number; y: number } | null>(null);
   const videoResize = useRef<{ id: number; x: number; y: number } | null>(null);
+  const decorationDrag = useRef<{ id: number; item: string; x: number; y: number } | null>(null);
+  const decorationResize = useRef<{ id: number; item: string; x: number; y: number } | null>(null);
 
   useEffect(() => {
     setVideoPlaying(false);
+    setPickedDecoration(null);
   }, [index]);
+
+  // The shared library is only read, so placed decorations can be drawn.
+  useEffect(() => {
+    let alive = true;
+    void loadLibrary({ data: undefined })
+      .then((res) => {
+        if (alive) setLibrary(res.decorations);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [loadLibrary]);
 
   useEffect(() => {
     if (!ready) return;
@@ -479,6 +510,190 @@ export function MemoryBookPageEditor({
     });
   }
 
+  /* ---- Decorations: one more independent layer of THIS page ---- */
+
+  const placed = page.decorations ?? [];
+  const selectedDecoration = placed.find((d) => d.id === pickedDecoration) ?? null;
+  const libraryOf = (decorationId: string) =>
+    library.find((l) => l.id === decorationId) ?? null;
+
+  function newDecorationId() {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      return `d${Date.now()}${Math.random().toString(16).slice(2, 8)}`;
+    }
+  }
+
+  /** Puts a library decoration on the current page. Nothing is charged. */
+  function addDecoration(decoration: MemoryBookDecoration) {
+    if (placed.length >= MEMORY_BOOK_MAX_DECORATIONS_PER_PAGE) return;
+    const next = clampPlacedDecoration({
+      id: newDecorationId(),
+      decorationId: decoration.id,
+      x: 50,
+      y: 50,
+      size: 25,
+      rotation: 0,
+      color: null,
+    });
+    setPickedDecoration(next.id);
+    persist({ ...page, decorations: [...placed, next] });
+  }
+
+  function updateDecoration(id: string, patch: Partial<MemoryBookPlacedDecoration>) {
+    persist({
+      ...page,
+      decorations: placed.map((d) => (d.id === id ? clampPlacedDecoration({ ...d, ...patch }) : d)),
+    });
+  }
+
+  function removeDecoration(id: string) {
+    if (pickedDecoration === id) setPickedDecoration(null);
+    persist({ ...page, decorations: placed.filter((d) => d.id !== id) });
+  }
+
+  function onDecorationPointerDown(e: React.PointerEvent, item: MemoryBookPlacedDecoration) {
+    if (tool !== "decorations") return;
+    e.preventDefault();
+    setPickedDecoration(item.id);
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    decorationDrag.current = { id: e.pointerId, item: item.id, x: e.clientX, y: e.clientY };
+  }
+
+  function onDecorationPointerMove(e: React.PointerEvent) {
+    const drag = decorationDrag.current;
+    if (!drag || drag.id !== e.pointerId) return;
+    const rect = pageRectOf(e.currentTarget);
+    if (!rect?.width || !rect.height) return;
+    e.preventDefault();
+    const current = placed.find((d) => d.id === drag.item);
+    if (!current) return;
+    const dx = ((e.clientX - drag.x) / rect.width) * 100;
+    const dy = ((e.clientY - drag.y) / rect.height) * 100;
+    decorationDrag.current = { ...drag, x: e.clientX, y: e.clientY };
+    updateDecoration(drag.item, { x: current.x + dx, y: current.y + dy });
+  }
+
+  function onDecorationPointerUp(e: React.PointerEvent) {
+    if (decorationDrag.current?.id === e.pointerId) decorationDrag.current = null;
+  }
+
+  function onDecorationResizeDown(e: React.PointerEvent, item: MemoryBookPlacedDecoration) {
+    e.stopPropagation();
+    e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    decorationResize.current = { id: e.pointerId, item: item.id, x: e.clientX, y: e.clientY };
+  }
+
+  function onDecorationResizeMove(e: React.PointerEvent) {
+    const resize = decorationResize.current;
+    if (!resize || resize.id !== e.pointerId) return;
+    const rect = pageRectOf(e.currentTarget);
+    if (!rect?.width) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const current = placed.find((d) => d.id === resize.item);
+    if (!current) return;
+    const dx = ((e.clientX - resize.x) / rect.width) * 100;
+    decorationResize.current = { ...resize, x: e.clientX, y: e.clientY };
+    updateDecoration(resize.item, { size: current.size + dx * 2 });
+  }
+
+  function onDecorationResizeUp(e: React.PointerEvent) {
+    if (decorationResize.current?.id === e.pointerId) decorationResize.current = null;
+  }
+
+  const decorationControls = (
+    <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
+      {!selectedDecoration ? (
+        <p className="text-sm text-muted-foreground">
+          {placed.length ? t("mbdec_select_hint") : t("mbdec_add_hint")}
+        </p>
+      ) : (
+        <>
+          <p className="text-sm font-medium">{t("mbdec_selected")}</p>
+          <p className="text-xs text-muted-foreground">{t("mbdec_move_hint")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                updateDecoration(selectedDecoration.id, { size: selectedDecoration.size - 4 })
+              }
+            >
+              <Minus className="mr-1 h-3.5 w-3.5" aria-hidden />
+              {t("mbdec_smaller")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                updateDecoration(selectedDecoration.id, { size: selectedDecoration.size + 4 })
+              }
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
+              {t("mbdec_bigger")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                updateDecoration(selectedDecoration.id, {
+                  rotation: selectedDecoration.rotation - 15,
+                })
+              }
+            >
+              {t("mbdec_rotate_left")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                updateDecoration(selectedDecoration.id, {
+                  rotation: selectedDecoration.rotation + 15,
+                })
+              }
+            >
+              {t("mbdec_rotate_right")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => removeDecoration(selectedDecoration.id)}
+            >
+              <X className="mr-1 h-3.5 w-3.5" aria-hidden />
+              {t("mbdec_delete")}
+            </Button>
+          </div>
+          {libraryOf(selectedDecoration.decorationId)?.fileType === "svg" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-sm font-medium" htmlFor="mbdec-color">
+                {t("mbdec_color")}
+              </label>
+              <input
+                id="mbdec-color"
+                type="color"
+                className="h-8 w-12 cursor-pointer rounded border border-border/70 bg-background"
+                value={selectedDecoration.color ?? "#c2185b"}
+                onChange={(e) =>
+                  updateDecoration(selectedDecoration.id, { color: e.target.value })
+                }
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => updateDecoration(selectedDecoration.id, { color: null })}
+              >
+                {t("mbdec_color_reset")}
+              </Button>
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+
   /** The existing photo controls, unchanged — only their place moved. */
   const photoControls = (
     <div className="space-y-2 sm:space-y-3">
@@ -602,20 +817,25 @@ export function MemoryBookPageEditor({
             {t(`mbe_type_${type}`)}
           </Button>
         ))}
-      </div>
-
-      <div>
-        <Button size="sm" variant="outline" onClick={() => setDecorationsOpen((v) => !v)}>
-          {decorationsOpen ? t("mbdec_close") : t("mbdec_open")}
+        <Button
+          size="sm"
+          variant={tool === "decorations" ? "default" : "outline"}
+          onClick={() => setTool("decorations")}
+        >
+          {t("mbdec_open")}
         </Button>
       </div>
 
-      {decorationsOpen ? (
-        <MemoryBookDecorations
-          bookId={bookId}
-          pageIndex={index - 1}
-          onClose={() => setDecorationsOpen(false)}
-        />
+      {tool === "decorations" ? (
+        <div className="space-y-4">
+          <MemoryBookDecorations
+            bookId={bookId}
+            pageIndex={index - 1}
+            onClose={() => setTool(page.layout ? "photos" : "text")}
+            onPick={addDecoration}
+          />
+          {decorationControls}
+        </div>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -851,6 +1071,80 @@ export function MemoryBookPageEditor({
             ) : null}
           </div>
         ) : null}
+
+        {/* Decorations stay part of the page in every editing tool. */}
+        {placed.map((item) => {
+          const source = libraryOf(item.decorationId);
+          if (!source?.url) return null;
+          const active = tool === "decorations";
+          const chosen = active && pickedDecoration === item.id;
+          return (
+            <div
+              key={item.id}
+              className={`absolute ${chosen ? "ring-2 ring-primary/70" : ""}`}
+              style={{
+                left: `${item.x}%`,
+                top: `${item.y}%`,
+                width: `${item.size}%`,
+                transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
+                touchAction: "none",
+                cursor: active ? "move" : undefined,
+                pointerEvents: active ? "auto" : "none",
+              }}
+              onPointerDown={(e) => onDecorationPointerDown(e, item)}
+              onPointerMove={onDecorationPointerMove}
+              onPointerUp={onDecorationPointerUp}
+              onPointerCancel={onDecorationPointerUp}
+            >
+              {item.color && source.fileType === "svg" ? (
+                <>
+                  {/* The library file itself is never changed: the colour is
+                      painted through the shape of this placed copy only. */}
+                  <img
+                    src={source.url}
+                    alt=""
+                    draggable={false}
+                    className="block w-full select-none opacity-0"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      backgroundColor: item.color,
+                      WebkitMaskImage: `url(${source.url})`,
+                      maskImage: `url(${source.url})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
+                    }}
+                  />
+                </>
+              ) : (
+                <img
+                  src={source.url}
+                  alt={source.name}
+                  draggable={false}
+                  className="pointer-events-none block w-full select-none"
+                />
+              )}
+              {chosen ? (
+                <span
+                  role="presentation"
+                  aria-label={t("mbdec_resize")}
+                  className="absolute -bottom-2 -right-2 h-6 w-6 cursor-nwse-resize rounded-full bg-primary/85"
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => onDecorationResizeDown(e, item)}
+                  onPointerMove={onDecorationResizeMove}
+                  onPointerUp={onDecorationResizeUp}
+                  onPointerCancel={onDecorationResizeUp}
+                />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
         );
         // On phones the working preview and its controls sit side by side so

@@ -55,6 +55,26 @@ export interface MemoryBookVideoFrame {
   height: number;
 }
 
+/**
+ * One decoration placed on ONE page. It is an independent page object: the
+ * library decoration itself is never changed by moving or recolouring it.
+ */
+export interface MemoryBookPlacedDecoration {
+  /** Identifies this placed object on this page. */
+  id: string;
+  /** The library decoration this object shows. */
+  decorationId: string;
+  /** Centre of the decoration, in percent of the page width/height. */
+  x: number;
+  y: number;
+  /** Width of the decoration, in percent of the page width; height follows. */
+  size: number;
+  /** Turn of the decoration, in degrees. */
+  rotation: number;
+  /** Colour chosen for THIS placed SVG only, or null for the original look. */
+  color: string | null;
+}
+
 export interface MemoryBookPage {
   pageIndex: number;
   content: MemoryBookPageContent;
@@ -67,6 +87,48 @@ export interface MemoryBookPage {
   videoMaterialId: string | null;
   /** Where the video window sits on the page and how big it is. */
   videoFrame: MemoryBookVideoFrame;
+  /** Decorations placed on THIS page only. */
+  decorations: MemoryBookPlacedDecoration[];
+}
+
+export const MEMORY_BOOK_DECORATION_MIN_SIZE = 4;
+export const MEMORY_BOOK_DECORATION_MAX_SIZE = 100;
+export const MEMORY_BOOK_MAX_DECORATIONS_PER_PAGE = 40;
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** Keeps one placed decoration inside the page and within sensible sizes. */
+export function clampPlacedDecoration(
+  value: Partial<MemoryBookPlacedDecoration> | null | undefined,
+): MemoryBookPlacedDecoration {
+  const num = (raw: unknown, fallback: number) => {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const size = Math.min(
+    MEMORY_BOOK_DECORATION_MAX_SIZE,
+    Math.max(MEMORY_BOOK_DECORATION_MIN_SIZE, num(value?.size, 25)),
+  );
+  const rotation = ((num(value?.rotation, 0) % 360) + 360) % 360;
+  const color = typeof value?.color === "string" && HEX.test(value.color) ? value.color : null;
+  return {
+    id: String(value?.id ?? "").slice(0, 64),
+    decorationId: String(value?.decorationId ?? "").slice(0, 64),
+    x: Number(Math.min(100, Math.max(0, num(value?.x, 50))).toFixed(2)),
+    y: Number(Math.min(100, Math.max(0, num(value?.y, 50))).toFixed(2)),
+    size: Number(size.toFixed(2)),
+    rotation: Number(rotation.toFixed(1)),
+    color,
+  };
+}
+
+/** Reads a stored decoration list, dropping anything unusable. */
+export function readPlacedDecorations(value: unknown): MemoryBookPlacedDecoration[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, MEMORY_BOOK_MAX_DECORATIONS_PER_PAGE)
+    .map((raw) => clampPlacedDecoration(raw as Partial<MemoryBookPlacedDecoration>))
+    .filter((d) => d.id && d.decorationId);
 }
 
 export const MEMORY_BOOK_VIDEO_MIN_SIZE = 15;
@@ -237,6 +299,7 @@ export const emptyPage = (pageIndex: number): MemoryBookPage => ({
   textDesign: memoryBookDefaultTextDesign(),
   videoMaterialId: null,
   videoFrame: defaultVideoFrame(),
+  decorations: [],
 });
 
 /** Keeps a photo inside its own area whatever the customer drags. */
