@@ -94,6 +94,54 @@ function PhotoComposition({
   );
 }
 
+/**
+ * A photo frame only enlarges on a deliberate double click / double tap.
+ * A press that moves is a page-turn gesture and never opens the photo, and
+ * the press is passed on to the book so the leaf can be dragged from here.
+ */
+function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void }) {
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const moved = useRef(false);
+  const lastTap = useRef(0);
+
+  return (
+    <div
+      role="button"
+      tabIndex={-1}
+      aria-label={label}
+      className="absolute inset-0"
+      onPointerDown={(e) => {
+        start.current = { x: e.clientX, y: e.clientY };
+        moved.current = false;
+      }}
+      onPointerMove={(e) => {
+        const s = start.current;
+        if (!s) return;
+        if (Math.abs(e.clientX - s.x) > 8 || Math.abs(e.clientY - s.y) > 8) moved.current = true;
+      }}
+      onPointerCancel={() => {
+        start.current = null;
+        moved.current = true;
+      }}
+      onPointerUp={() => {
+        if (!start.current) return;
+        start.current = null;
+        if (moved.current) {
+          lastTap.current = 0;
+          return;
+        }
+        const now = Date.now();
+        if (now - lastTap.current < 400) {
+          lastTap.current = 0;
+          onOpen();
+        } else {
+          lastTap.current = now;
+        }
+      }}
+    />
+  );
+}
+
 /** One face of the book: the cover, one saved internal page, or the back. */
 function BookFace({
   face,
