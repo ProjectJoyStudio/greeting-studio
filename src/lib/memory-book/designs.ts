@@ -36,10 +36,24 @@ export interface MemoryBookStageState {
   remaining: number;
 }
 
+/** The two faces of the physical cover of one book. */
+export type MemoryBookCoverSide = "front" | "back";
+
+/** Where the back cover stands: inherited from the front, or chosen alone. */
+export interface MemoryBookBackCoverState {
+  /** The design chosen for the back cover, when the customer overrode it. */
+  designId: string | null;
+  /** True once the customer picked a back background of their own. */
+  overridden: boolean;
+  /** The background actually shown on the back cover right now. */
+  url: string | null;
+}
+
 export interface MemoryBookDesignState {
   bookId: string;
   stage: MemoryBookStage;
   cover: MemoryBookStageState;
   leaf: MemoryBookStageState;
+  backCover: MemoryBookBackCoverState;
   creditsSpent: number;
 }
