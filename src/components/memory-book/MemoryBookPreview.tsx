@@ -197,6 +197,7 @@ function BookFace({
   library,
   onOpenPhotos,
   onOpenVideo,
+  onCancelTurn,
 }: {
   face: Face;
   coverUrl: string | null;
@@ -207,6 +208,7 @@ function BookFace({
   library: MemoryBookDecoration[];
   onOpenPhotos?: (page: MemoryBookPage) => void;
   onOpenVideo?: (url: string) => void;
+  onCancelTurn: () => void;
 }) {
   const { t } = useI18n();
 
@@ -263,7 +265,11 @@ function BookFace({
             photos={photos}
           />
           {onOpenPhotos ? (
-            <PhotoTapLayer label={t("mbpv_open_photos")} onOpen={() => onOpenPhotos(page)} />
+            <PhotoTapLayer
+              label={t("mbpv_open_photos")}
+              onOpen={() => onOpenPhotos(page)}
+              onCancelTurn={onCancelTurn}
+            />
           ) : null}
         </>
       ) : null}
@@ -684,6 +690,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     library,
     onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
     onOpenVideo: (url: string) => setVideoUrl(url),
+    onCancelTurn: settleBook,
   };
 
   const pageWidth = Math.max(
