@@ -815,7 +815,9 @@ export function MemoryBookPageEditor({
               controls={videoPlaying}
               preload="metadata"
               playsInline
-              className="h-full w-full bg-black object-cover"
+              className={`h-full w-full bg-black object-cover ${
+                videoPlaying ? "" : "pointer-events-none"
+              }`}
             />
             {!videoPlaying ? (
               // The dim layer must not swallow pointers, otherwise the frame
