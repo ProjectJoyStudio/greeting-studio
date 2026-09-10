@@ -927,10 +927,18 @@ export function MemoryBookPageEditor({
     <section className="space-y-4 text-left sm:space-y-6">
       <div className="space-y-2">
         <h2 className="font-display text-xl font-semibold">
-          {coverMode ? t("mbe_cover_title") : t("mbe_title")}
+          {coverMode
+            ? coverPageIndex < 0
+              ? t("mbe_back_cover_title")
+              : t("mbe_cover_title")
+            : t("mbe_title")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {coverMode ? t("mbe_cover_hint") : t("mbe_hint")}
+          {coverMode
+            ? coverPageIndex < 0
+              ? t("mbe_back_cover_hint")
+              : t("mbe_cover_hint")
+            : t("mbe_hint")}
         </p>
       </div>
 
