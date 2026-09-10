@@ -454,10 +454,21 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   }
   if (!ok) return <p className="text-sm text-muted-foreground">{t("mbpv_not_found")}</p>;
 
-  const leftFace = turned > 0 ? sheets[turned - 1]!.back : null;
-  const rightFace = turned < sheets.length ? sheets[turned]!.front : null;
-  const flipSheet =
-    flip === "forward" ? sheets[turned] : flip === "backward" ? sheets[turned - 1] : null;
+  // Desktop shows an open spread; the phone shows the same faces one by one.
+  const leftFace = !isMobile && turned > 0 ? sheets[turned - 1]!.back : null;
+  const rightFace = isMobile
+    ? (faces[turned] ?? null)
+    : turned < sheets.length
+      ? sheets[turned]!.front
+      : null;
+  /** The face drawn on the sheet that is turning right now. */
+  const flipFace: Face | null = flip
+    ? isMobile
+      ? (faces[flip === "forward" ? turned : turned - 1] ?? null)
+      : flip === "forward"
+        ? (sheets[turned]?.front ?? null)
+        : (sheets[turned - 1]?.front ?? null)
+    : null;
 
   const faceProps = {
     coverUrl,
@@ -470,6 +481,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   };
 
   const panel = "relative overflow-hidden rounded-xl bg-card shadow-sm";
+  const shown = rightFace ?? leftFace;
 
   return (
     <div className="space-y-6">
@@ -492,13 +504,10 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           else turnBackward();
         }}
       >
-        <div
-          className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
-          style={{ transformStyle: "preserve-3d" }}
-        >
+        <div className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
           {!isMobile ? (
             <div className={panel} style={{ aspectRatio: "3 / 4" }}>
-              {leftFace && !(flip === "backward") ? (
+              {leftFace ? (
                 <BookFace face={leftFace} {...faceProps} />
               ) : (
                 <div className="h-full w-full bg-muted/40" />
@@ -507,42 +516,26 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           ) : null}
 
           <div className={panel} style={{ aspectRatio: "3 / 4" }}>
-            {isMobile ? (
-              leftFace && rightFace === null ? (
-                <BookFace face={leftFace} {...faceProps} />
-              ) : rightFace && flip !== "forward" ? (
-                <BookFace face={rightFace} {...faceProps} />
-              ) : (
-                <div className="h-full w-full bg-muted/40" />
-              )
-            ) : rightFace && flip !== "forward" ? (
+            {rightFace && flip !== "forward" ? (
               <BookFace face={rightFace} {...faceProps} />
             ) : (
               <div className="h-full w-full bg-muted/40" />
             )}
 
-            {/* The turning sheet itself. */}
-            {flipSheet ? (
+            {/* The leaf that is turning right now. */}
+            {flipFace ? (
               <div
-                className="absolute inset-0"
-                style={{
-                  transformStyle: "preserve-3d",
-                  transformOrigin: flip === "forward" ? "left center" : "right center",
-                  transition: "transform 600ms ease-in-out",
-                  transform:
-                    flip === "forward" ? "rotateY(-170deg)" : "rotateY(0deg)",
-                  animation: undefined,
-                  zIndex: 20,
-                }}
+                className={`absolute inset-0 overflow-hidden rounded-xl shadow-xl ${
+                  flip === "forward" ? "mb-leaf-forward" : "mb-leaf-backward"
+                }`}
+                style={{ transformOrigin: "left center", zIndex: 20 }}
               >
-                <div className="absolute inset-0 overflow-hidden rounded-xl" style={{ backfaceVisibility: "hidden" }}>
-                  <BookFace
-                    face={flip === "forward" ? flipSheet.front : flipSheet.back}
-                    {...faceProps}
-                    onOpenPhotos={undefined}
-                    onOpenVideo={undefined}
-                  />
-                </div>
+                <BookFace
+                  face={flipFace}
+                  {...faceProps}
+                  onOpenPhotos={undefined}
+                  onOpenVideo={undefined}
+                />
               </div>
             ) : null}
           </div>
@@ -554,10 +547,10 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
             {t("mbpv_prev")}
           </Button>
           <span className="text-sm text-muted-foreground">
-            {turned === 0
+            {shown?.kind === "cover"
               ? t("mbpv_cover")
-              : rightFace && rightFace.kind === "page"
-                ? fill(t("mbpv_page"), { n: rightFace.number })
+              : shown?.kind === "page"
+                ? fill(t("mbpv_page"), { n: shown.number })
                 : t("mbpv_end")}
           </span>
           <Button variant="outline" size="sm" disabled={!canForward} onClick={turnForward}>
