@@ -837,16 +837,18 @@ export function MemoryBookPageEditor({
                 </button>
               </div>
             ) : null}
-            <span
-              role="presentation"
-              aria-label={t("mbe_video_resize")}
-              className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
-              style={{ touchAction: "none" }}
-              onPointerDown={onVideoResizeDown}
-              onPointerMove={onVideoResizeMove}
-              onPointerUp={onVideoResizeUp}
-              onPointerCancel={onVideoResizeUp}
-            />
+            {tool === "video" ? (
+              <span
+                role="presentation"
+                aria-label={t("mbe_video_resize")}
+                className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
+                style={{ touchAction: "none" }}
+                onPointerDown={onVideoResizeDown}
+                onPointerMove={onVideoResizeMove}
+                onPointerUp={onVideoResizeUp}
+                onPointerCancel={onVideoResizeUp}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
