@@ -221,3 +221,139 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
       };
     }
   });
+
+/** One saved background of one exact page. */
+export interface MemoryBookPageBackground {
+  id: string;
+  url: string | null;
+  prompt: string;
+  createdAt: string;
+  active: boolean;
+}
+
+async function readBackgrounds(
+  userId: string,
+  bookId: string,
+  pageIndex: number,
+): Promise<MemoryBookPageBackground[]> {
+  const db = await admin();
+  const { data: rows } = await db
+    .from("memory_book_page_backgrounds")
+    .select("id, bucket, path, prompt, created_at")
+    .eq("user_id", userId)
+    .eq("book_id", bookId)
+    .eq("page_index", pageIndex)
+    .order("created_at", { ascending: true });
+
+  const { data: pageRow } = await db
+    .from("memory_book_pages")
+    .select("background_path")
+    .eq("user_id", userId)
+    .eq("book_id", bookId)
+    .eq("page_index", pageIndex)
+    .maybeSingle();
+  const activePath =
+    typeof (pageRow as Row | null)?.background_path === "string"
+      ? String((pageRow as Row).background_path)
+      : "";
+
+  const out: MemoryBookPageBackground[] = [];
+  for (const raw of (rows ?? []) as unknown as Row[]) {
+    const bucket = String(raw.bucket ?? "");
+    const path = String(raw.path ?? "");
+    out.push({
+      id: String(raw.id),
+      url: await signedBackground(bucket, path),
+      prompt: typeof raw.prompt === "string" ? raw.prompt : "",
+      createdAt: String(raw.created_at ?? ""),
+      active: path === activePath && path !== "",
+    });
+  }
+  return out;
+}
+
+/** Every background this exact page ever created successfully. */
+export const listMemoryBookPageBackgrounds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; pageIndex: number }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    pageIndex: Math.round(Number(input?.pageIndex ?? 0)),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ ok: boolean; backgrounds: MemoryBookPageBackground[] }> => {
+      const book = await ownedBook(context, data.bookId);
+      if (!book) return { ok: false, backgrounds: [] };
+      return {
+        ok: true,
+        backgrounds: await readBackgrounds(context.userId, data.bookId, data.pageIndex),
+      };
+    },
+  );
+
+/**
+ * Makes one already created background — or the original book design — the
+ * active background of this page. No generator runs and nothing is charged.
+ */
+export const selectMemoryBookPageBackground = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; pageIndex: number; backgroundId: string | null }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    pageIndex: Math.round(Number(input?.pageIndex ?? 0)),
+    backgroundId: input?.backgroundId ? String(input.backgroundId).slice(0, 64) : null,
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      backgroundUrl?: string | null;
+      backgrounds?: MemoryBookPageBackground[];
+    }> => {
+      const book = await ownedBook(context, data.bookId);
+      if (!book) return { ok: false };
+      if (data.pageIndex < 1 || data.pageIndex > book.internalPages) return { ok: false };
+
+      const db = await admin();
+      let bucket: string | null = null;
+      let path: string | null = null;
+
+      if (data.backgroundId) {
+        const { data: row } = await db
+          .from("memory_book_page_backgrounds")
+          .select("bucket, path")
+          .eq("id", data.backgroundId)
+          .eq("user_id", context.userId)
+          .eq("book_id", data.bookId)
+          .eq("page_index", data.pageIndex)
+          .maybeSingle();
+        if (!row) return { ok: false };
+        bucket = String((row as Row).bucket ?? "");
+        path = String((row as Row).path ?? "");
+      }
+
+      // Only the background reference of this page changes: photos, video,
+      // text and decorations are never touched here.
+      const { error } = await db.from("memory_book_pages").upsert(
+        {
+          book_id: data.bookId,
+          user_id: context.userId,
+          page_index: data.pageIndex,
+          background_bucket: bucket,
+          background_path: path,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "book_id,page_index" },
+      );
+      if (error) return { ok: false };
+
+      return {
+        ok: true,
+        backgroundUrl: bucket && path ? await signedBackground(bucket, path) : null,
+        backgrounds: await readBackgrounds(context.userId, data.bookId, data.pageIndex),
+      };
+    },
+  );
