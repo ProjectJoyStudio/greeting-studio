@@ -814,6 +814,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       {/* Full-screen photo frame: the whole composition, exactly as arranged. */}
       {photoPage ? (
         <div
+          ref={overlay}
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
           onClick={() => setPhotoPage(null)}
         >
