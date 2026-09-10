@@ -116,7 +116,7 @@ function BookFace({
 }) {
   const { t } = useI18n();
 
-  if (face.kind === "cover") {
+  if (face.kind === "cover" && !face.page) {
     return (
       <div
         className="h-full w-full bg-muted"
@@ -356,7 +356,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
   /** Every face of the book in the CURRENT leaf order: cover first. */
   const faces = useMemo<Face[]>(() => {
-    const list: Face[] = [{ kind: "cover" }];
+    const list: Face[] = [{ kind: "cover", page: pages[0] ?? null }];
     for (const leaf of order) {
       for (const side of [1, 2]) {
         const pageIndex = (leaf - 1) * 2 + side;
