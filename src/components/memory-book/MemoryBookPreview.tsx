@@ -669,6 +669,76 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [flipNext, flipPrev, photoPage, videoUrl]);
 
+  // The chosen composition of this book, if there is one.
+  useEffect(() => {
+    let active = true;
+    void loadMusic({ data: { bookId } })
+      .then((res) => {
+        if (!active || !res.state) return;
+        setMusicUrl(res.state.selectedUrl);
+        setMusicOn(res.state.enabled);
+        setMusicVolume(res.state.volume);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [bookId, loadMusic]);
+
+  // The music plays in a loop while the book is open and the sound is on.
+  useEffect(() => {
+    if (!musicUrl) return;
+    const audio = new Audio(musicUrl);
+    audio.loop = true;
+    audio.volume = musicVolumeRef.current;
+    music.current = audio;
+    return () => {
+      audio.pause();
+      music.current = null;
+    };
+  }, [musicUrl]);
+
+  useEffect(() => {
+    const audio = music.current;
+    if (!audio) return;
+    audio.volume = musicVolume;
+  }, [musicVolume, musicUrl]);
+
+  useEffect(() => {
+    const audio = music.current;
+    if (!audio) return;
+    if (musicOn) void audio.play().catch(() => undefined);
+    else audio.pause();
+  }, [musicOn, musicUrl]);
+
+  // A page video always takes the sound: the music waits and then continues
+  // from exactly the same moment, unless it was switched off by hand.
+  useEffect(() => {
+    const onPlay = (e: Event) => {
+      if (!(e.target instanceof HTMLVideoElement)) return;
+      music.current?.pause();
+    };
+    const onStop = (e: Event) => {
+      if (!(e.target instanceof HTMLVideoElement)) return;
+      if (!musicOnRef.current) return;
+      void music.current?.play().catch(() => undefined);
+    };
+    document.addEventListener("play", onPlay, true);
+    document.addEventListener("pause", onStop, true);
+    document.addEventListener("ended", onStop, true);
+    return () => {
+      document.removeEventListener("play", onPlay, true);
+      document.removeEventListener("pause", onStop, true);
+      document.removeEventListener("ended", onStop, true);
+    };
+  }, []);
+
+  // Closing the enlarged video also gives the sound back to the music.
+  useEffect(() => {
+    if (videoUrl || !musicOnRef.current) return;
+    void music.current?.play().catch(() => undefined);
+  }, [videoUrl]);
+
   async function moveLeaf(index: number, direction: -1 | 1) {
     const next = [...order];
     const target = index + direction;
