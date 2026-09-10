@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BookOpen, Coins, Gift, Layers, Timer } from "lucide-react";
 
@@ -19,6 +20,8 @@ import {
   EXTRA_LEAF_VIDEO,
   EXTRA_STORAGE_MONTH,
   EXTRA_STORAGE_WEEK,
+  MEMORY_BOOK_MAX_LEAVES,
+  MEMORY_BOOK_MAX_VIDEOS,
   MEMORY_BOOK_PACKAGES,
   creditsToEuro,
   formatEuro,
