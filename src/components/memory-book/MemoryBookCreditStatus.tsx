@@ -51,11 +51,19 @@ export function MemoryBookCreditStatus({
           {fill(t("mbc_spent_on_book"), { n: spent })}
         </span>
       </div>
-      <Button asChild variant="outline" className="w-full sm:w-auto">
-        <Link to="/memory-book-packages" search={{ book: bookId }}>
-          {t("mbc_buy_credits")}
-        </Link>
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Link to="/memory-book-packages" search={{ book: bookId }}>
+            {t("mbc_buy_credits")}
+          </Link>
+        </Button>
+        {/* Same book, same identity: only the additional leaves section is the target. */}
+        <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Link to="/memory-book-packages" search={{ book: bookId }} hash="extra-leaves">
+            {t("mbl_add_leaves")}
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

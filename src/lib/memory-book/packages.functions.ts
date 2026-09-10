@@ -5,6 +5,8 @@ import {
   CREDIT_EURO_CENTS,
   CREDIT_MAX,
   CREDIT_MIN,
+  EXTRA_LEAF_STANDARD,
+  EXTRA_LEAF_VIDEO,
   EXTRA_STORAGE_MONTH,
   EXTRA_STORAGE_WEEK,
   findPackage,
@@ -244,5 +246,68 @@ export const extendMemoryBookStorage = createServerFn({ method: "POST" })
         };
       }
       return { ok: true, expiresAt: payload.expires_at, balance: payload.balance };
+    },
+  );
+
+/**
+ * Adds exactly ONE additional leaf to an existing Memory Book. The database
+ * locks the book and the wallet and keys the purchase, so a double click, a
+ * refresh or a repeated request can never charge twice or add two leaves.
+ * A standard leaf never changes video capacity; the video leaf adds exactly
+ * one slot and never beyond the book limit of five.
+ */
+export const purchaseMemoryBookExtraLeaf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; kind: "standard" | "video"; purchaseKey: string }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    kind: input?.kind === "video" ? ("video" as const) : ("standard" as const),
+    purchaseKey: String(input?.purchaseKey ?? "").slice(0, 64),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      error?: "insufficient_credits" | "max_leaves" | "max_videos" | "not_found" | "failed";
+      leaves?: number;
+      internalPages?: number;
+      videoCapacity?: number;
+      balance?: number;
+    }> => {
+      if (!data.bookId || !data.purchaseKey) return { ok: false, error: "failed" };
+      const price =
+        data.kind === "video" ? EXTRA_LEAF_VIDEO.credits : EXTRA_LEAF_STANDARD.credits;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: result, error } = await supabaseAdmin.rpc(
+        "purchase_memory_book_extra_leaf",
+        {
+          _user_id: context.userId,
+          _book_id: data.bookId,
+          _kind: data.kind,
+          _price: price,
+          _purchase_key: data.purchaseKey,
+        },
+      );
+      const payload = (result ?? {}) as {
+        ok?: boolean;
+        error?: string;
+        leaves?: number;
+        internal_pages?: number;
+        video_capacity?: number;
+        balance?: number;
+      };
+      if (error || !payload.ok) {
+        const known = ["insufficient_credits", "max_leaves", "max_videos", "not_found"] as const;
+        const code = known.find((k) => k === payload.error);
+        return { ok: false, error: code ?? "failed", balance: payload.balance };
+      }
+      return {
+        ok: true,
+        leaves: payload.leaves,
+        internalPages: payload.internal_pages,
+        videoCapacity: payload.video_capacity,
+        balance: payload.balance,
+      };
     },
   );

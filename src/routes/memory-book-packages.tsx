@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BookOpen, Coins, Gift, Layers, Timer } from "lucide-react";
 
@@ -19,11 +20,15 @@ import {
   EXTRA_LEAF_VIDEO,
   EXTRA_STORAGE_MONTH,
   EXTRA_STORAGE_WEEK,
+  MEMORY_BOOK_MAX_LEAVES,
+  MEMORY_BOOK_MAX_VIDEOS,
   MEMORY_BOOK_PACKAGES,
   creditsToEuro,
   formatEuro,
 } from "@/lib/memory-book/packages";
 import {
+  getMemoryBookAccess,
+  purchaseMemoryBookExtraLeaf,
   purchaseMemoryBookPackage,
   startCreditPurchase,
 } from "@/lib/memory-book/packages.functions";
@@ -62,9 +67,23 @@ function MemoryBookPackagesPage() {
 
   const buyPackage = useServerFn(purchaseMemoryBookPackage);
   const startPurchase = useServerFn(startCreditPurchase);
+  const buyLeaf = useServerFn(purchaseMemoryBookExtraLeaf);
+  const bookAccess = useServerFn(getMemoryBookAccess);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Live state of the book the customer came from, so the additional leaves
+  // section can show what is still possible for THIS exact book.
+  const bookQuery = useQuery({
+    queryKey: ["memory-book", "access", activeBookId],
+    queryFn: () => bookAccess({ data: { bookId: activeBookId ?? "" } }),
+    enabled: Boolean(activeBookId) && isAuthenticated,
+  });
+  const activeBook = bookQuery.data?.book ?? null;
+  const leavesFull = activeBook ? activeBook.leaves >= MEMORY_BOOK_MAX_LEAVES : false;
+  const videosFull = activeBook ? activeBook.videoCapacity >= MEMORY_BOOK_MAX_VIDEOS : false;
+  const [leafBusy, setLeafBusy] = useState<string | null>(null);
+  const [leafNotice, setLeafNotice] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState(CREDIT_MIN);
   const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState(false);
@@ -105,6 +124,45 @@ function MemoryBookPackagesPage() {
       setNotice(t("mbp_err_failed"));
     } finally {
       setBusy(null);
+    }
+  }
+
+  /**
+   * Buys one additional leaf for the book the customer is working on. The key
+   * is stable per option until it succeeds, so repeated clicks cannot pay twice.
+   */
+  async function buyExtraLeaf(kind: "standard" | "video") {
+    if (leafBusy || !activeBookId) return;
+    setLeafNotice(null);
+    if (!isAuthenticated) {
+      setLeafNotice(t("mbp_err_auth"));
+      return;
+    }
+    setLeafBusy(kind);
+    try {
+      const res = await buyLeaf({
+        data: { bookId: activeBookId, kind, purchaseKey: keyFor(`leaf-${kind}`) },
+      });
+      if (res.ok) {
+        purchaseKeys.current[`leaf-${kind}`] = "";
+        delete purchaseKeys.current[`leaf-${kind}`];
+        setLeafNotice(t("mbl_added"));
+        await Promise.all([refresh(), bookQuery.refetch()]);
+      } else {
+        setLeafNotice(
+          res.error === "insufficient_credits"
+            ? t("mbl_err_credits")
+            : res.error === "max_leaves"
+              ? t("mbl_max_leaves")
+              : res.error === "max_videos"
+                ? t("mbl_max_videos")
+                : t("mbl_err_failed"),
+        );
+      }
+    } catch {
+      setLeafNotice(t("mbl_err_failed"));
+    } finally {
+      setLeafBusy(null);
     }
   }
 
@@ -244,8 +302,8 @@ function MemoryBookPackagesPage() {
           </ul>
         </div>
 
-        {/* Additional leaves — information only in this stage */}
-        <div className="mt-6 rounded-2xl border border-border/70 bg-card p-5">
+        {/* Additional leaves for the book the customer is working on */}
+        <div id="extra-leaves" className="mt-6 scroll-mt-24 rounded-2xl border border-border/70 bg-card p-5">
           <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
             <Layers className="h-5 w-5 text-primary" aria-hidden />
             {t("mbp_extra_leaves_title")}
@@ -261,6 +319,19 @@ function MemoryBookPackagesPage() {
                 <li>{t("mbp_extra_leaf_std_2")}</li>
                 <li>{t("mbp_extra_leaf_std_3")}</li>
               </ul>
+              {activeBookId ? (
+                <Button
+                  className="mt-3 w-full sm:w-auto"
+                  disabled={leafBusy !== null || leavesFull || !activeBook}
+                  onClick={() => void buyExtraLeaf("standard")}
+                >
+                  {leafBusy === "standard"
+                    ? t("mbl_buying")
+                    : leavesFull
+                      ? t("mbl_unavailable")
+                      : t("mbl_buy")}
+                </Button>
+              ) : null}
             </div>
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_video")}</p>
@@ -272,9 +343,45 @@ function MemoryBookPackagesPage() {
                 <li>{t("mbp_extra_leaf_video_2")}</li>
                 <li>{t("mbp_extra_leaf_video_3")}</li>
               </ul>
+              {activeBookId ? (
+                <Button
+                  className="mt-3 w-full sm:w-auto"
+                  disabled={leafBusy !== null || leavesFull || videosFull || !activeBook}
+                  onClick={() => void buyExtraLeaf("video")}
+                >
+                  {leafBusy === "video"
+                    ? t("mbl_buying")
+                    : leavesFull || videosFull
+                      ? t("mbl_unavailable")
+                      : t("mbl_buy")}
+                </Button>
+              ) : null}
             </div>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
+          {activeBook ? (
+            <>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {fill(t("mbl_current"), {
+                  l: activeBook.leaves,
+                  p: activeBook.internalPages,
+                  v: activeBook.videoCapacity,
+                })}
+              </p>
+              {leavesFull ? (
+                <p className="mt-1 text-sm text-muted-foreground">{t("mbl_max_leaves")}</p>
+              ) : null}
+              {videosFull ? (
+                <p className="mt-1 text-sm text-muted-foreground">{t("mbl_max_videos")}</p>
+              ) : null}
+              {leafNotice ? (
+                <p className="mt-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm">
+                  {leafNotice}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
+          )}
         </div>
 
         {/* Additional storage — information only in this stage */}
