@@ -1363,6 +1363,57 @@ export function MemoryBookPageEditor({
                   {improveMessage ? (
                     <p className="text-xs text-muted-foreground">{improveMessage}</p>
                   ) : null}
+
+                  {/* Every background this page ever created stays selectable. */}
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm font-medium">{t("mbi_variants")}</p>
+                    <p className="text-xs text-muted-foreground">{t("mbi_variants_free")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={switchingBackground}
+                        onClick={() => void pickBackground(null)}
+                        className={`h-16 w-14 overflow-hidden rounded-md border text-[10px] leading-tight ${
+                          page.backgroundUrl ? "border-border/70" : "border-primary ring-2 ring-primary"
+                        }`}
+                        style={
+                          leafBackgroundUrl
+                            ? {
+                                backgroundImage: `url(${leafBackgroundUrl})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                              }
+                            : undefined
+                        }
+                        title={t("mbi_variant_original")}
+                      >
+                        <span className="sr-only">{t("mbi_variant_original")}</span>
+                      </button>
+                      {backgrounds.map((item, i) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          disabled={switchingBackground}
+                          onClick={() => void pickBackground(item.id)}
+                          className={`h-16 w-14 overflow-hidden rounded-md border ${
+                            item.active ? "border-primary ring-2 ring-primary" : "border-border/70"
+                          }`}
+                          style={
+                            item.url
+                              ? {
+                                  backgroundImage: `url(${item.url})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                              : undefined
+                          }
+                          title={fill(t("mbi_variant_n"), { n: i + 1 })}
+                        >
+                          <span className="sr-only">{fill(t("mbi_variant_n"), { n: i + 1 })}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
               {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
