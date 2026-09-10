@@ -21,6 +21,7 @@ import {
 import { saveMemoryBookPosition } from "@/lib/memory-book/position.functions";
 import { MemoryBookMaterials } from "@/components/memory-book/MemoryBookMaterials";
 import { MemoryBookPageEditor } from "@/components/memory-book/MemoryBookPageEditor";
+import { MemoryBookMusicStage } from "@/components/memory-book/MemoryBookMusicStage";
 
 
 import type {
@@ -48,7 +49,7 @@ export function MemoryBookDesignStudio({
   bookId: string;
   videoCapacity?: number;
   /** Which part opens first, e.g. when returning from video preparation. */
-  initialView?: "design" | "materials" | "pages";
+  initialView?: "design" | "materials" | "pages" | "music";
   /** The internal page the customer was working on before leaving. */
   initialPage?: number;
 }) {
@@ -73,7 +74,9 @@ export function MemoryBookDesignStudio({
   const [libraryTarget, setLibraryTarget] = useState<"front" | "back">("front");
   /** Which face of the physical cover the customer is working on. */
   const [side, setSide] = useState<"front" | "back">("front");
-  const [view, setView] = useState<"design" | "materials" | "pages">(initialView ?? "design");
+  const [view, setView] = useState<"design" | "materials" | "pages" | "music">(
+    initialView ?? "design",
+  );
   const savePosition = useServerFn(saveMemoryBookPosition);
 
   /** Remembers the working position only — no page content is touched. */
@@ -306,6 +309,14 @@ export function MemoryBookDesignStudio({
         >
           {t("mbe_stage")}
         </Button>
+        <Button
+          variant={view === "music" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || view === "music"}
+          onClick={() => setView("music")}
+        >
+          {t("mbmu_stage")}
+        </Button>
         {/* Looking at the book changes nothing: it only shows the saved state. */}
         <Button asChild variant="secondary" size="sm">
           <Link to="/memory-book-preview" search={{ book: bookId }}>
@@ -314,7 +325,9 @@ export function MemoryBookDesignStudio({
         </Button>
       </div>
 
-      {view === "pages" ? (
+      {view === "music" ? (
+        <MemoryBookMusicStage bookId={bookId} />
+      ) : view === "pages" ? (
         <MemoryBookPageEditor
           bookId={bookId}
           initialPage={initialPage}
