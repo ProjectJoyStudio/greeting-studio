@@ -39,6 +39,22 @@ export interface MemoryBookFrame {
   scale: number;
 }
 
+/**
+ * Place and size of the video window on the page. All four values are
+ * percentages of the page, so the arrangement looks the same in every
+ * preview size. The video inside always keeps its own proportions.
+ */
+export interface MemoryBookVideoFrame {
+  /** Left edge, in percent of the page width. */
+  x: number;
+  /** Top edge, in percent of the page height. */
+  y: number;
+  /** Width, in percent of the page width. */
+  width: number;
+  /** Height, in percent of the page height. */
+  height: number;
+}
+
 export interface MemoryBookPage {
   pageIndex: number;
   content: MemoryBookPageContent;
@@ -49,6 +65,41 @@ export interface MemoryBookPage {
   /** Look and position of the page text — the shared Project Joy text design. */
   textDesign: CardTextDesign;
   videoMaterialId: string | null;
+  /** Where the video window sits on the page and how big it is. */
+  videoFrame: MemoryBookVideoFrame;
+}
+
+export const MEMORY_BOOK_VIDEO_MIN_SIZE = 15;
+
+export const defaultVideoFrame = (): MemoryBookVideoFrame => ({
+  x: 8,
+  y: 20,
+  width: 84,
+  height: 55,
+});
+
+/** Keeps the video window fully inside the page, whatever the customer does. */
+export function clampVideoFrame(
+  value: Partial<MemoryBookVideoFrame> | null | undefined,
+): MemoryBookVideoFrame {
+  const num = (raw: unknown, fallback: number) => {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const base = defaultVideoFrame();
+  const width = Math.min(100, Math.max(MEMORY_BOOK_VIDEO_MIN_SIZE, num(value?.width, base.width)));
+  const height = Math.min(
+    100,
+    Math.max(MEMORY_BOOK_VIDEO_MIN_SIZE, num(value?.height, base.height)),
+  );
+  const x = Math.min(100 - width, Math.max(0, num(value?.x, base.x)));
+  const y = Math.min(100 - height, Math.max(0, num(value?.y, base.y)));
+  return {
+    x: Number(x.toFixed(2)),
+    y: Number(y.toFixed(2)),
+    width: Number(width.toFixed(2)),
+    height: Number(height.toFixed(2)),
+  };
 }
 
 /** Page text starts in the middle of the page, dark on a light leaf design. */
