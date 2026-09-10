@@ -176,6 +176,7 @@ function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void })
 function BookFace({
   face,
   coverUrl,
+  backCoverUrl,
   leafBackgroundUrl,
   photos,
   videos,
@@ -185,6 +186,7 @@ function BookFace({
 }: {
   face: Face;
   coverUrl: string | null;
+  backCoverUrl: string | null;
   leafBackgroundUrl: string | null;
   photos: MemoryBookMaterial[];
   videos: MemoryBookMaterial[];
@@ -194,12 +196,13 @@ function BookFace({
 }) {
   const { t } = useI18n();
 
-  if (face.kind === "cover" && !face.page) {
+  if ((face.kind === "cover" || face.kind === "back") && !face.page) {
+    const url = face.kind === "back" ? backCoverUrl : coverUrl;
     return (
       <div
         className="h-full w-full bg-muted"
         style={{
-          backgroundImage: coverUrl ? `url(${coverUrl})` : undefined,
+          backgroundImage: url ? `url(${url})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -216,7 +219,11 @@ function BookFace({
 
   const page = face.page!;
   const background =
-    face.kind === "cover" ? coverUrl : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
+    face.kind === "cover"
+      ? coverUrl
+      : face.kind === "back"
+        ? backCoverUrl
+        : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const textDesign = clampTextDesign(page.textDesign);
   const frame = clampFrame(page.frame);
   const videoFrame = clampVideoFrame(page.videoFrame);
