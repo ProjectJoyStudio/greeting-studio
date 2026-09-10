@@ -155,39 +155,36 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
       const db = await admin();
       const page: MemoryBookPage = { ...data.page };
 
-      if (page.content === "video") {
-        page.slots = [];
-        page.layout = null;
-        if (page.videoMaterialId) {
-          const { data: video } = await db
-            .from("memory_book_materials")
-            .select("id, duration_seconds")
-            .eq("id", page.videoMaterialId)
-            .eq("book_id", data.bookId)
-            .eq("user_id", context.userId)
-            .eq("kind", "video")
-            .maybeSingle();
-          if (!video) return { ok: false, error: "not_found" };
-          const seconds = Number((video as Row).duration_seconds ?? 0);
-          if (!seconds || seconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS) {
-            return { ok: false, error: "video_too_long" };
-          }
+      // Video, photos and text are independent layers of the SAME page. The
+      // editing tool the customer used never removes another layer.
+      if (page.videoMaterialId) {
+        const { data: video } = await db
+          .from("memory_book_materials")
+          .select("id, duration_seconds")
+          .eq("id", page.videoMaterialId)
+          .eq("book_id", data.bookId)
+          .eq("user_id", context.userId)
+          .eq("kind", "video")
+          .maybeSingle();
+        if (!video) return { ok: false, error: "not_found" };
+        const seconds = Number((video as Row).duration_seconds ?? 0);
+        if (!seconds || seconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS) {
+          return { ok: false, error: "video_too_long" };
         }
         // The book may never hold more video pages than its video capacity.
         const { data: others } = await db
           .from("memory_book_pages")
-          .select("page_index")
+          .select("page_index, video_material_id")
           .eq("book_id", data.bookId)
           .eq("user_id", context.userId)
-          .eq("content_type", "video");
+          .not("video_material_id", "is", null);
         const used = ((others ?? []) as unknown as Row[]).filter(
           (r) => Number(r.page_index) !== index,
         ).length;
         if (used >= book.videoCapacity) return { ok: false, error: "video_capacity" };
-      } else {
-        // Photos and text are independent layers of the SAME page: keeping a
-        // photo composition never depends on which tool the customer uses.
-        page.videoMaterialId = null;
+      }
+
+      {
         const layout = findLayout(page.layout);
         if (!layout) {
           page.layout = null;

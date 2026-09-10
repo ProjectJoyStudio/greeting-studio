@@ -244,7 +244,7 @@ export function MemoryBookPageEditor({
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
   const videoPagesUsed = useMemo(
-    () => Object.values(pages).filter((p) => p.content === "video").length,
+    () => Object.values(pages).filter((p) => p.videoMaterialId).length,
     [pages],
   );
 
@@ -378,15 +378,11 @@ export function MemoryBookPageEditor({
    * the same page, so switching never removes anything already placed.
    */
   function setContent(content: MemoryBookPageContent) {
-    if (content === "video" && page.content !== "video" && videoPagesUsed >= videoCapacity) {
+    if (content === "video" && !page.videoMaterialId && videoPagesUsed >= videoCapacity) {
       setError(t("mbe_video_capacity_full"));
       return;
     }
     setTool(content);
-    if (content === "video") {
-      persist({ ...page, content, layout: null, slots: [] });
-      return;
-    }
     if (content === "photos") {
       const first = layoutsForCount(1)[0];
       persist({
@@ -394,12 +390,12 @@ export function MemoryBookPageEditor({
         content,
         layout: page.layout ?? first?.id ?? null,
         slots: page.slots.length ? page.slots : [emptySlot()],
-        videoMaterialId: null,
       });
       return;
     }
-    // Text or empty: the photo composition stays exactly where it is.
-    persist({ ...page, content, videoMaterialId: null });
+    // Every other tool only changes what is being edited: the photo, text and
+    // video layers already on the page all stay exactly as they are.
+    persist({ ...page, content });
   }
 
   function setLayout(id: string) {
@@ -428,6 +424,8 @@ export function MemoryBookPageEditor({
   }
 
   function onVideoPointerDown(e: React.PointerEvent) {
+    // The video frame is only moved while the video tool is the active layer.
+    if (tool !== "video") return;
     if (videoPlaying) return;
     if (videoResize.current) return;
     e.preventDefault();
@@ -639,7 +637,7 @@ export function MemoryBookPageEditor({
           backgroundPosition: "center",
         }}
       >
-        {page.content !== "video" && layout ? (
+        {layout ? (
           <div
             className={`absolute inset-0 ${tool === "photos" && mode === "frame" ? "cursor-move" : ""}`}
             style={{
@@ -759,7 +757,7 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content !== "video" && page.text.trim() ? (
+        {page.text.trim() ? (
           <div
             role="presentation"
             className={`absolute select-none ${tool === "text" ? "cursor-move" : "pointer-events-none"}`}
@@ -793,16 +791,18 @@ export function MemoryBookPageEditor({
           </div>
         ) : null}
 
-        {page.content === "video" && page.videoMaterialId ? (
+        {page.videoMaterialId ? (
           <div
-            className="absolute overflow-hidden rounded-xl border-2 border-primary/60 bg-black shadow-lg"
+            className={`absolute overflow-hidden rounded-xl bg-black shadow-lg ${
+              tool === "video" ? "border-2 border-primary/60" : ""
+            }`}
             style={{
               left: `${videoFrame.x}%`,
               top: `${videoFrame.y}%`,
               width: `${videoFrame.width}%`,
               height: `${videoFrame.height}%`,
               touchAction: "none",
-              cursor: videoPlaying ? undefined : "move",
+              cursor: videoPlaying || tool !== "video" ? undefined : "move",
             }}
             onPointerDown={onVideoPointerDown}
             onPointerMove={onVideoPointerMove}
@@ -837,16 +837,18 @@ export function MemoryBookPageEditor({
                 </button>
               </div>
             ) : null}
-            <span
-              role="presentation"
-              aria-label={t("mbe_video_resize")}
-              className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
-              style={{ touchAction: "none" }}
-              onPointerDown={onVideoResizeDown}
-              onPointerMove={onVideoResizeMove}
-              onPointerUp={onVideoResizeUp}
-              onPointerCancel={onVideoResizeUp}
-            />
+            {tool === "video" ? (
+              <span
+                role="presentation"
+                aria-label={t("mbe_video_resize")}
+                className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
+                style={{ touchAction: "none" }}
+                onPointerDown={onVideoResizeDown}
+                onPointerMove={onVideoResizeMove}
+                onPointerUp={onVideoResizeUp}
+                onPointerCancel={onVideoResizeUp}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -903,7 +905,7 @@ export function MemoryBookPageEditor({
       })()}
 
 
-      {page.content === "video" ? (
+      {tool === "video" ? (
         <div className="space-y-3">
           <p className="text-sm font-medium">{t("mbe_video_label")}</p>
           <p className="text-xs text-muted-foreground">
