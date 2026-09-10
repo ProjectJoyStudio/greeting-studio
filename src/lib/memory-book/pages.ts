@@ -236,6 +236,7 @@ export const emptyPage = (pageIndex: number): MemoryBookPage => ({
   text: "",
   textDesign: memoryBookDefaultTextDesign(),
   videoMaterialId: null,
+  videoFrame: defaultVideoFrame(),
 });
 
 /** Keeps a photo inside its own area whatever the customer drags. */
