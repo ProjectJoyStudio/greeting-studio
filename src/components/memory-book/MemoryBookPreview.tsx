@@ -136,8 +136,9 @@ function BookFace({
     );
   }
 
-  const page = face.page;
-  const background = page.backgroundUrl ?? leafBackgroundUrl ?? null;
+  const page = face.page!;
+  const background =
+    face.kind === "cover" ? coverUrl : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const textDesign = clampTextDesign(page.textDesign);
   const frame = clampFrame(page.frame);
   const videoFrame = clampVideoFrame(page.videoFrame);
