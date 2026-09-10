@@ -488,6 +488,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     };
 
     const onDown = (e: Event) => {
+      if (frozenRef.current) return;
       if (!(e.target instanceof Node) || !el.contains(e.target)) return;
       from = point(e);
       now = from;
