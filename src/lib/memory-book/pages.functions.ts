@@ -10,6 +10,7 @@ import {
   clampVideoFrame,
   clampTextDesign,
   findLayout,
+  readPlacedDecorations,
   type MemoryBookPage,
   type MemoryBookPageContent,
   type MemoryBookPhotoSlot,
@@ -72,6 +73,7 @@ function rowToPage(row: Row): MemoryBookPage {
     videoMaterialId:
       typeof row.video_material_id === "string" ? row.video_material_id : null,
     videoFrame: clampVideoFrame((row.video_frame ?? null) as Record<string, number> | null),
+    decorations: readPlacedDecorations(row.decorations),
   };
 }
 
@@ -96,7 +98,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       const db = await admin();
       const { data: rows } = await db
         .from("memory_book_pages")
-        .select("page_index, content_type, layout, slots, frame, text_content, text_design, video_material_id, video_frame")
+        .select("page_index, content_type, layout, slots, frame, text_content, text_design, video_material_id, video_frame, decorations")
         .eq("book_id", data.bookId)
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
@@ -134,6 +136,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
       videoMaterialId:
         typeof input?.page?.videoMaterialId === "string" ? input.page.videoMaterialId : null,
       videoFrame: clampVideoFrame(input?.page?.videoFrame),
+      decorations: readPlacedDecorations(input?.page?.decorations),
     } satisfies MemoryBookPage,
   }))
   .handler(
@@ -154,6 +157,20 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
 
       const db = await admin();
       const page: MemoryBookPage = { ...data.page };
+
+      // Decorations are one more independent layer of THIS page. Only
+      // decorations the administrator switched on may be placed; the library
+      // entries themselves are never modified here.
+      if (page.decorations.length) {
+        const ids = [...new Set(page.decorations.map((d) => d.decorationId))];
+        const { data: allowedRows } = await db
+          .from("memory_book_decorations")
+          .select("id")
+          .eq("enabled", true)
+          .in("id", ids);
+        const allowed = ((allowedRows ?? []) as unknown as Row[]).map((r) => String(r.id));
+        page.decorations = page.decorations.filter((d) => allowed.includes(d.decorationId));
+      }
 
       // Video, photos and text are independent layers of the SAME page. The
       // editing tool the customer used never removes another layer.
@@ -229,6 +246,7 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
           text_design: JSON.parse(JSON.stringify(page.textDesign)),
           video_material_id: page.videoMaterialId,
           video_frame: JSON.parse(JSON.stringify(page.videoFrame)),
+          decorations: JSON.parse(JSON.stringify(page.decorations)),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "book_id,page_index" },

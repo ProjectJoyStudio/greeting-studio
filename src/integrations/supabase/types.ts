@@ -2358,6 +2358,7 @@ export type Database = {
           book_id: string
           content_type: string
           created_at: string
+          decorations: Json
           frame: Json
           id: string
           layout: string | null
@@ -2374,6 +2375,7 @@ export type Database = {
           book_id: string
           content_type?: string
           created_at?: string
+          decorations?: Json
           frame?: Json
           id?: string
           layout?: string | null
@@ -2390,6 +2392,7 @@ export type Database = {
           book_id?: string
           content_type?: string
           created_at?: string
+          decorations?: Json
           frame?: Json
           id?: string
           layout?: string | null
