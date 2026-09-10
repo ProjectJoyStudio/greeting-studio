@@ -376,8 +376,13 @@ export function MemoryBookPageEditor({
   const frame = clampFrame(page.frame ?? defaultFrame());
   const textDesign = clampTextDesign(page.textDesign);
 
-  /** The background of THIS page: its improved design, else the book design. */
-  const pageBackgroundUrl = page.backgroundUrl ?? leafBackgroundUrl ?? null;
+  /**
+   * The background of THIS page: its improved design, else the book design.
+   * On the front cover it is always the chosen cover design.
+   */
+  const pageBackgroundUrl = coverMode
+    ? (leafBackgroundUrl ?? null)
+    : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const improveIncludedUsed = page.improveIncludedUsed === true;
   const improveFreeLeft = Math.max(improveAllowance - improveDistinctUsed, 0);
   const improveBlocked = !improveIncludedUsed && improveFreeLeft <= 0;
