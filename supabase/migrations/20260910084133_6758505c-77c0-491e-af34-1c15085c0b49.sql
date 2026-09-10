@@ -1,0 +1,1 @@
+ALTER TABLE public.memory_book_pages ADD COLUMN IF NOT EXISTS video_frame jsonb;

@@ -2367,6 +2367,7 @@ export type Database = {
           text_design: Json
           updated_at: string
           user_id: string
+          video_frame: Json | null
           video_material_id: string | null
         }
         Insert: {
@@ -2382,6 +2383,7 @@ export type Database = {
           text_design?: Json
           updated_at?: string
           user_id: string
+          video_frame?: Json | null
           video_material_id?: string | null
         }
         Update: {
@@ -2397,6 +2399,7 @@ export type Database = {
           text_design?: Json
           updated_at?: string
           user_id?: string
+          video_frame?: Json | null
           video_material_id?: string | null
         }
         Relationships: [
