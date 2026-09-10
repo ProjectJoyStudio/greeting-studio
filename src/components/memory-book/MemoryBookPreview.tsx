@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, Loader2, Play, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Pause, Play, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
@@ -283,6 +283,12 @@ function BookFace({
   );
 }
 
+type FlipBookApi = {
+  flipNext: () => void;
+  flipPrev: () => void;
+  getCurrentPageIndex: () => number;
+};
+
 /**
  * Interactive preview of the assembled Memory Book. It only READS the saved
  * state of the customer's book: nothing is generated, charged, completed or
@@ -307,11 +313,36 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [leafBackgroundUrl, setLeafBackgroundUrl] = useState<string | null>(null);
   const [order, setOrder] = useState<number[]>([]);
   const [orderMessage, setOrderMessage] = useState<string | null>(null);
-  const [turned, setTurned] = useState(0);
-  const [flip, setFlip] = useState<"forward" | "backward" | null>(null);
   const [photoPage, setPhotoPage] = useState<MemoryBookPage | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const [auto, setAuto] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
+  const wrapper = useRef<HTMLDivElement | null>(null);
+  const book = useRef<{ pageFlip: () => FlipBookApi } | null>(null);
+
+  // The real page-turn engine touches the DOM, so it is only loaded in the
+  // browser, after hydration.
+  useEffect(() => {
+    let alive = true;
+    void import("react-pageflip").then((mod) => {
+      if (alive) setFlip(() => mod.default as unknown as React.ComponentType<Record<string, unknown>>);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // The book is scaled to the space available, keeping the page proportions.
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+    observer.observe(el);
+    setWidth(el.clientWidth);
+    return () => observer.disconnect();
+  }, [ready]);
 
   // The preview always reads the CURRENT saved book. Opening it changes
   // nothing about the project's lifecycle.
@@ -366,68 +397,48 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       }
     }
     list.push({ kind: "blank" });
+    if (list.length % 2 !== 0) list.push({ kind: "blank" });
     return list;
   }, [order, pages]);
 
-  /** Sheets of the book: each one has a front and a back face. */
-  const sheets = useMemo(() => {
-    const out: { front: Face; back: Face }[] = [];
-    for (let i = 0; i < faces.length; i += 2) {
-      out.push({ front: faces[i]!, back: faces[i + 1] ?? { kind: "blank" } });
-    }
-    return out;
-  }, [faces]);
+  const flipNext = useCallback(() => book.current?.pageFlip()?.flipNext(), []);
+  const flipPrev = useCallback(() => book.current?.pageFlip()?.flipPrev(), []);
 
-  // On a phone the book shows one page at a time; on wider screens it shows
-  // the open spread of two pages. Both turn the same saved book.
-  const canForward = isMobile
-    ? turned < faces.length - 1 && !flip
-    : turned < sheets.length && !flip;
-  const canBackward = turned > 0 && !flip;
-
-  const turnForward = useCallback(() => {
-    if (flip) return;
-    if (isMobile ? turned >= faces.length - 1 : turned >= sheets.length) return;
-    setFlip("forward");
-    window.setTimeout(() => {
-      setTurned((n) => n + 1);
-      setFlip(null);
-    }, 620);
-  }, [turned, sheets.length, faces.length, isMobile, flip]);
-
-  const turnBackward = useCallback(() => {
-    if (turned <= 0 || flip) return;
-    setFlip("backward");
-    window.setTimeout(() => {
-      setTurned((n) => n - 1);
-      setFlip(null);
-    }, 620);
-  }, [turned, flip]);
-
-  // Switching between phone and desktop layout restarts at the cover so the
-  // position always means the same thing.
+  // Automatic viewing turns the leaves with the very same page-turn animation.
   useEffect(() => {
-    setTurned(0);
-    setFlip(null);
-  }, [isMobile]);
+    if (!auto || photoPage || videoUrl) return;
+    const timer = window.setInterval(() => {
+      if (position >= faces.length - 1) {
+        setAuto(false);
+        return;
+      }
+      flipNext();
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, [auto, position, faces.length, flipNext, photoPage, videoUrl]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (photoPage || videoUrl) return;
-      if (e.key === "ArrowRight") turnForward();
-      if (e.key === "ArrowLeft") turnBackward();
+      if (photoPage || videoUrl) {
+        if (e.key === "Escape") {
+          setPhotoPage(null);
+          setVideoUrl(null);
+        }
+        return;
+      }
+      if (e.key === "ArrowRight") flipNext();
+      if (e.key === "ArrowLeft") flipPrev();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [turnForward, turnBackward, photoPage, videoUrl]);
+  }, [flipNext, flipPrev, photoPage, videoUrl]);
 
-  async function moveLeaf(position: number, direction: -1 | 1) {
+  async function moveLeaf(index: number, direction: -1 | 1) {
     const next = [...order];
-    const target = position + direction;
+    const target = index + direction;
     if (target < 0 || target >= next.length) return;
-    [next[position], next[target]] = [next[target]!, next[position]!];
+    [next[index], next[target]] = [next[target]!, next[index]!];
     setOrder(next);
-    setTurned(0);
     setOrderMessage(null);
     try {
       const res = await saveOrder({ data: { bookId, order: next } });
@@ -448,22 +459,6 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   }
   if (!ok) return <p className="text-sm text-muted-foreground">{t("mbpv_not_found")}</p>;
 
-  // Desktop shows an open spread; the phone shows the same faces one by one.
-  const leftFace = !isMobile && turned > 0 ? sheets[turned - 1]!.back : null;
-  const rightFace = isMobile
-    ? (faces[turned] ?? null)
-    : turned < sheets.length
-      ? sheets[turned]!.front
-      : null;
-  /** The face drawn on the sheet that is turning right now. */
-  const flipFace: Face | null = flip
-    ? isMobile
-      ? (faces[flip === "forward" ? turned : turned - 1] ?? null)
-      : flip === "forward"
-        ? (sheets[turned]?.front ?? null)
-        : (sheets[turned - 1]?.front ?? null)
-    : null;
-
   const faceProps = {
     coverUrl,
     leafBackgroundUrl,
@@ -474,82 +469,106 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     onOpenVideo: (url: string) => setVideoUrl(url),
   };
 
-  const panel = "relative overflow-hidden rounded-xl bg-card shadow-sm";
-  const shown = rightFace ?? leftFace;
+  const pageWidth = Math.max(
+    220,
+    Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
+  );
+  const pageHeight = Math.round((pageWidth * 4) / 3);
+  const current = faces[position] ?? null;
+  // A closed book shows the cover alone, centered; the open book is a
+  // two-page spread, so the whole block slides half a page sideways.
+  const closed = !isMobile && position === 0;
+  const finished = !isMobile && position >= faces.length - 1;
+  const shift = closed ? -pageWidth / 2 : finished ? pageWidth / 2 : 0;
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{t("mbpv_hint")}</p>
 
-      <div
-        className="mx-auto w-full max-w-5xl select-none"
-        style={{ perspective: "2000px" }}
-        onPointerDown={(e) => {
-          swipe.current = { x: e.clientX, y: e.clientY };
-        }}
-        onPointerUp={(e) => {
-          const start = swipe.current;
-          swipe.current = null;
-          if (!start) return;
-          const dx = e.clientX - start.x;
-          const dy = e.clientY - start.y;
-          if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
-          if (dx < 0) turnForward();
-          else turnBackward();
-        }}
-      >
-        <div className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
-          {!isMobile ? (
-            <div className={panel} style={{ aspectRatio: "3 / 4" }}>
-              {leftFace ? (
-                <BookFace face={leftFace} {...faceProps} />
-              ) : (
-                <div className="h-full w-full bg-muted/40" />
-              )}
-            </div>
-          ) : null}
-
-          <div className={panel} style={{ aspectRatio: "3 / 4" }}>
-            {rightFace && flip !== "forward" ? (
-              <BookFace face={rightFace} {...faceProps} />
-            ) : (
-              <div className="h-full w-full bg-muted/40" />
-            )}
-
-            {/* The leaf that is turning right now. */}
-            {flipFace ? (
+      <div ref={wrapper} className="mb-book mx-auto w-full max-w-5xl select-none">
+        {Flip && width > 0 ? (
+          <div
+            className="transition-transform duration-500 ease-out"
+            style={{ transform: `translateX(${shift}px)` }}
+          >
+          <Flip
+            key={`${isMobile ? "one" : "two"}-${pageWidth}-${order.join("-")}`}
+            ref={book as never}
+            className="mx-auto"
+            style={{}}
+            width={pageWidth}
+            height={pageHeight}
+            size="fixed"
+            minWidth={220}
+            maxWidth={600}
+            minHeight={290}
+            maxHeight={900}
+            showCover
+            usePortrait={isMobile}
+            mobileScrollSupport
+            useMouseEvents
+            drawShadow
+            maxShadowOpacity={0.5}
+            flippingTime={800}
+            startPage={0}
+            onFlip={(e: { data: number }) => setPosition(e.data)}
+          >
+            {faces.map((face, i) => (
               <div
-                className={`absolute inset-0 overflow-hidden rounded-xl shadow-xl ${
-                  flip === "forward" ? "mb-leaf-forward" : "mb-leaf-backward"
-                }`}
-                style={{ transformOrigin: "left center", zIndex: 20 }}
+                key={i}
+                className="mb-book-page bg-card"
+                data-density={i === 0 || i === faces.length - 1 ? "hard" : "soft"}
               >
-                <BookFace
-                  face={flipFace}
-                  {...faceProps}
-                  onOpenPhotos={undefined}
-                  onOpenVideo={undefined}
-                />
+                <div className="relative h-full w-full overflow-hidden">
+                  <BookFace face={face} {...faceProps} />
+                  <span
+                    aria-hidden
+                    className={`pointer-events-none absolute inset-y-0 w-6 ${
+                      i % 2 === 0
+                        ? "left-0 bg-gradient-to-r from-black/25 to-transparent"
+                        : "right-0 bg-gradient-to-l from-black/25 to-transparent"
+                    }`}
+                  />
+                </div>
               </div>
-            ) : null}
+            ))}
+          </Flip>
           </div>
-        </div>
+        ) : (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            {t("mbpv_loading")}
+          </p>
+        )}
 
-        <div className="mt-4 flex items-center justify-center gap-3">
-          <Button variant="outline" size="sm" disabled={!canBackward} onClick={turnBackward}>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={flipPrev}>
             <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
             {t("mbpv_prev")}
           </Button>
           <span className="text-sm text-muted-foreground">
-            {shown?.kind === "cover"
+            {current?.kind === "cover"
               ? t("mbpv_cover")
-              : shown?.kind === "page"
-                ? fill(t("mbpv_page"), { n: shown.number })
+              : current?.kind === "page"
+                ? fill(t("mbpv_page"), { n: current.number })
                 : t("mbpv_end")}
           </span>
-          <Button variant="outline" size="sm" disabled={!canForward} onClick={turnForward}>
+          <Button variant="outline" size="sm" onClick={flipNext}>
             {t("mbpv_next")}
             <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setAuto((v) => !v)}>
+            {auto ? (
+              <>
+                <Pause className="mr-1 h-4 w-4" aria-hidden />
+                {t("mbpv_auto_pause")}
+              </>
+            ) : (
+              <>
+                <Play className="mr-1 h-4 w-4" aria-hidden />
+                {t("mbpv_auto_play")}
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -559,7 +578,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
         <h2 className="font-display text-lg font-semibold">{t("mbpv_order_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("mbpv_order_hint")}</p>
         <ul className="space-y-2">
-          {order.map((leaf, position) => (
+          {order.map((leaf, index) => (
             <li
               key={leaf}
               className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
@@ -569,16 +588,16 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={position === 0}
-                  onClick={() => void moveLeaf(position, -1)}
+                  disabled={index === 0}
+                  onClick={() => void moveLeaf(index, -1)}
                 >
                   {t("mbpv_move_up")}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={position === order.length - 1}
-                  onClick={() => void moveLeaf(position, 1)}
+                  disabled={index === order.length - 1}
+                  onClick={() => void moveLeaf(index, 1)}
                 >
                   {t("mbpv_move_down")}
                 </Button>
@@ -591,8 +610,22 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
       {/* Full-screen photo frame: the whole composition, exactly as arranged. */}
       {photoPage ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4">
-          <div className="relative w-full max-w-3xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
+          onClick={() => setPhotoPage(null)}
+        >
+          <button
+            type="button"
+            aria-label={t("mbpv_close")}
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPhotoPage(null);
+            }}
+          >
+            <X className="h-6 w-6" aria-hidden />
+          </button>
+          <div className="relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <div
               className="relative w-full overflow-hidden rounded-2xl bg-card"
               style={{ aspectRatio: "3 / 4", containerType: "inline-size" }}
@@ -615,6 +648,14 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       {/* Full-screen video: the prepared video itself is never changed. */}
       {videoUrl ? (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/95 p-4">
+          <button
+            type="button"
+            aria-label={t("mbpv_close")}
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/70 text-white shadow-lg"
+            onClick={() => setVideoUrl(null)}
+          >
+            <X className="h-6 w-6" aria-hidden />
+          </button>
           <video
             src={videoUrl}
             controls

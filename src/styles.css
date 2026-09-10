@@ -211,3 +211,13 @@
   animation: mb-leaf-backward 600ms ease-in-out forwards;
   backface-visibility: hidden;
 }
+
+/* The assembled Memory Book viewer: one connected open book. */
+.mb-book .stf__parent {
+  margin: 0 auto;
+}
+
+.mb-book-page {
+  background-color: var(--card);
+  overflow: hidden;
+}
