@@ -38,6 +38,8 @@ type Face =
   /** The front cover, with the composition the customer placed on it. */
   | { kind: "cover"; page: MemoryBookPage | null }
   | { kind: "page"; page: MemoryBookPage; number: number }
+  /** The back cover: the very last physical face of the book. */
+  | { kind: "back"; page: MemoryBookPage | null }
   | { kind: "blank" };
 
 /** The photo composition of a page — exactly as it was arranged in the editor. */
