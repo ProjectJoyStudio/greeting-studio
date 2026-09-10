@@ -100,47 +100,73 @@ function PhotoComposition({
  * the press is passed on to the book so the leaf can be dragged from here.
  */
 function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
   const lastTap = useRef(0);
+  const openRef = useRef(onOpen);
+  openRef.current = onOpen;
 
-  return (
-    <div
-      role="button"
-      tabIndex={-1}
-      aria-label={label}
-      className="absolute inset-0"
-      onPointerDown={(e) => {
-        start.current = { x: e.clientX, y: e.clientY };
-        moved.current = false;
-      }}
-      onPointerMove={(e) => {
-        const s = start.current;
-        if (!s) return;
-        if (Math.abs(e.clientX - s.x) > 8 || Math.abs(e.clientY - s.y) > 8) moved.current = true;
-      }}
-      onPointerCancel={() => {
-        start.current = null;
-        moved.current = true;
-      }}
-      onPointerUp={() => {
-        if (!start.current) return;
-        start.current = null;
-        if (moved.current) {
-          lastTap.current = 0;
-          return;
-        }
-        const now = Date.now();
-        if (now - lastTap.current < 400) {
-          lastTap.current = 0;
-          onOpen();
-        } else {
-          lastTap.current = now;
-        }
-      }}
-    />
-  );
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const begin = (x: number, y: number) => {
+      start.current = { x, y };
+      moved.current = false;
+    };
+    const track = (x: number, y: number) => {
+      const s = start.current;
+      if (!s) return;
+      if (Math.abs(x - s.x) > 8 || Math.abs(y - s.y) > 8) moved.current = true;
+    };
+    /** A press that never moved is photo business only — the book must not turn. */
+    const finish = (e: Event) => {
+      if (!start.current) return;
+      start.current = null;
+      if (moved.current) return;
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTap.current < 400) {
+        lastTap.current = 0;
+        openRef.current();
+      } else {
+        lastTap.current = now;
+      }
+    };
+
+    const onMouseDown = (e: MouseEvent) => begin(e.clientX, e.clientY);
+    const onMouseMove = (e: MouseEvent) => track(e.clientX, e.clientY);
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (t) begin(t.clientX, t.clientY);
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (t) track(t.clientX, t.clientY);
+    };
+
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    el.addEventListener("mouseup", finish);
+    el.addEventListener("click", (e) => e.stopPropagation());
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", finish);
+
+    return () => {
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      el.removeEventListener("mouseup", finish);
+      el.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", finish);
+    };
+  }, []);
+
+  return <div ref={ref} role="presentation" aria-label={label} className="absolute inset-0" />;
 }
+
 
 /** One face of the book: the cover, one saved internal page, or the back. */
 function BookFace({
