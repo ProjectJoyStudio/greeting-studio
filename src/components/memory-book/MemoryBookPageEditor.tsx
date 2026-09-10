@@ -309,13 +309,14 @@ export function MemoryBookPageEditor({
       setTool("photos");
       return;
     }
-    setTool(
+    const next: EditorTool =
       stored.content === "empty"
         ? stored.text.trim()
           ? "text"
           : "photos"
-        : stored.content,
-    );
+        : stored.content;
+    // The front cover has no video tool.
+    setTool(coverMode && next === "video" ? "photos" : next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, ready]);
 
