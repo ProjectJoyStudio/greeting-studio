@@ -1481,7 +1481,7 @@ export function MemoryBookPageEditor({
       })()}
 
 
-      {tool === "video" ? (
+      {tool === "video" && !coverMode ? (
         <div className="space-y-3">
           <p className="text-sm font-medium">{t("mbe_video_label")}</p>
           <p className="text-xs text-muted-foreground">
