@@ -232,6 +232,29 @@ export function MemoryBookDesignStudio({
 
   const bothReady = Boolean(state.cover.selectedId && state.leaf.selectedId);
 
+  // The physical cover has two faces; both are edited in the cover stage.
+  const coverSideSwitch =
+    view === "design" && stage === "cover" ? (
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={side === "front" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || side === "front"}
+          onClick={() => setSide("front")}
+        >
+          {t("mbd_side_front")}
+        </Button>
+        <Button
+          variant={side === "back" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || side === "back"}
+          onClick={() => setSide("back")}
+        >
+          {t("mbd_side_back")}
+        </Button>
+      </div>
+    ) : null;
+
   return (
     <section className="mt-8 space-y-6 text-left">
       <div className="flex flex-wrap gap-2">
