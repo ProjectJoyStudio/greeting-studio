@@ -359,16 +359,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     for (const leaf of order) {
       for (const side of [1, 2]) {
         const pageIndex = (leaf - 1) * 2 + side;
-        const page = pages[pageIndex];
-        list.push(
-          page
-            ? { kind: "page", page, number: pageIndex }
-            : {
-                kind: "page",
-                page: { ...(pages[pageIndex] ?? emptyLike(pageIndex)) },
-                number: pageIndex,
-              },
-        );
+        const page = pages[pageIndex] ?? emptyLike(pageIndex);
+        list.push({ kind: "page", page, number: pageIndex });
       }
     }
     list.push({ kind: "blank" });
