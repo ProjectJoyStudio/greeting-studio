@@ -408,19 +408,22 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const frozenRef = useRef(frozen);
   frozenRef.current = frozen;
 
-  /** Ends any half-started leaf drag, so the book stays exactly where it is. */
+  /**
+   * Cancels any started press inside the book so nothing can turn later. The
+   * turn engine is told the gesture was already handled, which drops it
+   * without moving the book by even one leaf.
+   */
   const settleBook = useCallback(() => {
-    const el = wrapper.current?.querySelector(".stf__parent");
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    for (const type of ["mouseup", "touchend"]) {
-      const ev = new Event(type, { bubbles: true, cancelable: true });
-      Object.defineProperty(ev, "clientX", { value: x });
-      Object.defineProperty(ev, "clientY", { value: y });
-      Object.defineProperty(ev, "changedTouches", { value: [{ clientX: x, clientY: y }] });
-      window.dispatchEvent(ev);
+    const api = book.current?.pageFlip?.();
+    if (!api) return;
+    try {
+      api.userStop?.({ x: 0, y: 0 }, true);
+      const ui = api.getUI?.();
+      if (ui && typeof ui === "object" && "touchPoint" in ui) {
+        (ui as { touchPoint: unknown }).touchPoint = null;
+      }
+    } catch {
+      /* the engine is not ready yet — there is nothing pending to cancel */
     }
   }, []);
 
