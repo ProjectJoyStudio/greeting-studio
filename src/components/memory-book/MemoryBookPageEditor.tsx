@@ -793,14 +793,16 @@ export function MemoryBookPageEditor({
 
         {page.videoMaterialId ? (
           <div
-            className="absolute overflow-hidden rounded-xl border-2 border-primary/60 bg-black shadow-lg"
+            className={`absolute overflow-hidden rounded-xl bg-black shadow-lg ${
+              tool === "video" ? "border-2 border-primary/60" : ""
+            }`}
             style={{
               left: `${videoFrame.x}%`,
               top: `${videoFrame.y}%`,
               width: `${videoFrame.width}%`,
               height: `${videoFrame.height}%`,
               touchAction: "none",
-              cursor: videoPlaying ? undefined : "move",
+              cursor: videoPlaying || tool !== "video" ? undefined : "move",
             }}
             onPointerDown={onVideoPointerDown}
             onPointerMove={onVideoPointerMove}
