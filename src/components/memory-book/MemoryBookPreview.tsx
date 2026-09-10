@@ -475,6 +475,11 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   );
   const pageHeight = Math.round((pageWidth * 4) / 3);
   const current = faces[position] ?? null;
+  // A closed book shows the cover alone, centered; the open book is a
+  // two-page spread, so the whole block slides half a page sideways.
+  const closed = !isMobile && position === 0;
+  const finished = !isMobile && position >= faces.length - 1;
+  const shift = closed ? -pageWidth / 2 : finished ? pageWidth / 2 : 0;
 
   return (
     <div className="space-y-6">
@@ -482,6 +487,10 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
       <div ref={wrapper} className="mb-book mx-auto w-full max-w-5xl select-none">
         {Flip && width > 0 ? (
+          <div
+            className="transition-transform duration-500 ease-out"
+            style={{ transform: `translateX(${shift}px)` }}
+          >
           <Flip
             key={`${isMobile ? "one" : "two"}-${pageWidth}-${order.join("-")}`}
             ref={book as never}
