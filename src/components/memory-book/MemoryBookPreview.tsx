@@ -682,7 +682,10 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{t("mbpv_hint")}</p>
 
-      <div ref={wrapper} className="mb-book mx-auto w-full max-w-5xl select-none">
+      <div
+        ref={wrapper}
+        className={`mb-book mx-auto w-full max-w-5xl select-none ${frozen ? "pointer-events-none" : ""}`}
+      >
         {Flip && width > 0 ? (
           <div
             className="transition-transform duration-500 ease-out"
