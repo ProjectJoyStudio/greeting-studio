@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { Check, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -257,6 +258,12 @@ export function MemoryBookDesignStudio({
           }}
         >
           {t("mbe_stage")}
+        </Button>
+        {/* Looking at the book changes nothing: it only shows the saved state. */}
+        <Button asChild variant="secondary" size="sm">
+          <Link to="/memory-book-preview" search={{ book: bookId }}>
+            {t("mbpv_open")}
+          </Link>
         </Button>
       </div>
 
