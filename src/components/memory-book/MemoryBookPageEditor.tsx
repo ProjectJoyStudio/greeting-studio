@@ -168,6 +168,7 @@ export function MemoryBookPageEditor({
   leafBackgroundUrl,
   initialPage,
   onPageChange,
+  coverMode = false,
 }: {
   bookId: string;
   leafBackgroundUrl?: string | null;
@@ -175,6 +176,11 @@ export function MemoryBookPageEditor({
   initialPage?: number;
   /** Reports the page the customer is on, so Continue can return here. */
   onPageChange?: (page: number) => void;
+  /**
+   * Decorates the FRONT COVER instead of the internal pages. The cover is
+   * stored as page 0 of the same book and never holds a video.
+   */
+  coverMode?: boolean;
 }) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
