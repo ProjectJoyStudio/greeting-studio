@@ -384,17 +384,22 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     return out;
   }, [faces]);
 
-  const canForward = turned < sheets.length && !flip;
+  // On a phone the book shows one page at a time; on wider screens it shows
+  // the open spread of two pages. Both turn the same saved book.
+  const canForward = isMobile
+    ? turned < faces.length - 1 && !flip
+    : turned < sheets.length && !flip;
   const canBackward = turned > 0 && !flip;
 
   const turnForward = useCallback(() => {
-    if (turned >= sheets.length || flip) return;
+    if (flip) return;
+    if (isMobile ? turned >= faces.length - 1 : turned >= sheets.length) return;
     setFlip("forward");
     window.setTimeout(() => {
       setTurned((n) => n + 1);
       setFlip(null);
     }, 620);
-  }, [turned, sheets.length, flip]);
+  }, [turned, sheets.length, faces.length, isMobile, flip]);
 
   const turnBackward = useCallback(() => {
     if (turned <= 0 || flip) return;
@@ -404,6 +409,13 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       setFlip(null);
     }, 620);
   }, [turned, flip]);
+
+  // Switching between phone and desktop layout restarts at the cover so the
+  // position always means the same thing.
+  useEffect(() => {
+    setTurned(0);
+    setFlip(null);
+  }, [isMobile]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
