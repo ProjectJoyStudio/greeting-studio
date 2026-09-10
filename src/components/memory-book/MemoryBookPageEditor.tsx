@@ -1161,8 +1161,8 @@ export function MemoryBookPageEditor({
             </div>
           );
         }
-        if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         if (tool === "decorations") {
+
           // Same workspace principle: the small working page stays visible on
           // the left while the library and its controls scroll on the right.
           return (
