@@ -27,12 +27,15 @@ export function MemoryBookDecorations({
   pageIndex,
   onClose,
   onPick,
+  showPage = true,
 }: {
   bookId: string;
   pageIndex: number;
   onClose: () => void;
   /** Adds the chosen decoration to the page the customer is working on. */
   onPick?: (decoration: MemoryBookDecoration) => void;
+  /** The front cover has no page number, so the hint is left out there. */
+  showPage?: boolean;
 }) {
   const { t } = useI18n();
   const load = useServerFn(listMemoryBookDecorations);
