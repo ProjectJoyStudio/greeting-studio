@@ -697,9 +697,11 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           <span className="text-sm text-muted-foreground">
             {current?.kind === "cover"
               ? t("mbpv_cover")
-              : current?.kind === "page"
-                ? fill(t("mbpv_page"), { n: current.number })
-                : t("mbpv_end")}
+              : current?.kind === "back"
+                ? t("mbpv_back_cover")
+                : current?.kind === "page"
+                  ? fill(t("mbpv_page"), { n: current.number })
+                  : t("mbpv_end")}
           </span>
           <Button variant="outline" size="sm" onClick={flipNext}>
             {t("mbpv_next")}
