@@ -2583,6 +2583,7 @@ export type Database = {
           last_view: string | null
           leaf_generations_allowed: number
           leaf_generations_used: number
+          leaf_order: Json | null
           leaf_prompt: string | null
           leaves: number
           package_code: string
@@ -2612,6 +2613,7 @@ export type Database = {
           last_view?: string | null
           leaf_generations_allowed?: number
           leaf_generations_used?: number
+          leaf_order?: Json | null
           leaf_prompt?: string | null
           leaves: number
           package_code: string
@@ -2641,6 +2643,7 @@ export type Database = {
           last_view?: string | null
           leaf_generations_allowed?: number
           leaf_generations_used?: number
+          leaf_order?: Json | null
           leaf_prompt?: string | null
           leaves?: number
           package_code?: string

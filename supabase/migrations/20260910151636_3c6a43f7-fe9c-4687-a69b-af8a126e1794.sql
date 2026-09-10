@@ -1,0 +1,1 @@
+ALTER TABLE public.memory_book_projects ADD COLUMN IF NOT EXISTS leaf_order jsonb;
