@@ -101,13 +101,23 @@ function PhotoComposition({
  * A press that moves is a page-turn gesture and never opens the photo, and
  * the press is passed on to the book so the leaf can be dragged from here.
  */
-function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void }) {
+function PhotoTapLayer({
+  label,
+  onOpen,
+  onCancelTurn,
+}: {
+  label: string;
+  onOpen: () => void;
+  onCancelTurn: () => void;
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
   const lastTap = useRef(0);
   const openRef = useRef(onOpen);
   openRef.current = onOpen;
+  const cancelRef = useRef(onCancelTurn);
+  cancelRef.current = onCancelTurn;
 
   useEffect(() => {
     const el = ref.current;
@@ -122,12 +132,16 @@ function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void })
       if (!s) return;
       if (Math.abs(x - s.x) > 8 || Math.abs(y - s.y) > 8) moved.current = true;
     };
-    /** A press that never moved is photo business only — the book must not turn. */
-    const finish = (e: Event) => {
+    /**
+     * A press that never moved is photo business only. The started press is
+     * cancelled inside the turn engine itself, so no turn can be waiting to
+     * happen later — for example while the enlarged photo is being closed.
+     */
+    const finish = () => {
       if (!start.current) return;
       start.current = null;
       if (moved.current) return;
-      e.stopPropagation();
+      cancelRef.current();
       const now = Date.now();
       if (now - lastTap.current < 400) {
         lastTap.current = 0;
@@ -183,6 +197,7 @@ function BookFace({
   library,
   onOpenPhotos,
   onOpenVideo,
+  onCancelTurn,
 }: {
   face: Face;
   coverUrl: string | null;
@@ -193,6 +208,7 @@ function BookFace({
   library: MemoryBookDecoration[];
   onOpenPhotos?: (page: MemoryBookPage) => void;
   onOpenVideo?: (url: string) => void;
+  onCancelTurn: () => void;
 }) {
   const { t } = useI18n();
 
@@ -249,7 +265,11 @@ function BookFace({
             photos={photos}
           />
           {onOpenPhotos ? (
-            <PhotoTapLayer label={t("mbpv_open_photos")} onOpen={() => onOpenPhotos(page)} />
+            <PhotoTapLayer
+              label={t("mbpv_open_photos")}
+              onOpen={() => onOpenPhotos(page)}
+              onCancelTurn={onCancelTurn}
+            />
           ) : null}
         </>
       ) : null}
@@ -363,6 +383,9 @@ type FlipBookApi = {
   flipNext: () => void;
   flipPrev: () => void;
   getCurrentPageIndex: () => number;
+  /** Ends a started press WITHOUT turning anything (second argument = handled). */
+  userStop?: (point: { x: number; y: number }, handled?: boolean) => void;
+  getUI?: () => { touchPoint?: unknown } | null;
 };
 
 /**
@@ -405,19 +428,22 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const frozenRef = useRef(frozen);
   frozenRef.current = frozen;
 
-  /** Ends any half-started leaf drag, so the book stays exactly where it is. */
+  /**
+   * Cancels any started press inside the book so nothing can turn later. The
+   * turn engine is told the gesture was already handled, which drops it
+   * without moving the book by even one leaf.
+   */
   const settleBook = useCallback(() => {
-    const el = wrapper.current?.querySelector(".stf__parent");
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    for (const type of ["mouseup", "touchend"]) {
-      const ev = new Event(type, { bubbles: true, cancelable: true });
-      Object.defineProperty(ev, "clientX", { value: x });
-      Object.defineProperty(ev, "clientY", { value: y });
-      Object.defineProperty(ev, "changedTouches", { value: [{ clientX: x, clientY: y }] });
-      window.dispatchEvent(ev);
+    const api = book.current?.pageFlip?.();
+    if (!api) return;
+    try {
+      api.userStop?.({ x: 0, y: 0 }, true);
+      const ui = api.getUI?.();
+      if (ui && typeof ui === "object" && "touchPoint" in ui) {
+        (ui as { touchPoint: unknown }).touchPoint = null;
+      }
+    } catch {
+      /* the engine is not ready yet — there is nothing pending to cancel */
     }
   }, []);
 
@@ -445,6 +471,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     for (const type of types) window.addEventListener(type, block, true);
     return () => {
       for (const type of types) window.removeEventListener(type, block, true);
+      // Closing the enlarged view must leave nothing pending either.
+      settleBook();
     };
   }, [frozen, settleBook]);
 
@@ -664,6 +692,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     library,
     onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
     onOpenVideo: (url: string) => setVideoUrl(url),
+    onCancelTurn: settleBook,
   };
 
   const pageWidth = Math.max(
