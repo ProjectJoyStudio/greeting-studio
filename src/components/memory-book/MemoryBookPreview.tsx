@@ -164,16 +164,7 @@ function BookFace({
             photos={photos}
           />
           {onOpenPhotos ? (
-            <button
-              type="button"
-              aria-label={t("mbpv_open_photos")}
-              className="absolute inset-0"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenPhotos(page);
-              }}
-            />
+            <PhotoTapLayer label={t("mbpv_open_photos")} onOpen={() => onOpenPhotos(page)} />
           ) : null}
         </>
       ) : null}
