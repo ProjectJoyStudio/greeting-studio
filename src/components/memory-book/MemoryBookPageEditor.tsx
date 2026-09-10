@@ -1162,7 +1162,31 @@ export function MemoryBookPageEditor({
           );
         }
         if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
-        return (
+        if (tool === "decorations") {
+          // Same workspace principle: the small working page stays visible on
+          // the left while the library and its controls scroll on the right.
+          return (
+            <div className="space-y-4 sm:space-y-6">
+              <div className={workspaceGrid}>
+                <div className={workingPreview}>{pageSurface({ sizeClass: workingSize })}</div>
+                <div className="min-w-0 space-y-4">
+                  <div className="max-h-[28rem] overflow-y-auto pr-1">
+                    <MemoryBookDecorations
+                      bookId={bookId}
+                      pageIndex={index - 1}
+                      onClose={() => setTool(page.layout ? "photos" : "text")}
+                      onPick={addDecoration}
+                    />
+                  </div>
+                  {decorationControls}
+                </div>
+              </div>
+              {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
+            </div>
+          );
+        }
+          return (
+
           <div className="space-y-4 sm:space-y-6">
             <div className={workspaceGrid}>
               <div className={workingPreview}>
