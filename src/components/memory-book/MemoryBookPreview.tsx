@@ -398,6 +398,55 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
   const wrapper = useRef<HTMLDivElement | null>(null);
   const book = useRef<{ pageFlip: () => FlipBookApi } | null>(null);
+  const overlay = useRef<HTMLDivElement | null>(null);
+  // While a photo or video is enlarged the book is frozen: it must not react
+  // to any movement happening above it.
+  const frozen = photoPage !== null || videoUrl !== null;
+  const frozenRef = useRef(frozen);
+  frozenRef.current = frozen;
+
+  /** Ends any half-started leaf drag, so the book stays exactly where it is. */
+  const settleBook = useCallback(() => {
+    const el = wrapper.current?.querySelector(".stf__parent");
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    for (const type of ["mouseup", "touchend"]) {
+      const ev = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "clientX", { value: x });
+      Object.defineProperty(ev, "clientY", { value: y });
+      Object.defineProperty(ev, "changedTouches", { value: [{ clientX: x, clientY: y }] });
+      window.dispatchEvent(ev);
+    }
+  }, []);
+
+  // Every pointer or touch signal that does not belong to the enlarged view is
+  // swallowed before the page-turn engine can see it.
+  useEffect(() => {
+    if (!frozen) return;
+    settleBook();
+    const block = (e: Event) => {
+      const target = e.target;
+      if (target instanceof Node && overlay.current?.contains(target)) return;
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+    };
+    const types = [
+      "mousedown",
+      "mousemove",
+      "mouseup",
+      "click",
+      "touchstart",
+      "touchmove",
+      "touchend",
+      "wheel",
+    ];
+    for (const type of types) window.addEventListener(type, block, true);
+    return () => {
+      for (const type of types) window.removeEventListener(type, block, true);
+    };
+  }, [frozen, settleBook]);
 
   // The real page-turn engine touches the DOM, so it is only loaded in the
   // browser, after hydration.
