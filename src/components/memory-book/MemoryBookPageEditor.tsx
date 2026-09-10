@@ -244,7 +244,7 @@ export function MemoryBookPageEditor({
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
   const videoPagesUsed = useMemo(
-    () => Object.values(pages).filter((p) => p.content === "video").length,
+    () => Object.values(pages).filter((p) => p.videoMaterialId).length,
     [pages],
   );
 
