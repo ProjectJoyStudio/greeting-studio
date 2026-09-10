@@ -344,10 +344,11 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
 /** Attaches a chosen ready-made design to THIS Memory Book and selects it. */
 export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { bookId: string; stage: string; path: string }) => ({
+  .inputValidator((input: { bookId: string; stage: string; path: string; target?: string }) => ({
     bookId: String(input?.bookId ?? "").slice(0, 64),
     stage: toStage(input?.stage),
     path: String(input?.path ?? "").slice(0, 400),
+    target: input?.target === "back" ? ("back" as const) : ("front" as const),
   }))
   .handler(async ({ data, context }): Promise<{ ok: boolean; state?: MemoryBookDesignState }> => {
     const book = await ownedBook(context, data.bookId);
@@ -369,10 +370,52 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
       .maybeSingle();
     const designId = inserted ? String((inserted as unknown as Row).id) : null;
     if (designId) {
-      await patchBook(data.bookId, {
-        [data.stage === "cover" ? "selected_cover_id" : "selected_leaf_id"]: designId,
-      });
+      // A back-cover choice never touches the front cover selection.
+      await patchBook(
+        data.bookId,
+        data.target === "back"
+          ? { back_cover_design_id: designId, back_cover_overridden: true }
+          : { [data.stage === "cover" ? "selected_cover_id" : "selected_leaf_id"]: designId },
+      );
     }
     const fresh = await ownedBook(context, data.bookId);
     return { ok: Boolean(designId), state: fresh ? await buildState(fresh) : undefined };
+  });
+
+/**
+ * Chooses the background of the BACK cover. An empty design id gives the back
+ * cover back to the front cover, so it follows every later front change again.
+ */
+export const setMemoryBookBackCoverDesign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; designId?: string | null }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    designId: input?.designId ? String(input.designId).slice(0, 64) : null,
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; state?: MemoryBookDesignState }> => {
+    const book = await ownedBook(context, data.bookId);
+    if (!book) return { ok: false };
+
+    if (data.designId) {
+      const db = await admin();
+      const { data: design } = await db
+        .from("memory_book_designs")
+        .select("id")
+        .eq("id", data.designId)
+        .eq("book_id", data.bookId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!design) return { ok: false };
+      await patchBook(data.bookId, {
+        back_cover_design_id: data.designId,
+        back_cover_overridden: true,
+      });
+    } else {
+      await patchBook(data.bookId, {
+        back_cover_design_id: null,
+        back_cover_overridden: false,
+      });
+    }
+    const fresh = await ownedBook(context, data.bookId);
+    return { ok: true, state: fresh ? await buildState(fresh) : undefined };
   });
