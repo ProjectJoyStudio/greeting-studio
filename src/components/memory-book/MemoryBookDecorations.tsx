@@ -72,9 +72,11 @@ export function MemoryBookDecorations({
         <div>
           <h3 className="font-display text-lg font-semibold">{t("mbdec_title")}</h3>
           <p className="text-sm text-muted-foreground">{t("mbdec_hint")}</p>
-          <p className="text-xs text-muted-foreground">
-            {fill(t("mbdec_page"), { n: pageIndex + 1 })}
-          </p>
+          {showPage ? (
+            <p className="text-xs text-muted-foreground">
+              {fill(t("mbdec_page"), { n: pageIndex + 1 })}
+            </p>
+          ) : null}
         </div>
         <Button size="sm" variant="ghost" onClick={onClose}>
           {t("mbdec_close")}
