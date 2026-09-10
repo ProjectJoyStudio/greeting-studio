@@ -1267,6 +1267,54 @@ export function MemoryBookPageEditor({
             </div>
           );
         }
+        if (tool === "improve") {
+          // Only the background of THIS page is created here; everything the
+          // customer already placed stays exactly where it is.
+          return (
+            <div className="space-y-4 sm:space-y-6">
+              <div className={workspaceGrid}>
+                <div className={workingPreview}>{pageSurface({ sizeClass: workingSize })}</div>
+                <div className="min-w-0 space-y-2">
+                  <label className="text-sm font-medium" htmlFor="mbe-improve">
+                    {t("mbi_label")}
+                  </label>
+                  <Textarea
+                    id="mbe-improve"
+                    rows={4}
+                    value={improvePrompt}
+                    placeholder={t("mbi_placeholder")}
+                    onChange={(e) => setImprovePrompt(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {improveIncludedUsed
+                      ? fill(t("mbi_paid_note"), { c: MEMORY_BOOK_IMPROVE_PAGE_CREDITS })
+                      : fill(t("mbi_included_left"), {
+                          n: improveFreeLeft,
+                          t: improveAllowance,
+                        })}
+                  </p>
+                  {improveBlocked ? (
+                    <p className="text-xs text-destructive">{t("mbi_limit_reached")}</p>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    disabled={improving || improveBlocked || !improvePrompt.trim()}
+                    onClick={() => void runImprove()}
+                  >
+                    {improving ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+                    ) : null}
+                    {improveIncludedUsed ? t("mbi_generate_paid") : t("mbi_generate")}
+                  </Button>
+                  {improveMessage ? (
+                    <p className="text-xs text-muted-foreground">{improveMessage}</p>
+                  ) : null}
+                </div>
+              </div>
+              {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
+            </div>
+          );
+        }
         if (tool !== "text") return pageSurface({ attachRef: true, sizeClass: "max-w-md" });
         return (
           <div className="space-y-4 sm:space-y-6">
