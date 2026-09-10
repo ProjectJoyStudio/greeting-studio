@@ -424,6 +424,8 @@ export function MemoryBookPageEditor({
   }
 
   function onVideoPointerDown(e: React.PointerEvent) {
+    // The video frame is only moved while the video tool is the active layer.
+    if (tool !== "video") return;
     if (videoPlaying) return;
     if (videoResize.current) return;
     e.preventDefault();
