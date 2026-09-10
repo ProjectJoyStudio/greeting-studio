@@ -2568,6 +2568,8 @@ export type Database = {
       }
       memory_book_projects: {
         Row: {
+          back_cover_design_id: string | null
+          back_cover_overridden: boolean
           completed_at: string | null
           completion_method: string | null
           cover_generations_allowed: number
@@ -2598,6 +2600,8 @@ export type Database = {
           working_cleaned_at: string | null
         }
         Insert: {
+          back_cover_design_id?: string | null
+          back_cover_overridden?: boolean
           completed_at?: string | null
           completion_method?: string | null
           cover_generations_allowed?: number
@@ -2628,6 +2632,8 @@ export type Database = {
           working_cleaned_at?: string | null
         }
         Update: {
+          back_cover_design_id?: string | null
+          back_cover_overridden?: boolean
           completed_at?: string | null
           completion_method?: string | null
           cover_generations_allowed?: number

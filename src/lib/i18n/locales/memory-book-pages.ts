@@ -5,6 +5,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   en: {
     mbe_stage: "Book pages",
     mbe_cover_title: "Decorate the front cover",
+    mbe_back_cover_title: "Decorate the back cover",
+    mbe_back_cover_hint: "Place photos, text and decorations on the back of the book. Video is not used here.",
     mbe_cover_hint:
       "Add your own photos, text and decorations on top of the chosen cover. Everything is saved automatically.",
     mbe_title: "Internal pages",
@@ -86,6 +88,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   ru: {
     mbe_stage: "Страницы книги",
     mbe_cover_title: "Оформление обложки",
+    mbe_back_cover_title: "Оформление задней обложки",
+    mbe_back_cover_hint: "Разместите фото, текст и украшения на задней стороне книги. Видео здесь не используется.",
     mbe_cover_hint:
       "Добавьте на выбранную обложку свои фотографии, текст и украшения. Всё сохраняется автоматически.",
     mbe_title: "Внутренние страницы",
@@ -168,6 +172,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   uk: {
     mbe_stage: "Сторінки книги",
     mbe_cover_title: "Оформлення обкладинки",
+    mbe_back_cover_title: "Оформлення задньої обкладинки",
+    mbe_back_cover_hint: "Розмістіть фото, текст і прикраси на задньому боці книги. Відео тут не використовується.",
     mbe_cover_hint:
       "Додайте на вибрану обкладинку свої фотографії, текст і прикраси. Усе зберігається автоматично.",
     mbe_title: "Внутрішні сторінки",
@@ -250,6 +256,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   pl: {
     mbe_stage: "Strony książki",
     mbe_cover_title: "Ozdób okładkę",
+    mbe_back_cover_title: "Ozdób tylną okładkę",
+    mbe_back_cover_hint: "Umieść zdjęcia, tekst i ozdoby z tyłu książki. Wideo nie jest tu używane.",
     mbe_cover_hint:
       "Dodaj na wybranej okładce własne zdjęcia, tekst i ozdoby. Wszystko zapisuje się automatycznie.",
     mbe_title: "Strony wewnętrzne",
@@ -332,6 +340,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   de: {
     mbe_stage: "Buchseiten",
     mbe_cover_title: "Titelseite gestalten",
+    mbe_back_cover_title: "Rückseite gestalten",
+    mbe_back_cover_hint: "Platzieren Sie Fotos, Text und Verzierungen auf der Rückseite des Buches. Video wird hier nicht verwendet.",
     mbe_cover_hint:
       "Fügen Sie auf dem gewählten Umschlag eigene Fotos, Texte und Verzierungen hinzu. Alles wird automatisch gespeichert.",
     mbe_title: "Innenseiten",
@@ -414,6 +424,8 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   fr: {
     mbe_stage: "Pages du livre",
     mbe_cover_title: "Décorez la couverture",
+    mbe_back_cover_title: "Décorez le dos du livre",
+    mbe_back_cover_hint: "Placez des photos, du texte et des décorations au dos du livre. La vidéo n'est pas utilisée ici.",
     mbe_cover_hint:
       "Ajoutez vos photos, votre texte et des décorations sur la couverture choisie. Tout est enregistré automatiquement.",
     mbe_title: "Pages intérieures",

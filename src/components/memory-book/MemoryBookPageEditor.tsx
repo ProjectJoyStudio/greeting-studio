@@ -169,6 +169,7 @@ export function MemoryBookPageEditor({
   initialPage,
   onPageChange,
   coverMode = false,
+  coverPageIndex = 0,
 }: {
   bookId: string;
   leafBackgroundUrl?: string | null;
@@ -177,10 +178,13 @@ export function MemoryBookPageEditor({
   /** Reports the page the customer is on, so Continue can return here. */
   onPageChange?: (page: number) => void;
   /**
-   * Decorates the FRONT COVER instead of the internal pages. The cover is
-   * stored as page 0 of the same book and never holds a video.
+   * Decorates a COVER instead of the internal pages. The front cover is
+   * stored as page 0 and the back cover as page -1 of the same book;
+   * neither ever holds a video.
    */
   coverMode?: boolean;
+  /** Which cover is being decorated: 0 = front, -1 = back. */
+  coverPageIndex?: number;
 }) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
@@ -193,7 +197,7 @@ export function MemoryBookPageEditor({
   const [videoCapacity, setVideoCapacity] = useState(0);
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
   const [index, setIndex] = useState(
-    coverMode ? 0 : initialPage && initialPage > 0 ? initialPage : 1,
+    coverMode ? coverPageIndex : initialPage && initialPage > 0 ? initialPage : 1,
   );
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -923,10 +927,18 @@ export function MemoryBookPageEditor({
     <section className="space-y-4 text-left sm:space-y-6">
       <div className="space-y-2">
         <h2 className="font-display text-xl font-semibold">
-          {coverMode ? t("mbe_cover_title") : t("mbe_title")}
+          {coverMode
+            ? coverPageIndex < 0
+              ? t("mbe_back_cover_title")
+              : t("mbe_cover_title")
+            : t("mbe_title")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {coverMode ? t("mbe_cover_hint") : t("mbe_hint")}
+          {coverMode
+            ? coverPageIndex < 0
+              ? t("mbe_back_cover_hint")
+              : t("mbe_cover_hint")
+            : t("mbe_hint")}
         </p>
       </div>
 

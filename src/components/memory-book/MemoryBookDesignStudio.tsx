@@ -14,6 +14,7 @@ import {
   purchaseMemoryBookGenerations,
   saveMemoryBookDescription,
   selectMemoryBookDesign,
+  setMemoryBookBackCoverDesign,
   setMemoryBookStage,
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
@@ -61,6 +62,7 @@ export function MemoryBookDesignStudio({
   const setStage = useServerFn(setMemoryBookStage);
   const loadLibrary = useServerFn(listMemoryBookLibrary);
   const chooseLibrary = useServerFn(chooseMemoryBookLibraryDesign);
+  const setBackCover = useServerFn(setMemoryBookBackCoverDesign);
 
   const [state, setState] = useState<MemoryBookDesignState | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -68,6 +70,9 @@ export function MemoryBookDesignStudio({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [library, setLibrary] = useState<MemoryBookLibraryItem[] | null>(null);
+  const [libraryTarget, setLibraryTarget] = useState<"front" | "back">("front");
+  /** Which face of the physical cover the customer is working on. */
+  const [side, setSide] = useState<"front" | "back">("front");
   const [view, setView] = useState<"design" | "materials" | "pages">(initialView ?? "design");
   const savePosition = useServerFn(saveMemoryBookPosition);
 
@@ -170,10 +175,11 @@ export function MemoryBookDesignStudio({
     }
   }
 
-  async function openLibrary() {
+  async function openLibrary(target: "front" | "back" = "front") {
     setBusy(true);
+    setLibraryTarget(target);
     try {
-      const res = await loadLibrary({ data: { stage } });
+      const res = await loadLibrary({ data: { stage: target === "back" ? "cover" : stage } });
       setLibrary(res.items);
     } catch {
       setLibrary([]);
@@ -185,11 +191,29 @@ export function MemoryBookDesignStudio({
   async function useLibraryItem(path: string) {
     setBusy(true);
     try {
-      const res = await chooseLibrary({ data: { bookId, stage, path } });
+      const res = await chooseLibrary({
+        data: {
+          bookId,
+          stage: libraryTarget === "back" ? "cover" : stage,
+          path,
+          target: libraryTarget,
+        },
+      });
       if (res.ok) {
         apply(res.state);
         setLibrary(null);
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Back cover only: pick one of the saved designs, or follow the front again. */
+  async function chooseBackCover(designId: string | null) {
+    setBusy(true);
+    try {
+      const res = await setBackCover({ data: { bookId, designId } });
+      if (res.ok && res.state) setState(res.state);
     } finally {
       setBusy(false);
     }
@@ -207,6 +231,29 @@ export function MemoryBookDesignStudio({
   }
 
   const bothReady = Boolean(state.cover.selectedId && state.leaf.selectedId);
+
+  // The physical cover has two faces; both are edited in the cover stage.
+  const coverSideSwitch =
+    view === "design" && stage === "cover" ? (
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={side === "front" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || side === "front"}
+          onClick={() => setSide("front")}
+        >
+          {t("mbd_side_front")}
+        </Button>
+        <Button
+          variant={side === "back" ? "default" : "outline"}
+          size="sm"
+          disabled={busy || side === "back"}
+          onClick={() => setSide("back")}
+        >
+          {t("mbd_side_back")}
+        </Button>
+      </div>
+    ) : null;
 
   return (
     <section className="mt-8 space-y-6 text-left">
@@ -278,10 +325,70 @@ export function MemoryBookDesignStudio({
         />
       ) : view === "materials" ? (
         <MemoryBookMaterials bookId={bookId} videoCapacity={videoCapacity} />
+      ) : stage === "cover" && side === "back" ? (
+        <>
+          {coverSideSwitch}
+          <div className="space-y-2">
+            <h2 className="font-display text-xl font-semibold">{t("mbd_back_title")}</h2>
+            <p className="text-sm text-muted-foreground">{t("mbd_back_hint")}</p>
+            <p className="text-xs text-muted-foreground">
+              {state.backCover.overridden ? t("mbd_back_own") : t("mbd_back_inherited")}
+            </p>
+            <p className="text-xs text-muted-foreground">{t("mbk_saved")}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" onClick={() => void openLibrary("back")} disabled={busy}>
+              {t("mbd_back_choose_ready")}
+            </Button>
+            {state.backCover.overridden ? (
+              <Button variant="ghost" onClick={() => void chooseBackCover(null)} disabled={busy}>
+                {t("mbd_back_use_front")}
+              </Button>
+            ) : null}
+          </div>
+
+          {state.cover.variants.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("mbd_back_pick_saved")}</p>
+              <div className="flex flex-wrap gap-3">
+                {state.cover.variants.map((variant) => (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void chooseBackCover(variant.id)}
+                    className={`h-24 w-20 overflow-hidden rounded-lg border ${
+                      state.backCover.designId === variant.id
+                        ? "border-primary"
+                        : "border-border/70"
+                    }`}
+                  >
+                    <img src={variant.url} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Photos, text and decorations of the back cover live on their own
+              page and never touch the front cover. Video is not offered. */}
+          <div className="border-t border-border/60 pt-6">
+            <MemoryBookPageEditor
+              key="back-cover"
+              bookId={bookId}
+              coverMode
+              coverPageIndex={-1}
+              leafBackgroundUrl={state.backCover.url}
+            />
+          </div>
+        </>
       ) : (
 
         <>
+      {coverSideSwitch}
       <div className="space-y-2">
+
 
         <h2 className="font-display text-xl font-semibold">
           {stage === "cover" ? t("mbd_cover_title") : t("mbd_leaf_title")}

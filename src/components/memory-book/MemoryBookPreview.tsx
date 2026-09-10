@@ -38,6 +38,8 @@ type Face =
   /** The front cover, with the composition the customer placed on it. */
   | { kind: "cover"; page: MemoryBookPage | null }
   | { kind: "page"; page: MemoryBookPage; number: number }
+  /** The back cover: the very last physical face of the book. */
+  | { kind: "back"; page: MemoryBookPage | null }
   | { kind: "blank" };
 
 /** The photo composition of a page — exactly as it was arranged in the editor. */
@@ -174,6 +176,7 @@ function PhotoTapLayer({ label, onOpen }: { label: string; onOpen: () => void })
 function BookFace({
   face,
   coverUrl,
+  backCoverUrl,
   leafBackgroundUrl,
   photos,
   videos,
@@ -183,6 +186,7 @@ function BookFace({
 }: {
   face: Face;
   coverUrl: string | null;
+  backCoverUrl: string | null;
   leafBackgroundUrl: string | null;
   photos: MemoryBookMaterial[];
   videos: MemoryBookMaterial[];
@@ -192,12 +196,13 @@ function BookFace({
 }) {
   const { t } = useI18n();
 
-  if (face.kind === "cover" && !face.page) {
+  if ((face.kind === "cover" || face.kind === "back") && !face.page) {
+    const url = face.kind === "back" ? backCoverUrl : coverUrl;
     return (
       <div
         className="h-full w-full bg-muted"
         style={{
-          backgroundImage: coverUrl ? `url(${coverUrl})` : undefined,
+          backgroundImage: url ? `url(${url})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -214,7 +219,11 @@ function BookFace({
 
   const page = face.page!;
   const background =
-    face.kind === "cover" ? coverUrl : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
+    face.kind === "cover"
+      ? coverUrl
+      : face.kind === "back"
+        ? backCoverUrl
+        : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const textDesign = clampTextDesign(page.textDesign);
   const frame = clampFrame(page.frame);
   const videoFrame = clampVideoFrame(page.videoFrame);
@@ -377,6 +386,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
   const [library, setLibrary] = useState<MemoryBookDecoration[]>([]);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [backCoverUrl, setBackCoverUrl] = useState<string | null>(null);
   const [leafBackgroundUrl, setLeafBackgroundUrl] = useState<string | null>(null);
   const [order, setOrder] = useState<number[]>([]);
   const [orderMessage, setOrderMessage] = useState<string | null>(null);
@@ -504,6 +514,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           setCoverUrl(
             state.cover.variants.find((v) => v.id === state.cover.selectedId)?.url ?? null,
           );
+          setBackCoverUrl(state.backCover.url);
           setLeafBackgroundUrl(
             state.leaf.variants.find((v) => v.id === state.leaf.selectedId)?.url ?? null,
           );
@@ -530,8 +541,9 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
         list.push({ kind: "page", page, number: pageIndex });
       }
     }
-    list.push({ kind: "blank" });
-    if (list.length % 2 !== 0) list.push({ kind: "blank" });
+    // The back cover is the very last physical face of the book.
+    list.push({ kind: "back", page: pages[-1] ?? null });
+    if (list.length % 2 !== 0) list.splice(list.length - 1, 0, { kind: "blank" });
     return list;
   }, [order, pages]);
 
@@ -595,6 +607,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
   const faceProps = {
     coverUrl,
+    backCoverUrl,
     leafBackgroundUrl,
     photos,
     videos,
@@ -684,9 +697,11 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
           <span className="text-sm text-muted-foreground">
             {current?.kind === "cover"
               ? t("mbpv_cover")
-              : current?.kind === "page"
-                ? fill(t("mbpv_page"), { n: current.number })
-                : t("mbpv_end")}
+              : current?.kind === "back"
+                ? t("mbpv_back_cover")
+                : current?.kind === "page"
+                  ? fill(t("mbpv_page"), { n: current.number })
+                  : t("mbpv_end")}
           </span>
           <Button variant="outline" size="sm" onClick={flipNext}>
             {t("mbpv_next")}

@@ -120,10 +120,10 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .order("page_index", { ascending: true });
 
-      // Page 0 is the front cover composition of the SAME book.
+      // Page 0 is the front cover, page -1 the back cover, of the SAME book.
       const raw = ((rows ?? []) as unknown as Row[]).filter((r) => {
         const i = Number(r.page_index);
-        return i >= 0 && i <= book.internalPages;
+        return i >= -1 && i <= book.internalPages;
       });
 
       const pages: MemoryBookPage[] = [];
@@ -188,15 +188,15 @@ export const saveMemoryBookPage = createServerFn({ method: "POST" })
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "not_found" };
       const index = data.page.pageIndex;
-      // Index 0 is the front cover of this book; 1…n are its internal pages.
-      if (!Number.isFinite(index) || index < 0 || index > book.internalPages) {
+      // Index 0 is the front cover, -1 the back cover; 1…n are internal pages.
+      if (!Number.isFinite(index) || index < -1 || index > book.internalPages) {
         return { ok: false, error: "bad_page" };
       }
 
       const db = await admin();
       const page: MemoryBookPage = { ...data.page };
-      // The front cover never holds a video.
-      if (index === 0) page.videoMaterialId = null;
+      // Neither cover ever holds a video.
+      if (index <= 0) page.videoMaterialId = null;
 
       // Decorations are one more independent layer of THIS page. Only
       // decorations the administrator switched on may be placed; the library
