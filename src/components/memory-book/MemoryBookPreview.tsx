@@ -501,7 +501,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
       const ended = now;
       from = null;
       now = null;
-      if (!started || !ended) return;
+      if (!started || !ended || frozenRef.current) return;
       const dx = ended.x - started.x;
       const dy = ended.y - started.y;
       if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) * 1.5) return;
