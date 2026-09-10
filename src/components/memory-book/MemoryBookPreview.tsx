@@ -35,7 +35,8 @@ function fill(text: string, vars: Record<string, string | number>) {
 }
 
 type Face =
-  | { kind: "cover" }
+  /** The front cover, with the composition the customer placed on it. */
+  | { kind: "cover"; page: MemoryBookPage | null }
   | { kind: "page"; page: MemoryBookPage; number: number }
   | { kind: "blank" };
 
