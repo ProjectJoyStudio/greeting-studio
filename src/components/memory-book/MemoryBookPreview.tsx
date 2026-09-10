@@ -851,7 +851,10 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
       {/* Full-screen video: the prepared video itself is never changed. */}
       {videoUrl ? (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/95 p-4">
+        <div
+          ref={photoPage ? undefined : overlay}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/95 p-4"
+        >
           <button
             type="button"
             aria-label={t("mbpv_close")}
