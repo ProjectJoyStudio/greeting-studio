@@ -313,16 +313,22 @@ function MemoryBookVideoPage() {
                 <p className="text-xs text-muted-foreground">
                   {formatClock(current)} / {formatClock(sourceSeconds)}
                 </p>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  disabled={working}
+                  onClick={addFragment}
+                >
+                  <Plus className="mr-1 h-4 w-4" aria-hidden />
+                  {t("mbv_add")}
+                </Button>
               </div>
 
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-sm font-semibold">{t("mbv_fragments")}</h2>
-                  <Button size="sm" disabled={working} onClick={addFragment}>
-                    <Plus className="mr-1 h-4 w-4" aria-hidden />
-                    {t("mbv_add")}
-                  </Button>
                 </div>
+
 
                 {overLimit ? <p className="text-sm text-destructive">{t("mbv_too_long")}</p> : null}
 
