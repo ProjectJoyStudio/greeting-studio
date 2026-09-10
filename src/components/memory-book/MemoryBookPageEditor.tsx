@@ -429,7 +429,11 @@ export function MemoryBookPageEditor({
 
   function onVideoPointerDown(e: React.PointerEvent) {
     if (videoPlaying) return;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    if (videoResize.current) return;
+    e.preventDefault();
+    // Capturing on the frame itself keeps every move event on the same
+    // element, so the drag survives the video and the play overlay.
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     videoDrag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
   }
 
@@ -811,23 +815,27 @@ export function MemoryBookPageEditor({
               controls={videoPlaying}
               preload="metadata"
               playsInline
-              className="h-full w-full bg-black object-cover"
+              className={`h-full w-full bg-black object-cover ${
+                videoPlaying ? "" : "pointer-events-none"
+              }`}
             />
             {!videoPlaying ? (
-              <button
-                type="button"
-                aria-label={t("mbe_video_play")}
-                className="absolute inset-0 flex items-center justify-center bg-black/20"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  setVideoPlaying(true);
-                  void videoEl.current?.play().catch(() => undefined);
-                }}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85">
+              // The dim layer must not swallow pointers, otherwise the frame
+              // can never be dragged; only the round play button reacts.
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                <button
+                  type="button"
+                  aria-label={t("mbe_video_play")}
+                  className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-background/85"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    setVideoPlaying(true);
+                    void videoEl.current?.play().catch(() => undefined);
+                  }}
+                >
                   <Play className="h-6 w-6" aria-hidden />
-                </span>
-              </button>
+                </button>
+              </div>
             ) : null}
             <span
               role="presentation"
