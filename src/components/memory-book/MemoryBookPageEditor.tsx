@@ -40,7 +40,12 @@ import {
   loadMemoryBookPages,
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
-import { improveMemoryBookPage } from "@/lib/memory-book/improve.functions";
+import {
+  improveMemoryBookPage,
+  listMemoryBookPageBackgrounds,
+  selectMemoryBookPageBackground,
+  type MemoryBookPageBackground,
+} from "@/lib/memory-book/improve.functions";
 import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS } from "@/lib/memory-book/pages";
 
 /**
@@ -198,6 +203,11 @@ export function MemoryBookPageEditor({
   const [videoPlaying, setVideoPlaying] = useState(false);
   /** Improve Page: how many different pages this book may still improve free. */
   const improve = useServerFn(improveMemoryBookPage);
+  const listBackgrounds = useServerFn(listMemoryBookPageBackgrounds);
+  const selectBackground = useServerFn(selectMemoryBookPageBackground);
+  /** Every background this page created successfully, oldest first. */
+  const [backgrounds, setBackgrounds] = useState<MemoryBookPageBackground[]>([]);
+  const [switchingBackground, setSwitchingBackground] = useState(false);
   const [improveAllowance, setImproveAllowance] = useState(0);
   const [improveDistinctUsed, setImproveDistinctUsed] = useState(0);
   const [improvePrompt, setImprovePrompt] = useState("");
@@ -222,6 +232,20 @@ export function MemoryBookPageEditor({
     setPickedDecoration(null);
     setImproveMessage(null);
   }, [index]);
+
+  // Saved backgrounds belong to THIS exact page of THIS exact book.
+  useEffect(() => {
+    let alive = true;
+    setBackgrounds([]);
+    void listBackgrounds({ data: { bookId, pageIndex: index } })
+      .then((res) => {
+        if (alive && res.ok) setBackgrounds(res.backgrounds);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [bookId, index, listBackgrounds]);
 
   // The shared library is only read, so placed decorations can be drawn.
   useEffect(() => {
@@ -379,6 +403,8 @@ export function MemoryBookPageEditor({
           },
         }));
         setImproveMessage(t("mbi_done"));
+        const list = await listBackgrounds({ data: { bookId, pageIndex: index } });
+        if (list.ok) setBackgrounds(list.backgrounds);
       } else {
         setImproveMessage(
           res.error === "page_limit"
@@ -397,6 +423,34 @@ export function MemoryBookPageEditor({
     }
   }
 
+  /**
+   * Switches the page to a background that already exists — or back to the
+   * original book design. Nothing is generated and nothing is charged.
+   */
+  async function pickBackground(backgroundId: string | null) {
+    if (switchingBackground) return;
+    setSwitchingBackground(true);
+    setImproveMessage(null);
+    try {
+      const res = await selectBackground({ data: { bookId, pageIndex: index, backgroundId } });
+      if (res.ok) {
+        setPages((prev) => ({
+          ...prev,
+          [index]: {
+            ...(prev[index] ?? emptyPage(index)),
+            backgroundUrl: res.backgroundUrl ?? null,
+          },
+        }));
+        if (res.backgrounds) setBackgrounds(res.backgrounds);
+      } else {
+        setImproveMessage(t("mbi_select_failed"));
+      }
+    } catch {
+      setImproveMessage(t("mbi_select_failed"));
+    } finally {
+      setSwitchingBackground(false);
+    }
+  }
 
   /** Look and position of the page text; the page design itself is untouched. */
   function setTextDesign(patch: Partial<CardTextDesign>) {
@@ -1309,6 +1363,57 @@ export function MemoryBookPageEditor({
                   {improveMessage ? (
                     <p className="text-xs text-muted-foreground">{improveMessage}</p>
                   ) : null}
+
+                  {/* Every background this page ever created stays selectable. */}
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm font-medium">{t("mbi_variants")}</p>
+                    <p className="text-xs text-muted-foreground">{t("mbi_variants_free")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={switchingBackground}
+                        onClick={() => void pickBackground(null)}
+                        className={`h-16 w-14 overflow-hidden rounded-md border text-[10px] leading-tight ${
+                          page.backgroundUrl ? "border-border/70" : "border-primary ring-2 ring-primary"
+                        }`}
+                        style={
+                          leafBackgroundUrl
+                            ? {
+                                backgroundImage: `url(${leafBackgroundUrl})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                              }
+                            : undefined
+                        }
+                        title={t("mbi_variant_original")}
+                      >
+                        <span className="sr-only">{t("mbi_variant_original")}</span>
+                      </button>
+                      {backgrounds.map((item, i) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          disabled={switchingBackground}
+                          onClick={() => void pickBackground(item.id)}
+                          className={`h-16 w-14 overflow-hidden rounded-md border ${
+                            item.active ? "border-primary ring-2 ring-primary" : "border-border/70"
+                          }`}
+                          style={
+                            item.url
+                              ? {
+                                  backgroundImage: `url(${item.url})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                              : undefined
+                          }
+                          title={fill(t("mbi_variant_n"), { n: i + 1 })}
+                        >
+                          <span className="sr-only">{fill(t("mbi_variant_n"), { n: i + 1 })}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
               {pageSurface({ attachRef: true, sizeClass: "max-w-md" })}
