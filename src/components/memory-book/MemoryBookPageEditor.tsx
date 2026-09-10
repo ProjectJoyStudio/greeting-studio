@@ -713,12 +713,56 @@ export function MemoryBookPageEditor({
         ) : null}
 
         {page.content === "video" && page.videoMaterialId ? (
-          <video
-            src={videos.find((v) => v.id === page.videoMaterialId)?.url}
-            controls
-            preload="metadata"
-            className="absolute inset-4 h-auto w-auto max-w-[calc(100%-2rem)] bg-black object-contain"
-          />
+          <div
+            className="absolute overflow-hidden rounded-xl border-2 border-primary/60 bg-black shadow-lg"
+            style={{
+              left: `${videoFrame.x}%`,
+              top: `${videoFrame.y}%`,
+              width: `${videoFrame.width}%`,
+              height: `${videoFrame.height}%`,
+              touchAction: "none",
+              cursor: videoPlaying ? undefined : "move",
+            }}
+            onPointerDown={onVideoPointerDown}
+            onPointerMove={onVideoPointerMove}
+            onPointerUp={onVideoPointerUp}
+            onPointerCancel={onVideoPointerUp}
+          >
+            <video
+              ref={videoEl}
+              src={videos.find((v) => v.id === page.videoMaterialId)?.url}
+              controls={videoPlaying}
+              preload="metadata"
+              playsInline
+              className="h-full w-full bg-black object-cover"
+            />
+            {!videoPlaying ? (
+              <button
+                type="button"
+                aria-label={t("mbe_video_play")}
+                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  setVideoPlaying(true);
+                  void videoEl.current?.play().catch(() => undefined);
+                }}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85">
+                  <Play className="h-6 w-6" aria-hidden />
+                </span>
+              </button>
+            ) : null}
+            <span
+              role="presentation"
+              aria-label={t("mbe_video_resize")}
+              className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-lg bg-primary/85"
+              style={{ touchAction: "none" }}
+              onPointerDown={onVideoResizeDown}
+              onPointerMove={onVideoResizeMove}
+              onPointerUp={onVideoResizeUp}
+              onPointerCancel={onVideoResizeUp}
+            />
+          </div>
         ) : null}
       </div>
         );
