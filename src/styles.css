@@ -218,6 +218,6 @@
 }
 
 .mb-book-page {
-  background-color: hsl(var(--card));
+  background-color: var(--card);
   overflow: hidden;
 }
