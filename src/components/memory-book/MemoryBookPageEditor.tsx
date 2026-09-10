@@ -1339,7 +1339,8 @@ export function MemoryBookPageEditor({
                   <div className="max-h-[28rem] overflow-y-auto pr-1">
                     <MemoryBookDecorations
                       bookId={bookId}
-                      pageIndex={index - 1}
+                      pageIndex={Math.max(index - 1, 0)}
+                      showPage={!coverMode}
                       onClose={() => setTool(page.layout ? "photos" : "text")}
                       onPick={addDecoration}
                     />
