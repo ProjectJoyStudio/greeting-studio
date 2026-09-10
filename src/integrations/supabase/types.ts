@@ -2353,6 +2353,47 @@ export type Database = {
           },
         ]
       }
+      memory_book_page_backgrounds: {
+        Row: {
+          book_id: string
+          bucket: string
+          created_at: string
+          id: string
+          page_index: number
+          path: string
+          prompt: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          bucket: string
+          created_at?: string
+          id?: string
+          page_index: number
+          path: string
+          prompt?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          bucket?: string
+          created_at?: string
+          id?: string
+          page_index?: number
+          path?: string
+          prompt?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_page_backgrounds_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_page_improvements: {
         Row: {
           book_id: string
