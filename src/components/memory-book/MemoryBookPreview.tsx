@@ -35,7 +35,8 @@ function fill(text: string, vars: Record<string, string | number>) {
 }
 
 type Face =
-  | { kind: "cover" }
+  /** The front cover, with the composition the customer placed on it. */
+  | { kind: "cover"; page: MemoryBookPage | null }
   | { kind: "page"; page: MemoryBookPage; number: number }
   | { kind: "blank" };
 
@@ -115,7 +116,7 @@ function BookFace({
 }) {
   const { t } = useI18n();
 
-  if (face.kind === "cover") {
+  if (face.kind === "cover" && !face.page) {
     return (
       <div
         className="h-full w-full bg-muted"
@@ -135,8 +136,9 @@ function BookFace({
     );
   }
 
-  const page = face.page;
-  const background = page.backgroundUrl ?? leafBackgroundUrl ?? null;
+  const page = face.page!;
+  const background =
+    face.kind === "cover" ? coverUrl : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const textDesign = clampTextDesign(page.textDesign);
   const frame = clampFrame(page.frame);
   const videoFrame = clampVideoFrame(page.videoFrame);
@@ -355,7 +357,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
 
   /** Every face of the book in the CURRENT leaf order: cover first. */
   const faces = useMemo<Face[]>(() => {
-    const list: Face[] = [{ kind: "cover" }];
+    const list: Face[] = [{ kind: "cover", page: pages[0] ?? null }];
     for (const leaf of order) {
       for (const side of [1, 2]) {
         const pageIndex = (leaf - 1) * 2 + side;

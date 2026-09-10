@@ -27,12 +27,15 @@ export function MemoryBookDecorations({
   pageIndex,
   onClose,
   onPick,
+  showPage = true,
 }: {
   bookId: string;
   pageIndex: number;
   onClose: () => void;
   /** Adds the chosen decoration to the page the customer is working on. */
   onPick?: (decoration: MemoryBookDecoration) => void;
+  /** The front cover has no page number, so the hint is left out there. */
+  showPage?: boolean;
 }) {
   const { t } = useI18n();
   const load = useServerFn(listMemoryBookDecorations);
@@ -69,9 +72,11 @@ export function MemoryBookDecorations({
         <div>
           <h3 className="font-display text-lg font-semibold">{t("mbdec_title")}</h3>
           <p className="text-sm text-muted-foreground">{t("mbdec_hint")}</p>
-          <p className="text-xs text-muted-foreground">
-            {fill(t("mbdec_page"), { n: pageIndex + 1 })}
-          </p>
+          {showPage ? (
+            <p className="text-xs text-muted-foreground">
+              {fill(t("mbdec_page"), { n: pageIndex + 1 })}
+            </p>
+          ) : null}
         </div>
         <Button size="sm" variant="ghost" onClick={onClose}>
           {t("mbdec_close")}

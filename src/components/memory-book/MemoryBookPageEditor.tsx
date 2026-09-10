@@ -168,6 +168,7 @@ export function MemoryBookPageEditor({
   leafBackgroundUrl,
   initialPage,
   onPageChange,
+  coverMode = false,
 }: {
   bookId: string;
   leafBackgroundUrl?: string | null;
@@ -175,6 +176,11 @@ export function MemoryBookPageEditor({
   initialPage?: number;
   /** Reports the page the customer is on, so Continue can return here. */
   onPageChange?: (page: number) => void;
+  /**
+   * Decorates the FRONT COVER instead of the internal pages. The cover is
+   * stored as page 0 of the same book and never holds a video.
+   */
+  coverMode?: boolean;
 }) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
@@ -186,7 +192,9 @@ export function MemoryBookPageEditor({
   const [total, setTotal] = useState(0);
   const [videoCapacity, setVideoCapacity] = useState(0);
   const [materials, setMaterials] = useState<MemoryBookMaterial[]>([]);
-  const [index, setIndex] = useState(initialPage && initialPage > 0 ? initialPage : 1);
+  const [index, setIndex] = useState(
+    coverMode ? 0 : initialPage && initialPage > 0 ? initialPage : 1,
+  );
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -233,10 +241,12 @@ export function MemoryBookPageEditor({
     setImproveMessage(null);
   }, [index]);
 
-  // Saved backgrounds belong to THIS exact page of THIS exact book.
+  // Saved backgrounds belong to THIS exact page of THIS exact book. The front
+  // cover keeps its own selected design, so nothing is looked up for it.
   useEffect(() => {
     let alive = true;
     setBackgrounds([]);
+    if (coverMode) return;
     void listBackgrounds({ data: { bookId, pageIndex: index } })
       .then((res) => {
         if (alive && res.ok) setBackgrounds(res.backgrounds);
@@ -245,7 +255,7 @@ export function MemoryBookPageEditor({
     return () => {
       alive = false;
     };
-  }, [bookId, index, listBackgrounds]);
+  }, [bookId, index, listBackgrounds, coverMode]);
 
   // The shared library is only read, so placed decorations can be drawn.
   useEffect(() => {
@@ -261,9 +271,9 @@ export function MemoryBookPageEditor({
   }, [loadLibrary]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || coverMode) return;
     onPageChange?.(index);
-  }, [ready, index, onPageChange]);
+  }, [ready, index, onPageChange, coverMode]);
 
   useEffect(() => {
     let alive = true;
@@ -299,13 +309,14 @@ export function MemoryBookPageEditor({
       setTool("photos");
       return;
     }
-    setTool(
+    const next: EditorTool =
       stored.content === "empty"
         ? stored.text.trim()
           ? "text"
           : "photos"
-        : stored.content,
-    );
+        : stored.content;
+    // The front cover has no video tool.
+    setTool(coverMode && next === "video" ? "photos" : next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, ready]);
 
@@ -365,8 +376,13 @@ export function MemoryBookPageEditor({
   const frame = clampFrame(page.frame ?? defaultFrame());
   const textDesign = clampTextDesign(page.textDesign);
 
-  /** The background of THIS page: its improved design, else the book design. */
-  const pageBackgroundUrl = page.backgroundUrl ?? leafBackgroundUrl ?? null;
+  /**
+   * The background of THIS page: its improved design, else the book design.
+   * On the front cover it is always the chosen cover design.
+   */
+  const pageBackgroundUrl = coverMode
+    ? (leafBackgroundUrl ?? null)
+    : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const improveIncludedUsed = page.improveIncludedUsed === true;
   const improveFreeLeft = Math.max(improveAllowance - improveDistinctUsed, 0);
   const improveBlocked = !improveIncludedUsed && improveFreeLeft <= 0;
@@ -906,37 +922,49 @@ export function MemoryBookPageEditor({
   return (
     <section className="space-y-4 text-left sm:space-y-6">
       <div className="space-y-2">
-        <h2 className="font-display text-xl font-semibold">{t("mbe_title")}</h2>
-        <p className="text-sm text-muted-foreground">{t("mbe_hint")}</p>
+        <h2 className="font-display text-xl font-semibold">
+          {coverMode ? t("mbe_cover_title") : t("mbe_title")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {coverMode ? t("mbe_cover_hint") : t("mbe_hint")}
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={index <= 1}
-          onClick={() => setIndex((i) => Math.max(1, i - 1))}
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
-          {t("mbe_prev")}
-        </Button>
-        <span className="text-sm font-medium">{fill(t("mbe_page"), { n: index, t: total })}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={index >= total}
-          onClick={() => setIndex((i) => Math.min(total, i + 1))}
-        >
-          {t("mbe_next")}
-          <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
-        </Button>
+        {coverMode ? null : (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index <= 1}
+              onClick={() => setIndex((i) => Math.max(1, i - 1))}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbe_prev")}
+            </Button>
+            <span className="text-sm font-medium">
+              {fill(t("mbe_page"), { n: index, t: total })}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index >= total}
+              onClick={() => setIndex((i) => Math.min(total, i + 1))}
+            >
+              {t("mbe_next")}
+              <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
+            </Button>
+          </>
+        )}
         <span className="text-xs text-muted-foreground">
           {saving ? t("mbe_saving") : t("mbe_saved")}
         </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {(["empty", "photos", "text", "video"] as MemoryBookPageContent[]).map((type) => (
+        {((coverMode
+          ? ["photos", "text"]
+          : ["empty", "photos", "text", "video"]) as MemoryBookPageContent[]).map((type) => (
           <Button
             key={type}
             size="sm"
@@ -953,13 +981,15 @@ export function MemoryBookPageEditor({
         >
           {t("mbdec_open")}
         </Button>
-        <Button
-          size="sm"
-          variant={tool === "improve" ? "default" : "outline"}
-          onClick={() => setTool("improve")}
-        >
-          {t("mbi_open")}
-        </Button>
+        {coverMode ? null : (
+          <Button
+            size="sm"
+            variant={tool === "improve" ? "default" : "outline"}
+            onClick={() => setTool("improve")}
+          >
+            {t("mbi_open")}
+          </Button>
+        )}
       </div>
 
 
@@ -1309,7 +1339,8 @@ export function MemoryBookPageEditor({
                   <div className="max-h-[28rem] overflow-y-auto pr-1">
                     <MemoryBookDecorations
                       bookId={bookId}
-                      pageIndex={index - 1}
+                      pageIndex={Math.max(index - 1, 0)}
+                      showPage={!coverMode}
                       onClose={() => setTool(page.layout ? "photos" : "text")}
                       onPick={addDecoration}
                     />
@@ -1450,7 +1481,7 @@ export function MemoryBookPageEditor({
       })()}
 
 
-      {tool === "video" ? (
+      {tool === "video" && !coverMode ? (
         <div className="space-y-3">
           <p className="text-sm font-medium">{t("mbe_video_label")}</p>
           <p className="text-xs text-muted-foreground">

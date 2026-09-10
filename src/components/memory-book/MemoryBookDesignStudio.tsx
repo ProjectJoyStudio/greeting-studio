@@ -380,6 +380,14 @@ export function MemoryBookDesignStudio({
         </div>
       ) : null}
 
+      {/* Photos, text and decorations placed ON the chosen cover. The cover
+          design itself, its variants and its attempts stay untouched. */}
+      {stage === "cover" && selected ? (
+        <div className="border-t border-border/60 pt-6">
+          <MemoryBookPageEditor bookId={bookId} coverMode leafBackgroundUrl={selected.url} />
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-3 border-t border-border/60 pt-4">
         {stage === "cover" && state.cover.selectedId ? (
           <Button variant="outline" onClick={() => void goToStage("leaf")} disabled={busy}>

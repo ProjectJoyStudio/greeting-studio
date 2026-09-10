@@ -4,6 +4,9 @@ import type { Dict, Lang } from "../types";
 export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   en: {
     mbe_stage: "Book pages",
+    mbe_cover_title: "Decorate the front cover",
+    mbe_cover_hint:
+      "Add your own photos, text and decorations on top of the chosen cover. Everything is saved automatically.",
     mbe_title: "Internal pages",
     mbe_hint:
       "Decide what every internal page of your book contains. Everything is saved automatically.",
@@ -82,6 +85,9 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   },
   ru: {
     mbe_stage: "Страницы книги",
+    mbe_cover_title: "Оформление обложки",
+    mbe_cover_hint:
+      "Добавьте на выбранную обложку свои фотографии, текст и украшения. Всё сохраняется автоматически.",
     mbe_title: "Внутренние страницы",
     mbe_hint:
       "Решите, что будет на каждой внутренней странице книги. Всё сохраняется автоматически.",
@@ -161,6 +167,9 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   },
   uk: {
     mbe_stage: "Сторінки книги",
+    mbe_cover_title: "Оформлення обкладинки",
+    mbe_cover_hint:
+      "Додайте на вибрану обкладинку свої фотографії, текст і прикраси. Усе зберігається автоматично.",
     mbe_title: "Внутрішні сторінки",
     mbe_hint:
       "Вирішіть, що буде на кожній внутрішній сторінці книги. Усе зберігається автоматично.",
@@ -240,6 +249,9 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   },
   pl: {
     mbe_stage: "Strony książki",
+    mbe_cover_title: "Ozdób okładkę",
+    mbe_cover_hint:
+      "Dodaj na wybranej okładce własne zdjęcia, tekst i ozdoby. Wszystko zapisuje się automatycznie.",
     mbe_title: "Strony wewnętrzne",
     mbe_hint:
       "Zdecyduj, co znajdzie się na każdej wewnętrznej stronie książki. Wszystko zapisuje się automatycznie.",
@@ -319,6 +331,9 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   },
   de: {
     mbe_stage: "Buchseiten",
+    mbe_cover_title: "Titelseite gestalten",
+    mbe_cover_hint:
+      "Fügen Sie auf dem gewählten Umschlag eigene Fotos, Texte und Verzierungen hinzu. Alles wird automatisch gespeichert.",
     mbe_title: "Innenseiten",
     mbe_hint:
       "Legen Sie fest, was auf jeder Innenseite Ihres Buches steht. Alles wird automatisch gespeichert.",
@@ -398,6 +413,9 @@ export const MEMORY_BOOK_PAGES_I18N: Record<Lang, Dict> = {
   },
   fr: {
     mbe_stage: "Pages du livre",
+    mbe_cover_title: "Décorez la couverture",
+    mbe_cover_hint:
+      "Ajoutez vos photos, votre texte et des décorations sur la couverture choisie. Tout est enregistré automatiquement.",
     mbe_title: "Pages intérieures",
     mbe_hint:
       "Décidez du contenu de chaque page intérieure de votre livre. Tout est enregistré automatiquement.",
