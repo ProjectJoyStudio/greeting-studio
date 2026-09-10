@@ -14,6 +14,7 @@ import {
   purchaseMemoryBookGenerations,
   saveMemoryBookDescription,
   selectMemoryBookDesign,
+  setMemoryBookBackCoverDesign,
   setMemoryBookStage,
   type MemoryBookLibraryItem,
 } from "@/lib/memory-book/designs.functions";
