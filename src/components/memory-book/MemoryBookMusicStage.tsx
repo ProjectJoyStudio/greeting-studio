@@ -264,6 +264,8 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
                 );
               })}
             </ul>
+            )}
+            </>
           )}
         </div>
       ) : (
