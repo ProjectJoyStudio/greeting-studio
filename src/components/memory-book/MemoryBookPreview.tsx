@@ -98,31 +98,51 @@ function PhotoComposition({
 }
 
 /**
- * A photo frame only enlarges on a deliberate double click / double tap.
- * A press that moves is a page-turn gesture and never opens the photo, and
- * the press is passed on to the book so the leaf can be dragged from here.
+ * The gesture layer of one page face.
+ *
+ * Mouse (unchanged): a press that never moves belongs to the page, a second
+ * click within 400 ms enlarges it, a press that moves drags the leaf.
+ *
+ * Touch: one tap turns the page, a second tap within 300 ms cancels that
+ * pending turn and enlarges the page instead, and any finger movement drops
+ * both and lets the book's own physical turn take over.
  */
 function PhotoTapLayer({
   label,
+  canOpen,
   onOpen,
+  onTurn,
   onCancelTurn,
 }: {
   label: string;
+  canOpen: boolean;
   onOpen: () => void;
+  onTurn: (direction: -1 | 1) => void;
   onCancelTurn: () => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
   const lastTap = useRef(0);
+  const lastTouch = useRef(0);
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openRef = useRef(onOpen);
   openRef.current = onOpen;
+  const turnRef = useRef(onTurn);
+  turnRef.current = onTurn;
+  const canOpenRef = useRef(canOpen);
+  canOpenRef.current = canOpen;
   const cancelRef = useRef(onCancelTurn);
   cancelRef.current = onCancelTurn;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    const clearPending = () => {
+      if (pending.current) clearTimeout(pending.current);
+      pending.current = null;
+    };
 
     const begin = (x: number, y: number) => {
       start.current = { x, y };
@@ -131,12 +151,17 @@ function PhotoTapLayer({
     const track = (x: number, y: number) => {
       const s = start.current;
       if (!s) return;
-      if (Math.abs(x - s.x) > 8 || Math.abs(y - s.y) > 8) moved.current = true;
+      if (Math.abs(x - s.x) > 8 || Math.abs(y - s.y) > 8) {
+        moved.current = true;
+        // Movement is a page-turn gesture: nothing may be waiting to fire.
+        clearPending();
+        lastTap.current = 0;
+      }
     };
     /**
-     * A press that never moved is photo business only. The started press is
-     * cancelled inside the turn engine itself, so no turn can be waiting to
-     * happen later — for example while the enlarged photo is being closed.
+     * A mouse press that never moved is page business only. The started press
+     * is cancelled inside the turn engine itself, so no turn can be waiting to
+     * happen later — for example while the enlarged page is being closed.
      */
     const finish = () => {
       if (!start.current) return;
@@ -146,7 +171,7 @@ function PhotoTapLayer({
       const now = Date.now();
       if (now - lastTap.current < 400) {
         lastTap.current = 0;
-        openRef.current();
+        if (canOpenRef.current) openRef.current();
       } else {
         lastTap.current = now;
       }
@@ -155,6 +180,9 @@ function PhotoTapLayer({
     const onMouseDown = (e: MouseEvent) => begin(e.clientX, e.clientY);
     const onMouseMove = (e: MouseEvent) => track(e.clientX, e.clientY);
     const onTouchStart = (e: TouchEvent) => {
+      lastTouch.current = Date.now();
+      // A second finger press cancels the turn the first tap was waiting for.
+      clearPending();
       const t = e.changedTouches[0];
       if (t) begin(t.clientX, t.clientY);
     };
@@ -162,29 +190,60 @@ function PhotoTapLayer({
       const t = e.changedTouches[0];
       if (t) track(t.clientX, t.clientY);
     };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!start.current) return;
+      const point = e.changedTouches[0];
+      start.current = null;
+      if (moved.current) return;
+      // A still finger is ours: the book's own tap handling must not see it.
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
+      cancelRef.current();
+      const now = Date.now();
+      if (now - lastTap.current < 300) {
+        lastTap.current = 0;
+        clearPending();
+        if (canOpenRef.current) openRef.current();
+        return;
+      }
+      lastTap.current = now;
+      const rect = el.getBoundingClientRect();
+      const x = point?.clientX ?? rect.left + rect.width / 2;
+      const direction: -1 | 1 = x < rect.left + rect.width / 2 ? -1 : 1;
+      pending.current = setTimeout(() => {
+        pending.current = null;
+        turnRef.current(direction);
+      }, 300);
+    };
+    // A click that follows a tap is the browser's echo of that same tap.
+    const swallowClick = (e: Event) => {
+      e.stopPropagation();
+      if (Date.now() - lastTouch.current < 800) e.preventDefault();
+    };
 
     el.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     el.addEventListener("mouseup", finish);
-    const swallowClick = (e: Event) => e.stopPropagation();
     el.addEventListener("click", swallowClick);
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", finish);
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
 
     return () => {
+      clearPending();
       el.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       el.removeEventListener("mouseup", finish);
       el.removeEventListener("click", swallowClick);
       el.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", finish);
+      el.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
   return <div ref={ref} role="presentation" aria-label={label} className="absolute inset-0" />;
 }
+
 
 
 /** One face of the book: the cover, one saved internal page, or the back. */
