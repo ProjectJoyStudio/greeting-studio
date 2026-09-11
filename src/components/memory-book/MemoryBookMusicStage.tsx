@@ -52,6 +52,21 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Customer-side browsing helper only: "all" is never stored on a track.
+  const [category, setCategory] = useState<string>("all");
+
+  const categories = useMemo(() => {
+    const used = new Set((tracks ?? []).map((track) => track.category));
+    return MUSIC_CATEGORIES.filter((c) => used.has(c));
+  }, [tracks]);
+
+  const visibleTracks = useMemo(
+    () =>
+      category === "all"
+        ? (tracks ?? [])
+        : (tracks ?? []).filter((track) => track.category === category),
+    [tracks, category],
+  );
 
   useEffect(() => {
     let active = true;
