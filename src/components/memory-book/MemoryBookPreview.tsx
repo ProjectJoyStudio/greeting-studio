@@ -859,6 +859,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     library,
     onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
     onOpenVideo: (url: string) => setVideoUrl(url),
+    onTurn: (direction: -1 | 1) => (direction < 0 ? flipPrev() : flipNext()),
+
     onCancelTurn: settleBook,
   };
 
