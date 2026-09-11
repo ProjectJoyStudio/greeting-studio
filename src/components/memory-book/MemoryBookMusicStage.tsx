@@ -199,8 +199,28 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
           ) : tracks.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("mbmu_library_empty")}</p>
           ) : (
+            <>
+            <div className="flex flex-wrap gap-2">
+              {["all", ...categories].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={`max-w-full truncate rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                    category === c
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/60 hover:border-primary/40"
+                  }`}
+                >
+                  {c === "all" ? t("mus_filter_all") : t(`mus_cat_${c}`)}
+                </button>
+              ))}
+            </div>
+            {visibleTracks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("mbmu_library_empty")}</p>
+            ) : (
             <ul className="space-y-2">
-              {tracks.map((track) => {
+              {visibleTracks.map((track) => {
                 const chosen = state.source === "library" && state.trackId === track.id;
                 return (
                   <li
