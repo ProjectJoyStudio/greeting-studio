@@ -278,15 +278,24 @@ function BookFace({
     const url = face.kind === "back" ? backCoverUrl : coverUrl;
     return (
       <div
-        className="h-full w-full bg-muted"
+        className="relative h-full w-full bg-muted"
         style={{
           backgroundImage: url ? `url(${url})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
-      />
+      >
+        <PhotoTapLayer
+          label={t("mbpv_open_photos")}
+          canOpen={false}
+          onOpen={() => undefined}
+          onTurn={onTurn}
+          onCancelTurn={onCancelTurn}
+        />
+      </div>
     );
   }
+
   if (face.kind === "blank") {
     return (
       <div className="flex h-full w-full items-center justify-center bg-muted/60 text-sm text-muted-foreground">
