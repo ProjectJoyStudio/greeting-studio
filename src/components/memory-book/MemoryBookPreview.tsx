@@ -98,6 +98,66 @@ function PhotoComposition({
 }
 
 /**
+ * Everything the finger does on a page video belongs to the video alone: the
+ * book underneath must never see it, so it can neither turn nor drag. A second
+ * tap within 400 ms opens the existing full-screen video.
+ */
+function VideoTouchGuard({
+  onOpen,
+  children,
+  className,
+  style,
+}: {
+  onOpen: () => void;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const openRef = useRef(onOpen);
+  openRef.current = onOpen;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const lastTap = { time: 0 };
+    const swallow = (e: Event) => e.stopPropagation();
+    const onTouchEnd = (e: TouchEvent) => {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTap.time < 400) {
+        lastTap.time = 0;
+        if (e.cancelable) e.preventDefault();
+        openRef.current();
+        return;
+      }
+      lastTap.time = now;
+    };
+    const events: Array<[string, EventListener, AddEventListenerOptions?]> = [
+      ["mousedown", swallow],
+      ["mouseup", swallow],
+      ["click", swallow],
+      ["pointerdown", swallow],
+      ["pointerup", swallow],
+      ["touchstart", swallow, { passive: true }],
+      ["touchmove", swallow, { passive: true }],
+      ["touchend", onTouchEnd as EventListener, { passive: false }],
+    ];
+    for (const [name, handler, options] of events)
+      el.addEventListener(name, handler, options);
+    return () => {
+      for (const [name, handler] of events) el.removeEventListener(name, handler);
+    };
+  }, []);
+
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * The gesture layer of one page face.
  *
  * Mouse (unchanged): a press that never moves belongs to the page, a second
@@ -375,7 +435,8 @@ function BookFace({
       ) : null}
 
       {video ? (
-        <div
+        <VideoTouchGuard
+          onOpen={() => onOpenVideo?.(video.url)}
           className="absolute overflow-hidden rounded-xl bg-black shadow-lg"
           style={{
             left: `${videoFrame.x}%`,
@@ -397,15 +458,16 @@ function BookFace({
               aria-label={t("mbpv_play")}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
+              onPointerUp={(e) => {
+                // Mouse keeps its single click; a finger uses the double tap.
                 e.stopPropagation();
-                onOpenVideo?.(video.url);
+                if (e.pointerType === "mouse") onOpenVideo?.(video.url);
               }}
             >
               <Play className="h-6 w-6" aria-hidden />
             </button>
           </div>
-        </div>
+        </VideoTouchGuard>
       ) : null}
 
       {page.decorations.map((item) => {
