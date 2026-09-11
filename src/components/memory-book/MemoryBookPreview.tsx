@@ -467,7 +467,7 @@ function BookFace({
               <Play className="h-6 w-6" aria-hidden />
             </button>
           </div>
-        </div>
+        </VideoTouchGuard>
       ) : null}
 
       {page.decorations.map((item) => {
