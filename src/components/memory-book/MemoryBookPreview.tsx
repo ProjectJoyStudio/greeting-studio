@@ -800,10 +800,11 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     onCancelTurn: settleBook,
   };
 
-  const pageWidth = Math.max(
-    220,
-    Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
-  );
+  // The page is limited by the free width and, just as strictly, by the free
+  // height, so the whole book always stays inside the screen.
+  const widthLimit = Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460);
+  const heightLimit = availableHeight > 0 ? Math.floor((availableHeight * 3) / 4) : widthLimit;
+  const pageWidth = Math.max(160, Math.min(widthLimit, heightLimit));
   const pageHeight = Math.round((pageWidth * 4) / 3);
 
 
