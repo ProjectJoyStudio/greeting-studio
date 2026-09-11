@@ -133,7 +133,14 @@ function VideoTouchGuard({
       }
       lastTap.time = now;
     };
+    // Desktop: a double-click over the video opens the same full-screen viewer.
+    const onDoubleClick = (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      openRef.current();
+    };
     const events: Array<[string, EventListener, AddEventListenerOptions?]> = [
+      ["dblclick", onDoubleClick as EventListener],
       ["mousedown", swallow],
       ["mouseup", swallow],
       ["click", swallow],
