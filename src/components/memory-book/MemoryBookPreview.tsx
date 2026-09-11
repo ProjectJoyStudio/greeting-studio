@@ -435,7 +435,8 @@ function BookFace({
       ) : null}
 
       {video ? (
-        <div
+        <VideoTouchGuard
+          onOpen={() => onOpenVideo?.(video.url)}
           className="absolute overflow-hidden rounded-xl bg-black shadow-lg"
           style={{
             left: `${videoFrame.x}%`,
@@ -457,9 +458,10 @@ function BookFace({
               aria-label={t("mbpv_play")}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
+              onPointerUp={(e) => {
+                // Mouse keeps its single click; a finger uses the double tap.
                 e.stopPropagation();
-                onOpenVideo?.(video.url);
+                if (e.pointerType === "mouse") onOpenVideo?.(video.url);
               }}
             >
               <Play className="h-6 w-6" aria-hidden />
