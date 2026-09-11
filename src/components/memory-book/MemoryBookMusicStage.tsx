@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Music, Pause, Play } from "lucide-react";
 
@@ -14,6 +14,7 @@ import {
   selectMemoryBookMusicVariant,
 } from "@/lib/memory-book/music.functions";
 import type { MemoryBookMusicState } from "@/lib/memory-book/music";
+import { MUSIC_CATEGORIES } from "@/lib/music/types";
 
 function fill(text: string, vars: Record<string, string | number>) {
   return Object.entries(vars).reduce(
@@ -51,6 +52,21 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Customer-side browsing helper only: "all" is never stored on a track.
+  const [category, setCategory] = useState<string>("all");
+
+  const categories = useMemo(() => {
+    const used = new Set((tracks ?? []).map((track) => track.category));
+    return MUSIC_CATEGORIES.filter((c) => used.has(c));
+  }, [tracks]);
+
+  const visibleTracks = useMemo(
+    () =>
+      category === "all"
+        ? (tracks ?? [])
+        : (tracks ?? []).filter((track) => track.category === category),
+    [tracks, category],
+  );
 
   useEffect(() => {
     let active = true;
@@ -183,8 +199,28 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
           ) : tracks.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("mbmu_library_empty")}</p>
           ) : (
+            <>
+            <div className="flex flex-wrap gap-2">
+              {["all", ...categories].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={`max-w-full truncate rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                    category === c
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border/60 hover:border-primary/40"
+                  }`}
+                >
+                  {c === "all" ? t("mus_filter_all") : t(`mus_cat_${c}`)}
+                </button>
+              ))}
+            </div>
+            {visibleTracks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("mbmu_library_empty")}</p>
+            ) : (
             <ul className="space-y-2">
-              {tracks.map((track) => {
+              {visibleTracks.map((track) => {
                 const chosen = state.source === "library" && state.trackId === track.id;
                 return (
                   <li
@@ -228,6 +264,8 @@ export function MemoryBookMusicStage({ bookId }: { bookId: string }) {
                 );
               })}
             </ul>
+            )}
+            </>
           )}
         </div>
       ) : (
