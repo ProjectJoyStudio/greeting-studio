@@ -257,6 +257,7 @@ function BookFace({
   library,
   onOpenPhotos,
   onOpenVideo,
+  onTurn,
   onCancelTurn,
 }: {
   face: Face;
@@ -268,6 +269,7 @@ function BookFace({
   library: MemoryBookDecoration[];
   onOpenPhotos?: (page: MemoryBookPage) => void;
   onOpenVideo?: (url: string) => void;
+  onTurn: (direction: -1 | 1) => void;
   onCancelTurn: () => void;
 }) {
   const { t } = useI18n();
