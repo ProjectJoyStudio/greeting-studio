@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Music, Pause, Play } from "lucide-react";
 
@@ -14,6 +14,7 @@ import {
   selectMemoryBookMusicVariant,
 } from "@/lib/memory-book/music.functions";
 import type { MemoryBookMusicState } from "@/lib/memory-book/music";
+import { MUSIC_CATEGORIES } from "@/lib/music/types";
 
 function fill(text: string, vars: Record<string, string | number>) {
   return Object.entries(vars).reduce(
