@@ -421,6 +421,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   const [auto, setAuto] = useState(false);
   const [position, setPosition] = useState(0);
   const [width, setWidth] = useState(0);
+  const [availableHeight, setAvailableHeight] = useState(0);
   const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
   // Background music of this exact book: one composition, playing in a loop.
   const [musicUrl, setMusicUrl] = useState<string | null>(null);
@@ -501,13 +502,35 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
   }, []);
 
   // The book is scaled to the space available, keeping the page proportions.
+  // Both the free width and the free height below the header are measured, so
+  // a phone held sideways still shows the whole book without scrolling.
   useEffect(() => {
     const el = wrapper.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+
+    const measure = () => {
+      setWidth(el.clientWidth);
+      const rect = el.getBoundingClientRect();
+      const vv = typeof window !== "undefined" ? window.visualViewport : null;
+      const viewH = vv?.height ?? window.innerHeight;
+      // Space kept for the buttons under the book; the book is expected to sit
+      // right below the header, so a long scroll position is ignored.
+      const top = Math.max(0, Math.min(rect.top, 96));
+      setAvailableHeight(Math.max(220, Math.round(viewH - top - 130)));
+    };
+
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
-    setWidth(el.clientWidth);
-    return () => observer.disconnect();
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+    };
   }, [ready]);
 
   // Turning a leaf by hand should not require dragging it across the whole
@@ -777,10 +800,11 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
     onCancelTurn: settleBook,
   };
 
-  const pageWidth = Math.max(
-    220,
-    Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460),
-  );
+  // The page is limited by the free width and, just as strictly, by the free
+  // height, so the whole book always stays inside the screen.
+  const widthLimit = Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460);
+  const heightLimit = availableHeight > 0 ? Math.floor((availableHeight * 3) / 4) : widthLimit;
+  const pageWidth = Math.max(160, Math.min(widthLimit, heightLimit));
   const pageHeight = Math.round((pageWidth * 4) / 3);
 
 
