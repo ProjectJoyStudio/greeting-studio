@@ -317,22 +317,23 @@ function BookFace({
       }}
     >
       {hasPhotos ? (
-        <>
-          <PhotoComposition
-            layoutId={page.layout}
-            slots={page.slots}
-            frame={frame}
-            photos={photos}
-          />
-          {onOpenPhotos ? (
-            <PhotoTapLayer
-              label={t("mbpv_open_photos")}
-              onOpen={() => onOpenPhotos(page)}
-              onCancelTurn={onCancelTurn}
-            />
-          ) : null}
-        </>
+        <PhotoComposition
+          layoutId={page.layout}
+          slots={page.slots}
+          frame={frame}
+          photos={photos}
+        />
       ) : null}
+      <PhotoTapLayer
+        label={t("mbpv_open_photos")}
+        canOpen={Boolean(hasPhotos && onOpenPhotos)}
+        onOpen={() => {
+          if (onOpenPhotos) onOpenPhotos(page);
+        }}
+        onTurn={onTurn}
+        onCancelTurn={onCancelTurn}
+      />
+
 
       {page.text.trim() ? (
         <div
