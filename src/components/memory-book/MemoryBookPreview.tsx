@@ -98,6 +98,66 @@ function PhotoComposition({
 }
 
 /**
+ * Everything the finger does on a page video belongs to the video alone: the
+ * book underneath must never see it, so it can neither turn nor drag. A second
+ * tap within 400 ms opens the existing full-screen video.
+ */
+function VideoTouchGuard({
+  onOpen,
+  children,
+  className,
+  style,
+}: {
+  onOpen: () => void;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const openRef = useRef(onOpen);
+  openRef.current = onOpen;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const lastTap = { time: 0 };
+    const swallow = (e: Event) => e.stopPropagation();
+    const onTouchEnd = (e: TouchEvent) => {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTap.time < 400) {
+        lastTap.time = 0;
+        if (e.cancelable) e.preventDefault();
+        openRef.current();
+        return;
+      }
+      lastTap.time = now;
+    };
+    const events: Array<[string, EventListener, AddEventListenerOptions?]> = [
+      ["mousedown", swallow],
+      ["mouseup", swallow],
+      ["click", swallow],
+      ["pointerdown", swallow],
+      ["pointerup", swallow],
+      ["touchstart", swallow, { passive: true }],
+      ["touchmove", swallow, { passive: true }],
+      ["touchend", onTouchEnd as EventListener, { passive: false }],
+    ];
+    for (const [name, handler, options] of events)
+      el.addEventListener(name, handler, options);
+    return () => {
+      for (const [name, handler] of events) el.removeEventListener(name, handler);
+    };
+  }, []);
+
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * The gesture layer of one page face.
  *
  * Mouse (unchanged): a press that never moves belongs to the page, a second
