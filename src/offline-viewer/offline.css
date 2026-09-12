@@ -1,0 +1,13 @@
+/* The offline book reuses exactly the same styling as the online book. */
+@import "../styles.css";
+
+html,
+body,
+#joy-book {
+  min-height: 100%;
+  margin: 0;
+}
+
+#joy-book {
+  padding: 1.5rem 1rem 2.5rem;
+}
