@@ -26,7 +26,7 @@ if (host && data) {
   createRoot(host).render(
     <StrictMode>
       <I18nProvider>
-        <div className="mx-auto w-full max-w-5xl">
+        <div className="joy-book-frame mx-auto w-full max-w-5xl">
           <MemoryBookBook data={data} />
         </div>
       </I18nProvider>
