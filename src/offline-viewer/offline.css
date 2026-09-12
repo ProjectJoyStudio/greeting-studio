@@ -2,12 +2,23 @@
 @import "../styles.css";
 
 html,
-body,
-#joy-book {
-  min-height: 100%;
+body {
+  height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
+/* The offline page has no site header, so the book area is pinned to a fixed,
+   full-height, non-scrolling frame. The book wrapper therefore always starts
+   exactly 96px below the top of the window, the same stable offset the online
+   book measures. Nothing can shift it while a leaf is turning. */
 #joy-book {
-  padding: 1.5rem 1rem 2.5rem;
+  position: fixed;
+  inset: 0;
+  padding: 96px 1rem 0;
+  overflow: hidden;
+}
+
+#joy-book .joy-book-frame {
+  height: 100%;
 }
