@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Pause, Play, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
