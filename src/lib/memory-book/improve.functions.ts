@@ -15,7 +15,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { MEMORY_BOOK_DESIGN_BUCKET } from "./designs";
-import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS, type MemoryBookImproveState } from "./pages";
+import {
+  MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+  MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+  MEMORY_BOOK_IMPROVE_PAGE_CREDITS,
+  type MemoryBookImproveState,
+} from "./pages";
 
 type Row = Record<string, unknown>;
 
@@ -37,7 +42,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, internal_pages, package_code, credits_spent")
+    .select("id, internal_pages, package_code, credits_spent, improve_pack_remaining")
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
@@ -46,6 +51,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
     internalPages: Number(data.internal_pages ?? 0),
     packageCode: String(data.package_code ?? ""),
     creditsSpent: Number(data.credits_spent ?? 0),
+    packRemaining: Number(data.improve_pack_remaining ?? 0),
   };
 }
 
@@ -61,6 +67,7 @@ export async function improveStateOf(
   bookId: string,
   packageCode: string,
   pageIndex: number,
+  packRemaining = 0,
 ): Promise<MemoryBookImproveState> {
   const db = await admin();
   const { data } = await db
@@ -75,8 +82,10 @@ export async function improveStateOf(
     distinctUsed: rows.length,
     pageIncludedUsed: rows.some((r) => Number(r.page_index) === pageIndex),
     priceCredits: MEMORY_BOOK_IMPROVE_PAGE_CREDITS,
+    packRemaining,
   };
 }
+
 
 async function signedBackground(bucket: string, path: string): Promise<string | null> {
   const db = await admin();
