@@ -108,9 +108,60 @@ async function cleanupWorkingMaterials(bookId: string, keep: string[]) {
   }
 }
 
+/**
+ * Removes ONLY the page variants of a finished book that the book itself does
+ * not use. The active background of every page is always kept, and anything
+ * uncertain is kept as well.
+ */
+async function cleanupUnusedPageBackgrounds(userId: string, bookId: string) {
+  const db = await admin();
+  const { data: pageRows, error: pageError } = await db
+    .from("memory_book_pages")
+    .select("background_path")
+    .eq("user_id", userId)
+    .eq("book_id", bookId);
+  // Without a reliable list of pages nothing is removed.
+  if (pageError) return;
+  const used = new Set(
+    ((pageRows ?? []) as unknown as Row[])
+      .map((r) => (typeof r.background_path === "string" ? r.background_path : ""))
+      .filter((p) => p.length > 0),
+  );
+
+  const { data: variantRows, error: variantError } = await db
+    .from("memory_book_page_backgrounds")
+    .select("id, bucket, path")
+    .eq("user_id", userId)
+    .eq("book_id", bookId);
+  if (variantError) return;
+
+  const removable = ((variantRows ?? []) as unknown as Row[]).filter(
+    (r) => typeof r.path === "string" && r.path.length > 0 && !used.has(String(r.path)),
+  );
+  if (removable.length === 0) return;
+
+  const paths = removable
+    .filter((r) => r.bucket === MEMORY_BOOK_DESIGN_BUCKET)
+    .map((r) => String(r.path));
+  if (paths.length > 0) {
+    try {
+      await db.storage.from(MEMORY_BOOK_DESIGN_BUCKET).remove(paths);
+    } catch {
+      /* keeping the files is safer than failing after completion */
+    }
+  }
+  const ids = removable.map((r) => String(r.id));
+  await db
+    .from("memory_book_page_backgrounds")
+    .delete()
+    .in("id", ids)
+    .eq("book_id", bookId)
+    .eq("user_id", userId);
+}
+
 export interface MemoryBookCompletionResult {
   ok: boolean;
-  error?: "not_found";
+  error?: "not_found" | "failed";
   completedAt?: string;
   retentionExpiresAt?: string;
   alreadyCompleted?: boolean;
