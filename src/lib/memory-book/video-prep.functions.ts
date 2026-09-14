@@ -167,6 +167,8 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
     (input: {
       bookId: string;
       sourceMaterialId: string;
+      /** Every source video that really took part in this assembly. */
+      sourceMaterialIds?: string[];
       path: string;
       fileName?: string;
       mimeType?: string;
@@ -175,6 +177,9 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
     }) => ({
       bookId: String(input?.bookId ?? "").slice(0, 64),
       sourceMaterialId: String(input?.sourceMaterialId ?? "").slice(0, 64),
+      sourceMaterialIds: Array.isArray(input?.sourceMaterialIds)
+        ? input.sourceMaterialIds.slice(0, 50).map((id) => String(id ?? "").slice(0, 64)).filter(Boolean)
+        : [],
       path: String(input?.path ?? "").slice(0, 400),
       fileName: String(input?.fileName ?? "").slice(0, 200),
       mimeType: String(input?.mimeType ?? "").slice(0, 120),
@@ -182,6 +187,7 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
       durationSeconds: Number(input?.durationSeconds ?? 0),
     }),
   )
+
   .handler(
     async ({
       data,
