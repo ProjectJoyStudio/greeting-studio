@@ -100,14 +100,16 @@ export interface ImprovePageResult {
     | "bad_page"
     | "empty_prompt"
     | "page_limit"
+    | "needs_pack"
     | "insufficient_credits"
     | "failed";
-  /** Whether this generation used the included allowance or one credit. */
+  /** Whether this variant came from the package allowance or a paid bundle. */
   mode?: "included" | "paid";
   backgroundUrl?: string | null;
   improve?: MemoryBookImproveState;
   creditsSpent?: number;
 }
+
 
 /**
  * Creates one new background for the current internal page. A technical
