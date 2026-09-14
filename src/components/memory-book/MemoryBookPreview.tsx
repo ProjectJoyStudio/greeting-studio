@@ -33,7 +33,14 @@ function fill(text: string, vars: Record<string, string | number>) {
  * The book itself lives in MemoryBookBook, which receives already-loaded data;
  * this component is only the part that fetches and saves.
  */
-export function MemoryBookPreview({ bookId }: { bookId: string }) {
+export function MemoryBookPreview({
+  bookId,
+  readOnly = false,
+}: {
+  bookId: string;
+  /** A finished book is only read: the leaf order can no longer be changed. */
+  readOnly?: boolean;
+}) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
@@ -183,7 +190,8 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
         }}
       />
 
-      {/* Order of the leaves — both pages of a leaf always move together. */}
+      {/* Order of the leaves — hidden once the book is finished. */}
+      {readOnly ? null : (
       <div className="space-y-3 rounded-2xl border border-border/70 bg-card p-4">
         <h2 className="font-display text-lg font-semibold">{t("mbpv_order_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("mbpv_order_hint")}</p>
@@ -217,6 +225,7 @@ export function MemoryBookPreview({ bookId }: { bookId: string }) {
         </ul>
         {orderMessage ? <p className="text-sm text-muted-foreground">{orderMessage}</p> : null}
       </div>
+      )}
     </div>
   );
 }

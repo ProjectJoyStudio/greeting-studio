@@ -93,6 +93,13 @@ function MemoryBookCreatePage() {
     };
   }, [bookId, checkAccess]);
 
+  // A finished book is never editable again: an old or direct editor link
+  // sends the customer straight to the existing read-only viewer.
+  useEffect(() => {
+    if (state !== "allowed" || book?.status !== "completed") return;
+    void navigate({ to: "/memory-book-preview", search: { book: book.id }, replace: true });
+  }, [state, book, navigate]);
+
   useEffect(() => {
     if (state !== "denied") return;
     const timer = setTimeout(() => {
@@ -134,7 +141,7 @@ function MemoryBookCreatePage() {
           )}
         </div>
 
-        {state === "allowed" && book ? (
+        {state === "allowed" && book && book.status !== "completed" ? (
           <>
             <MemoryBookCreditStatus bookId={book.id} creditsSpent={book.creditsSpent} />
             <MemoryBookDesignStudio

@@ -22,14 +22,19 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, leaves, internal_pages, credits_spent, leaf_order")
+    .select("id, leaves, internal_pages, credits_spent, leaf_order, status")
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
   if (!data || Number(data.credits_spent ?? 0) <= 0) return null;
   const internalPages = Number(data.internal_pages ?? 0);
   const leaves = Number(data.leaves ?? 0) || Math.ceil(internalPages / 2);
-  return { leaves, internalPages, stored: data.leaf_order };
+  return {
+    leaves,
+    internalPages,
+    stored: data.leaf_order,
+    completed: String(data.status ?? "") === "completed",
+  };
 }
 
 /** A clean 1…n order, repairing anything unusable that may be stored. */
@@ -75,6 +80,8 @@ export const saveMemoryBookLeafOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; order: number[] }> => {
     const book = await ownedBook(context, data.bookId);
     if (!book) return { ok: false, order: [] };
+    // A finished book is read-only: its leaf order can never change again.
+    if (book.completed) return { ok: false, order: normalizeOrder(book.stored, book.leaves) };
     const order = normalizeOrder(data.order, book.leaves);
     const db = context.supabase as unknown as {
       from: (table: string) => {
