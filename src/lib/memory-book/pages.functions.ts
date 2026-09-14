@@ -101,6 +101,8 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       /** How many different pages this package may still improve for free. */
       improveAllowance: number;
       improveDistinctUsed: number;
+      /** Already paid page variants of this book that are still unused. */
+      improvePackRemaining: number;
     }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) {
@@ -111,6 +113,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
           videoCapacity: 0,
           improveAllowance: 0,
           improveDistinctUsed: 0,
+          improvePackRemaining: 0,
         };
       }
       const db = await admin();
