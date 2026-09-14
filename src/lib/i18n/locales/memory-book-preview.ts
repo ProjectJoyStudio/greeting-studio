@@ -28,6 +28,7 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Play the book",
     mbpv_auto_pause: "Pause",
     mbpv_close: "Close",
+    mbpv_restart: "Start over",
   },
   ru: {
     mbpv_open: "Посмотреть книгу",
@@ -56,6 +57,7 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Листать автоматически",
     mbpv_auto_pause: "Пауза",
     mbpv_close: "Закрыть",
+    mbpv_restart: "С начала",
   },
   uk: {
     mbpv_open: "Переглянути книгу",
@@ -84,6 +86,7 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Гортати автоматично",
     mbpv_auto_pause: "Пауза",
     mbpv_close: "Закрити",
+    mbpv_restart: "Спочатку",
   },
   pl: {
     mbpv_open: "Zobacz książkę",
@@ -112,6 +115,7 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Przewracaj automatycznie",
     mbpv_auto_pause: "Pauza",
     mbpv_close: "Zamknij",
+    mbpv_restart: "Od początku",
   },
   de: {
     mbpv_open: "Buch ansehen",
@@ -140,6 +144,7 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Automatisch blättern",
     mbpv_auto_pause: "Pause",
     mbpv_close: "Schließen",
+    mbpv_restart: "Von vorn",
   },
   fr: {
     mbpv_open: "Voir le livre",
@@ -168,5 +173,6 @@ export const MEMORY_BOOK_PREVIEW_I18N: Record<Lang, Dict> = {
     mbpv_auto_play: "Tourner automatiquement",
     mbpv_auto_pause: "Pause",
     mbpv_close: "Fermer",
+    mbpv_restart: "Depuis le début",
   },
 };
