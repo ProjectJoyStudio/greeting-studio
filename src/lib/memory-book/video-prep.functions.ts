@@ -262,23 +262,34 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
         .maybeSingle();
       if (!verified) return { ok: false, error: "failed" };
 
-      // Only now the long original working video may be removed.
+      // Only now the long original working videos may be removed — and only
+      // the ones that really took part in this assembly. Every other video of
+      // the Materials page stays untouched.
       let sourceRemoved = false;
-      try {
-        const { data: sourceRow } = await db
-          .from("memory_book_materials")
-          .select("id, bucket, path")
-          .eq("id", data.sourceMaterialId)
-          .eq("book_id", data.bookId)
-          .eq("user_id", context.userId)
-          .maybeSingle();
-        const row = sourceRow as unknown as Row | null;
-        if (row) {
+      const involved = Array.from(
+        new Set(
+          (data.sourceMaterialIds.length > 0
+            ? data.sourceMaterialIds
+            : [data.sourceMaterialId]
+          ).filter(Boolean),
+        ),
+      );
+      for (const involvedId of involved) {
+        try {
+          const { data: sourceRow } = await db
+            .from("memory_book_materials")
+            .select("id, bucket, path")
+            .eq("id", involvedId)
+            .eq("book_id", data.bookId)
+            .eq("user_id", context.userId)
+            .maybeSingle();
+          const row = sourceRow as unknown as Row | null;
+          if (!row) continue;
           await db.storage.from(text(row.bucket)).remove([text(row.path)]);
           const { error: delError } = await db
             .from("memory_book_materials")
             .delete()
-            .eq("id", data.sourceMaterialId)
+            .eq("id", involvedId)
             .eq("book_id", data.bookId)
             .eq("user_id", context.userId);
           if (!delError) {
@@ -287,21 +298,22 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
               .from("memory_book_video_edits")
               .delete()
               .eq("book_id", data.bookId)
-              .eq("source_material_id", data.sourceMaterialId)
+              .eq("source_material_id", involvedId)
               .eq("user_id", context.userId);
-            // A book page that still pointed at the removed working video now
+            // A book page that still pointed at a removed working video now
             // points at the prepared video instead.
             await db
               .from("memory_book_pages")
               .update({ video_material_id: materialId })
               .eq("book_id", data.bookId)
               .eq("user_id", context.userId)
-              .eq("video_material_id", data.sourceMaterialId);
+              .eq("video_material_id", involvedId);
           }
+        } catch {
+          // The prepared video is already safe; cleanup can be retried later.
         }
-      } catch {
-        // The prepared video is already safe; cleanup can be retried later.
       }
+
 
       return { ok: true, materialId, sourceRemoved };
     },
