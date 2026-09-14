@@ -51,11 +51,14 @@ function cleanFragments(value: unknown): MemoryBookVideoFragment[] {
     const start = Number(item?.start);
     const end = Number(item?.end);
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+    const sourceId = String(item?.sourceId ?? "").slice(0, 64);
     out.push({
       id: String(item?.id ?? "").slice(0, 64) || `${start}-${end}`,
+      ...(sourceId ? { sourceId } : {}),
       start: Number(Math.max(0, start).toFixed(2)),
       end: Number(Math.max(0, end).toFixed(2)),
     });
+
   }
   return out;
 }

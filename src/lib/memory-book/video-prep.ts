@@ -12,12 +12,15 @@ export const MEMORY_BOOK_FRAGMENT_MIN_SECONDS = 0.5;
 /** How long one picture and sound fade between two joined pieces lasts. */
 export const MEMORY_BOOK_FADE_SECONDS = 0.6;
 
-/** One manually chosen piece of the source video, with its own sound. */
+/** One manually chosen piece of a source video, with its own sound. */
 export interface MemoryBookVideoFragment {
   id: string;
   start: number;
   end: number;
+  /** Which source video this piece comes from. Missing = the first source. */
+  sourceId?: string;
 }
+
 
 export const fragmentLength = (fragment: MemoryBookVideoFragment) =>
   Math.max(0, fragment.end - fragment.start);
@@ -42,7 +45,9 @@ export function clampFragment(
   const end = Math.max(start + MEMORY_BOOK_FRAGMENT_MIN_SECONDS, rawEnd);
   return {
     id: fragment.id,
+    ...(fragment.sourceId ? { sourceId: fragment.sourceId } : {}),
     start: Number(start.toFixed(2)),
     end: Number(Math.min(limit, end).toFixed(2)),
   };
 }
+
