@@ -57,10 +57,10 @@ function MyMemoryBooksPage() {
       const res = await buildPlan({ data: { bookId: book.id } });
       if (!res.ok || !res.plan) throw new Error("no_plan");
       const { downloadOfflineBookPackage } = await import("@/lib/memory-book/offline-zip");
-      await downloadOfflineBookPackage(res.plan, ({ done: ready, total }) =>
+      const saved = await downloadOfflineBookPackage(res.plan, ({ done: ready, total }) =>
         setPercent(total > 0 ? Math.min(99, Math.round((ready / total) * 100)) : 0),
       );
-      setNotice(t("mbd_download_done"));
+      if (saved) setNotice(t("mbd_download_done"));
     } catch {
       setNotice(t("mbd_download_failed"));
     } finally {
