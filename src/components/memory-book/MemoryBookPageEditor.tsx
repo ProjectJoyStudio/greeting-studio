@@ -41,12 +41,16 @@ import {
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
 import {
+  buyMemoryBookImprovePack,
   improveMemoryBookPage,
   listMemoryBookPageBackgrounds,
   selectMemoryBookPageBackground,
   type MemoryBookPageBackground,
 } from "@/lib/memory-book/improve.functions";
-import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS } from "@/lib/memory-book/pages";
+import {
+  MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+  MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+} from "@/lib/memory-book/pages";
 
 /**
  * Which layer of the SAME page is being edited. Decorations are one more
