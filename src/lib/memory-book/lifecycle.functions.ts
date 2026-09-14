@@ -202,12 +202,10 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
     const keepDays = await retentionDays();
     const retentionExpiresAt = new Date(now.getTime() + keepDays * 86_400_000).toISOString();
 
-    const keep = [row.selected_cover_id, row.selected_leaf_id]
-      .filter((v): v is string => typeof v === "string" && v.length > 0);
-    await cleanupWorkingMaterials(data.bookId, keep);
-
+    // FIRST the finished book is written and verified. Nothing is removed
+    // before the completed state is safely stored.
     const db = await admin();
-    await db
+    const { error: saveError } = await db
       .from("memory_book_projects")
       .update({
         status: "completed",
@@ -219,6 +217,35 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
       } as never)
       .eq("id", data.bookId)
       .eq("user_id", context.userId);
+    if (saveError) return { ok: false, error: "failed" };
 
-    return { ok: true, completedAt: now.toISOString(), retentionExpiresAt };
+    const { data: saved } = await db
+      .from("memory_book_projects")
+      .select("status, completed_at, retention_expires_at")
+      .eq("id", data.bookId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const savedRow = saved as Row | null;
+    if (!savedRow || savedRow.status !== "completed") return { ok: false, error: "failed" };
+
+    // ONLY NOW the unused working pictures are removed. The chosen cover, the
+    // chosen leaf and every background the finished book uses are kept.
+    const keep = [row.selected_cover_id, row.selected_leaf_id]
+      .filter((v): v is string => typeof v === "string" && v.length > 0);
+    try {
+      await cleanupWorkingMaterials(data.bookId, keep);
+      await cleanupUnusedPageBackgrounds(context.userId, data.bookId);
+    } catch {
+      /* the book is already safely completed; cleanup may be retried later */
+    }
+
+    return {
+      ok: true,
+      completedAt:
+        typeof savedRow.completed_at === "string" ? savedRow.completed_at : now.toISOString(),
+      retentionExpiresAt:
+        typeof savedRow.retention_expires_at === "string"
+          ? savedRow.retention_expires_at
+          : retentionExpiresAt,
+    };
   });
