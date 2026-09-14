@@ -398,11 +398,15 @@ export function MemoryBookPageEditor({
     : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const improveIncludedUsed = page.improveIncludedUsed === true;
   const improveFreeLeft = Math.max(improveAllowance - improveDistinctUsed, 0);
-  const improveBlocked = !improveIncludedUsed && improveFreeLeft <= 0;
+  /** This page may still use one of the variants included in the package. */
+  const improveIncludedAvailable = !improveIncludedUsed && improveFreeLeft > 0;
+  /** Nothing left: the customer first buys another set of two variants. */
+  const improveBlocked = !improveIncludedAvailable && improvePackRemaining <= 0;
 
   /**
    * Creates a new background for THIS page only. Photos, video, text and
-   * decorations of the page are never sent and never changed.
+   * decorations of the page are never sent and never changed. Older variants
+   * of this page are always kept.
    */
   async function runImprove() {
     if (improving || !improvePrompt.trim() || improveBlocked) return;
@@ -420,6 +424,7 @@ export function MemoryBookPageEditor({
       if (res.improve) {
         setImproveAllowance(res.improve.allowance);
         setImproveDistinctUsed(res.improve.distinctUsed);
+        setImprovePackRemaining(res.improve.packRemaining);
       }
       if (res.ok) {
         setPages((prev) => ({
@@ -436,13 +441,15 @@ export function MemoryBookPageEditor({
         if (list.ok) setBackgrounds(list.backgrounds);
       } else {
         setImproveMessage(
-          res.error === "page_limit"
-            ? t("mbi_limit_reached")
-            : res.error === "insufficient_credits"
-              ? t("mbi_no_credits")
-              : res.error === "empty_prompt"
-                ? t("mbi_needs_description")
-                : t("mbi_failed"),
+          res.error === "needs_pack"
+            ? t("mbi_pack_needed")
+            : res.error === "page_limit"
+              ? t("mbi_limit_reached")
+              : res.error === "insufficient_credits"
+                ? t("mbi_no_credits")
+                : res.error === "empty_prompt"
+                  ? t("mbi_needs_description")
+                  : t("mbi_failed"),
         );
       }
     } catch {
@@ -451,6 +458,34 @@ export function MemoryBookPageEditor({
       setImproving(false);
     }
   }
+
+  /**
+   * Buys ONE set of two extra variants for this book. The credits are taken
+   * exactly once; nothing is created and no existing variant is removed.
+   */
+  async function buyVariantPack() {
+    if (buyingPack) return;
+    setBuyingPack(true);
+    setImproveMessage(null);
+    try {
+      const res = await buyImprovePack({
+        data: { bookId, purchaseKey: crypto.randomUUID() },
+      });
+      if (res.ok) {
+        setImprovePackRemaining(res.packRemaining ?? 0);
+        setImproveMessage(t("mbi_pack_done"));
+      } else {
+        setImproveMessage(
+          res.error === "insufficient_credits" ? t("mbi_no_credits") : t("mbi_pack_failed"),
+        );
+      }
+    } catch {
+      setImproveMessage(t("mbi_pack_failed"));
+    } finally {
+      setBuyingPack(false);
+    }
+  }
+
 
   /**
    * Switches the page to a background that already exists — or back to the
