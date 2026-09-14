@@ -131,10 +131,10 @@ export async function downloadOfflineBookPackage(
         types: [{ description: "ZIP", accept: { "application/zip": [".zip"] } }],
       });
     } catch {
-      return; // The customer closed the save dialog: nothing was changed.
+      return false; // The customer closed the save dialog: nothing was changed.
     }
     await zipped.body.pipeTo(await handle.createWritable());
-    return;
+    return true;
   }
 
   const blob = await zipped.blob();
@@ -146,4 +146,5 @@ export async function downloadOfflineBookPackage(
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return true;
 }
