@@ -62,12 +62,13 @@ export interface OfflineZipProgress {
 
 /**
  * Assembles the package and hands it to the customer as ONE file. The download
- * only starts once the archive has been produced without error.
+ * only starts once the archive has been produced without error. Returns false
+ * when the customer closes the save dialog, so nothing is reported as saved.
  */
 export async function downloadOfflineBookPackage(
   plan: OfflinePackagePlan,
   onProgress?: (progress: OfflineZipProgress) => void,
-): Promise<void> {
+): Promise<boolean> {
   const base = `${window.location.origin}/offline`;
 
   // Decorations used as CSS masks must live inside the data itself.
