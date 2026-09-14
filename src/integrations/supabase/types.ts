@@ -2335,6 +2335,36 @@ export type Database = {
           },
         ]
       }
+      memory_book_improve_packs: {
+        Row: {
+          book_id: string
+          created_at: string
+          credits: number
+          id: string
+          purchase_key: string
+          user_id: string
+          variants: number
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          credits: number
+          id?: string
+          purchase_key: string
+          user_id: string
+          variants: number
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          purchase_key?: string
+          user_id?: string
+          variants?: number
+        }
+        Relationships: []
+      }
       memory_book_leaf_purchases: {
         Row: {
           book_id: string
@@ -2704,6 +2734,7 @@ export type Database = {
           design_stage: string
           expires_at: string
           id: string
+          improve_pack_remaining: number
           internal_pages: number
           last_page: number | null
           last_view: string | null
@@ -2745,6 +2776,7 @@ export type Database = {
           design_stage?: string
           expires_at?: string
           id?: string
+          improve_pack_remaining?: number
           internal_pages: number
           last_page?: number | null
           last_view?: string | null
@@ -2786,6 +2818,7 @@ export type Database = {
           design_stage?: string
           expires_at?: string
           id?: string
+          improve_pack_remaining?: number
           internal_pages?: number
           last_page?: number | null
           last_view?: string | null
@@ -4974,6 +5007,16 @@ export type Database = {
           _price: number
           _session_key: string
           _user_id: string
+        }
+        Returns: Json
+      }
+      buy_memory_book_improve_pack: {
+        Args: {
+          _book_id: string
+          _price: number
+          _purchase_key: string
+          _user_id: string
+          _variants: number
         }
         Returns: Json
       }
