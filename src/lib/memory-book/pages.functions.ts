@@ -36,7 +36,9 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, internal_pages, video_capacity, credits_spent, package_code")
+    .select(
+      "id, internal_pages, video_capacity, credits_spent, package_code, improve_pack_remaining",
+    )
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
@@ -45,6 +47,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
     internalPages: Number(data.internal_pages ?? 0),
     videoCapacity: Number(data.video_capacity ?? 0),
     packageCode: String(data.package_code ?? ""),
+    packRemaining: Number(data.improve_pack_remaining ?? 0),
   };
 }
 
