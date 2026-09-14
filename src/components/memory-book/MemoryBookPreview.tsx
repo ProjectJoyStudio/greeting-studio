@@ -33,7 +33,14 @@ function fill(text: string, vars: Record<string, string | number>) {
  * The book itself lives in MemoryBookBook, which receives already-loaded data;
  * this component is only the part that fetches and saves.
  */
-export function MemoryBookPreview({ bookId }: { bookId: string }) {
+export function MemoryBookPreview({
+  bookId,
+  readOnly = false,
+}: {
+  bookId: string;
+  /** A finished book is only read: the leaf order can no longer be changed. */
+  readOnly?: boolean;
+}) {
   const { t } = useI18n();
   const loadPages = useServerFn(loadMemoryBookPages);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
