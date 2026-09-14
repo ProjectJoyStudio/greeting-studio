@@ -13,6 +13,7 @@ import {
   listMemoryBooks,
   type MemoryBookProject,
 } from "@/lib/memory-book/packages.functions";
+import { buildMemoryBookOfflinePlan } from "@/lib/memory-book/offline-export.functions";
 
 export const Route = createFileRoute("/dashboard/memory-books")({
   component: MyMemoryBooksPage,
@@ -36,10 +37,37 @@ function MyMemoryBooksPage() {
   const queryClient = useQueryClient();
   const fetchBooks = useServerFn(listMemoryBooks);
   const extend = useServerFn(extendMemoryBookStorage);
+  const buildPlan = useServerFn(buildMemoryBookOfflinePlan);
   const { refresh } = useCreditBalance();
 
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [percent, setPercent] = useState(0);
+
+  /**
+   * Prepares and saves the offline copy of ONE completed book. It only reads
+   * the book: nothing is stored on Project Joy and nothing is changed.
+   */
+  async function runDownload(book: MemoryBookProject) {
+    if (busy) return;
+    setNotice(null);
+    setPercent(0);
+    setBusy(`${book.id}-zip`);
+    try {
+      const res = await buildPlan({ data: { bookId: book.id } });
+      if (!res.ok || !res.plan) throw new Error("no_plan");
+      const { downloadOfflineBookPackage } = await import("@/lib/memory-book/offline-zip");
+      await downloadOfflineBookPackage(res.plan, ({ done: ready, total }) =>
+        setPercent(total > 0 ? Math.min(99, Math.round((ready / total) * 100)) : 0),
+      );
+      setNotice(t("mbd_download_done"));
+    } catch {
+      setNotice(t("mbd_download_failed"));
+    } finally {
+      setBusy(null);
+      setPercent(0);
+    }
+  }
 
   // One stable key per book + option, so a repeated click never charges twice.
   const keys = useRef<Record<string, string>>({});
@@ -170,11 +198,22 @@ function MyMemoryBooksPage() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {done ? (
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/memory-book-preview" search={{ book: book.id }}>
-                        {t("mbd_open")}
-                      </Link>
-                    </Button>
+                    <>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/memory-book-preview" search={{ book: book.id }}>
+                          {t("mbd_open")}
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={busy !== null}
+                        onClick={() => void runDownload(book)}
+                      >
+                        {busy === `${book.id}-zip`
+                          ? fill(t("mbd_download_working"), { n: percent })
+                          : t("mbd_download")}
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button asChild size="sm">
