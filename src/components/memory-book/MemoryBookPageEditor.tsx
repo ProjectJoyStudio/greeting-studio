@@ -219,6 +219,7 @@ export function MemoryBookPageEditor({
   const [videoPlaying, setVideoPlaying] = useState(false);
   /** Improve Page: how many different pages this book may still improve free. */
   const improve = useServerFn(improveMemoryBookPage);
+  const buyImprovePack = useServerFn(buyMemoryBookImprovePack);
   const listBackgrounds = useServerFn(listMemoryBookPageBackgrounds);
   const selectBackground = useServerFn(selectMemoryBookPageBackground);
   /** Every background this page created successfully, oldest first. */
@@ -226,6 +227,9 @@ export function MemoryBookPageEditor({
   const [switchingBackground, setSwitchingBackground] = useState(false);
   const [improveAllowance, setImproveAllowance] = useState(0);
   const [improveDistinctUsed, setImproveDistinctUsed] = useState(0);
+  /** Variants of this book that are already paid for and still unused. */
+  const [improvePackRemaining, setImprovePackRemaining] = useState(0);
+  const [buyingPack, setBuyingPack] = useState(false);
   const [improvePrompt, setImprovePrompt] = useState("");
   const [improving, setImproving] = useState(false);
   const [improveMessage, setImproveMessage] = useState<string | null>(null);
