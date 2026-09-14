@@ -227,10 +227,17 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
         ok: true,
         mode: claim.mode === "paid" ? "paid" : "included",
         backgroundUrl: url,
-        improve: await improveStateOf(data.bookId, book.packageCode, data.pageIndex),
+        improve: await improveStateOf(
+          data.bookId,
+          book.packageCode,
+          data.pageIndex,
+          fresh?.packRemaining ?? book.packRemaining,
+        ),
         creditsSpent: fresh?.creditsSpent ?? book.creditsSpent,
       };
     } catch {
+      // A technical failure gives the included allowance — or the paid
+      // variant — straight back, and never charges anything again.
       await db.rpc("release_memory_book_page_improvement", {
         _user_id: context.userId,
         _book_id: data.bookId,
@@ -240,11 +247,66 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
       return {
         ok: false,
         error: "failed",
-        improve: await improveStateOf(data.bookId, book.packageCode, data.pageIndex),
+        improve: await improveStateOf(
+          data.bookId,
+          book.packageCode,
+          data.pageIndex,
+          fresh?.packRemaining ?? book.packRemaining,
+        ),
         creditsSpent: fresh?.creditsSpent ?? book.creditsSpent,
       };
     }
   });
+
+/**
+ * Buys ONE bundle of extra page variants for this book: 3 credits are charged
+ * exactly once and the book receives two variants it may use on any page.
+ * Nothing is generated here and no existing variant is removed.
+ */
+export const buyMemoryBookImprovePack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; purchaseKey: string }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    purchaseKey: String(input?.purchaseKey ?? "").slice(0, 64),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      error?: "not_found" | "insufficient_credits" | "failed";
+      packRemaining?: number;
+      creditsSpent?: number;
+    }> => {
+      const book = await ownedBook(context, data.bookId);
+      if (!book || !data.purchaseKey) return { ok: false, error: "not_found" };
+
+      const db = await admin();
+      const { data: raw, error } = await db.rpc("buy_memory_book_improve_pack", {
+        _user_id: context.userId,
+        _book_id: data.bookId,
+        _price: MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+        _variants: MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+        _purchase_key: data.purchaseKey,
+      });
+      if (error) return { ok: false, error: "failed" };
+      const res = (raw ?? {}) as { ok?: boolean; error?: string; remaining?: number };
+      if (!res.ok) {
+        return {
+          ok: false,
+          error: res.error === "insufficient_credits" ? "insufficient_credits" : "failed",
+        };
+      }
+      const fresh = await ownedBook(context, data.bookId);
+      return {
+        ok: true,
+        packRemaining: fresh?.packRemaining ?? res.remaining ?? 0,
+        creditsSpent: fresh?.creditsSpent ?? book.creditsSpent,
+      };
+    },
+  );
+
 
 /** One saved background of one exact page. */
 export interface MemoryBookPageBackground {
