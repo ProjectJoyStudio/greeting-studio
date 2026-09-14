@@ -42,6 +42,7 @@ function MemoryBookPreviewPage() {
   const navigate = useNavigate();
   const checkAccess = useServerFn(getMemoryBookAccess);
   const [state, setState] = useState<"checking" | "allowed" | "denied">("checking");
+  const [completed, setCompleted] = useState(false);
 
   // Only the owner of a paid book may look at it. Nothing is changed here.
   useEffect(() => {
@@ -53,6 +54,7 @@ function MemoryBookPreviewPage() {
     checkAccess({ data: { bookId } })
       .then((res) => {
         if (!active) return;
+        setCompleted(res.book?.status === "completed");
         setState(res.allowed && res.book ? "allowed" : "denied");
       })
       .catch(() => {
