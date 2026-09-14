@@ -780,7 +780,7 @@ export function MemoryBookBook({
     setAuto(false);
     const flip = book.current?.pageFlip();
     if (!flip) return;
-    flip.turnToPage(0);
+    flip.turnToPage?.(0);
     setPosition(0);
   }, []);
 
