@@ -988,6 +988,13 @@ export function MemoryBookBook({
               </>
             )}
           </Button>
+          {position >= faces.length - 1 ? (
+            <Button variant="default" size="sm" onClick={restart}>
+              <RotateCcw className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbpv_restart")}
+            </Button>
+          ) : null}
+
           {musicUrl ? (
             <>
               <Button
