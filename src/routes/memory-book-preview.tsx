@@ -87,16 +87,23 @@ function MemoryBookPreviewPage() {
 
       <section className="mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6">
         <Button asChild variant="ghost" size="sm" className="mb-4">
-          <Link to="/memory-book-create" search={{ book: bookId }}>
-            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
-            {t("mbpv_back")}
-          </Link>
+          {completed ? (
+            <Link to="/dashboard/memory-books">
+              <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbd_title")}
+            </Link>
+          ) : (
+            <Link to="/memory-book-create" search={{ book: bookId }}>
+              <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbpv_back")}
+            </Link>
+          )}
         </Button>
 
         {state === "checking" ? (
           <p className="text-sm text-muted-foreground">{t("mbpv_loading")}</p>
         ) : state === "allowed" ? (
-          <MemoryBookPreview bookId={bookId} />
+          <MemoryBookPreview bookId={bookId} readOnly={completed} />
         ) : (
           <p className="text-sm text-muted-foreground">{t("mbpv_not_found")}</p>
         )}
