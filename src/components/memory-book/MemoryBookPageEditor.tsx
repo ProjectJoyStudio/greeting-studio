@@ -300,6 +300,7 @@ export function MemoryBookPageEditor({
           setVideoCapacity(p.videoCapacity);
           setImproveAllowance(p.improveAllowance);
           setImproveDistinctUsed(p.improveDistinctUsed);
+          setImprovePackRemaining(p.improvePackRemaining);
         }
         if (m.ok) setMaterials(m.materials);
         setReady(true);
