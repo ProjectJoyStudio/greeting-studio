@@ -143,6 +143,10 @@ function MemoryBookCreatePage() {
               videoCapacity={book.videoCapacity}
             />
 
+            <MemoryBookCompleteAction
+              bookId={book.id}
+              alreadyCompleted={book.status === "completed"}
+            />
           </>
         ) : null}
       </section>
