@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Pause, Play, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
@@ -511,6 +511,9 @@ type FlipBookApi = {
   flipNext: () => void;
   flipPrev: () => void;
   getCurrentPageIndex: () => number;
+  /** Jumps straight to a face, used by the "Start over" action. */
+  turnToPage?: (page: number) => void;
+
   /** Ends a started press WITHOUT turning anything (second argument = handled). */
   userStop?: (point: { x: number; y: number }, handled?: boolean) => void;
   getUI?: () => { touchPoint?: unknown } | null;
@@ -772,6 +775,16 @@ export function MemoryBookBook({
   const flipNext = useCallback(() => book.current?.pageFlip()?.flipNext(), []);
   const flipPrev = useCallback(() => book.current?.pageFlip()?.flipPrev(), []);
 
+  // Returns the reader to the front cover without starting automatic viewing.
+  const restart = useCallback(() => {
+    setAuto(false);
+    const flip = book.current?.pageFlip();
+    if (!flip) return;
+    flip.turnToPage?.(0);
+    setPosition(0);
+  }, []);
+
+
   // Automatic viewing turns the leaves with the very same page-turn animation.
   useEffect(() => {
     if (!auto || photoPage || videoUrl) return;
@@ -975,6 +988,13 @@ export function MemoryBookBook({
               </>
             )}
           </Button>
+          {position >= faces.length - 1 ? (
+            <Button variant="default" size="sm" onClick={restart}>
+              <RotateCcw className="mr-1 h-4 w-4" aria-hidden />
+              {t("mbpv_restart")}
+            </Button>
+          ) : null}
+
           {musicUrl ? (
             <>
               <Button
