@@ -152,6 +152,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         videoCapacity: book.videoCapacity,
         improveAllowance: improveAllowanceOf(book.packageCode),
         improveDistinctUsed: pages.filter((p) => p.improveIncludedUsed).length,
+        improvePackRemaining: book.packRemaining,
       };
     },
   );
