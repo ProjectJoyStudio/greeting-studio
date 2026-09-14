@@ -190,7 +190,8 @@ export function MemoryBookPreview({
         }}
       />
 
-      {/* Order of the leaves — both pages of a leaf always move together. */}
+      {/* Order of the leaves — hidden once the book is finished. */}
+      {readOnly ? null : (
       <div className="space-y-3 rounded-2xl border border-border/70 bg-card p-4">
         <h2 className="font-display text-lg font-semibold">{t("mbpv_order_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("mbpv_order_hint")}</p>
@@ -224,6 +225,7 @@ export function MemoryBookPreview({
         </ul>
         {orderMessage ? <p className="text-sm text-muted-foreground">{orderMessage}</p> : null}
       </div>
+      )}
     </div>
   );
 }
