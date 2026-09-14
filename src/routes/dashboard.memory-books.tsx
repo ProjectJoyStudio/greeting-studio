@@ -171,7 +171,7 @@ function MyMemoryBooksPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {done ? (
                     <Button asChild size="sm" variant="outline">
-                      <Link to="/memory-book-create" search={{ book: book.id }}>
+                      <Link to="/memory-book-preview" search={{ book: book.id }}>
                         {t("mbd_open")}
                       </Link>
                     </Button>
