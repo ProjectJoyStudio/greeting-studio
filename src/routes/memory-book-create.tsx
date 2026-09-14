@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { useI18n } from "@/lib/i18n";
 import { MemoryBookDesignStudio } from "@/components/memory-book/MemoryBookDesignStudio";
 import { MemoryBookCreditStatus } from "@/components/memory-book/MemoryBookCreditStatus";
+import { MemoryBookCompleteAction } from "@/components/memory-book/MemoryBookCompleteAction";
 import {
   getMemoryBookAccess,
   type MemoryBookProject,
