@@ -772,6 +772,16 @@ export function MemoryBookBook({
   const flipNext = useCallback(() => book.current?.pageFlip()?.flipNext(), []);
   const flipPrev = useCallback(() => book.current?.pageFlip()?.flipPrev(), []);
 
+  // Returns the reader to the front cover without starting automatic viewing.
+  const restart = useCallback(() => {
+    setAuto(false);
+    const flip = book.current?.pageFlip();
+    if (!flip) return;
+    flip.turnToPage(0);
+    setPosition(0);
+  }, []);
+
+
   // Automatic viewing turns the leaves with the very same page-turn animation.
   useEffect(() => {
     if (!auto || photoPage || videoUrl) return;
