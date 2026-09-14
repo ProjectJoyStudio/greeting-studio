@@ -75,8 +75,12 @@ export interface MemoryBookPlacedDecoration {
   color: string | null;
 }
 
-/** One extra improvement of an already improved page costs one credit. */
+/** Kept for older data: extra improvements are now bought as a bundle. */
 export const MEMORY_BOOK_IMPROVE_PAGE_CREDITS = 1;
+
+/** One bundle of extra page variants: 3 credits, charged once, gives 2 variants. */
+export const MEMORY_BOOK_IMPROVE_PACK_CREDITS = 3;
+export const MEMORY_BOOK_IMPROVE_PACK_VARIANTS = 2;
 
 /** What this book may still do with "Improve Page". */
 export interface MemoryBookImproveState {
@@ -88,7 +92,10 @@ export interface MemoryBookImproveState {
   pageIncludedUsed: boolean;
   /** Credits charged for one more improvement of an already improved page. */
   priceCredits: number;
+  /** Already paid variants of this book that are still unused. */
+  packRemaining: number;
 }
+
 
 export interface MemoryBookPage {
   pageIndex: number;

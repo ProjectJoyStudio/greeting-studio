@@ -36,7 +36,9 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, internal_pages, video_capacity, credits_spent, package_code")
+    .select(
+      "id, internal_pages, video_capacity, credits_spent, package_code, improve_pack_remaining",
+    )
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
@@ -45,6 +47,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
     internalPages: Number(data.internal_pages ?? 0),
     videoCapacity: Number(data.video_capacity ?? 0),
     packageCode: String(data.package_code ?? ""),
+    packRemaining: Number(data.improve_pack_remaining ?? 0),
   };
 }
 
@@ -98,6 +101,8 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
       /** How many different pages this package may still improve for free. */
       improveAllowance: number;
       improveDistinctUsed: number;
+      /** Already paid page variants of this book that are still unused. */
+      improvePackRemaining: number;
     }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) {
@@ -108,6 +113,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
           videoCapacity: 0,
           improveAllowance: 0,
           improveDistinctUsed: 0,
+          improvePackRemaining: 0,
         };
       }
       const db = await admin();
@@ -146,6 +152,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         videoCapacity: book.videoCapacity,
         improveAllowance: improveAllowanceOf(book.packageCode),
         improveDistinctUsed: pages.filter((p) => p.improveIncludedUsed).length,
+        improvePackRemaining: book.packRemaining,
       };
     },
   );

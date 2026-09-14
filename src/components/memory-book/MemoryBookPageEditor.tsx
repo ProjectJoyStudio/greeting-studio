@@ -41,12 +41,16 @@ import {
   saveMemoryBookPage,
 } from "@/lib/memory-book/pages.functions";
 import {
+  buyMemoryBookImprovePack,
   improveMemoryBookPage,
   listMemoryBookPageBackgrounds,
   selectMemoryBookPageBackground,
   type MemoryBookPageBackground,
 } from "@/lib/memory-book/improve.functions";
-import { MEMORY_BOOK_IMPROVE_PAGE_CREDITS } from "@/lib/memory-book/pages";
+import {
+  MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+  MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+} from "@/lib/memory-book/pages";
 
 /**
  * Which layer of the SAME page is being edited. Decorations are one more
@@ -215,6 +219,7 @@ export function MemoryBookPageEditor({
   const [videoPlaying, setVideoPlaying] = useState(false);
   /** Improve Page: how many different pages this book may still improve free. */
   const improve = useServerFn(improveMemoryBookPage);
+  const buyImprovePack = useServerFn(buyMemoryBookImprovePack);
   const listBackgrounds = useServerFn(listMemoryBookPageBackgrounds);
   const selectBackground = useServerFn(selectMemoryBookPageBackground);
   /** Every background this page created successfully, oldest first. */
@@ -222,6 +227,9 @@ export function MemoryBookPageEditor({
   const [switchingBackground, setSwitchingBackground] = useState(false);
   const [improveAllowance, setImproveAllowance] = useState(0);
   const [improveDistinctUsed, setImproveDistinctUsed] = useState(0);
+  /** Variants of this book that are already paid for and still unused. */
+  const [improvePackRemaining, setImprovePackRemaining] = useState(0);
+  const [buyingPack, setBuyingPack] = useState(false);
   const [improvePrompt, setImprovePrompt] = useState("");
   const [improving, setImproving] = useState(false);
   const [improveMessage, setImproveMessage] = useState<string | null>(null);
@@ -292,6 +300,7 @@ export function MemoryBookPageEditor({
           setVideoCapacity(p.videoCapacity);
           setImproveAllowance(p.improveAllowance);
           setImproveDistinctUsed(p.improveDistinctUsed);
+          setImprovePackRemaining(p.improvePackRemaining);
         }
         if (m.ok) setMaterials(m.materials);
         setReady(true);
@@ -389,11 +398,15 @@ export function MemoryBookPageEditor({
     : (page.backgroundUrl ?? leafBackgroundUrl ?? null);
   const improveIncludedUsed = page.improveIncludedUsed === true;
   const improveFreeLeft = Math.max(improveAllowance - improveDistinctUsed, 0);
-  const improveBlocked = !improveIncludedUsed && improveFreeLeft <= 0;
+  /** This page may still use one of the variants included in the package. */
+  const improveIncludedAvailable = !improveIncludedUsed && improveFreeLeft > 0;
+  /** Nothing left: the customer first buys another set of two variants. */
+  const improveBlocked = !improveIncludedAvailable && improvePackRemaining <= 0;
 
   /**
    * Creates a new background for THIS page only. Photos, video, text and
-   * decorations of the page are never sent and never changed.
+   * decorations of the page are never sent and never changed. Older variants
+   * of this page are always kept.
    */
   async function runImprove() {
     if (improving || !improvePrompt.trim() || improveBlocked) return;
@@ -411,6 +424,7 @@ export function MemoryBookPageEditor({
       if (res.improve) {
         setImproveAllowance(res.improve.allowance);
         setImproveDistinctUsed(res.improve.distinctUsed);
+        setImprovePackRemaining(res.improve.packRemaining);
       }
       if (res.ok) {
         setPages((prev) => ({
@@ -427,13 +441,15 @@ export function MemoryBookPageEditor({
         if (list.ok) setBackgrounds(list.backgrounds);
       } else {
         setImproveMessage(
-          res.error === "page_limit"
-            ? t("mbi_limit_reached")
-            : res.error === "insufficient_credits"
-              ? t("mbi_no_credits")
-              : res.error === "empty_prompt"
-                ? t("mbi_needs_description")
-                : t("mbi_failed"),
+          res.error === "needs_pack"
+            ? t("mbi_pack_needed")
+            : res.error === "page_limit"
+              ? t("mbi_limit_reached")
+              : res.error === "insufficient_credits"
+                ? t("mbi_no_credits")
+                : res.error === "empty_prompt"
+                  ? t("mbi_needs_description")
+                  : t("mbi_failed"),
         );
       }
     } catch {
@@ -442,6 +458,34 @@ export function MemoryBookPageEditor({
       setImproving(false);
     }
   }
+
+  /**
+   * Buys ONE set of two extra variants for this book. The credits are taken
+   * exactly once; nothing is created and no existing variant is removed.
+   */
+  async function buyVariantPack() {
+    if (buyingPack) return;
+    setBuyingPack(true);
+    setImproveMessage(null);
+    try {
+      const res = await buyImprovePack({
+        data: { bookId, purchaseKey: crypto.randomUUID() },
+      });
+      if (res.ok) {
+        setImprovePackRemaining(res.packRemaining ?? 0);
+        setImproveMessage(t("mbi_pack_done"));
+      } else {
+        setImproveMessage(
+          res.error === "insufficient_credits" ? t("mbi_no_credits") : t("mbi_pack_failed"),
+        );
+      }
+    } catch {
+      setImproveMessage(t("mbi_pack_failed"));
+    } finally {
+      setBuyingPack(false);
+    }
+  }
+
 
   /**
    * Switches the page to a background that already exists — or back to the
@@ -1383,29 +1427,51 @@ export function MemoryBookPageEditor({
                     onChange={(e) => setImprovePrompt(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {improveIncludedUsed
-                      ? fill(t("mbi_paid_note"), { c: MEMORY_BOOK_IMPROVE_PAGE_CREDITS })
-                      : fill(t("mbi_included_left"), {
+                    {improveIncludedAvailable
+                      ? fill(t("mbi_included_left"), {
                           n: improveFreeLeft,
                           t: improveAllowance,
-                        })}
+                        })
+                      : t("mbi_pack_note")}
                   </p>
-                  {improveBlocked ? (
-                    <p className="text-xs text-destructive">{t("mbi_limit_reached")}</p>
+                  {improvePackRemaining > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {fill(t("mbi_pack_left"), { n: improvePackRemaining })}
+                    </p>
                   ) : null}
-                  <Button
-                    size="sm"
-                    disabled={improving || improveBlocked || !improvePrompt.trim()}
-                    onClick={() => void runImprove()}
-                  >
-                    {improving ? (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
-                    ) : null}
-                    {improveIncludedUsed ? t("mbi_generate_paid") : t("mbi_generate")}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={improving || improveBlocked || !improvePrompt.trim()}
+                      onClick={() => void runImprove()}
+                    >
+                      {improving ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+                      ) : null}
+                      {t("mbi_generate")}
+                    </Button>
+                    {/* One purchase, charged once, gives two more variants. */}
+                    {improveIncludedAvailable ? null : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={buyingPack}
+                        onClick={() => void buyVariantPack()}
+                      >
+                        {buyingPack ? (
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+                        ) : null}
+                        {fill(t("mbi_pack_buy"), {
+                          n: MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+                          c: MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+                        })}
+                      </Button>
+                    )}
+                  </div>
                   {improveMessage ? (
                     <p className="text-xs text-muted-foreground">{improveMessage}</p>
                   ) : null}
+
 
                   {/* Every background this page ever created stays selectable. */}
                   <div className="space-y-2 pt-2">
