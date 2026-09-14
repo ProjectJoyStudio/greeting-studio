@@ -12,22 +12,21 @@ export interface MemoryBookPackage {
   internalPages: number;
   videos: number;
   credits: number;
-  euro: number;
 }
 
 export const MEMORY_BOOK_PACKAGES: MemoryBookPackage[] = [
-  { code: "mb_5", leaves: 5, internalPages: 10, videos: 2, credits: 70, euro: 35 },
-  { code: "mb_10", leaves: 10, internalPages: 20, videos: 3, credits: 110, euro: 55 },
-  { code: "mb_15", leaves: 15, internalPages: 30, videos: 5, credits: 158, euro: 79 },
+  { code: "mb_5", leaves: 5, internalPages: 10, videos: 2, credits: 60 },
+  { code: "mb_10", leaves: 10, internalPages: 20, videos: 3, credits: 90 },
+  { code: "mb_15", leaves: 15, internalPages: 30, videos: 5, credits: 110 },
 ];
 
-export const MEMORY_BOOK_MAX_LEAVES = 15;
-export const MEMORY_BOOK_MAX_PAGES = 30;
-export const MEMORY_BOOK_MAX_VIDEOS = 5;
+export const MEMORY_BOOK_MAX_LEAVES = 20;
+export const MEMORY_BOOK_MAX_PAGES = 40;
+export const MEMORY_BOOK_MAX_VIDEOS = 7;
 
-/** Display-only extras for this stage. */
-export const EXTRA_LEAF_STANDARD = { credits: 12, euro: 6 };
-export const EXTRA_LEAF_VIDEO = { credits: 15, euro: 7.5 };
+/** Additional leaves, priced in credits only. */
+export const EXTRA_LEAF_STANDARD = { credits: 5 };
+export const EXTRA_LEAF_VIDEO = { credits: 8 };
 export const EXTRA_STORAGE_WEEK = { credits: 3, euro: 1.5 };
 export const EXTRA_STORAGE_MONTH = { credits: 10, euro: 5 };
 
