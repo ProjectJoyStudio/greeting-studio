@@ -511,6 +511,9 @@ type FlipBookApi = {
   flipNext: () => void;
   flipPrev: () => void;
   getCurrentPageIndex: () => number;
+  /** Jumps straight to a face, used by the "Start over" action. */
+  turnToPage?: (page: number) => void;
+
   /** Ends a started press WITHOUT turning anything (second argument = handled). */
   userStop?: (point: { x: number; y: number }, handled?: boolean) => void;
   getUI?: () => { touchPoint?: unknown } | null;
