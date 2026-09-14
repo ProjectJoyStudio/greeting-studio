@@ -1427,29 +1427,51 @@ export function MemoryBookPageEditor({
                     onChange={(e) => setImprovePrompt(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {improveIncludedUsed
-                      ? fill(t("mbi_paid_note"), { c: MEMORY_BOOK_IMPROVE_PAGE_CREDITS })
-                      : fill(t("mbi_included_left"), {
+                    {improveIncludedAvailable
+                      ? fill(t("mbi_included_left"), {
                           n: improveFreeLeft,
                           t: improveAllowance,
-                        })}
+                        })
+                      : t("mbi_pack_note")}
                   </p>
-                  {improveBlocked ? (
-                    <p className="text-xs text-destructive">{t("mbi_limit_reached")}</p>
+                  {improvePackRemaining > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {fill(t("mbi_pack_left"), { n: improvePackRemaining })}
+                    </p>
                   ) : null}
-                  <Button
-                    size="sm"
-                    disabled={improving || improveBlocked || !improvePrompt.trim()}
-                    onClick={() => void runImprove()}
-                  >
-                    {improving ? (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
-                    ) : null}
-                    {improveIncludedUsed ? t("mbi_generate_paid") : t("mbi_generate")}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={improving || improveBlocked || !improvePrompt.trim()}
+                      onClick={() => void runImprove()}
+                    >
+                      {improving ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+                      ) : null}
+                      {t("mbi_generate")}
+                    </Button>
+                    {/* One purchase, charged once, gives two more variants. */}
+                    {improveIncludedAvailable ? null : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={buyingPack}
+                        onClick={() => void buyVariantPack()}
+                      >
+                        {buyingPack ? (
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+                        ) : null}
+                        {fill(t("mbi_pack_buy"), {
+                          n: MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
+                          c: MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+                        })}
+                      </Button>
+                    )}
+                  </div>
                   {improveMessage ? (
                     <p className="text-xs text-muted-foreground">{improveMessage}</p>
                   ) : null}
+
 
                   {/* Every background this page ever created stays selectable. */}
                   <div className="space-y-2 pt-2">
