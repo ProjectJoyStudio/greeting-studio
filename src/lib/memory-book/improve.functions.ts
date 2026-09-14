@@ -156,23 +156,36 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
       _price: MEMORY_BOOK_IMPROVE_PAGE_CREDITS,
       _claim_key: data.claimKey,
     });
-    const claim = (claimRaw ?? {}) as { ok?: boolean; error?: string; mode?: string };
+    const claim = (claimRaw ?? {}) as {
+      ok?: boolean;
+      error?: string;
+      mode?: string;
+      remaining?: number;
+    };
     if (!claim.ok) {
-      const improve = await improveStateOf(data.bookId, book.packageCode, data.pageIndex);
+      const improve = await improveStateOf(
+        data.bookId,
+        book.packageCode,
+        data.pageIndex,
+        book.packRemaining,
+      );
       return {
         ok: false,
         error:
-          claim.error === "page_limit"
-            ? "page_limit"
-            : claim.error === "insufficient_credits"
-              ? "insufficient_credits"
-              : claim.error === "bad_page"
-                ? "bad_page"
-                : "not_found",
+          claim.error === "needs_pack"
+            ? "needs_pack"
+            : claim.error === "page_limit"
+              ? "page_limit"
+              : claim.error === "insufficient_credits"
+                ? "insufficient_credits"
+                : claim.error === "bad_page"
+                  ? "bad_page"
+                  : "not_found",
         improve,
         creditsSpent: book.creditsSpent,
       };
     }
+
 
     try {
       const { renderMemoryBookDesign } = await import("./designs.server");
