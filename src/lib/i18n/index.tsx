@@ -46,6 +46,7 @@ import { MEMORY_BOOK_PAGES_I18N } from "./locales/memory-book-pages";
 import { MEMORY_BOOK_DECORATIONS_I18N } from "./locales/memory-book-decorations";
 import { MEMORY_BOOK_VIDEO_I18N } from "./locales/memory-book-video";
 import { MEMORY_BOOK_PREVIEW_I18N } from "./locales/memory-book-preview";
+import { MEMORY_BOOK_COMPLETE_I18N } from "./locales/memory-book-complete";
 import { MEMORY_BOOK_MUSIC_I18N } from "./locales/memory-book-music";
 import { CM_DICT } from "@/lib/admin/catalog-mgmt/i18n";
 
@@ -90,6 +91,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.en,
     ...MEMORY_BOOK_VIDEO_I18N.en,
     ...MEMORY_BOOK_PREVIEW_I18N.en,
+    ...MEMORY_BOOK_COMPLETE_I18N.en,
     ...MEMORY_BOOK_MUSIC_I18N.en,
   },
   ru: {
@@ -127,6 +129,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.ru,
     ...MEMORY_BOOK_VIDEO_I18N.ru,
     ...MEMORY_BOOK_PREVIEW_I18N.ru,
+    ...MEMORY_BOOK_COMPLETE_I18N.ru,
     ...MEMORY_BOOK_MUSIC_I18N.ru,
   },
   de: {
@@ -164,6 +167,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.de,
     ...MEMORY_BOOK_VIDEO_I18N.de,
     ...MEMORY_BOOK_PREVIEW_I18N.de,
+    ...MEMORY_BOOK_COMPLETE_I18N.de,
     ...MEMORY_BOOK_MUSIC_I18N.de,
   },
   uk: {
@@ -201,6 +205,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.uk,
     ...MEMORY_BOOK_VIDEO_I18N.uk,
     ...MEMORY_BOOK_PREVIEW_I18N.uk,
+    ...MEMORY_BOOK_COMPLETE_I18N.uk,
     ...MEMORY_BOOK_MUSIC_I18N.uk,
   },
   fr: {
@@ -238,6 +243,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.fr,
     ...MEMORY_BOOK_VIDEO_I18N.fr,
     ...MEMORY_BOOK_PREVIEW_I18N.fr,
+    ...MEMORY_BOOK_COMPLETE_I18N.fr,
     ...MEMORY_BOOK_MUSIC_I18N.fr,
   },
   pl: {
@@ -275,6 +281,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_DECORATIONS_I18N.pl,
     ...MEMORY_BOOK_VIDEO_I18N.pl,
     ...MEMORY_BOOK_PREVIEW_I18N.pl,
+    ...MEMORY_BOOK_COMPLETE_I18N.pl,
     ...MEMORY_BOOK_MUSIC_I18N.pl,
   },
 };
