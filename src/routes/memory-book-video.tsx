@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { MEMORY_BOOK_MATERIALS_BUCKET, type MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   MEMORY_BOOK_FRAGMENT_MIN_SECONDS,
@@ -80,21 +81,26 @@ function MemoryBookVideoPage() {
   const loadEdit = useServerFn(loadMemoryBookVideoEdit);
   const saveFragments = useServerFn(saveMemoryBookVideoFragments);
   const registerPrepared = useServerFn(registerPreparedMemoryBookVideo);
+  const loadMaterials = useServerFn(loadMemoryBookMaterials);
 
   const player = useRef<HTMLVideoElement | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopAt = useRef<number | null>(null);
 
   const [state, setState] = useState<"loading" | "ready" | "denied">("loading");
-  const [source, setSource] = useState<MemoryBookMaterial | null>(null);
+  /** The first source is always the video the customer entered through. */
+  const [sources, setSources] = useState<MemoryBookMaterial[]>([]);
+  const [activeId, setActiveId] = useState<string>(materialId);
+  const [durations, setDurations] = useState<Record<string, number>>({});
   const [fragments, setFragments] = useState<MemoryBookVideoFragment[]>([]);
-  const [sourceSeconds, setSourceSeconds] = useState(0);
   const [current, setCurrent] = useState(0);
   const [working, setWorking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ url: string; blob: Blob; extension: string; mime: string; seconds: number } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [picker, setPicker] = useState<MemoryBookMaterial[] | null>(null);
+  const [pickerBusy, setPickerBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -103,16 +109,40 @@ function MemoryBookVideoPage() {
       return;
     }
     loadEdit({ data: { bookId, materialId } })
-      .then((res) => {
+      .then(async (res) => {
         if (!alive) return;
-        if (res.ok && res.source) {
-          setSource(res.source);
-          setFragments(res.fragments);
-          setSourceSeconds(res.source.durationSeconds ?? 0);
-          setState("ready");
-        } else {
+        if (!res.ok || !res.source) {
           setState("denied");
+          return;
         }
+        const first = res.source;
+        setSources([first]);
+        setActiveId(first.id);
+        setDurations({ [first.id]: first.durationSeconds ?? 0 });
+        setFragments(res.fragments);
+        setState("ready");
+
+        // Sources used by earlier chosen parts are brought back automatically.
+        const extra = Array.from(
+          new Set(
+            res.fragments
+              .map((fragment) => fragment.sourceId)
+              .filter((id): id is string => Boolean(id) && id !== first.id),
+          ),
+        );
+        if (extra.length === 0) return;
+        const list = await loadMaterials({ data: { bookId } }).catch(() => null);
+        if (!alive || !list?.ok) return;
+        const found = list.materials.filter(
+          (item) => item.kind === "video" && extra.includes(item.id),
+        );
+        if (found.length === 0) return;
+        setSources((prev) => [...prev, ...found.filter((item) => !prev.some((p) => p.id === item.id))]);
+        setDurations((prev) => {
+          const next = { ...prev };
+          for (const item of found) next[item.id] = item.durationSeconds ?? 0;
+          return next;
+        });
       })
       .catch(() => {
         if (alive) setState("denied");
@@ -120,7 +150,7 @@ function MemoryBookVideoPage() {
     return () => {
       alive = false;
     };
-  }, [bookId, materialId, loadEdit]);
+  }, [bookId, materialId, loadEdit, loadMaterials]);
 
   /** The chosen parts are stored automatically — there is no save button. */
   const persist = useCallback(
@@ -141,16 +171,56 @@ function MemoryBookVideoPage() {
   const total = fragmentsLength(fragments);
   const overLimit = total > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS;
 
+  const source = sources.find((item) => item.id === activeId) ?? sources[0] ?? null;
+  const sourceIdOf = (fragment: MemoryBookVideoFragment) => fragment.sourceId ?? materialId;
+  const secondsOf = (id: string) =>
+    durations[id] ?? sources.find((item) => item.id === id)?.durationSeconds ?? 0;
+  const sourceSeconds = source ? secondsOf(source.id) : 0;
+  const nameOf = (id: string) => sources.find((item) => item.id === id)?.fileName || "";
+
+  async function openPicker() {
+    setPickerBusy(true);
+    try {
+      const res = await loadMaterials({ data: { bookId } });
+      setPicker(
+        res.ok
+          ? res.materials.filter(
+              (item) => item.kind === "video" && !sources.some((s) => s.id === item.id),
+            )
+          : [],
+      );
+    } catch {
+      setPicker([]);
+    } finally {
+      setPickerBusy(false);
+    }
+  }
+
+  /** Uses an already uploaded video of THIS book — nothing is uploaded twice. */
+  function addSource(material: MemoryBookMaterial) {
+    setSources((prev) => (prev.some((s) => s.id === material.id) ? prev : [...prev, material]));
+    setDurations((prev) => ({ ...prev, [material.id]: material.durationSeconds ?? 0 }));
+    setActiveId(material.id);
+    setPicker((prev) => (prev ? prev.filter((item) => item.id !== material.id) : prev));
+  }
+
   function addFragment() {
-    const start = Math.min(current, Math.max(0, sourceSeconds - MEMORY_BOOK_FRAGMENT_MIN_SECONDS));
-    const end = Math.min(sourceSeconds, start + 15);
-    persist([...fragments, clampFragment({ id: newId(), start, end }, sourceSeconds)]);
+    if (!source) return;
+    const limit = secondsOf(source.id);
+    const start = Math.min(current, Math.max(0, limit - MEMORY_BOOK_FRAGMENT_MIN_SECONDS));
+    const end = Math.min(limit, start + 15);
+    persist([
+      ...fragments,
+      clampFragment({ id: newId(), sourceId: source.id, start, end }, limit),
+    ]);
   }
 
   function updateFragment(id: string, patch: Partial<MemoryBookVideoFragment>) {
     persist(
       fragments.map((fragment) =>
-        fragment.id === id ? clampFragment({ ...fragment, ...patch }, sourceSeconds) : fragment,
+        fragment.id === id
+          ? clampFragment({ ...fragment, ...patch }, secondsOf(sourceIdOf(fragment)))
+          : fragment,
       ),
     );
   }
@@ -160,10 +230,11 @@ function MemoryBookVideoPage() {
     const value = fragment[edge] + delta;
     const others = total - (fragment.end - fragment.start);
     const room = MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS - others;
+    const limit = secondsOf(sourceIdOf(fragment));
     const wanted =
       edge === "start"
         ? { start: Math.min(Math.max(0, value), fragment.end - MEMORY_BOOK_FRAGMENT_MIN_SECONDS) }
-        : { end: Math.min(value, sourceSeconds, fragment.start + Math.max(0, room)) };
+        : { end: Math.min(value, limit, fragment.start + Math.max(0, room)) };
     if (edge === "start" && fragment.end - (wanted.start ?? 0) > room) {
       wanted.start = Math.max(wanted.start ?? 0, fragment.end - Math.max(0, room));
     }
@@ -171,6 +242,11 @@ function MemoryBookVideoPage() {
   }
 
   function playFragment(fragment: MemoryBookVideoFragment) {
+    const owner = sourceIdOf(fragment);
+    if (owner !== activeId) {
+      setActiveId(owner);
+      return;
+    }
     const el = player.current;
     if (!el) return;
     stopAt.current = fragment.end;
@@ -185,8 +261,14 @@ function MemoryBookVideoPage() {
     setProgress(0);
     try {
       player.current?.pause();
-      const prepared = await joinVideoFragments(source.url, fragments, (ratio) =>
-        setProgress(Math.round(ratio * 100)),
+      const urls: Record<string, string> = {};
+      for (const item of sources) urls[item.id] = item.url;
+      const firstUrl = sources[0]?.url ?? source.url;
+      const prepared = await joinVideoFragments(
+        firstUrl,
+        fragments,
+        (ratio) => setProgress(Math.round(ratio * 100)),
+        urls,
       );
       if (prepared.seconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS + 1) {
         setMessage(t("mbv_too_long"));
@@ -220,12 +302,16 @@ function MemoryBookVideoPage() {
         .upload(path, result.blob, { upsert: false, contentType: result.mime });
       if (upErr) throw new Error("upload_failed");
 
+      // Only the source videos that really gave parts to this result.
+      const used = Array.from(new Set(fragments.map((fragment) => sourceIdOf(fragment))));
+
       const res = await registerPrepared({
         data: {
           bookId,
           sourceMaterialId: materialId,
+          sourceMaterialIds: used,
           path,
-          fileName: `${source?.fileName ?? "video"} (${formatClock(result.seconds)})`,
+          fileName: `${sources[0]?.fileName ?? "video"} (${formatClock(result.seconds)})`,
           mimeType: result.mime,
           sizeBytes: result.blob.size,
           durationSeconds: result.seconds,
@@ -290,7 +376,35 @@ function MemoryBookVideoPage() {
                   </p>
                 </div>
                 <h2 className="text-sm font-semibold">{t("mbv_source")}</h2>
+
+                {sources.length > 1 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {sources.map((item, index) => (
+                      <Button
+                        key={item.id}
+                        size="sm"
+                        variant={item.id === source.id ? "default" : "outline"}
+                        disabled={working}
+                        onClick={() => setActiveId(item.id)}
+                      >
+                        {item.fileName || fill(t("mbv_source_n"), { n: index + 1 })}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={working || pickerBusy}
+                  onClick={() => void openPicker()}
+                >
+                  {t("mbv_add_source")}
+                </Button>
+
                 <video
+                  key={source.id}
                   ref={player}
                   src={source.url}
                   controls
@@ -299,7 +413,9 @@ function MemoryBookVideoPage() {
                   className="w-full rounded-xl bg-black"
                   onLoadedMetadata={(e) => {
                     const value = e.currentTarget.duration;
-                    if (Number.isFinite(value) && value > 0) setSourceSeconds(value);
+                    if (Number.isFinite(value) && value > 0) {
+                      setDurations((prev) => ({ ...prev, [source.id]: value }));
+                    }
                   }}
                   onTimeUpdate={(e) => {
                     const el = e.currentTarget;
@@ -359,6 +475,14 @@ function MemoryBookVideoPage() {
                           </Button>
                         </div>
 
+                        {sources.length > 1 ? (
+                          <p className="text-xs text-muted-foreground">
+                            {fill(t("mbv_from_source"), {
+                              name: nameOf(sourceIdOf(fragment)) || t("mbv_source"),
+                            })}
+                          </p>
+                        ) : null}
+
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div className="space-y-1">
                             <label className="text-xs text-muted-foreground">
@@ -367,7 +491,7 @@ function MemoryBookVideoPage() {
                             <input
                               type="range"
                               min={0}
-                              max={Math.max(0, sourceSeconds)}
+                              max={Math.max(0, secondsOf(sourceIdOf(fragment)))}
                               step={0.1}
                               value={fragment.start}
                               disabled={working}
@@ -396,7 +520,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || sourceIdOf(fragment) !== source.id}
                                 onClick={() => updateFragment(fragment.id, { start: current })}
                               >
                                 {t("mbv_set_start")}
@@ -410,7 +534,7 @@ function MemoryBookVideoPage() {
                             <input
                               type="range"
                               min={0}
-                              max={Math.max(0, sourceSeconds)}
+                              max={Math.max(0, secondsOf(sourceIdOf(fragment)))}
                               step={0.1}
                               value={fragment.end}
                               disabled={working}
@@ -439,7 +563,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || sourceIdOf(fragment) !== source.id}
                                 onClick={() => updateFragment(fragment.id, { end: current })}
                               >
                                 {t("mbv_set_end")}
@@ -504,6 +628,41 @@ function MemoryBookVideoPage() {
                   >
                     {t("mbv_redo")}
                   </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {picker ? (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+                <div className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl border border-border/70 bg-card p-6">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h3 className="font-display text-lg font-semibold">{t("mbv_add_source")}</h3>
+                    <Button variant="ghost" onClick={() => setPicker(null)}>
+                      {t("mbv_pick_close")}
+                    </Button>
+                  </div>
+                  {picker.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("mbv_pick_empty")}</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {picker.map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3"
+                        >
+                          <span className="min-w-0 truncate text-sm">
+                            {item.fileName || "video"}
+                            {item.durationSeconds
+                              ? ` · ${formatClock(item.durationSeconds)}`
+                              : ""}
+                          </span>
+                          <Button size="sm" onClick={() => addSource(item)}>
+                            {t("mbv_pick_use")}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             ) : null}

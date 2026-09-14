@@ -85,34 +85,48 @@ export interface PreparedVideo {
 
 /**
  * Plays every chosen piece once, paints it on a surface and records the
- * result together with the original sound of that piece.
+ * result together with the original sound of that piece. Pieces may come from
+ * several source videos; `sourceUrls` maps a source id to its address.
  */
 export async function joinVideoFragments(
   sourceUrl: string,
   fragments: MemoryBookVideoFragment[],
   onProgress?: (ratio: number) => void,
+  sourceUrls?: Record<string, string>,
 ): Promise<PreparedVideo> {
   if (fragments.length === 0) throw new Error("no_fragments");
   const mime = pickMime();
   const total = fragmentsLength(fragments);
 
-  const video = await loadVideo(sourceUrl);
-  const width = video.videoWidth || 1280;
-  const height = video.videoHeight || 720;
+  const audio = new AudioContext();
+  if (audio.state === "suspended") await audio.resume();
+  const destination = audio.createMediaStreamDestination();
+
+  const opened = new Map<string, { video: HTMLVideoElement; gain: GainNode }>();
+  const urlOf = (fragment: MemoryBookVideoFragment) =>
+    (fragment.sourceId && sourceUrls?.[fragment.sourceId]) || sourceUrl;
+  async function openSource(url: string) {
+    const existing = opened.get(url);
+    if (existing) return existing;
+    const element = await loadVideo(url);
+    const media = audio.createMediaElementSource(element);
+    const gain = audio.createGain();
+    media.connect(gain);
+    gain.connect(destination);
+    const entry = { video: element, gain };
+    opened.set(url, entry);
+    return entry;
+  }
+
+  const first = await openSource(urlOf(fragments[0]!));
+  const width = first.video.videoWidth || 1280;
+  const height = first.video.videoHeight || 720;
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const surface = canvas.getContext("2d");
   if (!surface) throw new Error("canvas_unavailable");
-
-  const audio = new AudioContext();
-  if (audio.state === "suspended") await audio.resume();
-  const media = audio.createMediaElementSource(video);
-  const gain = audio.createGain();
-  const destination = audio.createMediaStreamDestination();
-  media.connect(gain);
-  gain.connect(destination);
 
   const stream = canvas.captureStream(30);
   for (const track of destination.stream.getAudioTracks()) stream.addTrack(track);
@@ -128,10 +142,12 @@ export async function joinVideoFragments(
 
   let elapsed = 0;
   const cleanup = async () => {
-    try {
-      video.pause();
-    } catch {
-      /* already stopped */
+    for (const entry of opened.values()) {
+      try {
+        entry.video.pause();
+      } catch {
+        /* already stopped */
+      }
     }
     for (const track of stream.getTracks()) track.stop();
     await audio.close().catch(() => undefined);
@@ -142,6 +158,7 @@ export async function joinVideoFragments(
       const fragment = fragments[index]!;
       const length = Math.max(0, fragment.end - fragment.start);
       if (length <= 0) continue;
+      const { video, gain } = await openSource(urlOf(fragment));
       const fade = Math.min(MEMORY_BOOK_FADE_SECONDS, length / 3);
       const fadesIn = index > 0;
       const fadesOut = index < fragments.length - 1;
@@ -169,9 +186,7 @@ export async function joinVideoFragments(
           surface.globalAlpha = 1;
           gain.gain.value = Math.max(0.0001, alpha);
 
-          onProgress?.(
-            total > 0 ? Math.min(1, (elapsed + Math.max(0, into)) / total) : 0,
-          );
+          onProgress?.(total > 0 ? Math.min(1, (elapsed + Math.max(0, into)) / total) : 0);
 
           if (time >= fragment.end || video.ended) {
             resolve();

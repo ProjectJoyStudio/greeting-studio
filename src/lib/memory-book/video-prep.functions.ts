@@ -51,11 +51,14 @@ function cleanFragments(value: unknown): MemoryBookVideoFragment[] {
     const start = Number(item?.start);
     const end = Number(item?.end);
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+    const sourceId = String(item?.sourceId ?? "").slice(0, 64);
     out.push({
       id: String(item?.id ?? "").slice(0, 64) || `${start}-${end}`,
+      ...(sourceId ? { sourceId } : {}),
       start: Number(Math.max(0, start).toFixed(2)),
       end: Number(Math.max(0, end).toFixed(2)),
     });
+
   }
   return out;
 }
@@ -164,6 +167,8 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
     (input: {
       bookId: string;
       sourceMaterialId: string;
+      /** Every source video that really took part in this assembly. */
+      sourceMaterialIds?: string[];
       path: string;
       fileName?: string;
       mimeType?: string;
@@ -172,6 +177,9 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
     }) => ({
       bookId: String(input?.bookId ?? "").slice(0, 64),
       sourceMaterialId: String(input?.sourceMaterialId ?? "").slice(0, 64),
+      sourceMaterialIds: Array.isArray(input?.sourceMaterialIds)
+        ? input.sourceMaterialIds.slice(0, 50).map((id) => String(id ?? "").slice(0, 64)).filter(Boolean)
+        : [],
       path: String(input?.path ?? "").slice(0, 400),
       fileName: String(input?.fileName ?? "").slice(0, 200),
       mimeType: String(input?.mimeType ?? "").slice(0, 120),
@@ -179,6 +187,7 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
       durationSeconds: Number(input?.durationSeconds ?? 0),
     }),
   )
+
   .handler(
     async ({
       data,
@@ -253,23 +262,34 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
         .maybeSingle();
       if (!verified) return { ok: false, error: "failed" };
 
-      // Only now the long original working video may be removed.
+      // Only now the long original working videos may be removed — and only
+      // the ones that really took part in this assembly. Every other video of
+      // the Materials page stays untouched.
       let sourceRemoved = false;
-      try {
-        const { data: sourceRow } = await db
-          .from("memory_book_materials")
-          .select("id, bucket, path")
-          .eq("id", data.sourceMaterialId)
-          .eq("book_id", data.bookId)
-          .eq("user_id", context.userId)
-          .maybeSingle();
-        const row = sourceRow as unknown as Row | null;
-        if (row) {
+      const involved = Array.from(
+        new Set(
+          (data.sourceMaterialIds.length > 0
+            ? data.sourceMaterialIds
+            : [data.sourceMaterialId]
+          ).filter(Boolean),
+        ),
+      );
+      for (const involvedId of involved) {
+        try {
+          const { data: sourceRow } = await db
+            .from("memory_book_materials")
+            .select("id, bucket, path")
+            .eq("id", involvedId)
+            .eq("book_id", data.bookId)
+            .eq("user_id", context.userId)
+            .maybeSingle();
+          const row = sourceRow as unknown as Row | null;
+          if (!row) continue;
           await db.storage.from(text(row.bucket)).remove([text(row.path)]);
           const { error: delError } = await db
             .from("memory_book_materials")
             .delete()
-            .eq("id", data.sourceMaterialId)
+            .eq("id", involvedId)
             .eq("book_id", data.bookId)
             .eq("user_id", context.userId);
           if (!delError) {
@@ -278,21 +298,22 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
               .from("memory_book_video_edits")
               .delete()
               .eq("book_id", data.bookId)
-              .eq("source_material_id", data.sourceMaterialId)
+              .eq("source_material_id", involvedId)
               .eq("user_id", context.userId);
-            // A book page that still pointed at the removed working video now
+            // A book page that still pointed at a removed working video now
             // points at the prepared video instead.
             await db
               .from("memory_book_pages")
               .update({ video_material_id: materialId })
               .eq("book_id", data.bookId)
               .eq("user_id", context.userId)
-              .eq("video_material_id", data.sourceMaterialId);
+              .eq("video_material_id", involvedId);
           }
+        } catch {
+          // The prepared video is already safe; cleanup can be retried later.
         }
-      } catch {
-        // The prepared video is already safe; cleanup can be retried later.
       }
+
 
       return { ok: true, materialId, sourceRemoved };
     },
