@@ -55,18 +55,31 @@ export function memoryBookVideoKey(
 export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { bookId: string; role?: string; fileName?: string; extension?: string }) => ({
+    (input: {
+      bookId: string;
+      role?: string;
+      fileName?: string;
+      extension?: string;
+      contentType?: string;
+    }) => ({
       bookId: String(input?.bookId ?? "").slice(0, 64),
       role: input?.role === "prepared" ? ("prepared" as const) : ("source" as const),
       fileName: String(input?.fileName ?? "").slice(0, 200),
       extension: String(input?.extension ?? "").slice(0, 10),
+      contentType: String(input?.contentType ?? "").slice(0, 120) || "video/mp4",
     }),
   )
   .handler(
     async ({
       data,
       context,
-    }): Promise<{ ok: boolean; storage?: string; key?: string; uploadUrl?: string }> => {
+    }): Promise<{
+      ok: boolean;
+      storage?: string;
+      key?: string;
+      uploadUrl?: string;
+      contentType?: string;
+    }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false };
 
@@ -79,9 +92,15 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
         ? extensionOf(`x.${data.extension}`, "mp4")
         : extensionOf(data.fileName, "mp4");
       const key = memoryBookVideoKey(context.userId, data.bookId, data.role, extension);
-      const uploadUrl = await r2SignedPutUrl(key, 60 * 60 * 6);
+      const uploadUrl = await r2SignedPutUrl(key, 60 * 60 * 6, data.contentType);
       if (!uploadUrl) return { ok: false };
 
-      return { ok: true, storage: MEMORY_BOOK_R2_BUCKET, key, uploadUrl };
+      return {
+        ok: true,
+        storage: MEMORY_BOOK_R2_BUCKET,
+        key,
+        uploadUrl,
+        contentType: data.contentType,
+      };
     },
   );

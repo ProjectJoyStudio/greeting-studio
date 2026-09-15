@@ -60,17 +60,20 @@ export async function r2SignedGetUrl(key: string, seconds: number): Promise<stri
 }
 
 /** A short-lived address the browser may store exactly one video at. */
+/** A short-lived address the browser may store exactly one video at. */
 export async function r2SignedPutUrl(
   key: string,
   seconds: number,
+  contentType: string,
 ): Promise<string | null> {
   const cfg = config();
   if (!cfg || !key) return null;
   const signed = await cfg.client.sign(
     new Request(`${objectUrl(cfg, key)}?X-Amz-Expires=${Math.max(60, Math.floor(seconds))}`, {
       method: "PUT",
+      headers: { "content-type": contentType || "application/octet-stream" },
     }),
-    { aws: { signQuery: true } },
+    { aws: { signQuery: true, allHeaders: true } },
   );
   return signed.url;
 }
