@@ -4,6 +4,13 @@
 /** Private storage area holding the source photos and videos of a book. */
 export const MEMORY_BOOK_MATERIALS_BUCKET = "memory-book-materials";
 
+/**
+ * Marker kept on a video record whose file lives in the Cloudflare video
+ * area instead of the original storage. Older records keep their own value
+ * and continue to work unchanged.
+ */
+export const MEMORY_BOOK_R2_BUCKET = "r2";
+
 /** Longest single source video a customer may upload, in seconds (60 min). */
 export const MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS = 60 * 60;
 

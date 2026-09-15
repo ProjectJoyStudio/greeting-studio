@@ -5,8 +5,9 @@
 
 import { AwsClient } from "aws4fetch";
 
-/** Marker written into the video record so an R2 file is recognised later. */
-export const MEMORY_BOOK_R2_BUCKET = "r2";
+import { MEMORY_BOOK_R2_BUCKET } from "./materials";
+
+export { MEMORY_BOOK_R2_BUCKET };
 
 interface R2Config {
   base: string;
