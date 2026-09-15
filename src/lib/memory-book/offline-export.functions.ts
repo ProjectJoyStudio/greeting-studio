@@ -61,11 +61,12 @@ export const buildMemoryBookOfflinePlan = createServerFn({ method: "POST" })
       const key = `${bucket}/${path}`;
       const cached = known.get(key);
       if (cached) return cached;
-      const { data: signed } = await db.storage.from(bucket).createSignedUrl(path, SIGNED_SECONDS);
-      if (!signed?.signedUrl) return null;
+      const { memoryBookFileUrl } = await import("./storage.server");
+      const url = await memoryBookFileUrl(bucket, path, SIGNED_SECONDS);
+      if (!url) return null;
       const ext = path.includes(".") ? path.slice(path.lastIndexOf(".")) : "";
       const name = `${String(++counter).padStart(3, "0")}${ext}`;
-      files.push({ name, url: signed.signedUrl });
+      files.push({ name, url });
       const local = `book-files/${name}`;
       known.set(key, local);
       return local;

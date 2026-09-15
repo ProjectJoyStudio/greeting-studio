@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import {
   MEMORY_BOOK_MATERIALS_BUCKET,
+  MEMORY_BOOK_R2_BUCKET,
   type MemoryBookMaterial,
 } from "./materials";
 import {
@@ -74,14 +75,13 @@ async function sourceMaterial(bookId: string, userId: string, materialId: string
     .maybeSingle();
   const row = data as unknown as Row | null;
   if (!row || row.kind !== "video") return null;
-  const { data: signed } = await db.storage
-    .from(text(row.bucket))
-    .createSignedUrl(text(row.path), 60 * 60 * 4);
-  if (!signed?.signedUrl) return null;
+  const { memoryBookFileUrl } = await import("./storage.server");
+  const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60 * 4);
+  if (!url) return null;
   const material: MemoryBookMaterial = {
     id: String(row.id),
     kind: "video",
-    url: signed.signedUrl,
+    url,
     fileName: text(row.file_name),
     durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
     sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
@@ -170,6 +170,7 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
       /** Every source video that really took part in this assembly. */
       sourceMaterialIds?: string[];
       path: string;
+      storage?: string;
       fileName?: string;
       mimeType?: string;
       sizeBytes?: number;
@@ -181,6 +182,10 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
         ? input.sourceMaterialIds.slice(0, 50).map((id) => String(id ?? "").slice(0, 64)).filter(Boolean)
         : [],
       path: String(input?.path ?? "").slice(0, 400),
+      storage:
+        input?.storage === MEMORY_BOOK_R2_BUCKET
+          ? MEMORY_BOOK_R2_BUCKET
+          : MEMORY_BOOK_MATERIALS_BUCKET,
       fileName: String(input?.fileName ?? "").slice(0, 200),
       mimeType: String(input?.mimeType ?? "").slice(0, 120),
       sizeBytes: Number(input?.sizeBytes ?? 0),
@@ -202,7 +207,11 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
       if (!book) return { ok: false, error: "not_found" };
       const source = await sourceMaterial(data.bookId, context.userId, data.sourceMaterialId);
       if (!source) return { ok: false, error: "not_found" };
-      if (!data.path.startsWith(`${context.userId}/${data.bookId}/`)) {
+      const inR2 = data.storage === MEMORY_BOOK_R2_BUCKET;
+      const prefix = inR2
+        ? `memory-book/${context.userId}/${data.bookId}/`
+        : `${context.userId}/${data.bookId}/`;
+      if (!data.path.startsWith(prefix)) {
         return { ok: false, error: "not_found" };
       }
       if (
@@ -217,15 +226,21 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
 
       // The prepared file must really exist in storage before anything is
       // treated as saved — a missing upload must never look successful.
-      const { data: check } = await db.storage
-        .from(MEMORY_BOOK_MATERIALS_BUCKET)
-        .createSignedUrl(data.path, 60);
-      if (!check?.signedUrl) return { ok: false, error: "failed" };
+      if (inR2) {
+        const { r2ObjectSize } = await import("./r2.server");
+        const stored = await r2ObjectSize(data.path);
+        if (stored == null || stored <= 0) return { ok: false, error: "failed" };
+      } else {
+        const { data: check } = await db.storage
+          .from(MEMORY_BOOK_MATERIALS_BUCKET)
+          .createSignedUrl(data.path, 60);
+        if (!check?.signedUrl) return { ok: false, error: "failed" };
+      }
 
       const { data: existing } = await db
         .from("memory_book_materials")
         .select("id")
-        .eq("bucket", MEMORY_BOOK_MATERIALS_BUCKET)
+        .eq("bucket", data.storage)
         .eq("path", data.path)
         .maybeSingle();
 
@@ -238,7 +253,7 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
             book_id: data.bookId,
             user_id: context.userId,
             kind: "video",
-            bucket: MEMORY_BOOK_MATERIALS_BUCKET,
+            bucket: data.storage,
             path: data.path,
             file_name: data.fileName || null,
             mime_type: data.mimeType || null,
@@ -285,7 +300,9 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
             .maybeSingle();
           const row = sourceRow as unknown as Row | null;
           if (!row) continue;
-          await db.storage.from(text(row.bucket)).remove([text(row.path)]);
+          const { memoryBookFileRemove } = await import("./storage.server");
+          // Only the exact file of this one source video is removed.
+          await memoryBookFileRemove(text(row.bucket), text(row.path));
           const { error: delError } = await db
             .from("memory_book_materials")
             .delete()
