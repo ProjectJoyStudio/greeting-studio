@@ -62,6 +62,7 @@ export function MemoryBookMaterials({
   const load = useServerFn(loadMemoryBookMaterials);
   const register = useServerFn(registerMemoryBookMaterial);
   const drop = useServerFn(removeMemoryBookMaterial);
+  const createUpload = useServerFn(createMemoryBookVideoUpload);
 
   const photoInput = useRef<HTMLInputElement | null>(null);
   const videoInput = useRef<HTMLInputElement | null>(null);
