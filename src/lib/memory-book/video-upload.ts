@@ -37,7 +37,15 @@ export interface StoredVideo {
  * ever reported as stored before the file has really been written.
  */
 export async function uploadMemoryBookVideo(
-  createUpload: (args: { data: Record<string, unknown> }) => Promise<UploadTicket>,
+  createUpload: (args: {
+    data: {
+      bookId: string;
+      role?: string;
+      fileName?: string;
+      extension?: string;
+      contentType?: string;
+    };
+  }) => Promise<UploadTicket>,
   request: UploadRequest,
 ): Promise<StoredVideo | null> {
   let ticket: UploadTicket = { ok: false };

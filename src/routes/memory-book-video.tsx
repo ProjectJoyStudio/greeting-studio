@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { MEMORY_BOOK_MATERIALS_BUCKET, type MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
 import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
@@ -83,6 +83,7 @@ function MemoryBookVideoPage() {
   const loadEdit = useServerFn(loadMemoryBookVideoEdit);
   const saveFragments = useServerFn(saveMemoryBookVideoFragments);
   const registerPrepared = useServerFn(registerPreparedMemoryBookVideo);
+  const createUpload = useServerFn(createMemoryBookVideoUpload);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
 
   const player = useRef<HTMLVideoElement | null>(null);
