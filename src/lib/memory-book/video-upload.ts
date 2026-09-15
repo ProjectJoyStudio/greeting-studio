@@ -63,13 +63,16 @@ export async function uploadMemoryBookVideo(
   }
 
   if (ticket.ok && ticket.uploadUrl && ticket.key) {
-    const res = await fetch(ticket.uploadUrl, {
-      method: "PUT",
-      headers: { "content-type": ticket.contentType ?? request.contentType },
-      body: request.data,
-    });
-    if (!res.ok) return null;
-    return { storage: ticket.storage ?? MEMORY_BOOK_R2_BUCKET, path: ticket.key };
+    try {
+      const res = await fetch(ticket.uploadUrl, {
+        method: "PUT",
+        headers: { "content-type": ticket.contentType ?? request.contentType },
+        body: request.data,
+      });
+      if (res.ok) return { storage: ticket.storage ?? MEMORY_BOOK_R2_BUCKET, path: ticket.key };
+    } catch {
+      // Falls through to the storage used before, so the customer can work on.
+    }
   }
 
   const { error } = await supabase.storage
