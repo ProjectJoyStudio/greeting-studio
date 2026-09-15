@@ -11,6 +11,8 @@ import {
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
   type MemoryBookMaterial,
 } from "@/lib/memory-book/materials";
+import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
+import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
 import {
   loadMemoryBookMaterials,
   registerMemoryBookMaterial,
@@ -115,19 +117,41 @@ export function MemoryBookMaterials({
           }
 
           const path = `${userId}/${bookId}/${kind}-${Date.now()}-${safeName(file.name)}`;
-          const { error: upErr } = await supabase.storage
-            .from(MEMORY_BOOK_MATERIALS_BUCKET)
-            .upload(path, file, { upsert: false, contentType: file.type || undefined });
-          if (upErr) {
-            fail(kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
-            continue;
+          let storage: string = MEMORY_BOOK_MATERIALS_BUCKET;
+          let storedPath = path;
+
+          if (kind === "video") {
+            // Book videos are kept in the separate video area.
+            const stored = await uploadMemoryBookVideo(createUpload, {
+              bookId,
+              role: "source",
+              data: file,
+              fileName: file.name,
+              contentType: file.type || "video/mp4",
+              fallbackPath: path,
+            });
+            if (!stored) {
+              fail(t("mbm_video_failed"));
+              continue;
+            }
+            storage = stored.storage;
+            storedPath = stored.path;
+          } else {
+            const { error: upErr } = await supabase.storage
+              .from(MEMORY_BOOK_MATERIALS_BUCKET)
+              .upload(path, file, { upsert: false, contentType: file.type || undefined });
+            if (upErr) {
+              fail(t("mbm_failed"));
+              continue;
+            }
           }
 
           const res = await register({
             data: {
               bookId,
               kind,
-              path,
+              path: storedPath,
+              storage,
               fileName: file.name,
               mimeType: file.type,
               sizeBytes: file.size,
@@ -147,7 +171,7 @@ export function MemoryBookMaterials({
         if (videoInput.current) videoInput.current.value = "";
       }
     },
-    [bookId, register, t],
+    [bookId, createUpload, register, t],
   );
 
   async function removeOne(materialId: string) {
