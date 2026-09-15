@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import {
   MEMORY_BOOK_MATERIALS_BUCKET,
+  MEMORY_BOOK_R2_BUCKET,
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
   type MemoryBookMaterial,
   type MemoryBookMaterialKind,
@@ -56,14 +57,13 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
   const rows = (data ?? []) as unknown as Row[];
   const out: MemoryBookMaterial[] = [];
   for (const row of rows) {
-    const { data: signed } = await db.storage
-      .from(text(row.bucket))
-      .createSignedUrl(text(row.path), 60 * 60);
-    if (!signed?.signedUrl) continue;
+    const { memoryBookFileUrl } = await import("./storage.server");
+    const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60);
+    if (!url) continue;
     out.push({
       id: String(row.id),
       kind: kindOf(row.kind),
-      url: signed.signedUrl,
+      url,
       fileName: text(row.file_name),
       durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
       sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
@@ -98,6 +98,7 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       bookId: string;
       kind: string;
       path: string;
+      storage?: string;
       fileName?: string;
       mimeType?: string;
       sizeBytes?: number;
@@ -106,6 +107,10 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       bookId: String(input?.bookId ?? "").slice(0, 64),
       kind: kindOf(input?.kind),
       path: String(input?.path ?? "").slice(0, 400),
+      storage:
+        input?.storage === MEMORY_BOOK_R2_BUCKET
+          ? MEMORY_BOOK_R2_BUCKET
+          : MEMORY_BOOK_MATERIALS_BUCKET,
       fileName: String(input?.fileName ?? "").slice(0, 200),
       mimeType: String(input?.mimeType ?? "").slice(0, 120),
       sizeBytes: Number(input?.sizeBytes ?? 0),
@@ -125,7 +130,11 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "not_found", materials: [] };
       // The file must live inside this customer's own book folder.
-      if (!data.path.startsWith(`${context.userId}/${data.bookId}/`)) {
+      const inR2 = data.storage === MEMORY_BOOK_R2_BUCKET;
+      const prefix = inR2
+        ? `memory-book/${context.userId}/${data.bookId}/`
+        : `${context.userId}/${data.bookId}/`;
+      if (!data.path.startsWith(prefix)) {
         return { ok: false, error: "not_found", materials: [] };
       }
       if (
@@ -136,11 +145,18 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
         return { ok: false, error: "too_long", materials: [] };
       }
 
+      // Nothing counts as uploaded before the file is really there.
+      if (inR2) {
+        const { r2ObjectSize } = await import("./r2.server");
+        const stored = await r2ObjectSize(data.path);
+        if (stored == null || stored <= 0) return { ok: false, error: "failed", materials: [] };
+      }
+
       const db = await admin();
       const { data: existing } = await db
         .from("memory_book_materials")
         .select("id")
-        .eq("bucket", MEMORY_BOOK_MATERIALS_BUCKET)
+        .eq("bucket", data.storage)
         .eq("path", data.path)
         .maybeSingle();
 
@@ -149,7 +165,7 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
           book_id: data.bookId,
           user_id: context.userId,
           kind: data.kind,
-          bucket: MEMORY_BOOK_MATERIALS_BUCKET,
+          bucket: data.storage,
           path: data.path,
           file_name: data.fileName || null,
           mime_type: data.mimeType || null,
@@ -186,7 +202,8 @@ export const removeMemoryBookMaterial = createServerFn({ method: "POST" })
       if (!row) return { ok: true, materials: await listOf(data.bookId, context.userId) };
 
       const record = row as unknown as Row;
-      await db.storage.from(text(record.bucket)).remove([text(record.path)]);
+      const { memoryBookFileRemove } = await import("./storage.server");
+      await memoryBookFileRemove(text(record.bucket), text(record.path));
       await db
         .from("memory_book_materials")
         .delete()

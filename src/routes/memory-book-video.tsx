@@ -8,8 +8,10 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { MEMORY_BOOK_MATERIALS_BUCKET, type MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
+import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
+import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   MEMORY_BOOK_FRAGMENT_MIN_SECONDS,
@@ -81,6 +83,7 @@ function MemoryBookVideoPage() {
   const loadEdit = useServerFn(loadMemoryBookVideoEdit);
   const saveFragments = useServerFn(saveMemoryBookVideoFragments);
   const registerPrepared = useServerFn(registerPreparedMemoryBookVideo);
+  const createUpload = useServerFn(createMemoryBookVideoUpload);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
 
   const player = useRef<HTMLVideoElement | null>(null);
@@ -297,10 +300,17 @@ function MemoryBookVideoPage() {
       const userId = session.user?.id;
       if (!userId) throw new Error("no_user");
       const path = `${userId}/${bookId}/video-prepared-${Date.now()}.${result.extension}`;
-      const { error: upErr } = await supabase.storage
-        .from(MEMORY_BOOK_MATERIALS_BUCKET)
-        .upload(path, result.blob, { upsert: false, contentType: result.mime });
-      if (upErr) throw new Error("upload_failed");
+      // The finished video is stored first; only a really stored file may be
+      // registered, and only then may the sources be cleaned up.
+      const stored = await uploadMemoryBookVideo(createUpload, {
+        bookId,
+        role: "prepared",
+        data: result.blob,
+        fileName: `prepared.${result.extension}`,
+        contentType: result.mime,
+        fallbackPath: path,
+      });
+      if (!stored) throw new Error("upload_failed");
 
       // Only the source videos that really gave parts to this result.
       const used = Array.from(new Set(fragments.map((fragment) => sourceIdOf(fragment))));
@@ -310,7 +320,8 @@ function MemoryBookVideoPage() {
           bookId,
           sourceMaterialId: materialId,
           sourceMaterialIds: used,
-          path,
+          path: stored.path,
+          storage: stored.storage,
           fileName: `${sources[0]?.fileName ?? "video"} (${formatClock(result.seconds)})`,
           mimeType: result.mime,
           sizeBytes: result.blob.size,
