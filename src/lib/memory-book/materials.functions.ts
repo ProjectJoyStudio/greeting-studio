@@ -131,10 +131,15 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       if (!book) return { ok: false, error: "not_found", materials: [] };
       // The file must live inside this customer's own book folder.
       const inR2 = data.storage === MEMORY_BOOK_R2_BUCKET;
-      const prefix = inR2
-        ? `memory-book/${context.userId}/${data.bookId}/`
-        : `${context.userId}/${data.bookId}/`;
-      if (!data.path.startsWith(prefix)) {
+      const prefixes = inR2
+        ? [
+            // The tested video area.
+            `memory-book/${context.userId}/${data.bookId}/`,
+            // The shared customer address used by the storage layer.
+            `users/${context.userId}/memory-book/${data.bookId}/`,
+          ]
+        : [`${context.userId}/${data.bookId}/`];
+      if (!prefixes.some((prefix) => data.path.startsWith(prefix))) {
         return { ok: false, error: "not_found", materials: [] };
       }
       if (
