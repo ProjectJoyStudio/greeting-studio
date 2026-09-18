@@ -4206,6 +4206,57 @@ export type Database = {
           },
         ]
       }
+      storage_placements: {
+        Row: {
+          attempts: number
+          checksum: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          last_backup_at: string | null
+          last_error: string | null
+          object_key: string
+          provider: string
+          role: string
+          size_bytes: number | null
+          status: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          checksum?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          last_backup_at?: string | null
+          last_error?: string | null
+          object_key: string
+          provider: string
+          role: string
+          size_bytes?: number | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          checksum?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          last_backup_at?: string | null
+          last_error?: string | null
+          object_key?: string
+          provider?: string
+          role?: string
+          size_bytes?: number | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       studio_promo_windows: {
         Row: {
           created_at: string

@@ -13,6 +13,7 @@ import {
 } from "@/lib/memory-book/materials";
 import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
 import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
+import { createMemoryBookPhotoUpload } from "@/lib/memory-book/photo-storage.functions";
 import {
   loadMemoryBookMaterials,
   registerMemoryBookMaterial,
@@ -63,6 +64,7 @@ export function MemoryBookMaterials({
   const register = useServerFn(registerMemoryBookMaterial);
   const drop = useServerFn(removeMemoryBookMaterial);
   const createUpload = useServerFn(createMemoryBookVideoUpload);
+  const createPhotoUpload = useServerFn(createMemoryBookPhotoUpload);
 
   const photoInput = useRef<HTMLInputElement | null>(null);
   const videoInput = useRef<HTMLInputElement | null>(null);
@@ -138,13 +140,25 @@ export function MemoryBookMaterials({
             storage = stored.storage;
             storedPath = stored.path;
           } else {
-            const { error: upErr } = await supabase.storage
-              .from(MEMORY_BOOK_MATERIALS_BUCKET)
-              .upload(path, file, { upsert: false, contentType: file.type || undefined });
-            if (upErr) {
+            // New book photos go to the working area; if it is unavailable the
+            // previous storage is used exactly as before.
+            const stored = await uploadMemoryBookVideo(
+              createPhotoUpload as unknown as Parameters<typeof uploadMemoryBookVideo>[0],
+              {
+                bookId,
+                role: "source",
+                data: file,
+                fileName: file.name,
+                contentType: file.type || "image/jpeg",
+                fallbackPath: path,
+              },
+            );
+            if (!stored) {
               fail(t("mbm_failed"));
               continue;
             }
+            storage = stored.storage;
+            storedPath = stored.path;
           }
 
           const res = await register({
@@ -172,7 +186,7 @@ export function MemoryBookMaterials({
         if (videoInput.current) videoInput.current.value = "";
       }
     },
-    [bookId, createUpload, register, t],
+    [bookId, createUpload, createPhotoUpload, register, t],
   );
 
   async function removeOne(materialId: string) {

@@ -131,10 +131,15 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       if (!book) return { ok: false, error: "not_found", materials: [] };
       // The file must live inside this customer's own book folder.
       const inR2 = data.storage === MEMORY_BOOK_R2_BUCKET;
-      const prefix = inR2
-        ? `memory-book/${context.userId}/${data.bookId}/`
-        : `${context.userId}/${data.bookId}/`;
-      if (!data.path.startsWith(prefix)) {
+      const prefixes = inR2
+        ? [
+            // The tested video area.
+            `memory-book/${context.userId}/${data.bookId}/`,
+            // The shared customer address used by the storage layer.
+            `users/${context.userId}/memory-book/${data.bookId}/`,
+          ]
+        : [`${context.userId}/${data.bookId}/`];
+      if (!prefixes.some((prefix) => data.path.startsWith(prefix))) {
         return { ok: false, error: "not_found", materials: [] };
       }
       if (
@@ -173,6 +178,13 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
           duration_seconds: data.durationSeconds,
         });
         if (error) return { ok: false, error: "failed", materials: [] };
+      }
+
+      // Photos stored in the working area also get their independent reserve
+      // copy. It can never undo or delay the customer's successful upload.
+      if (inR2 && data.kind === "photo") {
+        const { protectObject } = await import("@/lib/storage/backup.server");
+        await protectObject(data.path);
       }
 
       return { ok: true, materials: await listOf(data.bookId, context.userId) };
