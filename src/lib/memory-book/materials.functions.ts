@@ -180,6 +180,13 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
         if (error) return { ok: false, error: "failed", materials: [] };
       }
 
+      // Photos stored in the working area also get their independent reserve
+      // copy. It can never undo or delay the customer's successful upload.
+      if (inR2 && data.kind === "photo") {
+        const { protectObject } = await import("@/lib/storage/backup.server");
+        await protectObject(data.path);
+      }
+
       return { ok: true, materials: await listOf(data.bookId, context.userId) };
     },
   );
