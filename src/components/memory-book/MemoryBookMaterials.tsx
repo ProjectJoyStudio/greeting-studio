@@ -13,6 +13,7 @@ import {
 } from "@/lib/memory-book/materials";
 import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
 import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
+import { createMemoryBookPhotoUpload } from "@/lib/memory-book/photo-storage.functions";
 import {
   loadMemoryBookMaterials,
   registerMemoryBookMaterial,
