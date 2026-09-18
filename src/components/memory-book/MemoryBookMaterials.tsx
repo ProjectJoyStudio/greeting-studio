@@ -140,13 +140,25 @@ export function MemoryBookMaterials({
             storage = stored.storage;
             storedPath = stored.path;
           } else {
-            const { error: upErr } = await supabase.storage
-              .from(MEMORY_BOOK_MATERIALS_BUCKET)
-              .upload(path, file, { upsert: false, contentType: file.type || undefined });
-            if (upErr) {
+            // New book photos go to the working area; if it is unavailable the
+            // previous storage is used exactly as before.
+            const stored = await uploadMemoryBookVideo(
+              createPhotoUpload as unknown as Parameters<typeof uploadMemoryBookVideo>[0],
+              {
+                bookId,
+                role: "source",
+                data: file,
+                fileName: file.name,
+                contentType: file.type || "image/jpeg",
+                fallbackPath: path,
+              },
+            );
+            if (!stored) {
               fail(t("mbm_failed"));
               continue;
             }
+            storage = stored.storage;
+            storedPath = stored.path;
           }
 
           const res = await register({
