@@ -186,7 +186,7 @@ export function MemoryBookMaterials({
         if (videoInput.current) videoInput.current.value = "";
       }
     },
-    [bookId, createUpload, register, t],
+    [bookId, createUpload, createPhotoUpload, register, t],
   );
 
   async function removeOne(materialId: string) {
