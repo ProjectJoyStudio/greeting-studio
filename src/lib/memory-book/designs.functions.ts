@@ -377,7 +377,12 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; state?: MemoryBookDesignState }> => {
     const book = await ownedBook(context, data.bookId);
     if (!book) return { ok: false };
-    if (!data.path.startsWith(`${data.stage}/`)) return { ok: false };
+    // The chosen picture stays one single shared file; the book only points
+    // at it. New library designs live in the shared area, older ones stay put.
+    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
+    const shared = data.path.startsWith(readyDesignPrefix(data.stage));
+    if (!shared && !data.path.startsWith(`${data.stage}/`)) return { ok: false };
 
     const db = await admin();
     const { data: inserted } = await db
@@ -387,7 +392,7 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
         user_id: context.userId,
         stage: data.stage,
         source: "library",
-        bucket: MEMORY_BOOK_LIBRARY_BUCKET,
+        bucket: shared ? MEMORY_BOOK_R2_BUCKET : MEMORY_BOOK_LIBRARY_BUCKET,
         path: data.path,
       })
       .select("id")
