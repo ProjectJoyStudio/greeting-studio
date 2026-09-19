@@ -25,9 +25,15 @@ async function isEditor(userId: string): Promise<boolean> {
 }
 
 async function signed(bucket: string, path: string): Promise<string | null> {
-  const db = await admin();
-  const { data } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60 * 6);
-  return data?.signedUrl ?? null;
+  const { memoryBookFileUrl } = await import("@/lib/memory-book/storage.server");
+  return await memoryBookFileUrl(bucket, path, 60 * 60 * 6);
+}
+
+/** The track identity carried inside a working-area music address. */
+function trackIdFromKey(path: string): string | null {
+  const name = path.split("/").pop() ?? "";
+  const id = name.split(".")[0] ?? "";
+  return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 }
 
 export interface AdminMusicDraft {
