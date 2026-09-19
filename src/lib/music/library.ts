@@ -96,13 +96,52 @@ function extensionOf(file: File): string {
   return file.name.split(".").pop()?.toLowerCase() || "mp3";
 }
 
-/** Adds one new track to the Project Joy library. */
+/**
+ * Adds one new track to the Project Joy library. New tracks are stored in the
+ * working area under their own permanent address and get a reserve copy; only
+ * when that area is unavailable does the previous storage step in.
+ */
 export async function uploadLibraryTrack(input: {
   file: File;
   title: string;
   category: string;
 }): Promise<void> {
   const duration = await readAudioDuration(input.file);
+  const title = input.title.trim() || input.file.name.replace(/\.[^.]+$/, "");
+  const contentType = input.file.type || "audio/mpeg";
+
+  try {
+    const { createLibraryTrackUpload, finalizeLibraryTrack } = await import(
+      "./library-upload.functions"
+    );
+    const ticket = await createLibraryTrackUpload({
+      data: { fileName: input.file.name, contentType },
+    });
+    if (ticket.ok && ticket.uploadUrl && ticket.key && ticket.trackId) {
+      const res = await fetch(ticket.uploadUrl, {
+        method: "PUT",
+        headers: { "content-type": ticket.contentType ?? contentType },
+        body: input.file,
+      });
+      if (res.ok) {
+        const saved = await finalizeLibraryTrack({
+          data: {
+            trackId: ticket.trackId,
+            key: ticket.key,
+            title,
+            category: input.category,
+            durationSeconds: duration,
+          },
+        });
+        if (saved.ok) return;
+        throw new Error("library_save_failed");
+      }
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message === "library_save_failed") throw err;
+    // Falls through to the storage used before, so the library still works.
+  }
+
   const path = `${crypto.randomUUID()}.${extensionOf(input.file)}`;
   const { error: upErr } = await supabase.storage
     .from(MUSIC_LIBRARY_BUCKET)
