@@ -61,10 +61,11 @@ async function patchBook(bookId: string, patch: Record<string, unknown>) {
     .eq("id", bookId);
 }
 
+/** A short-lived read address for a design file, wherever it is stored. */
 async function signed(bucket: string, path: string): Promise<string | null> {
-  const db = await admin();
-  const { data } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60);
-  return data?.signedUrl ?? null;
+  if (!bucket || !path) return null;
+  const { memoryBookFileUrl } = await import("./storage.server");
+  return await memoryBookFileUrl(bucket, path, 60 * 60);
 }
 
 async function variantsOf(bookId: string, stage: MemoryBookStage): Promise<MemoryBookDesignVariant[]> {
@@ -322,16 +323,39 @@ export interface MemoryBookLibraryItem {
   url: string;
 }
 
-/** The ready-made designs Project Joy offers for this stage. */
+/**
+ * The ready-made designs Project Joy offers for this stage: the ones kept in
+ * the new shared area first, plus anything still stored in the older area.
+ */
 export const listMemoryBookLibrary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { stage: string }) => ({ stage: toStage(input?.stage) }))
   .handler(async ({ data }): Promise<{ items: MemoryBookLibraryItem[] }> => {
     const db = await admin();
+    const items: MemoryBookLibraryItem[] = [];
+
+    // ---- new shared area ----
+    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
+    const { data: placed } = await db
+      .from("storage_placements")
+      .select("object_key, created_at")
+      .eq("role", "primary")
+      .eq("status", "present")
+      .like("object_key", `${readyDesignPrefix(data.stage)}%`)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    for (const raw of ((placed ?? []) as unknown as Row[])) {
+      const key = text(raw.object_key);
+      if (!key) continue;
+      const url = await signed(MEMORY_BOOK_R2_BUCKET, key);
+      if (url) items.push({ path: key, url });
+    }
+
+    // ---- older area, kept readable ----
     const { data: files } = await db.storage
       .from(MEMORY_BOOK_LIBRARY_BUCKET)
       .list(data.stage, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
-    const items: MemoryBookLibraryItem[] = [];
     for (const file of files ?? []) {
       if (!file?.name) continue;
       const path = `${data.stage}/${file.name}`;
@@ -353,7 +377,12 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; state?: MemoryBookDesignState }> => {
     const book = await ownedBook(context, data.bookId);
     if (!book) return { ok: false };
-    if (!data.path.startsWith(`${data.stage}/`)) return { ok: false };
+    // The chosen picture stays one single shared file; the book only points
+    // at it. New library designs live in the shared area, older ones stay put.
+    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
+    const shared = data.path.startsWith(readyDesignPrefix(data.stage));
+    if (!shared && !data.path.startsWith(`${data.stage}/`)) return { ok: false };
 
     const db = await admin();
     const { data: inserted } = await db
@@ -363,7 +392,7 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
         user_id: context.userId,
         stage: data.stage,
         source: "library",
-        bucket: MEMORY_BOOK_LIBRARY_BUCKET,
+        bucket: shared ? MEMORY_BOOK_R2_BUCKET : MEMORY_BOOK_LIBRARY_BUCKET,
         path: data.path,
       })
       .select("id")

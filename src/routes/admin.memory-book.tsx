@@ -16,6 +16,10 @@ import {
   getMemoryBookRetention,
   setMemoryBookRetention,
 } from "@/lib/memory-book/lifecycle.functions";
+import {
+  createReadyDesignUpload,
+  finalizeReadyDesign,
+} from "@/lib/memory-book/ready-designs.functions";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
@@ -309,6 +313,8 @@ function RetentionSection() {
 /** Ready-made cover and leaf designs offered inside the creation flow. */
 function LibrarySection() {
   const { t } = useI18n();
+  const prepareUpload = useServerFn(createReadyDesignUpload);
+  const finishUpload = useServerFn(finalizeReadyDesign);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -318,6 +324,26 @@ function LibrarySection() {
     setNote(null);
     setFailure(null);
     try {
+      const contentType = file.type || "image/jpeg";
+      // New ready designs go straight into the shared new storage area.
+      const ticket = await prepareUpload({
+        data: { stage, fileName: file.name, contentType },
+      }).catch(() => ({ ok: false }) as { ok: boolean });
+
+      if (ticket.ok && "uploadUrl" in ticket && ticket.uploadUrl && ticket.key) {
+        const put = await fetch(ticket.uploadUrl, {
+          method: "PUT",
+          headers: { "content-type": contentType },
+          body: file,
+        });
+        if (!put.ok) throw new Error(`upload_failed_${put.status}`);
+        const done = await finishUpload({ data: { key: ticket.key } });
+        if (!done.ok) throw new Error(done.error ?? "store_failed");
+        setNote(t("mb_admin_saved"));
+        return;
+      }
+
+      // Only when the new area is unavailable: the previous way still works.
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const { error: upErr } = await supabase.storage
         .from("memory-book-library")
