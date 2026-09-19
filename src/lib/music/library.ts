@@ -33,20 +33,24 @@ function mapRow(r: Row): MusicTrack {
   };
 }
 
-/** A playable link for one stored file. */
+/**
+ * A playable link for one stored file. The server answers, because a library
+ * file may live in the older storage or in the working area.
+ */
 export async function musicUrl(bucket: string | null, path: string | null): Promise<string | null> {
   if (!bucket || !path) return null;
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_TTL);
-  return data?.signedUrl ?? null;
+  const { urls } = await resolveMusicUrls({ data: { items: [{ bucket, path }] } });
+  return urls[0] ?? null;
 }
 
 async function withUrls(tracks: MusicTrack[]): Promise<MusicTrack[]> {
-  return Promise.all(
-    tracks.map(async (track) => ({
-      ...track,
-      audioUrl: await musicUrl(track.storageBucket, track.storagePath),
-    })),
-  );
+  if (tracks.length === 0) return tracks;
+  const { urls } = await resolveMusicUrls({
+    data: {
+      items: tracks.map((track) => ({ bucket: track.storageBucket, path: track.storagePath })),
+    },
+  });
+  return tracks.map((track, index) => ({ ...track, audioUrl: urls[index] ?? null }));
 }
 
 /** The music a customer may choose from: active tracks only, in order. */
