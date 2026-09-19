@@ -143,14 +143,15 @@ async function cleanupUnusedPageBackgrounds(userId: string, bookId: string) {
   );
   if (removable.length === 0) return;
 
-  const paths = removable
-    .filter((r) => r.bucket === MEMORY_BOOK_DESIGN_BUCKET)
-    .map((r) => String(r.path));
-  if (paths.length > 0) {
+  const { memoryBookFileRemove } = await import("./storage.server");
+  for (const row of removable) {
+    const bucket = String(row.bucket ?? "");
+    const path = String(row.path ?? "");
+    if (!path || (bucket !== MEMORY_BOOK_DESIGN_BUCKET && !path.includes("/memory-book/"))) continue;
     try {
-      await db.storage.from(MEMORY_BOOK_DESIGN_BUCKET).remove(paths);
+      await memoryBookFileRemove(bucket, path);
     } catch {
-      /* keeping the files is safer than failing after completion */
+      /* keeping the file is safer than failing after completion */
     }
   }
   const ids = removable.map((r) => String(r.id));
