@@ -323,16 +323,39 @@ export interface MemoryBookLibraryItem {
   url: string;
 }
 
-/** The ready-made designs Project Joy offers for this stage. */
+/**
+ * The ready-made designs Project Joy offers for this stage: the ones kept in
+ * the new shared area first, plus anything still stored in the older area.
+ */
 export const listMemoryBookLibrary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { stage: string }) => ({ stage: toStage(input?.stage) }))
   .handler(async ({ data }): Promise<{ items: MemoryBookLibraryItem[] }> => {
     const db = await admin();
+    const items: MemoryBookLibraryItem[] = [];
+
+    // ---- new shared area ----
+    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
+    const { data: placed } = await db
+      .from("storage_placements")
+      .select("object_key, created_at")
+      .eq("role", "primary")
+      .eq("status", "present")
+      .like("object_key", `${readyDesignPrefix(data.stage)}%`)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    for (const raw of ((placed ?? []) as unknown as Row[])) {
+      const key = text(raw.object_key);
+      if (!key) continue;
+      const url = await signed(MEMORY_BOOK_R2_BUCKET, key);
+      if (url) items.push({ path: key, url });
+    }
+
+    // ---- older area, kept readable ----
     const { data: files } = await db.storage
       .from(MEMORY_BOOK_LIBRARY_BUCKET)
       .list(data.stage, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
-    const items: MemoryBookLibraryItem[] = [];
     for (const file of files ?? []) {
       if (!file?.name) continue;
       const path = `${data.stage}/${file.name}`;
