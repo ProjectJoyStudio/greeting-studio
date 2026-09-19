@@ -175,7 +175,10 @@ export const adminRemoveMemoryBookDecoration = createServerFn({ method: "POST" }
         .maybeSingle();
       if (row) {
         const record = row as unknown as Row;
-        await db.storage.from(text(record.bucket)).remove([text(record.path)]);
+        // Removes exactly the one stored file, wherever it lives. The reserve
+        // copy in the other area keeps its own independent life.
+        const { memoryBookFileRemove } = await import("./storage.server");
+        await memoryBookFileRemove(text(record.bucket), text(record.path));
         await db.from("memory_book_decorations").delete().eq("id", data.id);
       }
       return { ok: true, decorations: await listAll(false) };
