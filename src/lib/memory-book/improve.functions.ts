@@ -191,19 +191,25 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
     try {
       const { renderMemoryBookDesign } = await import("./designs.server");
       const rendered = await renderMemoryBookDesign("leaf", data.prompt);
-      const path = `${context.userId}/${data.bookId}/page-${data.pageIndex}-${crypto.randomUUID()}.${rendered.fileExtension}`;
-      const upload = await db.storage
-        .from(MEMORY_BOOK_DESIGN_BUCKET)
-        .upload(path, rendered.bytes, { contentType: rendered.contentType, upsert: false });
-      if (upload.error) throw new Error(upload.error.message);
+      const name = `page-${data.pageIndex}-${crypto.randomUUID()}.${rendered.fileExtension}`;
+      const { storeMemoryBookFile } = await import("./generated-storage.server");
+      const stored = await storeMemoryBookFile({
+        userId: context.userId,
+        bookId: data.bookId,
+        parts: ["pages", name],
+        bytes: rendered.bytes,
+        contentType: rendered.contentType,
+        legacyBucket: MEMORY_BOOK_DESIGN_BUCKET,
+        legacyPath: `${context.userId}/${data.bookId}/${name}`,
+      });
 
       // Only the background columns of THIS page are written. Photos, video,
       // text and decorations are never part of this update.
       const { error } = await db
         .from("memory_book_pages")
         .update({
-          background_bucket: MEMORY_BOOK_DESIGN_BUCKET,
-          background_path: path,
+          background_bucket: stored.bucket,
+          background_path: stored.path,
           updated_at: new Date().toISOString(),
         } as never)
         .eq("book_id", data.bookId)
@@ -217,12 +223,12 @@ export const improveMemoryBookPage = createServerFn({ method: "POST" })
         user_id: context.userId,
         book_id: data.bookId,
         page_index: data.pageIndex,
-        bucket: MEMORY_BOOK_DESIGN_BUCKET,
-        path,
+        bucket: stored.bucket,
+        path: stored.path,
         prompt: data.prompt,
       } as never);
 
-      const url = await signedBackground(MEMORY_BOOK_DESIGN_BUCKET, path);
+      const url = await signedBackground(stored.bucket, stored.path);
       const fresh = await ownedBook(context, data.bookId);
       return {
         ok: true,
