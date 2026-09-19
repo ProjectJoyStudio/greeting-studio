@@ -193,9 +193,17 @@ export const publishAdminMusicDraft = createServerFn({ method: "POST" })
       const nextOrder =
         Number((last?.[0] as { sort_order?: number } | undefined)?.sort_order ?? 0) + 1;
 
+      // A file already stored under its permanent shared address keeps that
+      // address: the track simply takes the identity written in it.
+      const keptId =
+        String(draft.bucket ?? "") === MEMORY_BOOK_R2_BUCKET
+          ? trackIdFromKey(String(draft.path ?? ""))
+          : null;
+
       const { data: track, error } = await db
         .from("music_tracks")
         .insert({
+          ...(keptId ? { id: keptId } : {}),
           title: data.title || String(draft.title ?? "Project Joy music"),
           category: data.category || String(draft.category ?? "background"),
           storage_bucket: String(draft.bucket ?? ""),
