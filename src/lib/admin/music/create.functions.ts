@@ -104,18 +104,47 @@ export const createAdminMusic = createServerFn({ method: "POST" })
       try {
         const { createMusicComposition } = await import("@/lib/memory-book/music.server");
         const created = await createMusicComposition(data.prompt);
-        const path = `drafts/${crypto.randomUUID()}.${created.fileExtension}`;
-        const upload = await db.storage
-          .from(MUSIC_LIBRARY_BUCKET)
-          .upload(path, created.bytes, { contentType: created.contentType, upsert: false });
-        if (upload.error) throw new Error(upload.error.message);
+
+        // A new library track is written straight into the working area under
+        // the permanent address it will keep once published, and receives its
+        // own verified reserve copy. Only when that area is unavailable does
+        // the storage used before step in.
+        let bucket = MUSIC_LIBRARY_BUCKET;
+        let path = "";
+        const { storageFor } = await import("@/lib/storage/registry.server");
+        const primary = storageFor("primary");
+        if (primary) {
+          const key = `system/music/${crypto.randomUUID()}.${created.fileExtension}`;
+          const stored = await primary
+            .put(key, created.bytes as unknown as BodyInit, created.contentType)
+            .catch(() => false);
+          if (stored) {
+            const { recordPrimary, backupToReserve } = await import("@/lib/storage/backup.server");
+            const recorded = await recordPrimary(key);
+            if (recorded) {
+              bucket = MEMORY_BOOK_R2_BUCKET;
+              path = key;
+              // A reserve failure never destroys a good upload: it is recorded
+              // and stays retryable.
+              await backupToReserve(key).catch(() => undefined);
+            }
+          }
+        }
+
+        if (!path) {
+          path = `drafts/${crypto.randomUUID()}.${created.fileExtension}`;
+          const upload = await db.storage
+            .from(MUSIC_LIBRARY_BUCKET)
+            .upload(path, created.bytes, { contentType: created.contentType, upsert: false });
+          if (upload.error) throw new Error(upload.error.message);
+        }
 
         await db.from("admin_music_drafts").insert({
           created_by: context.userId,
           title: data.title || data.prompt.trim().slice(0, 60),
           prompt: data.prompt,
           category: data.category,
-          bucket: MUSIC_LIBRARY_BUCKET,
+          bucket,
           path,
           duration_seconds: created.durationSeconds,
         } as never);
