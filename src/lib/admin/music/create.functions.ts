@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MEMORY_BOOK_R2_BUCKET } from "@/lib/memory-book/materials";
 import { MUSIC_LIBRARY_BUCKET } from "@/lib/music/types";
 
 type Row = Record<string, unknown>;
