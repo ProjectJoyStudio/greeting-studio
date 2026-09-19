@@ -3,9 +3,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+import { removeLibraryMusicFile, resolveMusicUrls } from "./library.functions";
 import { MUSIC_LIBRARY_BUCKET, MUSIC_UPLOAD_BUCKET, type MusicTrack } from "./types";
-
-const SIGNED_TTL = 60 * 60 * 12;
 
 interface Row {
   id: string;
