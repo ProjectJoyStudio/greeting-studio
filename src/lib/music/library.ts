@@ -153,10 +153,11 @@ export async function updateTrack(
 export async function deleteTrack(track: MusicTrack): Promise<void> {
   const { error } = await supabase.from("music_tracks").delete().eq("id", track.id);
   if (error) throw error;
-  await supabase.storage
-    .from(track.storageBucket)
-    .remove([track.storagePath])
-    .catch(() => undefined);
+  // Removes exactly the one stored file, wherever it lives. A reserve copy in
+  // the other area keeps its own independent life.
+  await removeLibraryMusicFile({
+    data: { bucket: track.storageBucket, path: track.storagePath },
+  }).catch(() => undefined);
 }
 
 /** Music a customer brings, stored for this one project only. */

@@ -30,9 +30,10 @@ async function admin() {
 
 async function signed(bucket: string | null, path: string | null): Promise<string | null> {
   if (!bucket || !path) return null;
-  const db = await admin();
-  const { data } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60 * 6);
-  return data?.signedUrl ?? null;
+  // The file may live in the older storage or in the working area; the shared
+  // helper knows both and always returns a short-lived read address.
+  const { memoryBookFileUrl } = await import("./storage.server");
+  return await memoryBookFileUrl(bucket, path, 60 * 60 * 6);
 }
 
 /** The paid book of the signed-in customer, or nothing. */
