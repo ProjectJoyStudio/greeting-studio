@@ -234,11 +234,17 @@ export const createMemoryBookMusic = createServerFn({ method: "POST" })
       try {
         const { createMusicComposition } = await import("./music.server");
         const created = await createMusicComposition(data.prompt);
-        const path = `${context.userId}/${data.bookId}/${crypto.randomUUID()}.${created.fileExtension}`;
-        const upload = await db.storage
-          .from(MEMORY_BOOK_MUSIC_BUCKET)
-          .upload(path, created.bytes, { contentType: created.contentType, upsert: false });
-        if (upload.error) throw new Error(upload.error.message);
+        const name = `${crypto.randomUUID()}.${created.fileExtension}`;
+        const { storeMemoryBookFile } = await import("./generated-storage.server");
+        const stored = await storeMemoryBookFile({
+          userId: context.userId,
+          bookId: data.bookId,
+          parts: ["music", name],
+          bytes: created.bytes,
+          contentType: created.contentType,
+          legacyBucket: MEMORY_BOOK_MUSIC_BUCKET,
+          legacyPath: `${context.userId}/${data.bookId}/${name}`,
+        });
 
         const { data: inserted, error } = await db
           .from("memory_book_music_variants")
@@ -246,8 +252,8 @@ export const createMemoryBookMusic = createServerFn({ method: "POST" })
             book_id: data.bookId,
             user_id: context.userId,
             prompt: data.prompt,
-            bucket: MEMORY_BOOK_MUSIC_BUCKET,
-            path,
+            bucket: stored.bucket,
+            path: stored.path,
             duration_seconds: created.durationSeconds,
           } as never)
           .select("id")
