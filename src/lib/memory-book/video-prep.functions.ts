@@ -277,6 +277,15 @@ export const registerPreparedMemoryBookVideo = createServerFn({ method: "POST" }
         .maybeSingle();
       if (!verified) return { ok: false, error: "failed" };
 
+      // The finished video in the working area gets its own independent
+      // reserve copy. It can never undo or delay the customer's result.
+      if (inR2) {
+        const { protectObject } = await import("@/lib/storage/backup.server");
+        await protectObject(data.path);
+      }
+
+
+
       // Only now the long original working videos may be removed — and only
       // the ones that really took part in this assembly. Every other video of
       // the Materials page stays untouched.
