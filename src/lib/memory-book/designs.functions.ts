@@ -199,19 +199,25 @@ export const generateMemoryBookDesign = createServerFn({ method: "POST" })
       try {
         const { renderMemoryBookDesign } = await import("./designs.server");
         const rendered = await renderMemoryBookDesign(data.stage, data.prompt);
-        const path = `${context.userId}/${data.bookId}/${data.stage}-${crypto.randomUUID()}.${rendered.fileExtension}`;
-        const upload = await db.storage
-          .from(MEMORY_BOOK_DESIGN_BUCKET)
-          .upload(path, rendered.bytes, { contentType: rendered.contentType, upsert: false });
-        if (upload.error) throw new Error(upload.error.message);
+        const name = `${data.stage}-${crypto.randomUUID()}.${rendered.fileExtension}`;
+        const { storeMemoryBookFile } = await import("./generated-storage.server");
+        const stored = await storeMemoryBookFile({
+          userId: context.userId,
+          bookId: data.bookId,
+          parts: ["designs", name],
+          bytes: rendered.bytes,
+          contentType: rendered.contentType,
+          legacyBucket: MEMORY_BOOK_DESIGN_BUCKET,
+          legacyPath: `${context.userId}/${data.bookId}/${name}`,
+        });
 
         await db.from("memory_book_designs").insert({
           book_id: data.bookId,
           user_id: context.userId,
           stage: data.stage,
           source: "generated",
-          bucket: MEMORY_BOOK_DESIGN_BUCKET,
-          path,
+          bucket: stored.bucket,
+          path: stored.path,
           prompt: data.prompt,
         });
       } catch {
