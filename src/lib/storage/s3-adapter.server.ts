@@ -74,10 +74,21 @@ export function createS3Adapter(
       if (!c || !key) return null;
       const res = await c.client.fetch(objectUrl(c, key), { method: "HEAD" });
       if (!res.ok) return null;
-      const length = Number(res.headers.get("content-length") ?? 0);
+      const header = Number(res.headers.get("content-length") ?? 0);
+      let sizeBytes = Number.isFinite(header) ? header : 0;
+      if (sizeBytes <= 0) {
+        // Some areas do not report the length on a HEAD. Asking for the very
+        // first byte returns the real total without downloading the file.
+        const probe = await c.client.fetch(objectUrl(c, key), {
+          method: "GET",
+          headers: { range: "bytes=0-0" },
+        });
+        const total = Number(/\/(\d+)\s*$/.exec(probe.headers.get("content-range") ?? "")?.[1] ?? 0);
+        if (Number.isFinite(total) && total > 0) sizeBytes = total;
+      }
       return {
         key,
-        sizeBytes: Number.isFinite(length) ? length : 0,
+        sizeBytes,
         contentType: res.headers.get("content-type"),
       };
     },

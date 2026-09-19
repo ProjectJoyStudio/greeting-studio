@@ -44,20 +44,33 @@ const db = createClient(
 const saved = new Map<string, string>();
 let counter = 0;
 
+/** Reads one stored file, wherever Project Joy keeps it today. */
+async function readStored(bucket: string, path: string): Promise<Buffer | null> {
+  if (bucket === "r2") {
+    const { storageFor } = await import("../src/lib/storage/registry.server");
+    const primary = storageFor("primary");
+    const bytes = primary ? await primary.getBytes(path) : null;
+    return bytes ? Buffer.from(bytes) : null;
+  }
+  const { data, error } = await db.storage.from(bucket).download(path);
+  if (error || !data) return null;
+  return Buffer.from(await data.arrayBuffer());
+}
+
 /** Copies one stored file into the package and returns its local address. */
 async function localCopy(bucket: string | null, path: string | null): Promise<string | null> {
   if (!bucket || !path) return null;
   const key = `${bucket}/${path}`;
   const known = saved.get(key);
   if (known) return known;
-  const { data, error } = await db.storage.from(bucket).download(path);
-  if (error || !data) {
-    console.warn(`  ! could not read ${key}: ${error?.message ?? "missing"}`);
+  const bytes = await readStored(bucket, path);
+  if (!bytes) {
+    console.warn(`  ! could not read ${key}`);
     return null;
   }
   const ext = path.includes(".") ? path.slice(path.lastIndexOf(".")) : "";
   const name = `${String(++counter).padStart(3, "0")}${ext}`;
-  await writeFile(join(ASSETS, name), Buffer.from(await data.arrayBuffer()));
+  await writeFile(join(ASSETS, name), bytes);
   const url = `book-files/${name}`;
   saved.set(key, url);
   console.log(`  + ${key} -> ${url}`);
@@ -66,9 +79,8 @@ async function localCopy(bucket: string | null, path: string | null): Promise<st
 
 /** Small files that must be readable as data (CSS masks) travel inline. */
 async function inlineCopy(bucket: string, path: string): Promise<string | null> {
-  const { data, error } = await db.storage.from(bucket).download(path);
-  if (error || !data) return null;
-  const bytes = Buffer.from(await data.arrayBuffer());
+  const bytes = await readStored(bucket, path);
+  if (!bytes) return null;
   const mime = path.endsWith(".svg") ? "image/svg+xml" : "image/png";
   console.log(`  + ${bucket}/${path} -> inside the book data`);
   return `data:${mime};base64,${bytes.toString("base64")}`;

@@ -30,15 +30,19 @@ async function assertAdmin(context: { supabase: unknown; userId: string }) {
 
 /** SVG files stay scalable: the stored file itself is served, never a raster copy. */
 async function toDecoration(row: Row): Promise<MemoryBookDecoration> {
-  const db = await admin();
-  const { data: signed } = await db.storage
-    .from(text(row.bucket) || MEMORY_BOOK_DECORATIONS_BUCKET)
-    .createSignedUrl(text(row.path), 60 * 60 * 12);
+  // The file may live in the working area or still in the older storage; the
+  // shared helper knows both and always returns a short-lived read address.
+  const { memoryBookFileUrl } = await import("./storage.server");
+  const url = await memoryBookFileUrl(
+    text(row.bucket) || MEMORY_BOOK_DECORATIONS_BUCKET,
+    text(row.path),
+    60 * 60 * 12,
+  );
   return {
     id: String(row.id),
     name: text(row.name),
     category: toCategory(row.category),
-    url: signed?.signedUrl ?? null,
+    url,
     fileType: row.file_type === "svg" ? "svg" : "png",
     recolorable: row.recolorable === true,
     enabled: row.enabled === true,
@@ -171,7 +175,10 @@ export const adminRemoveMemoryBookDecoration = createServerFn({ method: "POST" }
         .maybeSingle();
       if (row) {
         const record = row as unknown as Row;
-        await db.storage.from(text(record.bucket)).remove([text(record.path)]);
+        // Removes exactly the one stored file, wherever it lives. The reserve
+        // copy in the other area keeps its own independent life.
+        const { memoryBookFileRemove } = await import("./storage.server");
+        await memoryBookFileRemove(text(record.bucket), text(record.path));
         await db.from("memory_book_decorations").delete().eq("id", data.id);
       }
       return { ok: true, decorations: await listAll(false) };
