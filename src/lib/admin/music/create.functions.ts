@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MEMORY_BOOK_R2_BUCKET } from "@/lib/memory-book/materials";
 import { MUSIC_LIBRARY_BUCKET } from "@/lib/music/types";
 
 type Row = Record<string, unknown>;
@@ -25,9 +26,15 @@ async function isEditor(userId: string): Promise<boolean> {
 }
 
 async function signed(bucket: string, path: string): Promise<string | null> {
-  const db = await admin();
-  const { data } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60 * 6);
-  return data?.signedUrl ?? null;
+  const { memoryBookFileUrl } = await import("@/lib/memory-book/storage.server");
+  return await memoryBookFileUrl(bucket, path, 60 * 60 * 6);
+}
+
+/** The track identity carried inside a working-area music address. */
+function trackIdFromKey(path: string): string | null {
+  const name = path.split("/").pop() ?? "";
+  const id = name.split(".")[0] ?? "";
+  return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 }
 
 export interface AdminMusicDraft {
@@ -98,18 +105,47 @@ export const createAdminMusic = createServerFn({ method: "POST" })
       try {
         const { createMusicComposition } = await import("@/lib/memory-book/music.server");
         const created = await createMusicComposition(data.prompt);
-        const path = `drafts/${crypto.randomUUID()}.${created.fileExtension}`;
-        const upload = await db.storage
-          .from(MUSIC_LIBRARY_BUCKET)
-          .upload(path, created.bytes, { contentType: created.contentType, upsert: false });
-        if (upload.error) throw new Error(upload.error.message);
+
+        // A new library track is written straight into the working area under
+        // the permanent address it will keep once published, and receives its
+        // own verified reserve copy. Only when that area is unavailable does
+        // the storage used before step in.
+        let bucket = MUSIC_LIBRARY_BUCKET;
+        let path = "";
+        const { storageFor } = await import("@/lib/storage/registry.server");
+        const primary = storageFor("primary");
+        if (primary) {
+          const key = `system/music/${crypto.randomUUID()}.${created.fileExtension}`;
+          const stored = await primary
+            .put(key, created.bytes as unknown as BodyInit, created.contentType)
+            .catch(() => false);
+          if (stored) {
+            const { recordPrimary, backupToReserve } = await import("@/lib/storage/backup.server");
+            const recorded = await recordPrimary(key);
+            if (recorded) {
+              bucket = MEMORY_BOOK_R2_BUCKET;
+              path = key;
+              // A reserve failure never destroys a good upload: it is recorded
+              // and stays retryable.
+              await backupToReserve(key).catch(() => undefined);
+            }
+          }
+        }
+
+        if (!path) {
+          path = `drafts/${crypto.randomUUID()}.${created.fileExtension}`;
+          const upload = await db.storage
+            .from(MUSIC_LIBRARY_BUCKET)
+            .upload(path, created.bytes, { contentType: created.contentType, upsert: false });
+          if (upload.error) throw new Error(upload.error.message);
+        }
 
         await db.from("admin_music_drafts").insert({
           created_by: context.userId,
           title: data.title || data.prompt.trim().slice(0, 60),
           prompt: data.prompt,
           category: data.category,
-          bucket: MUSIC_LIBRARY_BUCKET,
+          bucket,
           path,
           duration_seconds: created.durationSeconds,
         } as never);
@@ -157,9 +193,17 @@ export const publishAdminMusicDraft = createServerFn({ method: "POST" })
       const nextOrder =
         Number((last?.[0] as { sort_order?: number } | undefined)?.sort_order ?? 0) + 1;
 
+      // A file already stored under its permanent shared address keeps that
+      // address: the track simply takes the identity written in it.
+      const keptId =
+        String(draft.bucket ?? "") === MEMORY_BOOK_R2_BUCKET
+          ? trackIdFromKey(String(draft.path ?? ""))
+          : null;
+
       const { data: track, error } = await db
         .from("music_tracks")
         .insert({
+          ...(keptId ? { id: keptId } : {}),
           title: data.title || String(draft.title ?? "Project Joy music"),
           category: data.category || String(draft.category ?? "background"),
           storage_bucket: String(draft.bucket ?? ""),
@@ -200,10 +244,12 @@ export const discardAdminMusicDraft = createServerFn({ method: "POST" })
         .maybeSingle();
       const draft = (draftRow ?? null) as Row | null;
       if (draft && !draft.published_track_id) {
-        await db.storage
-          .from(String(draft.bucket ?? ""))
-          .remove([String(draft.path ?? "")])
-          .catch(() => undefined);
+        // Removes exactly the one stored file, wherever it lives. A reserve
+        // copy in the other area keeps its own independent life.
+        const { memoryBookFileRemove } = await import("@/lib/memory-book/storage.server");
+        await memoryBookFileRemove(String(draft.bucket ?? ""), String(draft.path ?? "")).catch(
+          () => undefined,
+        );
       }
       await db.from("admin_music_drafts").delete().eq("id", data.draftId);
       return { ok: true, drafts: await listDrafts() };
