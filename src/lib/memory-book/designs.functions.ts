@@ -61,10 +61,11 @@ async function patchBook(bookId: string, patch: Record<string, unknown>) {
     .eq("id", bookId);
 }
 
+/** A short-lived read address for a design file, wherever it is stored. */
 async function signed(bucket: string, path: string): Promise<string | null> {
-  const db = await admin();
-  const { data } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60);
-  return data?.signedUrl ?? null;
+  if (!bucket || !path) return null;
+  const { memoryBookFileUrl } = await import("./storage.server");
+  return await memoryBookFileUrl(bucket, path, 60 * 60);
 }
 
 async function variantsOf(bookId: string, stage: MemoryBookStage): Promise<MemoryBookDesignVariant[]> {
