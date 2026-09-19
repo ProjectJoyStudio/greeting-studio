@@ -3,9 +3,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+import { removeLibraryMusicFile, resolveMusicUrls } from "./library.functions";
 import { MUSIC_LIBRARY_BUCKET, MUSIC_UPLOAD_BUCKET, type MusicTrack } from "./types";
-
-const SIGNED_TTL = 60 * 60 * 12;
 
 interface Row {
   id: string;
@@ -33,20 +32,24 @@ function mapRow(r: Row): MusicTrack {
   };
 }
 
-/** A playable link for one stored file. */
+/**
+ * A playable link for one stored file. The server answers, because a library
+ * file may live in the older storage or in the working area.
+ */
 export async function musicUrl(bucket: string | null, path: string | null): Promise<string | null> {
   if (!bucket || !path) return null;
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_TTL);
-  return data?.signedUrl ?? null;
+  const { urls } = await resolveMusicUrls({ data: { items: [{ bucket, path }] } });
+  return urls[0] ?? null;
 }
 
 async function withUrls(tracks: MusicTrack[]): Promise<MusicTrack[]> {
-  return Promise.all(
-    tracks.map(async (track) => ({
-      ...track,
-      audioUrl: await musicUrl(track.storageBucket, track.storagePath),
-    })),
-  );
+  if (tracks.length === 0) return tracks;
+  const { urls } = await resolveMusicUrls({
+    data: {
+      items: tracks.map((track) => ({ bucket: track.storageBucket, path: track.storagePath })),
+    },
+  });
+  return tracks.map((track, index) => ({ ...track, audioUrl: urls[index] ?? null }));
 }
 
 /** The music a customer may choose from: active tracks only, in order. */
@@ -150,10 +153,11 @@ export async function updateTrack(
 export async function deleteTrack(track: MusicTrack): Promise<void> {
   const { error } = await supabase.from("music_tracks").delete().eq("id", track.id);
   if (error) throw error;
-  await supabase.storage
-    .from(track.storageBucket)
-    .remove([track.storagePath])
-    .catch(() => undefined);
+  // Removes exactly the one stored file, wherever it lives. A reserve copy in
+  // the other area keeps its own independent life.
+  await removeLibraryMusicFile({
+    data: { bucket: track.storageBucket, path: track.storagePath },
+  }).catch(() => undefined);
 }
 
 /** Music a customer brings, stored for this one project only. */
