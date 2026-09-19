@@ -29,8 +29,13 @@ export async function memoryBookFileRemove(bucket: string, path: string): Promis
   if (!bucket || !path) return;
   if (isR2Bucket(bucket)) {
     await r2DeleteObject(path);
+    // Only the working copy is gone. The reserve copy in the other area keeps
+    // its own independent life and is never deleted along with it.
+    const { markPrimaryDeleted } = await import("@/lib/storage/backup.server");
+    await markPrimaryDeleted(path);
     return;
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.storage.from(bucket).remove([path]);
 }
+

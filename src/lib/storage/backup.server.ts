@@ -106,6 +106,27 @@ export async function forgetPlacements(objectKey: string): Promise<void> {
 }
 
 /**
+ * Notes that the working copy of one file is gone. The reserve copy and its
+ * record are deliberately left alone: the two areas are independent.
+ */
+export async function markPrimaryDeleted(objectKey: string): Promise<void> {
+  try {
+    const primary = storageFor("primary");
+    if (!primary || !objectKey) return;
+    const existing = await placementOf(objectKey, primary.id);
+    if (!existing) return;
+    const client = await db();
+    await client
+      .from(TABLE)
+      .update({ status: "deleted", verified_at: null, last_error: null })
+      .eq("id", existing.id as string);
+  } catch {
+    // Bookkeeping must never break a deletion.
+  }
+}
+
+
+/**
  * Confirms the file really is in the working area and records it. Returns
  * false only when the object is genuinely not there.
  */
