@@ -244,10 +244,12 @@ export const discardAdminMusicDraft = createServerFn({ method: "POST" })
         .maybeSingle();
       const draft = (draftRow ?? null) as Row | null;
       if (draft && !draft.published_track_id) {
-        await db.storage
-          .from(String(draft.bucket ?? ""))
-          .remove([String(draft.path ?? "")])
-          .catch(() => undefined);
+        // Removes exactly the one stored file, wherever it lives. A reserve
+        // copy in the other area keeps its own independent life.
+        const { memoryBookFileRemove } = await import("@/lib/memory-book/storage.server");
+        await memoryBookFileRemove(String(draft.bucket ?? ""), String(draft.path ?? "")).catch(
+          () => undefined,
+        );
       }
       await db.from("admin_music_drafts").delete().eq("id", data.draftId);
       return { ok: true, drafts: await listDrafts() };
