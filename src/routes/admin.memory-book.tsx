@@ -16,6 +16,10 @@ import {
   getMemoryBookRetention,
   setMemoryBookRetention,
 } from "@/lib/memory-book/lifecycle.functions";
+import {
+  createReadyDesignUpload,
+  finalizeReadyDesign,
+} from "@/lib/memory-book/ready-designs.functions";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
