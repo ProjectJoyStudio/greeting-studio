@@ -20,10 +20,45 @@ import {
   createReadyDesignUpload,
   finalizeReadyDesign,
 } from "@/lib/memory-book/ready-designs.functions";
+import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
+import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
+import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
 });
+
+const TABS = ["books", "materials", "tariffs", "history"] as const;
+type AdminBookTab = (typeof TABS)[number];
+
+/** Moves between the parts of the Memory Book administration area. */
+function MemoryBookAdminTabs({
+  tab,
+  setTab,
+}: {
+  tab: AdminBookTab;
+  setTab: (next: AdminBookTab) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TABS.map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setTab(item)}
+          className={`rounded-lg px-3 py-1.5 text-sm transition ${
+            tab === item
+              ? "bg-primary/10 text-primary"
+              : "border border-border/60 text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          {t(`mba_tab_${item}`)}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function kindForFile(name: string): MemoryBookDemoKind {
   const lower = name.toLowerCase();
