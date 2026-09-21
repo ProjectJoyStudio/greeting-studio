@@ -76,6 +76,19 @@ export function bookObjectPrefix(userId: string, bookId: string): string {
   return `users/${userId}/memory-book/${bookId}/`;
 }
 
+/** Sign-in address of every account, used only inside the admin area. */
+async function emailMap(): Promise<Map<string, string | null>> {
+  const out = new Map<string, string | null>();
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    for (const user of data?.users ?? []) out.set(user.id, user.email ?? null);
+  } catch {
+    /* names are a convenience; the list still works without them */
+  }
+  return out;
+}
+
 async function logAction(
   actorUserId: string,
   action: string,
