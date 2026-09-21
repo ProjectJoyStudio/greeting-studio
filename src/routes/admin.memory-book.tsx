@@ -118,9 +118,36 @@ function AdminMemoryBookPage() {
     }
   }
 
+  if (tab === "books") {
+    return (
+      <div className="space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookBooksPanel />
+      </div>
+    );
+  }
+  if (tab === "tariffs") {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookTariffsPanel />
+      </div>
+    );
+  }
+  if (tab === "history") {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookHistoryPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <MemoryBookAdminTabs tab={tab} setTab={setTab} />
       <h1 className="font-[Fraunces] text-2xl font-semibold">{t("mb_admin_title")}</h1>
+
 
       <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">{t("mb_admin_demo_title")}</h2>
