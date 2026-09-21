@@ -73,6 +73,7 @@ function AdminMemoryBookPage() {
   const save = useServerFn(setMemoryBookDemo);
   const listMaterials = useServerFn(listMemoryBookDemoMaterials);
 
+  const [tab, setTab] = useState<AdminBookTab>("books");
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState<MemoryBookDemoKind>("book");
