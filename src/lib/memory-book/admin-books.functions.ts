@@ -157,14 +157,8 @@ export const adminListMemoryBooks = createServerFn({ method: "POST" })
     const books = (rows ?? []) as Array<Record<string, unknown>>;
     if (books.length === 0) return { books: [] };
 
-    const userIds = [...new Set(books.map((b) => String(b.user_id)))];
-    const { data: profileRows } = await db.from("profiles").select("id, email").in("id", userIds);
-    const emails = new Map<string, string | null>(
-      ((profileRows ?? []) as Array<{ id: string; email: string | null }>).map((p) => [
-        p.id,
-        p.email ?? null,
-      ]),
-    );
+    const emails = allEmails;
+
 
     // One look at the reserve copies of all listed books at once.
     const problems = new Set<string>();
@@ -486,8 +480,9 @@ export interface AdminActionRow {
   entityId: string | null;
   actorEmail: string | null;
   createdAt: string;
-  previous: unknown;
-  next: unknown;
+  previous: string | null;
+  next: string | null;
+
 }
 
 /** What administrators did in the Memory Book storage area, newest first. */
