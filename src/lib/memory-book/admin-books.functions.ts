@@ -266,7 +266,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
       detail: {
         book: rowToBook(
           book,
-          ((profile as { email?: string | null } | null)?.email ?? null) as string | null,
+          bookEmail,
           providers.some((p) => p.problemObjects > 0),
         ),
         providers,
