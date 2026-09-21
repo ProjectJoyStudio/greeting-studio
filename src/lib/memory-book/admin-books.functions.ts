@@ -505,14 +505,9 @@ export const adminMemoryBookHistory = createServerFn({ method: "POST" })
     const { data: rows } = await query;
     const list = (rows ?? []) as Array<Record<string, unknown>>;
 
-    const actorIds = [...new Set(list.map((r) => String(r.actor_user_id)).filter(Boolean))];
-    const emails = new Map<string, string | null>();
-    if (actorIds.length > 0) {
-      const { data: profiles } = await db.from("profiles").select("id, email").in("id", actorIds);
-      for (const p of (profiles ?? []) as Array<{ id: string; email: string | null }>) {
-        emails.set(p.id, p.email ?? null);
-      }
-    }
+    const emails = await emailMap();
+    const asText = (value: unknown): string | null =>
+      value == null ? null : typeof value === "string" ? value : JSON.stringify(value);
 
     return {
       entries: list.map((r) => ({
@@ -521,8 +516,9 @@ export const adminMemoryBookHistory = createServerFn({ method: "POST" })
         entityId: (r.entity_id as string | null) ?? null,
         actorEmail: emails.get(String(r.actor_user_id)) ?? null,
         createdAt: String(r.created_at ?? ""),
-        previous: r.previous_data ?? null,
-        next: r.new_data ?? null,
+        previous: asText(r.previous_data),
+        next: asText(r.new_data),
       })),
+
     };
   });
