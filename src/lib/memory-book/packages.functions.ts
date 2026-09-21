@@ -122,10 +122,16 @@ export const purchaseMemoryBookPackage = createServerFn({ method: "POST" })
       if (!pkg || !data.purchaseKey) return { ok: false, error: "unknown_package" };
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      // The price is whatever the administrator has saved right now; a price
+      // saved later never changes anything already bought.
+      const { memoryBookTariffs } = await import("@/lib/pricing/tariffs.server");
+      const { packageTariffKey } = await import("@/lib/pricing/tariffs");
+      const prices = await memoryBookTariffs();
+      const priceKey = packageTariffKey(pkg.code);
       const { data: result, error } = await supabaseAdmin.rpc("purchase_memory_book_package", {
         _user_id: context.userId,
         _package_code: pkg.code,
-        _price: pkg.credits,
+        _price: priceKey ? prices[priceKey] : pkg.credits,
         _leaves: pkg.leaves,
         _pages: pkg.internalPages,
         _videos: pkg.videos,
