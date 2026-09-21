@@ -140,16 +140,15 @@ export const adminListMemoryBooks = createServerFn({ method: "POST" })
 
     // Searching by book address or by the customer behind it.
     const isUuid = /^[0-9a-f-]{36}$/i.test(data.search);
-    let searchUserIds: string[] | null = null;
+    const allEmails = await emailMap();
     if (data.search && !isUuid) {
-      const { data: profiles } = await db
-        .from("profiles")
-        .select("id, email")
-        .ilike("email", `%${data.search}%`)
-        .limit(200);
-      searchUserIds = ((profiles ?? []) as Array<{ id: string }>).map((p) => p.id);
+      const needle = data.search.toLowerCase();
+      const searchUserIds = [...allEmails.entries()]
+        .filter(([, email]) => (email ?? "").toLowerCase().includes(needle))
+        .map(([id]) => id);
       if (searchUserIds.length === 0) return { books: [] };
       query = query.in("user_id", searchUserIds);
+
     } else if (isUuid) {
       query = query.or(`id.eq.${data.search},user_id.eq.${data.search}`);
     }
