@@ -224,7 +224,9 @@ export const extendMemoryBookStorage = createServerFn({ method: "POST" })
       balance?: number;
     }> => {
       if (!data.bookId || !data.extendKey) return { ok: false, error: "failed" };
-      const price = data.days === 30 ? EXTRA_STORAGE_MONTH.credits : EXTRA_STORAGE_WEEK.credits;
+      const { memoryBookTariffs } = await import("@/lib/pricing/tariffs.server");
+      const prices = await memoryBookTariffs();
+      const price = data.days === 30 ? prices.storage_month : prices.storage_week;
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: result, error } = await supabaseAdmin.rpc("extend_memory_book_storage", {
         _user_id: context.userId,
@@ -282,8 +284,10 @@ export const purchaseMemoryBookExtraLeaf = createServerFn({ method: "POST" })
       balance?: number;
     }> => {
       if (!data.bookId || !data.purchaseKey) return { ok: false, error: "failed" };
+      const { memoryBookTariffs: leafTariffs } = await import("@/lib/pricing/tariffs.server");
+      const leafPrices = await leafTariffs();
       const price =
-        data.kind === "video" ? EXTRA_LEAF_VIDEO.credits : EXTRA_LEAF_STANDARD.credits;
+        data.kind === "video" ? leafPrices.extra_leaf_video : leafPrices.extra_leaf_standard;
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: result, error } = await supabaseAdmin.rpc(
         "purchase_memory_book_extra_leaf",
