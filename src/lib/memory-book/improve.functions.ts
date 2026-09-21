@@ -290,10 +290,14 @@ export const buyMemoryBookImprovePack = createServerFn({ method: "POST" })
       if (!book || !data.purchaseKey) return { ok: false, error: "not_found" };
 
       const db = await admin();
+      // Price as saved by the administrator; the set still contains the same
+      // number of variants and is charged exactly once.
+      const { memoryBookTariffs } = await import("@/lib/pricing/tariffs.server");
+      const packPrice = (await memoryBookTariffs()).improve_pack;
       const { data: raw, error } = await db.rpc("buy_memory_book_improve_pack", {
         _user_id: context.userId,
         _book_id: data.bookId,
-        _price: MEMORY_BOOK_IMPROVE_PACK_CREDITS,
+        _price: packPrice,
         _variants: MEMORY_BOOK_IMPROVE_PACK_VARIANTS,
         _purchase_key: data.purchaseKey,
       });
