@@ -211,11 +211,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
 
     const book = row as Record<string, unknown>;
     const userId = String(book.user_id);
-    const { data: profile } = await db
-      .from("profiles")
-      .select("email")
-      .eq("id", userId)
-      .maybeSingle();
+    const bookEmail = (await emailMap()).get(userId) ?? null;
 
     const prefix = bookObjectPrefix(userId, data.bookId);
     const { data: placements } = await db
