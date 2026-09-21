@@ -20,10 +20,45 @@ import {
   createReadyDesignUpload,
   finalizeReadyDesign,
 } from "@/lib/memory-book/ready-designs.functions";
+import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
+import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
+import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
 });
+
+const TABS = ["books", "materials", "tariffs", "history"] as const;
+type AdminBookTab = (typeof TABS)[number];
+
+/** Moves between the parts of the Memory Book administration area. */
+function MemoryBookAdminTabs({
+  tab,
+  setTab,
+}: {
+  tab: AdminBookTab;
+  setTab: (next: AdminBookTab) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TABS.map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setTab(item)}
+          className={`rounded-lg px-3 py-1.5 text-sm transition ${
+            tab === item
+              ? "bg-primary/10 text-primary"
+              : "border border-border/60 text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          {t(`mba_tab_${item}`)}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function kindForFile(name: string): MemoryBookDemoKind {
   const lower = name.toLowerCase();
@@ -38,6 +73,7 @@ function AdminMemoryBookPage() {
   const save = useServerFn(setMemoryBookDemo);
   const listMaterials = useServerFn(listMemoryBookDemoMaterials);
 
+  const [tab, setTab] = useState<AdminBookTab>("books");
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState<MemoryBookDemoKind>("book");
@@ -118,9 +154,36 @@ function AdminMemoryBookPage() {
     }
   }
 
+  if (tab === "books") {
+    return (
+      <div className="space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookBooksPanel />
+      </div>
+    );
+  }
+  if (tab === "tariffs") {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookTariffsPanel />
+      </div>
+    );
+  }
+  if (tab === "history") {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <MemoryBookAdminTabs tab={tab} setTab={setTab} />
+        <MemoryBookHistoryPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <MemoryBookAdminTabs tab={tab} setTab={setTab} />
       <h1 className="font-[Fraunces] text-2xl font-semibold">{t("mb_admin_title")}</h1>
+
 
       <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">{t("mb_admin_demo_title")}</h2>

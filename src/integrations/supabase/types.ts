@@ -2890,6 +2890,47 @@ export type Database = {
           },
         ]
       }
+      memory_book_storage_retention: {
+        Row: {
+          book_id: string
+          created_at: string
+          delete_after: string | null
+          id: string
+          note: string | null
+          provider: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          delete_after?: string | null
+          id?: string
+          note?: string | null
+          provider: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          delete_after?: string | null
+          id?: string
+          note?: string | null
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_storage_retention_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_video_edits: {
         Row: {
           book_id: string
@@ -4386,6 +4427,36 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tariff_settings: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          key: string
+          product: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          key: string
+          product: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          key?: string
+          product?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }

@@ -274,3 +274,89 @@ export async function retryPendingBackups(limit = 10): Promise<{ tried: number; 
   }
   return { tried: rows.length, done };
 }
+
+/**
+ * Notes that the copy of one file in ONE area is gone. The copy in the other
+ * area and its record are deliberately left alone: the areas are independent.
+ */
+export async function markProviderDeleted(
+  objectKey: string,
+  provider: StorageProviderId,
+): Promise<void> {
+  try {
+    if (!objectKey) return;
+    const existing = await placementOf(objectKey, provider);
+    if (!existing) return;
+    const client = await db();
+    await client
+      .from(TABLE)
+      .update({ status: "deleted", verified_at: null, last_error: null })
+      .eq("id", existing.id as string);
+  } catch {
+    // Bookkeeping must never break a deletion.
+  }
+}
+
+/**
+ * Brings ONE file back from the reserve area into the working area and checks
+ * it arrived. The reserve copy is never removed by a restore.
+ */
+export async function restoreFromReserve(objectKey: string): Promise<BackupResult> {
+  const primary = storageFor("primary");
+  const backup = storageFor("backup");
+  if (!objectKey) return { ok: false, status: "failed", error: "no_key" };
+  if (!primary) return { ok: false, status: "failed", error: "primary_not_configured" };
+  if (!backup) return { ok: false, status: "failed", error: "backup_not_configured" };
+
+  const source = await backup.head(objectKey);
+  if (!source) return { ok: false, status: "failed", error: "reserve_object_missing" };
+
+  const already = await primary.head(objectKey);
+  if (already && already.sizeBytes === source.sizeBytes) {
+    await writePlacement(objectKey, primary.id, {
+      role: "primary",
+      status: "present",
+      sizeBytes: already.sizeBytes,
+      contentType: already.contentType,
+      verifiedAt: new Date().toISOString(),
+      lastError: null,
+    });
+    return { ok: true, status: "present", skipped: true };
+  }
+
+  const failed = async (error: string): Promise<BackupResult> => {
+    await writePlacement(objectKey, primary.id, {
+      role: "primary",
+      status: "failed",
+      lastError: error,
+    });
+    return { ok: false, status: "failed", error };
+  };
+
+  try {
+    const bytes = await backup.getBytes(objectKey);
+    if (!bytes) return await failed("reserve_read_failed");
+    const stored = await primary.put(
+      objectKey,
+      bytes as unknown as BodyInit,
+      source.contentType || "application/octet-stream",
+    );
+    if (!stored) return await failed("write_failed");
+    const check = await primary.head(objectKey);
+    if (!check) return await failed("verify_missing");
+    if (source.sizeBytes > 0 && check.sizeBytes !== source.sizeBytes) {
+      return await failed("verify_size_mismatch");
+    }
+    await writePlacement(objectKey, primary.id, {
+      role: "primary",
+      status: "present",
+      sizeBytes: check.sizeBytes,
+      contentType: check.contentType ?? source.contentType,
+      verifiedAt: new Date().toISOString(),
+      lastError: null,
+    });
+    return { ok: true, status: "present" };
+  } catch (err) {
+    return await failed(err instanceof Error ? err.message.slice(0, 300) : "unexpected_error");
+  }
+}
