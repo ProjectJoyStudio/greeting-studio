@@ -376,8 +376,7 @@ function RetentionSection() {
 /** Ready-made cover and leaf designs offered inside the creation flow. */
 function LibrarySection() {
   const { t } = useI18n();
-  const prepareUpload = useServerFn(createReadyDesignUpload);
-  const finishUpload = useServerFn(finalizeReadyDesign);
+  const sendUpload = useServerFn(uploadReadyDesign);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
