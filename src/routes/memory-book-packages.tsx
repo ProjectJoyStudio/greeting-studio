@@ -286,7 +286,9 @@ function MemoryBookPackagesPage() {
                 <li>{fill(t("mbp_videos"), { n: pkg.videos })}</li>
               </ul>
               <p className="font-display text-lg font-semibold">
-                {fill(t("mbp_price_credits"), { c: pkg.credits })}
+                {fill(t("mbp_price_credits"), {
+                  c: prices[packageTariffKey(pkg.code) ?? "package_mb_5"] ?? pkg.credits,
+                })}
               </p>
               <Button
                 className="mt-auto"
