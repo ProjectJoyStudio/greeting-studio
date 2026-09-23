@@ -419,10 +419,26 @@ function LibrarySection() {
     }
   }
 
+  if (manage) {
+    return <ReadyDesignsPanel stage={manage} onBack={() => setManage(null)} />;
+  }
+
   return (
     <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold">{t("mb_admin_library_title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("mb_admin_library_hint")}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {(["cover", "leaf"] as const).map((stage) => (
+          <button
+            key={stage}
+            type="button"
+            onClick={() => setManage(stage)}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium"
+          >
+            {stage === "cover" ? t("mba_rd_open_covers") : t("mba_rd_open_leaves")}
+          </button>
+        ))}
+      </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {(["cover", "leaf"] as const).map((stage) => (
           <label key={stage} className="space-y-2 text-sm">
