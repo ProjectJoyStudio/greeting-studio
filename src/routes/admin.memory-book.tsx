@@ -20,6 +20,7 @@ import { uploadReadyDesign } from "@/lib/memory-book/ready-designs.functions";
 import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
 import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
 import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
+import { ReadyDesignsPanel } from "@/components/admin/memory-book/ReadyDesignsPanel";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
