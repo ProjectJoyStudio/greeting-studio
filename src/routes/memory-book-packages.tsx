@@ -328,7 +328,7 @@ function MemoryBookPackagesPage() {
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_std")}</p>
               <p className="mt-1 font-display text-base font-semibold">
-                {fill(t("mbp_price_credits"), { c: EXTRA_LEAF_STANDARD.credits })}
+                {fill(t("mbp_price_credits"), { c: prices.extra_leaf_standard })}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>{t("mbp_extra_leaf_std_1")}</li>
