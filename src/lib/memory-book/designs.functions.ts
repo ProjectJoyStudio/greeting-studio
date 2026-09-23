@@ -355,7 +355,7 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
       .limit(100);
     for (const raw of ((placed ?? []) as unknown as Row[])) {
       const key = text(raw.object_key);
-      if (!key) continue;
+      if (!key || hidden.has(key)) continue;
       const url = await signed(MEMORY_BOOK_R2_BUCKET, key);
       if (url) items.push({ path: key, url });
     }
