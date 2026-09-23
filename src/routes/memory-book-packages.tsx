@@ -32,6 +32,11 @@ import {
   purchaseMemoryBookPackage,
   startCreditPurchase,
 } from "@/lib/memory-book/packages.functions";
+import { getMemoryBookPrices } from "@/lib/pricing/tariffs.functions";
+import {
+  MEMORY_BOOK_TARIFF_DEFAULTS,
+  packageTariffKey,
+} from "@/lib/pricing/tariffs";
 
 export const Route = createFileRoute("/memory-book-packages")({
   // Keeps the identity of an active Memory Book while the customer buys credits.
