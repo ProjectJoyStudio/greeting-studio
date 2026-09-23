@@ -16,10 +16,6 @@ import {
   CREDIT_MAX,
   CREDIT_MIN,
   CREDIT_STEP,
-  EXTRA_LEAF_STANDARD,
-  EXTRA_LEAF_VIDEO,
-  EXTRA_STORAGE_MONTH,
-  EXTRA_STORAGE_WEEK,
   MEMORY_BOOK_MAX_LEAVES,
   MEMORY_BOOK_MAX_VIDEOS,
   MEMORY_BOOK_PACKAGES,
@@ -32,6 +28,11 @@ import {
   purchaseMemoryBookPackage,
   startCreditPurchase,
 } from "@/lib/memory-book/packages.functions";
+import { getMemoryBookPrices } from "@/lib/pricing/tariffs.functions";
+import {
+  MEMORY_BOOK_TARIFF_DEFAULTS,
+  packageTariffKey,
+} from "@/lib/pricing/tariffs";
 
 export const Route = createFileRoute("/memory-book-packages")({
   // Keeps the identity of an active Memory Book while the customer buys credits.
@@ -87,6 +88,15 @@ function MemoryBookPackagesPage() {
   const [creditAmount, setCreditAmount] = useState(CREDIT_MIN);
   const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState(false);
+
+  // The one saved price list the customer is charged from.
+  const readPrices = useServerFn(getMemoryBookPrices);
+  const pricesQuery = useQuery({
+    queryKey: ["memory-book", "tariffs"],
+    queryFn: () => readPrices(),
+    staleTime: 30_000,
+  });
+  const prices = pricesQuery.data?.prices ?? MEMORY_BOOK_TARIFF_DEFAULTS;
 
   // One stable key per package attempt: repeated clicks reuse it, so the
   // database can never charge twice or create a second book.
@@ -272,7 +282,9 @@ function MemoryBookPackagesPage() {
                 <li>{fill(t("mbp_videos"), { n: pkg.videos })}</li>
               </ul>
               <p className="font-display text-lg font-semibold">
-                {fill(t("mbp_price_credits"), { c: pkg.credits })}
+                {fill(t("mbp_price_credits"), {
+                  c: prices[packageTariffKey(pkg.code) ?? "package_mb_5"] ?? pkg.credits,
+                })}
               </p>
               <Button
                 className="mt-auto"
@@ -312,7 +324,7 @@ function MemoryBookPackagesPage() {
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_std")}</p>
               <p className="mt-1 font-display text-base font-semibold">
-                {fill(t("mbp_price_credits"), { c: EXTRA_LEAF_STANDARD.credits })}
+                {fill(t("mbp_price_credits"), { c: prices.extra_leaf_standard })}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>{t("mbp_extra_leaf_std_1")}</li>
@@ -336,7 +348,7 @@ function MemoryBookPackagesPage() {
             <div className="rounded-xl border border-border/60 p-4">
               <p className="font-medium">{t("mbp_extra_leaf_video")}</p>
               <p className="mt-1 font-display text-base font-semibold">
-                {fill(t("mbp_price_credits"), { c: EXTRA_LEAF_VIDEO.credits })}
+                {fill(t("mbp_price_credits"), { c: prices.extra_leaf_video })}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>{t("mbp_extra_leaf_video_1")}</li>
@@ -394,11 +406,11 @@ function MemoryBookPackagesPage() {
           <ul className="mt-2 space-y-1 text-sm">
             <li>
               {t("mbp_storage_week")}:{" "}
-              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_WEEK.credits })}
+              {fill(t("mbp_price_credits"), { c: prices.storage_week })}
             </li>
             <li>
               {t("mbp_storage_month")}:{" "}
-              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_MONTH.credits })}
+              {fill(t("mbp_price_credits"), { c: prices.storage_month })}
             </li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
