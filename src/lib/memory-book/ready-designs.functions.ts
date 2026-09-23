@@ -68,6 +68,62 @@ export const createReadyDesignUpload = createServerFn({ method: "POST" })
   );
 
 /**
+ * Receives the picture itself from the admin page and stores it in the working
+ * area server-side. The browser therefore never talks to the storage company
+ * directly, which is what made the direct upload fail from the site address.
+ */
+export const uploadReadyDesign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { stage?: string; fileName?: string; contentType?: string; dataBase64?: string }) => ({
+      stage: toStage(input?.stage),
+      fileName: String(input?.fileName ?? "").slice(0, 200),
+      contentType: String(input?.contentType ?? "").slice(0, 120) || "image/jpeg",
+      dataBase64: String(input?.dataBase64 ?? ""),
+    }),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ ok: boolean; key?: string; backup?: boolean; error?: string }> => {
+      if (!(await isAdmin(context))) return { ok: false, error: "forbidden" };
+      if (!data.dataBase64) return { ok: false, error: "bad_request" };
+
+      let bytes: Uint8Array;
+      try {
+        const binary = atob(data.dataBase64);
+        bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      } catch {
+        return { ok: false, error: "bad_request" };
+      }
+      if (bytes.byteLength === 0 || bytes.byteLength > 25 * 1024 * 1024) {
+        return { ok: false, error: "bad_size" };
+      }
+
+      const { storageFor } = await import("@/lib/storage/registry.server");
+      const primary = storageFor("primary");
+      if (!primary) return { ok: false, error: "no_primary" };
+
+      const key = `${readyDesignPrefix(data.stage)}${crypto.randomUUID()}.${extensionOf(data.fileName)}`;
+      const written = await primary.put(key, bytes as unknown as BodyInit, data.contentType);
+      if (!written) return { ok: false, error: "not_stored" };
+
+      const { recordPrimary, backupToReserve } = await import("@/lib/storage/backup.server");
+      const stored = await recordPrimary(key);
+      if (!stored) return { ok: false, error: "not_stored" };
+
+      let backup = false;
+      if (storageFor("backup")) {
+        const res = await backupToReserve(key).catch(() => ({ ok: false }) as const);
+        backup = res.ok === true;
+      }
+      return { ok: true, key, backup };
+    },
+  );
+
+/**
  * Confirms the new ready design: the stored file is verified, recorded as the
  * working copy and given its reserve copy. A reserve failure never destroys a
  * successful upload — the design stays usable and the copy stays retryable.

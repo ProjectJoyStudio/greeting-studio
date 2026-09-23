@@ -16,10 +16,7 @@ import {
   getMemoryBookRetention,
   setMemoryBookRetention,
 } from "@/lib/memory-book/lifecycle.functions";
-import {
-  createReadyDesignUpload,
-  finalizeReadyDesign,
-} from "@/lib/memory-book/ready-designs.functions";
+import { uploadReadyDesign } from "@/lib/memory-book/ready-designs.functions";
 import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
 import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
 import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
@@ -376,8 +373,7 @@ function RetentionSection() {
 /** Ready-made cover and leaf designs offered inside the creation flow. */
 function LibrarySection() {
   const { t } = useI18n();
-  const prepareUpload = useServerFn(createReadyDesignUpload);
-  const finishUpload = useServerFn(finalizeReadyDesign);
+  const sendUpload = useServerFn(uploadReadyDesign);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -388,23 +384,22 @@ function LibrarySection() {
     setFailure(null);
     try {
       const contentType = file.type || "image/jpeg";
-      // New ready designs go straight into the shared new storage area.
-      const ticket = await prepareUpload({
-        data: { stage, fileName: file.name, contentType },
-      }).catch(() => ({ ok: false }) as { ok: boolean });
+      // The picture travels through Project Joy itself and is placed in the
+      // shared new storage area there; the browser never contacts storage.
+      const buffer = new Uint8Array(await file.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < buffer.length; i += 8192) {
+        binary += String.fromCharCode(...buffer.subarray(i, i + 8192));
+      }
+      const done = await sendUpload({
+        data: { stage, fileName: file.name, contentType, dataBase64: btoa(binary) },
+      }).catch(() => ({ ok: false, error: "network" }) as { ok: boolean; error?: string });
 
-      if (ticket.ok && "uploadUrl" in ticket && ticket.uploadUrl && ticket.key) {
-        const put = await fetch(ticket.uploadUrl, {
-          method: "PUT",
-          headers: { "content-type": contentType },
-          body: file,
-        });
-        if (!put.ok) throw new Error(`upload_failed_${put.status}`);
-        const done = await finishUpload({ data: { key: ticket.key } });
-        if (!done.ok) throw new Error(done.error ?? "store_failed");
+      if (done.ok) {
         setNote(t("mb_admin_saved"));
         return;
       }
+      if (done.error && done.error !== "no_primary") throw new Error(done.error);
 
       // Only when the new area is unavailable: the previous way still works.
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
