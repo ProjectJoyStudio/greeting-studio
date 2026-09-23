@@ -374,6 +374,7 @@ function RetentionSection() {
 function LibrarySection() {
   const { t } = useI18n();
   const sendUpload = useServerFn(uploadReadyDesign);
+  const [manage, setManage] = useState<"cover" | "leaf" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
