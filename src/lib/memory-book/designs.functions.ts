@@ -367,6 +367,7 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
     for (const file of files ?? []) {
       if (!file?.name) continue;
       const path = `${data.stage}/${file.name}`;
+      if (hidden.has(path)) continue;
       const url = await signed(MEMORY_BOOK_LIBRARY_BUCKET, path);
       if (url) items.push({ path, url });
     }
