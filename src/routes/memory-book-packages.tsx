@@ -410,11 +410,11 @@ function MemoryBookPackagesPage() {
           <ul className="mt-2 space-y-1 text-sm">
             <li>
               {t("mbp_storage_week")}:{" "}
-              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_WEEK.credits })}
+              {fill(t("mbp_price_credits"), { c: prices.storage_week })}
             </li>
             <li>
               {t("mbp_storage_month")}:{" "}
-              {fill(t("mbp_price_credits"), { c: EXTRA_STORAGE_MONTH.credits })}
+              {fill(t("mbp_price_credits"), { c: prices.storage_month })}
             </li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">{t("mbp_display_only")}</p>
