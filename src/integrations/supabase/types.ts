@@ -4194,6 +4194,36 @@ export type Database = {
           },
         ]
       }
+      ready_design_visibility: {
+        Row: {
+          created_at: string
+          hidden: boolean
+          id: string
+          object_key: string
+          stage: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          object_key: string
+          stage: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          object_key?: string
+          stage?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       scheduled_deliveries: {
         Row: {
           attempted_count: number
