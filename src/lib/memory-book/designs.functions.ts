@@ -388,10 +388,13 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
     if (!book) return { ok: false };
     // The chosen picture stays one single shared file; the book only points
     // at it. New library designs live in the shared area, older ones stay put.
-    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { readyDesignPrefix, hiddenReadyDesignPaths } = await import("./ready-designs.functions");
     const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
     const shared = data.path.startsWith(readyDesignPrefix(data.stage));
     if (!shared && !data.path.startsWith(`${data.stage}/`)) return { ok: false };
+    // A design taken out of the library cannot be chosen anew.
+    const hidden = await hiddenReadyDesignPaths(data.stage);
+    if (hidden.has(data.path)) return { ok: false };
 
     const db = await admin();
     const { data: inserted } = await db
