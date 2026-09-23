@@ -20,6 +20,7 @@ import { uploadReadyDesign } from "@/lib/memory-book/ready-designs.functions";
 import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
 import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
 import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
+import { ReadyDesignsPanel } from "@/components/admin/memory-book/ReadyDesignsPanel";
 
 export const Route = createFileRoute("/admin/memory-book")({
   component: AdminMemoryBookPage,
@@ -374,6 +375,7 @@ function RetentionSection() {
 function LibrarySection() {
   const { t } = useI18n();
   const sendUpload = useServerFn(uploadReadyDesign);
+  const [manage, setManage] = useState<"cover" | "leaf" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -418,10 +420,26 @@ function LibrarySection() {
     }
   }
 
+  if (manage) {
+    return <ReadyDesignsPanel stage={manage} onBack={() => setManage(null)} />;
+  }
+
   return (
     <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold">{t("mb_admin_library_title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("mb_admin_library_hint")}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {(["cover", "leaf"] as const).map((stage) => (
+          <button
+            key={stage}
+            type="button"
+            onClick={() => setManage(stage)}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium"
+          >
+            {stage === "cover" ? t("mba_rd_open_covers") : t("mba_rd_open_leaves")}
+          </button>
+        ))}
+      </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {(["cover", "leaf"] as const).map((stage) => (
           <label key={stage} className="space-y-2 text-sm">

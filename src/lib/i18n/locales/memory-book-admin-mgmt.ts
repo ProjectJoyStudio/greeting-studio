@@ -75,6 +75,20 @@ const EN: Dict = {
   mba_history_title: "Action history",
   mba_history_hint: "Who changed what in the Memory Book storage area. Customers never see this.",
   mba_history_empty: "Nothing has been changed yet.",
+
+  mba_rd_open_covers: "Manage covers",
+  mba_rd_open_leaves: "Manage leaves",
+  mba_rd_covers_title: "Ready design covers",
+  mba_rd_leaves_title: "Ready design leaves",
+  mba_rd_hint:
+    "Taking a design out of the library only stops new choices. The picture itself is kept, and books already using it stay unchanged.",
+  mba_rd_empty: "Nothing has been uploaded yet.",
+  mba_rd_state_active: "In library",
+  mba_rd_state_hidden: "Hidden",
+  mba_rd_remove: "Remove from library",
+  mba_rd_return: "Return to library",
+  mba_rd_hide_confirm:
+    "Customers will no longer be able to choose this design. The picture is kept and books already using it are not affected. Continue?",
 };
 
 const RU: Dict = {
@@ -152,6 +166,20 @@ const RU: Dict = {
   mba_history_hint:
     "Кто и что менял в хранилище Книги памяти. Клиенты этого не видят.",
   mba_history_empty: "Изменений пока нет.",
+
+  mba_rd_open_covers: "Управление обложками",
+  mba_rd_open_leaves: "Управление листами",
+  mba_rd_covers_title: "Готовые дизайны — обложки",
+  mba_rd_leaves_title: "Готовые дизайны — листы",
+  mba_rd_hint:
+    "Удаление из библиотеки прекращает только новый выбор. Сама картинка сохраняется, а книги, где она уже выбрана, не меняются.",
+  mba_rd_empty: "Пока ничего не загружено.",
+  mba_rd_state_active: "В библиотеке",
+  mba_rd_state_hidden: "Скрыт",
+  mba_rd_remove: "Убрать из библиотеки",
+  mba_rd_return: "Вернуть в библиотеку",
+  mba_rd_hide_confirm:
+    "Клиенты больше не смогут выбрать этот дизайн. Картинка сохраняется, уже созданные книги не затрагиваются. Продолжить?",
 };
 
 export const MEMORY_BOOK_ADMIN_MGMT_I18N: Record<Lang, Dict> = {

@@ -149,3 +149,139 @@ export const finalizeReadyDesign = createServerFn({ method: "POST" })
     }
     return { ok: true, backup };
   });
+
+/* ------------------------------------------------------------------ */
+/* Library management: which ready designs customers may choose today. */
+/* ------------------------------------------------------------------ */
+
+export interface AdminReadyDesignItem {
+  /** Storage address of the picture; it never changes. */
+  path: string;
+  url: string;
+  hidden: boolean;
+  createdAt: string | null;
+  /** True while the picture still lives in the older library area. */
+  legacy: boolean;
+}
+
+async function adminDb() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as unknown as {
+    from: (t: string) => any;
+    storage: { from: (b: string) => any };
+  };
+}
+
+/** Addresses of the ready designs that are currently hidden from customers. */
+export async function hiddenReadyDesignPaths(stage: "cover" | "leaf"): Promise<Set<string>> {
+  const db = await adminDb();
+  const { data } = await db
+    .from("ready_design_visibility")
+    .select("object_key")
+    .eq("stage", stage)
+    .eq("hidden", true);
+  const out = new Set<string>();
+  for (const row of ((data ?? []) as Array<Record<string, unknown>>)) {
+    if (typeof row.object_key === "string") out.add(row.object_key);
+  }
+  return out;
+}
+
+/** Everything in the ready designs library of one stage, for administrators. */
+export const adminListReadyDesigns = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { stage?: string }) => ({ stage: toStage(input?.stage) }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; items: AdminReadyDesignItem[] }> => {
+    if (!(await isAdmin(context))) return { ok: false, items: [] };
+
+    const db = await adminDb();
+    const { memoryBookFileUrl, MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
+    const { MEMORY_BOOK_LIBRARY_BUCKET } = await import("./designs");
+    const hidden = await hiddenReadyDesignPaths(data.stage);
+    const items: AdminReadyDesignItem[] = [];
+
+    const { data: placed } = await db
+      .from("storage_placements")
+      .select("object_key, created_at")
+      .eq("role", "primary")
+      .eq("status", "present")
+      .like("object_key", `${readyDesignPrefix(data.stage)}%`)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    for (const raw of ((placed ?? []) as Array<Record<string, unknown>>)) {
+      const key = typeof raw.object_key === "string" ? raw.object_key : "";
+      if (!key) continue;
+      const url = await memoryBookFileUrl(MEMORY_BOOK_R2_BUCKET, key, 60 * 60);
+      if (!url) continue;
+      items.push({
+        path: key,
+        url,
+        hidden: hidden.has(key),
+        createdAt: typeof raw.created_at === "string" ? raw.created_at : null,
+        legacy: false,
+      });
+    }
+
+    // Anything still stored in the older area stays visible and manageable.
+    const { data: files } = await db.storage
+      .from(MEMORY_BOOK_LIBRARY_BUCKET)
+      .list(data.stage, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
+    for (const file of ((files ?? []) as Array<Record<string, unknown>>)) {
+      const name = typeof file?.name === "string" ? file.name : "";
+      if (!name) continue;
+      const path = `${data.stage}/${name}`;
+      const url = await memoryBookFileUrl(MEMORY_BOOK_LIBRARY_BUCKET, path, 60 * 60);
+      if (!url) continue;
+      items.push({
+        path,
+        url,
+        hidden: hidden.has(path),
+        createdAt: typeof file.created_at === "string" ? file.created_at : null,
+        legacy: true,
+      });
+    }
+
+    return { ok: true, items };
+  });
+
+/**
+ * Takes one ready design out of the customer library, or puts it back.
+ * The picture itself is never touched: neither the working copy nor the
+ * reserve copy is removed, so books already using it keep working.
+ */
+export const setReadyDesignHidden = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { stage?: string; path?: string; hidden?: boolean }) => ({
+    stage: toStage(input?.stage),
+    path: String(input?.path ?? "").slice(0, 400),
+    hidden: input?.hidden === true,
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    if (!(await isAdmin(context))) return { ok: false };
+    if (!data.path) return { ok: false };
+
+    const db = await adminDb();
+    const { error } = await db
+      .from("ready_design_visibility")
+      .upsert(
+        {
+          object_key: data.path,
+          stage: data.stage,
+          hidden: data.hidden,
+          updated_by: context.userId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "object_key" },
+      );
+    if (error) return { ok: false };
+
+    await db.from("admin_audit_log").insert({
+      actor_user_id: context.userId,
+      action: data.hidden ? "memory_book.ready_design_hidden" : "memory_book.ready_design_shown",
+      entity_type: "memory_book",
+      entity_id: null,
+      previous_data: null,
+      new_data: { path: data.path, stage: data.stage },
+    });
+    return { ok: true };
+  });

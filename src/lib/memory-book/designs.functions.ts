@@ -341,7 +341,9 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
     const items: MemoryBookLibraryItem[] = [];
 
     // ---- new shared area ----
-    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { readyDesignPrefix, hiddenReadyDesignPaths } = await import("./ready-designs.functions");
+    // Designs taken out of the library are no longer offered as a new choice.
+    const hidden = await hiddenReadyDesignPaths(data.stage);
     const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
     const { data: placed } = await db
       .from("storage_placements")
@@ -353,7 +355,7 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
       .limit(100);
     for (const raw of ((placed ?? []) as unknown as Row[])) {
       const key = text(raw.object_key);
-      if (!key) continue;
+      if (!key || hidden.has(key)) continue;
       const url = await signed(MEMORY_BOOK_R2_BUCKET, key);
       if (url) items.push({ path: key, url });
     }
@@ -365,6 +367,7 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
     for (const file of files ?? []) {
       if (!file?.name) continue;
       const path = `${data.stage}/${file.name}`;
+      if (hidden.has(path)) continue;
       const url = await signed(MEMORY_BOOK_LIBRARY_BUCKET, path);
       if (url) items.push({ path, url });
     }
@@ -385,10 +388,13 @@ export const chooseMemoryBookLibraryDesign = createServerFn({ method: "POST" })
     if (!book) return { ok: false };
     // The chosen picture stays one single shared file; the book only points
     // at it. New library designs live in the shared area, older ones stay put.
-    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { readyDesignPrefix, hiddenReadyDesignPaths } = await import("./ready-designs.functions");
     const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
     const shared = data.path.startsWith(readyDesignPrefix(data.stage));
     if (!shared && !data.path.startsWith(`${data.stage}/`)) return { ok: false };
+    // A design taken out of the library cannot be chosen anew.
+    const hidden = await hiddenReadyDesignPaths(data.stage);
+    if (hidden.has(data.path)) return { ok: false };
 
     const db = await admin();
     const { data: inserted } = await db
