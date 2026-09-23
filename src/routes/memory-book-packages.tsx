@@ -93,6 +93,15 @@ function MemoryBookPackagesPage() {
   const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState(false);
 
+  // The one saved price list the customer is charged from.
+  const readPrices = useServerFn(getMemoryBookPrices);
+  const pricesQuery = useQuery({
+    queryKey: ["memory-book", "tariffs"],
+    queryFn: () => readPrices(),
+    staleTime: 30_000,
+  });
+  const prices = pricesQuery.data?.prices ?? MEMORY_BOOK_TARIFF_DEFAULTS;
+
   // One stable key per package attempt: repeated clicks reuse it, so the
   // database can never charge twice or create a second book.
   const purchaseKeys = useRef<Record<string, string>>({});
