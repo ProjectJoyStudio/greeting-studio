@@ -75,6 +75,20 @@ const EN: Dict = {
   mba_history_title: "Action history",
   mba_history_hint: "Who changed what in the Memory Book storage area. Customers never see this.",
   mba_history_empty: "Nothing has been changed yet.",
+
+  mba_rd_open_covers: "Manage covers",
+  mba_rd_open_leaves: "Manage leaves",
+  mba_rd_covers_title: "Ready design covers",
+  mba_rd_leaves_title: "Ready design leaves",
+  mba_rd_hint:
+    "Taking a design out of the library only stops new choices. The picture itself is kept, and books already using it stay unchanged.",
+  mba_rd_empty: "Nothing has been uploaded yet.",
+  mba_rd_state_active: "In library",
+  mba_rd_state_hidden: "Hidden",
+  mba_rd_remove: "Remove from library",
+  mba_rd_return: "Return to library",
+  mba_rd_hide_confirm:
+    "Customers will no longer be able to choose this design. The picture is kept and books already using it are not affected. Continue?",
 };
 
 const RU: Dict = {
