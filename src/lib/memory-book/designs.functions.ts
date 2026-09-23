@@ -341,7 +341,9 @@ export const listMemoryBookLibrary = createServerFn({ method: "POST" })
     const items: MemoryBookLibraryItem[] = [];
 
     // ---- new shared area ----
-    const { readyDesignPrefix } = await import("./ready-designs.functions");
+    const { readyDesignPrefix, hiddenReadyDesignPaths } = await import("./ready-designs.functions");
+    // Designs taken out of the library are no longer offered as a new choice.
+    const hidden = await hiddenReadyDesignPaths(data.stage);
     const { MEMORY_BOOK_R2_BUCKET } = await import("./storage.server");
     const { data: placed } = await db
       .from("storage_placements")
