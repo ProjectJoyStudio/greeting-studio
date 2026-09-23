@@ -16,10 +16,7 @@ import {
   getMemoryBookRetention,
   setMemoryBookRetention,
 } from "@/lib/memory-book/lifecycle.functions";
-import {
-  createReadyDesignUpload,
-  finalizeReadyDesign,
-} from "@/lib/memory-book/ready-designs.functions";
+import { uploadReadyDesign } from "@/lib/memory-book/ready-designs.functions";
 import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
 import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
 import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
