@@ -197,11 +197,23 @@ export async function backupToReserve(objectKey: string): Promise<BackupResult> 
     return { ok: false, status: "failed", error: "primary_object_missing" };
   }
 
-  // Already there and the same size: nothing to do, and nothing duplicated.
+  // Already there and the same size: nothing to copy, and nothing duplicated.
+  // A copy that exists but was wrongly recorded as failed is simply
+  // re-verified and marked present, without writing it again.
   const existing = await placementOf(objectKey, backup.id);
-  if (existing?.status === "present") {
-    const stored = await backup.head(objectKey);
-    if (stored && stored.sizeBytes === source.sizeBytes) {
+  if (existing) {
+    const stored = await verifyWithRetry(backup, objectKey);
+    if (stored.state === "exists" && stored.info.sizeBytes === source.sizeBytes) {
+      if (existing.status !== "present") {
+        await writePlacement(objectKey, backup.id, {
+          role: "backup",
+          status: "present",
+          sizeBytes: stored.info.sizeBytes,
+          contentType: stored.info.contentType ?? source.contentType,
+          verifiedAt: new Date().toISOString(),
+          lastError: null,
+        });
+      }
       return { ok: true, status: "present", skipped: true };
     }
   }
