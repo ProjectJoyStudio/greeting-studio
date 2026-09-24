@@ -5,7 +5,12 @@
 
 import { AwsClient } from "aws4fetch";
 
-import type { StorageAdapter, StorageObjectInfo, StorageProviderId } from "./types";
+import type {
+  StorageAdapter,
+  StorageCheckResult,
+  StorageObjectInfo,
+  StorageProviderId,
+} from "./types";
 
 export interface S3Settings {
   endpoint: string;
@@ -70,26 +75,49 @@ export function createS3Adapter(
     },
 
     async head(key: string): Promise<StorageObjectInfo | null> {
+      const r = await this.check(key);
+      return r.state === "exists" ? r.info : null;
+    },
+
+    async check(key: string): Promise<StorageCheckResult> {
       const c = cfg();
-      if (!c || !key) return null;
-      const res = await c.client.fetch(objectUrl(c, key), { method: "HEAD" });
-      if (!res.ok) return null;
+      if (!c) return { state: "error", status: null, detail: "not_configured" };
+      if (!key) return { state: "error", status: null, detail: "no_key" };
+      let res: Response;
+      try {
+        res = await c.client.fetch(objectUrl(c, key), { method: "HEAD" });
+      } catch (err) {
+        return {
+          state: "error",
+          status: null,
+          detail: `network:${err instanceof Error ? err.message.slice(0, 200) : "unknown"}`,
+        };
+      }
+      // Only a real "not found" counts as missing. Everything else is retryable.
+      if (res.status === 404) return { state: "missing", status: 404 };
+      if (!res.ok) {
+        const code = res.headers.get("x-amz-error-code") ?? res.statusText ?? "";
+        return { state: "error", status: res.status, detail: `http_${res.status}${code ? `:${code}` : ""}` };
+      }
       const header = Number(res.headers.get("content-length") ?? 0);
       let sizeBytes = Number.isFinite(header) ? header : 0;
       if (sizeBytes <= 0) {
         // Some areas do not report the length on a HEAD. Asking for the very
         // first byte returns the real total without downloading the file.
-        const probe = await c.client.fetch(objectUrl(c, key), {
-          method: "GET",
-          headers: { range: "bytes=0-0" },
-        });
-        const total = Number(/\/(\d+)\s*$/.exec(probe.headers.get("content-range") ?? "")?.[1] ?? 0);
-        if (Number.isFinite(total) && total > 0) sizeBytes = total;
+        try {
+          const probe = await c.client.fetch(objectUrl(c, key), {
+            method: "GET",
+            headers: { range: "bytes=0-0" },
+          });
+          const total = Number(/\/(\d+)\s*$/.exec(probe.headers.get("content-range") ?? "")?.[1] ?? 0);
+          if (Number.isFinite(total) && total > 0) sizeBytes = total;
+        } catch {
+          /* keep the HEAD result */
+        }
       }
       return {
-        key,
-        sizeBytes,
-        contentType: res.headers.get("content-type"),
+        state: "exists",
+        info: { key, sizeBytes, contentType: res.headers.get("content-type") },
       };
     },
 

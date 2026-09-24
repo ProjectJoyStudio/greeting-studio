@@ -33,6 +33,11 @@ export interface StorageObjectInfo {
   contentType: string | null;
 }
 
+export type StorageCheckResult =
+  | { state: "exists"; info: StorageObjectInfo }
+  | { state: "missing"; status: number }
+  | { state: "error"; status: number | null; detail: string };
+
 /**
  * Everything one storage company must be able to do for Project Joy.
  * A future third provider only has to supply this, nothing else changes.
@@ -44,6 +49,11 @@ export interface StorageAdapter {
   /** Human readable name of the configured area, for reports only. */
   describe(): string;
   head(key: string): Promise<StorageObjectInfo | null>;
+  /**
+   * Existence check that keeps the reason: "exists", a genuine "missing"
+   * (404 / NoSuchKey only), or a retryable "error" with the provider status.
+   */
+  check(key: string): Promise<StorageCheckResult>;
   put(key: string, body: BodyInit, contentType?: string): Promise<boolean>;
   getBytes(key: string): Promise<Uint8Array | null>;
   signedReadUrl(key: string, seconds: number): Promise<string | null>;
