@@ -62,7 +62,7 @@ export function createS3Adapter(
 ): StorageAdapter {
   const cfg = () => resolve(read());
 
-  return {
+  const adapter: StorageAdapter = {
     id,
 
     isReady() {
@@ -75,7 +75,7 @@ export function createS3Adapter(
     },
 
     async head(key: string): Promise<StorageObjectInfo | null> {
-      const r = await this.check(key);
+      const r = await adapter.check(key);
       return r.state === "exists" ? r.info : null;
     },
 
@@ -173,4 +173,5 @@ export function createS3Adapter(
       return res.ok || res.status === 404;
     },
   };
+  return adapter;
 }
