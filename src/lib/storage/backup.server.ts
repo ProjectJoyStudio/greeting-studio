@@ -8,7 +8,12 @@
 // stays a deliberate administrator decision, made elsewhere, later.
 
 import { storageFor } from "./registry.server";
-import type { StorageProviderId, StorageRole } from "./types";
+import type {
+  StorageAdapter,
+  StorageCheckResult,
+  StorageProviderId,
+  StorageRole,
+} from "./types";
 
 export type PlacementStatus =
   | "pending"
@@ -157,6 +162,26 @@ export async function recordPrimary(objectKey: string): Promise<boolean> {
 export const BACKUP_MAX_ATTEMPTS = 5;
 
 /**
+ * Checks one stored copy, asking again (at most 3 checks, ~2.5 s total) when
+ * the answer is not definitive. A genuine "not found" right after writing is
+ * also re-asked once, since some areas report new objects a moment late.
+ * Never rewrites the file.
+ */
+export async function verifyWithRetry(
+  adapter: StorageAdapter,
+  objectKey: string,
+): Promise<StorageCheckResult> {
+  const waits = [500, 2000];
+  let result = await adapter.check(objectKey);
+  for (const ms of waits) {
+    if (result.state === "exists") return result;
+    await new Promise((r) => setTimeout(r, ms));
+    result = await adapter.check(objectKey);
+  }
+  return result;
+}
+
+/**
  * Copies one file from the working area to the reserve area and verifies it.
  * Safe to call again at any time: a verified matching copy is left alone.
  */
@@ -172,11 +197,23 @@ export async function backupToReserve(objectKey: string): Promise<BackupResult> 
     return { ok: false, status: "failed", error: "primary_object_missing" };
   }
 
-  // Already there and the same size: nothing to do, and nothing duplicated.
+  // Already there and the same size: nothing to copy, and nothing duplicated.
+  // A copy that exists but was wrongly recorded as failed is simply
+  // re-verified and marked present, without writing it again.
   const existing = await placementOf(objectKey, backup.id);
-  if (existing?.status === "present") {
-    const stored = await backup.head(objectKey);
-    if (stored && stored.sizeBytes === source.sizeBytes) {
+  if (existing) {
+    const stored = await verifyWithRetry(backup, objectKey);
+    if (stored.state === "exists" && stored.info.sizeBytes === source.sizeBytes) {
+      if (existing.status !== "present") {
+        await writePlacement(objectKey, backup.id, {
+          role: "backup",
+          status: "present",
+          sizeBytes: stored.info.sizeBytes,
+          contentType: stored.info.contentType ?? source.contentType,
+          verifiedAt: new Date().toISOString(),
+          lastError: null,
+        });
+      }
       return { ok: true, status: "present", skipped: true };
     }
   }
@@ -213,8 +250,10 @@ export async function backupToReserve(objectKey: string): Promise<BackupResult> 
     );
     if (!stored) return await failed("write_failed");
 
-    const check = await backup.head(objectKey);
-    if (!check) return await failed("verify_missing");
+    const verified = await verifyWithRetry(backup, objectKey);
+    if (verified.state === "missing") return await failed("verify_missing");
+    if (verified.state === "error") return await failed(`verify_error:${verified.detail}`);
+    const check = verified.info;
     if (source.sizeBytes > 0 && check.sizeBytes !== source.sizeBytes) {
       return await failed("verify_size_mismatch");
     }
