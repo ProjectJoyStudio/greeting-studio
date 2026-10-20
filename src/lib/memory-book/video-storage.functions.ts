@@ -61,7 +61,6 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
       fileName?: string;
       extension?: string;
       contentType?: string;
-      error?: "authorization" | "configuration";
     }) => ({
       bookId: String(input?.bookId ?? "").slice(0, 64),
       role: input?.role === "prepared" ? ("prepared" as const) : ("source" as const),
@@ -80,6 +79,7 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
       key?: string;
       uploadUrl?: string;
       contentType?: string;
+      error?: "authorization" | "configuration";
     }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "authorization" };
