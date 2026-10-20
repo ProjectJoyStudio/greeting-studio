@@ -20,6 +20,26 @@ const MIME_CANDIDATES = [
   "video/webm",
 ];
 
+// Diagnostic trace: records the step in progress so a failure keeps its real
+// cause (step, piece, source, browser error) instead of a generic message.
+export interface JoinDiagnostics {
+  stage: string;
+  fragmentIndex: number | null;
+  sourceId: string | null;
+  log: string[];
+}
+export const joinDiagnostics: JoinDiagnostics = { stage: "idle", fragmentIndex: null, sourceId: null, log: [] };
+function stage(name: string, fragmentIndex: number | null = null, sourceId: string | null = null) {
+  joinDiagnostics.stage = name;
+  joinDiagnostics.fragmentIndex = fragmentIndex;
+  joinDiagnostics.sourceId = sourceId;
+  const mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+  joinDiagnostics.log.push(
+    `${new Date().toISOString()} ${name}${fragmentIndex !== null ? ` #${fragmentIndex + 1}` : ""}${sourceId ? ` ${sourceId}` : ""}${mem ? ` heap=${Math.round(mem.usedJSHeapSize / 1048576)}MB` : ""}`,
+  );
+  console.info(`[mb-video-join] ${joinDiagnostics.log[joinDiagnostics.log.length - 1]}`);
+}
+
 function pickMime(): string {
   if (typeof MediaRecorder === "undefined") throw new Error("recording_unsupported");
   for (const mime of MIME_CANDIDATES) {
@@ -35,7 +55,12 @@ function loadVideo(url: string): Promise<HTMLVideoElement> {
     el.playsInline = true;
     el.preload = "auto";
     el.onloadeddata = () => resolve(el);
-    el.onerror = () => reject(new Error("video_load_failed"));
+    el.onerror = () =>
+      reject(
+        new Error(
+          `video_load_failed: MediaError code=${el.error?.code ?? "?"} message=${el.error?.message || "(none)"}`,
+        ),
+      );
     el.src = url;
   });
 }
@@ -94,8 +119,12 @@ export async function joinVideoFragments(
   onProgress?: (ratio: number) => void,
   sourceUrls?: Record<string, string>,
 ): Promise<PreparedVideo> {
+  joinDiagnostics.log = [];
+  stage("start");
   if (fragments.length === 0) throw new Error("no_fragments");
+  stage("pick_mime");
   const mime = pickMime();
+  joinDiagnostics.log.push(`mime=${mime}`);
   const total = fragmentsLength(fragments);
 
   const audio = new AudioContext();
@@ -109,6 +138,9 @@ export async function joinVideoFragments(
     const existing = opened.get(url);
     if (existing) return existing;
     const element = await loadVideo(url);
+    joinDiagnostics.log.push(
+      `loaded ${element.videoWidth}x${element.videoHeight} duration=${element.duration}`,
+    );
     const media = audio.createMediaElementSource(element);
     const gain = audio.createGain();
     media.connect(gain);
@@ -118,6 +150,7 @@ export async function joinVideoFragments(
     return entry;
   }
 
+  stage("open_first_source", 0, fragments[0]!.sourceId ?? null);
   const first = await openSource(urlOf(fragments[0]!));
   const width = first.video.videoWidth || 1280;
   const height = first.video.videoHeight || 720;
@@ -132,7 +165,13 @@ export async function joinVideoFragments(
   for (const track of destination.stream.getAudioTracks()) stream.addTrack(track);
 
   const chunks: Blob[] = [];
+  stage("create_recorder");
   const recorder = new MediaRecorder(stream, { mimeType: mime });
+  recorder.onerror = (event) => {
+    const err = (event as unknown as { error?: DOMException }).error;
+    joinDiagnostics.log.push(`recorder_error ${err?.name ?? ""} ${err?.message ?? ""}`);
+    console.error("[mb-video-join] recorder error", err);
+  };
   recorder.ondataavailable = (event) => {
     if (event.data && event.data.size > 0) chunks.push(event.data);
   };
@@ -158,16 +197,21 @@ export async function joinVideoFragments(
       const fragment = fragments[index]!;
       const length = Math.max(0, fragment.end - fragment.start);
       if (length <= 0) continue;
+      const sid = fragment.sourceId ?? null;
+      stage("open_source", index, sid);
       const { video, gain } = await openSource(urlOf(fragment));
       const fade = Math.min(MEMORY_BOOK_FADE_SECONDS, length / 3);
       const fadesIn = index > 0;
       const fadesOut = index < fragments.length - 1;
 
+      stage(`seek ${fragment.start}`, index, sid);
       await seek(video, fragment.start);
       if (recorder.state === "inactive") recorder.start(1000);
       else if (recorder.state === "paused") recorder.resume();
 
+      stage("play", index, sid);
       await video.play();
+      stage(`recording ${fragment.start}->${fragment.end}`, index, sid);
 
       await new Promise<void>((resolve) => {
         const draw = () => {
@@ -198,20 +242,25 @@ export async function joinVideoFragments(
       });
 
       video.pause();
+      stage(`piece_done at ${video.currentTime} ended=${video.ended}`, index, sid);
       elapsed += length;
       if (recorder.state === "recording" && index < fragments.length - 1) recorder.pause();
     }
 
     if (recorder.state === "inactive") throw new Error("no_fragments");
+    stage("stop_recorder");
     recorder.stop();
     await finished;
+    stage("recorder_stopped");
   } finally {
     await cleanup();
   }
 
   const blob = new Blob(chunks, { type: mime });
+  stage(`read_duration size=${blob.size}`);
   const measured = await readBlobDuration(blob);
   const seconds = measured ?? total;
   const extension = mime.includes("mp4") ? "mp4" : "webm";
+  stage(`done seconds=${seconds}`);
   return { blob, mime, extension, seconds };
 }

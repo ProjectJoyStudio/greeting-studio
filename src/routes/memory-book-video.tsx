@@ -20,7 +20,7 @@ import {
   fragmentsLength,
   type MemoryBookVideoFragment,
 } from "@/lib/memory-book/video-prep";
-import { joinVideoFragments } from "@/lib/memory-book/video-join";
+import { joinDiagnostics, joinVideoFragments } from "@/lib/memory-book/video-join";
 import {
   loadMemoryBookVideoEdit,
   registerPreparedMemoryBookVideo,
@@ -284,8 +284,12 @@ function MemoryBookVideoPage() {
         mime: prepared.mime,
         seconds: prepared.seconds,
       });
-    } catch {
-      setMessage(t("mbv_failed"));
+    } catch (error) {
+      // DIAGNOSTIC: keep the real failure visible instead of discarding it.
+      const err = error as { name?: string; message?: string; stack?: string } | undefined;
+      const detail = `${err?.name ?? typeof error}: ${err?.message ?? String(error)} [step: ${joinDiagnostics.stage}${joinDiagnostics.fragmentIndex !== null ? `, piece ${joinDiagnostics.fragmentIndex + 1}` : ""}${joinDiagnostics.sourceId ? `, source ${joinDiagnostics.sourceId}` : ""}]`;
+      console.error("[mb-video-join] FAILED", detail, err?.stack, joinDiagnostics.log.join("\n"));
+      setMessage(`${t("mbv_failed")} — ${detail}`);
     } finally {
       setWorking(false);
     }
