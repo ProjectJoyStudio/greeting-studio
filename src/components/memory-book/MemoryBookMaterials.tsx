@@ -42,6 +42,16 @@ function readDuration(file: File): Promise<number | null> {
   });
 }
 
+/** Large source videos upload a couple at a time, never all at once. */
+const VIDEO_CONCURRENCY = 2;
+
+interface VideoQueueItem {
+  id: string;
+  name: string;
+  status: "queued" | "uploading" | "done" | "failed";
+  error?: string;
+}
+
 /**
  * Source photos and videos of ONE purchased Memory Book. Nothing here is
  * placed on pages yet — the material simply stays with this book.
@@ -69,6 +79,7 @@ export function MemoryBookMaterials({
   const [uploadingKind, setUploadingKind] = useState<"photo" | "video" | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [queue, setQueue] = useState<VideoQueueItem[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -150,6 +161,92 @@ export function MemoryBookMaterials({
       }
     },
     [bookId, createUpload, createPhotoUpload, register, t],
+  );
+
+  /**
+   * Source videos: each selected file is validated, uploaded to its own signed
+   * R2 address and registered on its own. At most VIDEO_CONCURRENCY uploads
+   * run at once; one failure never affects the other files.
+   */
+  const uploadVideos = useCallback(
+    async (files: File[]) => {
+      if (uploadingRef.current || files.length === 0) return;
+      uploadingRef.current = true;
+      setBusy(true);
+      setUploadingKind("video");
+      setVideoError(null);
+      const base = Date.now();
+      const items: VideoQueueItem[] = files.map((f, i) => ({ id: `${base}-${i}`, name: f.name, status: "queued" }));
+      setQueue(items);
+      const patch = (id: string, next: Partial<VideoQueueItem>) =>
+        setQueue((q) => q.map((it) => (it.id === id ? { ...it, ...next } : it)));
+
+      const runOne = async (file: File, id: string) => {
+        patch(id, { status: "uploading" });
+        try {
+          const duration = await readDuration(file);
+          if (duration == null) {
+            console.error("Memory Book upload", { category: "validation", detail: "video_unreadable" });
+            return patch(id, { status: "failed", error: t("mbm_video_unreadable") });
+          }
+          if (duration > MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS) {
+            console.error("Memory Book upload", { category: "validation", detail: "too_long" });
+            return patch(id, { status: "failed", error: t("mbm_video_too_long") });
+          }
+          const stored = await uploadMemoryBookMaterial(createUpload, {
+            bookId,
+            data: file,
+            fileName: file.name,
+            contentType: file.type || "video/mp4",
+          });
+          const res = await register({
+            data: {
+              bookId,
+              kind: "video",
+              path: stored.path,
+              storage: stored.storage,
+              fileName: file.name,
+              mimeType: file.type,
+              sizeBytes: file.size,
+              durationSeconds: duration,
+            },
+          });
+          if (res.ok) {
+            // Merge so a slower response never hides a file registered meanwhile.
+            setMaterials((prev) => {
+              const ids = new Set(res.materials.map((m) => m.id));
+              return [...res.materials, ...prev.filter((m) => !ids.has(m.id))];
+            });
+            patch(id, { status: "done" });
+          } else {
+            console.error("Memory Book upload", { category: res.error === "not_found" ? "authorization" : res.error === "too_long" ? "validation" : "registration", detail: res.error ?? "failed" });
+            patch(id, { status: "failed", error: res.error === "too_long" ? t("mbm_video_too_long") : t("mbm_video_failed") });
+          }
+        } catch (cause) {
+          console.error("Memory Book upload", cause instanceof MaterialUploadError
+            ? { category: cause.category, detail: cause.detail }
+            : { category: "server", detail: "request_failed" });
+          patch(id, { status: "failed", error: t("mbm_video_failed") });
+        }
+      };
+
+      let next = 0;
+      const worker = async () => {
+        while (next < files.length) {
+          const i = next++;
+          await runOne(files[i], items[i].id);
+        }
+      };
+      try {
+        await Promise.all(Array.from({ length: Math.min(VIDEO_CONCURRENCY, files.length) }, worker));
+      } finally {
+        uploadingRef.current = false;
+        setBusy(false);
+        setUploadingKind(null);
+        if (videoInput.current) videoInput.current.value = "";
+      }
+    },
+    [bookId, createUpload, register, t],
   );
 
   async function removeOne(materialId: string) {
