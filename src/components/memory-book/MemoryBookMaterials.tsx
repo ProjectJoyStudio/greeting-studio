@@ -5,13 +5,11 @@ import { Loader2, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
 import {
-  MEMORY_BOOK_MATERIALS_BUCKET,
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
   type MemoryBookMaterial,
 } from "@/lib/memory-book/materials";
-import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
+import { MaterialUploadError, uploadMemoryBookMaterial } from "@/lib/memory-book/materials-upload";
 import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
 import { createMemoryBookPhotoUpload } from "@/lib/memory-book/photo-storage.functions";
 import {
@@ -42,10 +40,6 @@ function readDuration(file: File): Promise<number | null> {
     video.onerror = () => done(null);
     video.src = url;
   });
-}
-
-function safeName(name: string) {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
 }
 
 /**
@@ -101,72 +95,35 @@ export function MemoryBookMaterials({
         else setError(msg);
       };
       try {
-        const { data: session } = await supabase.auth.getUser();
-        const userId = session.user?.id;
-        if (!userId) throw new Error("no_user");
-
         for (const file of files) {
           let duration: number | null = null;
           if (kind === "video") {
             duration = await readDuration(file);
             if (duration == null) {
+              console.error("Memory Book upload", { category: "validation", detail: "video_unreadable" });
               fail(t("mbm_video_unreadable"));
               continue;
             }
             if (duration > MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS) {
+              console.error("Memory Book upload", { category: "validation", detail: "too_long" });
               fail(t("mbm_video_too_long"));
               continue;
             }
           }
 
-          const path = `${userId}/${bookId}/${kind}-${Date.now()}-${safeName(file.name)}`;
-          let storage: string = MEMORY_BOOK_MATERIALS_BUCKET;
-          let storedPath = path;
-
-          if (kind === "video") {
-            // Book videos are kept in the separate video area.
-            const stored = await uploadMemoryBookVideo(createUpload, {
-              bookId,
-              role: "source",
-              data: file,
-              fileName: file.name,
-              contentType: file.type || "video/mp4",
-              fallbackPath: path,
-            });
-            if (!stored) {
-              fail(t("mbm_video_failed"));
-              continue;
-            }
-            storage = stored.storage;
-            storedPath = stored.path;
-          } else {
-            // New book photos go to the working area; if it is unavailable the
-            // previous storage is used exactly as before.
-            const stored = await uploadMemoryBookVideo(
-              createPhotoUpload as unknown as Parameters<typeof uploadMemoryBookVideo>[0],
-              {
-                bookId,
-                role: "source",
-                data: file,
-                fileName: file.name,
-                contentType: file.type || "image/jpeg",
-                fallbackPath: path,
-              },
-            );
-            if (!stored) {
-              fail(t("mbm_failed"));
-              continue;
-            }
-            storage = stored.storage;
-            storedPath = stored.path;
-          }
+          const stored = await uploadMemoryBookMaterial(kind === "video" ? createUpload : createPhotoUpload, {
+            bookId,
+            data: file,
+            fileName: file.name,
+            contentType: file.type || (kind === "video" ? "video/mp4" : "image/jpeg"),
+          });
 
           const res = await register({
             data: {
               bookId,
               kind,
-              path: storedPath,
-              storage,
+              path: stored.path,
+              storage: stored.storage,
               fileName: file.name,
               mimeType: file.type,
               sizeBytes: file.size,
@@ -174,9 +131,15 @@ export function MemoryBookMaterials({
             },
           });
           if (res.ok) setMaterials(res.materials);
-          else fail(res.error === "too_long" ? t("mbm_video_too_long") : kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
+          else {
+            console.error("Memory Book upload", { category: res.error === "not_found" ? "authorization" : res.error === "too_long" ? "validation" : "registration", detail: res.error ?? "failed" });
+            fail(res.error === "too_long" ? t("mbm_video_too_long") : kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
+          }
         }
-      } catch {
+      } catch (cause) {
+        console.error("Memory Book upload", cause instanceof MaterialUploadError
+          ? { category: cause.category, detail: cause.detail }
+          : { category: "server", detail: "request_failed" });
         fail(kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
       } finally {
         uploadingRef.current = false;

@@ -9,243 +9,103 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VideoGreetingSetupRouteImport } from './routes/video-greeting-setup'
-import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as StudioRouteImport } from './routes/studio'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ShowcaseRouteImport } from './routes/showcase'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
-import { Route as MemoryBookVideoRouteImport } from './routes/memory-book-video'
-import { Route as MemoryBookPreviewRouteImport } from './routes/memory-book-preview'
-import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
-import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
-import { Route as MemoryBookCreateRouteImport } from './routes/memory-book-create'
-import { Route as MemoryBookRouteImport } from './routes/memory-book'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as LiveCardsRouteImport } from './routes/live-cards'
-import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as DailyRouteImport } from './routes/daily'
-import { Route as CreditsRouteImport } from './routes/credits'
-import { Route as CreateCardRouteImport } from './routes/create-card'
-import { Route as CreateRouteImport } from './routes/create'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
-import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CreateRouteImport } from './routes/create'
+import { Route as CreateCardRouteImport } from './routes/create-card'
+import { Route as CreditsRouteImport } from './routes/credits'
+import { Route as DailyRouteImport } from './routes/daily'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FreeGreetingRouteImport } from './routes/free-greeting'
+import { Route as LiveCardsRouteImport } from './routes/live-cards'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MemoryBookRouteImport } from './routes/memory-book'
+import { Route as MemoryBookCreateRouteImport } from './routes/memory-book-create'
+import { Route as MemoryBookInstructionsRouteImport } from './routes/memory-book-instructions'
+import { Route as MemoryBookPackagesRouteImport } from './routes/memory-book-packages'
+import { Route as MemoryBookPreviewRouteImport } from './routes/memory-book-preview'
+import { Route as MemoryBookVideoRouteImport } from './routes/memory-book-video'
+import { Route as PersonalOrdersRouteImport } from './routes/personal-orders'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ReplicateTestRouteImport } from './routes/replicate-test'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ShowcaseRouteImport } from './routes/showcase'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StudioRouteImport } from './routes/studio'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as VideoGreetingRouteImport } from './routes/video-greeting'
+import { Route as VideoGreetingSetupRouteImport } from './routes/video-greeting-setup'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
-import { Route as DashboardVoicesRouteImport } from './routes/dashboard.voices'
-import { Route as DashboardVideoGreetingsRouteImport } from './routes/dashboard.video-greetings'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
-import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
-import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
-import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
-import { Route as DashboardMemoryBooksRouteImport } from './routes/dashboard.memory-books'
-import { Route as DashboardLiveCardsRouteImport } from './routes/dashboard.live-cards'
-import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
-import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
-import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
-import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
-import { Route as CSlugRouteImport } from './routes/c.$slug'
-import { Route as AdminYourCreditsRouteImport } from './routes/admin.your-credits'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminUserLiveCardsRouteImport } from './routes/admin.user-live-cards'
-import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
-import { Route as AdminStudioPromosRouteImport } from './routes/admin.studio-promos'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
-import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
-import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
-import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
-import { Route as AdminMusicRouteImport } from './routes/admin.music'
-import { Route as AdminMemoryBookDecorationsRouteImport } from './routes/admin.memory-book-decorations'
-import { Route as AdminMemoryBookRouteImport } from './routes/admin.memory-book'
-import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
-import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
-import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
-import { Route as AdminDevCreditsRouteImport } from './routes/admin.dev-credits'
-import { Route as AdminDeletedVideoDraftsRouteImport } from './routes/admin.deleted-video-drafts'
-import { Route as AdminDeletedLiveCardsRouteImport } from './routes/admin.deleted-live-cards'
-import { Route as AdminDeletedCardsRouteImport } from './routes/admin.deleted-cards'
-import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
-import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
-import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
-import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminActivityLogRouteImport } from './routes/admin.activity-log'
-import { Route as AdminVoiceSettingsIndexRouteImport } from './routes/admin.voice-settings.index'
+import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminCalendarSettingsRouteImport } from './routes/admin.calendar-settings'
+import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
+import { Route as AdminCreditPackagesRouteImport } from './routes/admin.credit-packages'
+import { Route as AdminDeletedCardsRouteImport } from './routes/admin.deleted-cards'
+import { Route as AdminDeletedLiveCardsRouteImport } from './routes/admin.deleted-live-cards'
+import { Route as AdminDeletedVideoDraftsRouteImport } from './routes/admin.deleted-video-drafts'
+import { Route as AdminDevCreditsRouteImport } from './routes/admin.dev-credits'
+import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
+import { Route as AdminHomepageHeroRouteImport } from './routes/admin.homepage-hero'
+import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
+import { Route as AdminMemoryBookRouteImport } from './routes/admin.memory-book'
+import { Route as AdminMemoryBookDecorationsRouteImport } from './routes/admin.memory-book-decorations'
+import { Route as AdminMusicRouteImport } from './routes/admin.music'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminPlatformSettingsRouteImport } from './routes/admin.platform-settings'
+import { Route as AdminPromotionsRouteImport } from './routes/admin.promotions'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminStudioPromosRouteImport } from './routes/admin.studio-promos'
+import { Route as AdminUserDraftsRouteImport } from './routes/admin.user-drafts'
+import { Route as AdminUserLiveCardsRouteImport } from './routes/admin.user-live-cards'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminYourCreditsRouteImport } from './routes/admin.your-credits'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
+import { Route as CatalogCategoryRouteImport } from './routes/catalog.$category'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardCardsRouteImport } from './routes/dashboard.cards'
+import { Route as DashboardCreditsRouteImport } from './routes/dashboard.credits'
+import { Route as DashboardFavoritesRouteImport } from './routes/dashboard.favorites'
+import { Route as DashboardLiveCardsRouteImport } from './routes/dashboard.live-cards'
+import { Route as DashboardMemoryBooksRouteImport } from './routes/dashboard.memory-books'
+import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardVideoGreetingsRouteImport } from './routes/dashboard.video-greetings'
+import { Route as DashboardVoicesRouteImport } from './routes/dashboard.voices'
+import { Route as LiveEditorAnimationIdRouteImport } from './routes/live-editor.$animationId'
 import { Route as AdminCatalogIndexRouteImport } from './routes/admin.catalog.index'
-import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
-import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
-import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
-import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
-import { Route as AdminVoiceSettingsTestingRouteImport } from './routes/admin.voice-settings.testing'
-import { Route as AdminVoiceSettingsLibraryRouteImport } from './routes/admin.voice-settings.library'
-import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
-import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
-import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
-import { Route as AdminCatalogPublishedRouteImport } from './routes/admin.catalog.published'
-import { Route as AdminCatalogHiddenRouteImport } from './routes/admin.catalog.hidden'
-import { Route as AdminCatalogDraftsRouteImport } from './routes/admin.catalog.drafts'
 import { Route as AdminCatalogBackgroundsRouteImport } from './routes/admin.catalog.backgrounds'
-import { Route as AdminCatalogVariantsIndexRouteImport } from './routes/admin.catalog.variants.index'
-import { Route as AdminCatalogVariantsNewRouteImport } from './routes/admin.catalog.variants.new'
-import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catalog.variants.$id'
-import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
+import { Route as AdminCatalogDraftsRouteImport } from './routes/admin.catalog.drafts'
+import { Route as AdminCatalogHiddenRouteImport } from './routes/admin.catalog.hidden'
+import { Route as AdminCatalogPublishedRouteImport } from './routes/admin.catalog.published'
+import { Route as AdminCatalogTaxonomyRouteImport } from './routes/admin.catalog.taxonomy'
+import { Route as AdminCatalogTranslationsRouteImport } from './routes/admin.catalog.translations'
+import { Route as AdminCatalogUploadRouteImport } from './routes/admin.catalog.upload'
+import { Route as AdminVoiceSettingsIndexRouteImport } from './routes/admin.voice-settings.index'
+import { Route as AdminVoiceSettingsLibraryRouteImport } from './routes/admin.voice-settings.library'
+import { Route as AdminVoiceSettingsTestingRouteImport } from './routes/admin.voice-settings.testing'
+import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
+import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
+import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
+import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
+import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
+import { Route as AdminCatalogVariantsIndexRouteImport } from './routes/admin.catalog.variants.index'
+import { Route as AdminCatalogVariantsIdRouteImport } from './routes/admin.catalog.variants.$id'
+import { Route as AdminCatalogVariantsNewRouteImport } from './routes/admin.catalog.variants.new'
 
-const VideoGreetingSetupRoute = VideoGreetingSetupRouteImport.update({
-  id: '/video-greeting-setup',
-  path: '/video-greeting-setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VideoGreetingRoute = VideoGreetingRouteImport.update({
-  id: '/video-greeting',
-  path: '/video-greeting',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VerifyEmailRoute = VerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudioRoute = StudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShowcaseRoute = ShowcaseRouteImport.update({
-  id: '/showcase',
-  path: '/showcase',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReplicateTestRoute = ReplicateTestRouteImport.update({
-  id: '/replicate-test',
-  path: '/replicate-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
-  id: '/personal-orders',
-  path: '/personal-orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookVideoRoute = MemoryBookVideoRouteImport.update({
-  id: '/memory-book-video',
-  path: '/memory-book-video',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookPreviewRoute = MemoryBookPreviewRouteImport.update({
-  id: '/memory-book-preview',
-  path: '/memory-book-preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
-  id: '/memory-book-packages',
-  path: '/memory-book-packages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookInstructionsRoute = MemoryBookInstructionsRouteImport.update({
-  id: '/memory-book-instructions',
-  path: '/memory-book-instructions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookCreateRoute = MemoryBookCreateRouteImport.update({
-  id: '/memory-book-create',
-  path: '/memory-book-create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryBookRoute = MemoryBookRouteImport.update({
-  id: '/memory-book',
-  path: '/memory-book',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveCardsRoute = LiveCardsRouteImport.update({
-  id: '/live-cards',
-  path: '/live-cards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FreeGreetingRoute = FreeGreetingRouteImport.update({
-  id: '/free-greeting',
-  path: '/free-greeting',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DailyRoute = DailyRouteImport.update({
-  id: '/daily',
-  path: '/daily',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreditsRoute = CreditsRouteImport.update({
-  id: '/credits',
-  path: '/credits',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreateCardRoute = CreateCardRouteImport.update({
-  id: '/create-card',
-  path: '/create-card',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreateRoute = CreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -253,19 +113,149 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardRoute,
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const CatalogIndexRoute = CatalogIndexRouteImport.update({
-  id: '/catalog/',
-  path: '/catalog/',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateCardRoute = CreateCardRouteImport.update({
+  id: '/create-card',
+  path: '/create-card',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditsRoute = CreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyRoute = DailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FreeGreetingRoute = FreeGreetingRouteImport.update({
+  id: '/free-greeting',
+  path: '/free-greeting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveCardsRoute = LiveCardsRouteImport.update({
+  id: '/live-cards',
+  path: '/live-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookRoute = MemoryBookRouteImport.update({
+  id: '/memory-book',
+  path: '/memory-book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookCreateRoute = MemoryBookCreateRouteImport.update({
+  id: '/memory-book-create',
+  path: '/memory-book-create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookInstructionsRoute = MemoryBookInstructionsRouteImport.update({
+  id: '/memory-book-instructions',
+  path: '/memory-book-instructions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookPackagesRoute = MemoryBookPackagesRouteImport.update({
+  id: '/memory-book-packages',
+  path: '/memory-book-packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookPreviewRoute = MemoryBookPreviewRouteImport.update({
+  id: '/memory-book-preview',
+  path: '/memory-book-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryBookVideoRoute = MemoryBookVideoRouteImport.update({
+  id: '/memory-book-video',
+  path: '/memory-book-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonalOrdersRoute = PersonalOrdersRouteImport.update({
+  id: '/personal-orders',
+  path: '/personal-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReplicateTestRoute = ReplicateTestRouteImport.update({
+  id: '/replicate-test',
+  path: '/replicate-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowcaseRoute = ShowcaseRouteImport.update({
+  id: '/showcase',
+  path: '/showcase',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioRoute = StudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideoGreetingRoute = VideoGreetingRouteImport.update({
+  id: '/video-greeting',
+  path: '/video-greeting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideoGreetingSetupRoute = VideoGreetingSetupRouteImport.update({
+  id: '/video-greeting-setup',
+  path: '/video-greeting-setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -273,129 +263,69 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
-  id: '/live-editor/$animationId',
-  path: '/live-editor/$animationId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardVoicesRoute = DashboardVoicesRouteImport.update({
-  id: '/voices',
-  path: '/voices',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardVideoGreetingsRoute = DashboardVideoGreetingsRouteImport.update({
-  id: '/video-greetings',
-  path: '/video-greetings',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardProfileRoute = DashboardProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardNotificationsRoute = DashboardNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardMemoryBooksRoute = DashboardMemoryBooksRouteImport.update({
-  id: '/memory-books',
-  path: '/memory-books',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardLiveCardsRoute = DashboardLiveCardsRouteImport.update({
-  id: '/live-cards',
-  path: '/live-cards',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardFavoritesRoute = DashboardFavoritesRouteImport.update({
-  id: '/favorites',
-  path: '/favorites',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
-  id: '/credits',
-  path: '/credits',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardCardsRoute = DashboardCardsRouteImport.update({
-  id: '/cards',
-  path: '/cards',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const CatalogCategoryRoute = CatalogCategoryRouteImport.update({
-  id: '/catalog/$category',
-  path: '/catalog/$category',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CSlugRoute = CSlugRouteImport.update({
-  id: '/c/$slug',
-  path: '/c/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminYourCreditsRoute = AdminYourCreditsRouteImport.update({
-  id: '/your-credits',
-  path: '/your-credits',
+const AdminActivityLogRoute = AdminActivityLogRouteImport.update({
+  id: '/activity-log',
+  path: '/activity-log',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminUserLiveCardsRoute = AdminUserLiveCardsRouteImport.update({
-  id: '/user-live-cards',
-  path: '/user-live-cards',
+const AdminCalendarSettingsRoute = AdminCalendarSettingsRouteImport.update({
+  id: '/calendar-settings',
+  path: '/calendar-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminUserDraftsRoute = AdminUserDraftsRouteImport.update({
-  id: '/user-drafts',
-  path: '/user-drafts',
+const AdminCatalogRoute = AdminCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminStudioPromosRoute = AdminStudioPromosRouteImport.update({
-  id: '/studio-promos',
-  path: '/studio-promos',
+const AdminCreditPackagesRoute = AdminCreditPackagesRouteImport.update({
+  id: '/credit-packages',
+  path: '/credit-packages',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AdminDeletedCardsRoute = AdminDeletedCardsRouteImport.update({
+  id: '/deleted-cards',
+  path: '/deleted-cards',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPromotionsRoute = AdminPromotionsRouteImport.update({
-  id: '/promotions',
-  path: '/promotions',
+const AdminDeletedLiveCardsRoute = AdminDeletedLiveCardsRouteImport.update({
+  id: '/deleted-live-cards',
+  path: '/deleted-live-cards',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPlatformSettingsRoute = AdminPlatformSettingsRouteImport.update({
-  id: '/platform-settings',
-  path: '/platform-settings',
+const AdminDeletedVideoDraftsRoute = AdminDeletedVideoDraftsRouteImport.update({
+  id: '/deleted-video-drafts',
+  path: '/deleted-video-drafts',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminOrdersRoute = AdminOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
+const AdminDevCreditsRoute = AdminDevCreditsRouteImport.update({
+  id: '/dev-credits',
+  path: '/dev-credits',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
+const AdminEconomyRoute = AdminEconomyRouteImport.update({
+  id: '/economy',
+  path: '/economy',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminMusicRoute = AdminMusicRouteImport.update({
-  id: '/music',
-  path: '/music',
+const AdminHomepageHeroRoute = AdminHomepageHeroRouteImport.update({
+  id: '/homepage-hero',
+  path: '/homepage-hero',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
+  id: '/languages',
+  path: '/languages',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMemoryBookRoute = AdminMemoryBookRouteImport.update({
+  id: '/memory-book',
+  path: '/memory-book',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMemoryBookDecorationsRoute =
@@ -404,119 +334,169 @@ const AdminMemoryBookDecorationsRoute =
     path: '/memory-book-decorations',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminMemoryBookRoute = AdminMemoryBookRouteImport.update({
-  id: '/memory-book',
-  path: '/memory-book',
+const AdminMusicRoute = AdminMusicRouteImport.update({
+  id: '/music',
+  path: '/music',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLanguagesRoute = AdminLanguagesRouteImport.update({
-  id: '/languages',
-  path: '/languages',
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminHomepageHeroRoute = AdminHomepageHeroRouteImport.update({
-  id: '/homepage-hero',
-  path: '/homepage-hero',
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminEconomyRoute = AdminEconomyRouteImport.update({
-  id: '/economy',
-  path: '/economy',
+const AdminPlatformSettingsRoute = AdminPlatformSettingsRouteImport.update({
+  id: '/platform-settings',
+  path: '/platform-settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDevCreditsRoute = AdminDevCreditsRouteImport.update({
-  id: '/dev-credits',
-  path: '/dev-credits',
+const AdminPromotionsRoute = AdminPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDeletedVideoDraftsRoute = AdminDeletedVideoDraftsRouteImport.update({
-  id: '/deleted-video-drafts',
-  path: '/deleted-video-drafts',
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDeletedLiveCardsRoute = AdminDeletedLiveCardsRouteImport.update({
-  id: '/deleted-live-cards',
-  path: '/deleted-live-cards',
+const AdminStudioPromosRoute = AdminStudioPromosRouteImport.update({
+  id: '/studio-promos',
+  path: '/studio-promos',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDeletedCardsRoute = AdminDeletedCardsRouteImport.update({
-  id: '/deleted-cards',
-  path: '/deleted-cards',
+const AdminUserDraftsRoute = AdminUserDraftsRouteImport.update({
+  id: '/user-drafts',
+  path: '/user-drafts',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCreditPackagesRoute = AdminCreditPackagesRouteImport.update({
-  id: '/credit-packages',
-  path: '/credit-packages',
+const AdminUserLiveCardsRoute = AdminUserLiveCardsRouteImport.update({
+  id: '/user-live-cards',
+  path: '/user-live-cards',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCatalogRoute = AdminCatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCalendarSettingsRoute = AdminCalendarSettingsRouteImport.update({
-  id: '/calendar-settings',
-  path: '/calendar-settings',
+const AdminYourCreditsRoute = AdminYourCreditsRouteImport.update({
+  id: '/your-credits',
+  path: '/your-credits',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
-  id: '/audit-log',
-  path: '/audit-log',
-  getParentRoute: () => AdminRoute,
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminActivityLogRoute = AdminActivityLogRouteImport.update({
-  id: '/activity-log',
-  path: '/activity-log',
-  getParentRoute: () => AdminRoute,
+const CatalogIndexRoute = CatalogIndexRouteImport.update({
+  id: '/catalog/',
+  path: '/catalog/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminVoiceSettingsIndexRoute = AdminVoiceSettingsIndexRouteImport.update({
-  id: '/voice-settings/',
-  path: '/voice-settings/',
-  getParentRoute: () => AdminRoute,
+const CatalogCategoryRoute = CatalogCategoryRouteImport.update({
+  id: '/catalog/$category',
+  path: '/catalog/$category',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCardsRoute = DashboardCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardFavoritesRoute = DashboardFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLiveCardsRoute = DashboardLiveCardsRouteImport.update({
+  id: '/live-cards',
+  path: '/live-cards',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMemoryBooksRoute = DashboardMemoryBooksRouteImport.update({
+  id: '/memory-books',
+  path: '/memory-books',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardNotificationsRoute = DashboardNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardVideoGreetingsRoute = DashboardVideoGreetingsRouteImport.update({
+  id: '/video-greetings',
+  path: '/video-greetings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardVoicesRoute = DashboardVoicesRouteImport.update({
+  id: '/voices',
+  path: '/voices',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const LiveEditorAnimationIdRoute = LiveEditorAnimationIdRouteImport.update({
+  id: '/live-editor/$animationId',
+  path: '/live-editor/$animationId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCatalogIndexRoute = AdminCatalogIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
-const ApiPublicVoicePreviewsMaintainRoute =
-  ApiPublicVoicePreviewsMaintainRouteImport.update({
-    id: '/api/public/voice-previews-maintain',
-    path: '/api/public/voice-previews-maintain',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicPvgReconcileRoute = ApiPublicPvgReconcileRouteImport.update({
-  id: '/api/public/pvg-reconcile',
-  path: '/api/public/pvg-reconcile',
-  getParentRoute: () => rootRouteImport,
+const AdminCatalogBackgroundsRoute = AdminCatalogBackgroundsRouteImport.update({
+  id: '/backgrounds',
+  path: '/backgrounds',
+  getParentRoute: () => AdminCatalogRoute,
 } as any)
-const ApiPublicPurgeDeletedCardsRoute =
-  ApiPublicPurgeDeletedCardsRouteImport.update({
-    id: '/api/public/purge-deleted-cards',
-    path: '/api/public/purge-deleted-cards',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicLiveCardsReconcileRoute =
-  ApiPublicLiveCardsReconcileRouteImport.update({
-    id: '/api/public/live-cards-reconcile',
-    path: '/api/public/live-cards-reconcile',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminVoiceSettingsTestingRoute =
-  AdminVoiceSettingsTestingRouteImport.update({
-    id: '/voice-settings/testing',
-    path: '/voice-settings/testing',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminVoiceSettingsLibraryRoute =
-  AdminVoiceSettingsLibraryRouteImport.update({
-    id: '/voice-settings/library',
-    path: '/voice-settings/library',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
+const AdminCatalogDraftsRoute = AdminCatalogDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogHiddenRoute = AdminCatalogHiddenRouteImport.update({
+  id: '/hidden',
+  path: '/hidden',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogPublishedRoute = AdminCatalogPublishedRouteImport.update({
+  id: '/published',
+  path: '/published',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogTaxonomyRoute = AdminCatalogTaxonomyRouteImport.update({
+  id: '/taxonomy',
+  path: '/taxonomy',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
 const AdminCatalogTranslationsRoute =
@@ -525,52 +505,50 @@ const AdminCatalogTranslationsRoute =
     path: '/translations',
     getParentRoute: () => AdminCatalogRoute,
   } as any)
-const AdminCatalogTaxonomyRoute = AdminCatalogTaxonomyRouteImport.update({
-  id: '/taxonomy',
-  path: '/taxonomy',
+const AdminCatalogUploadRoute = AdminCatalogUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
-const AdminCatalogPublishedRoute = AdminCatalogPublishedRouteImport.update({
-  id: '/published',
-  path: '/published',
-  getParentRoute: () => AdminCatalogRoute,
+const AdminVoiceSettingsIndexRoute = AdminVoiceSettingsIndexRouteImport.update({
+  id: '/voice-settings/',
+  path: '/voice-settings/',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AdminCatalogHiddenRoute = AdminCatalogHiddenRouteImport.update({
-  id: '/hidden',
-  path: '/hidden',
-  getParentRoute: () => AdminCatalogRoute,
-} as any)
-const AdminCatalogDraftsRoute = AdminCatalogDraftsRouteImport.update({
-  id: '/drafts',
-  path: '/drafts',
-  getParentRoute: () => AdminCatalogRoute,
-} as any)
-const AdminCatalogBackgroundsRoute = AdminCatalogBackgroundsRouteImport.update({
-  id: '/backgrounds',
-  path: '/backgrounds',
-  getParentRoute: () => AdminCatalogRoute,
-} as any)
-const AdminCatalogVariantsIndexRoute =
-  AdminCatalogVariantsIndexRouteImport.update({
-    id: '/variants/',
-    path: '/variants/',
-    getParentRoute: () => AdminCatalogRoute,
+const AdminVoiceSettingsLibraryRoute =
+  AdminVoiceSettingsLibraryRouteImport.update({
+    id: '/voice-settings/library',
+    path: '/voice-settings/library',
+    getParentRoute: () => AdminRoute,
   } as any)
-const AdminCatalogVariantsNewRoute = AdminCatalogVariantsNewRouteImport.update({
-  id: '/variants/new',
-  path: '/variants/new',
-  getParentRoute: () => AdminCatalogRoute,
+const AdminVoiceSettingsTestingRoute =
+  AdminVoiceSettingsTestingRouteImport.update({
+    id: '/voice-settings/testing',
+    path: '/voice-settings/testing',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const ApiPublicLiveCardsReconcileRoute =
+  ApiPublicLiveCardsReconcileRouteImport.update({
+    id: '/api/public/live-cards-reconcile',
+    path: '/api/public/live-cards-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPurgeDeletedCardsRoute =
+  ApiPublicPurgeDeletedCardsRouteImport.update({
+    id: '/api/public/purge-deleted-cards',
+    path: '/api/public/purge-deleted-cards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPvgReconcileRoute = ApiPublicPvgReconcileRouteImport.update({
+  id: '/api/public/pvg-reconcile',
+  path: '/api/public/pvg-reconcile',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCatalogVariantsIdRoute = AdminCatalogVariantsIdRouteImport.update({
-  id: '/variants/$id',
-  path: '/variants/$id',
-  getParentRoute: () => AdminCatalogRoute,
-} as any)
-const AdminCatalogBackgroundsNewRoute =
-  AdminCatalogBackgroundsNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AdminCatalogBackgroundsRoute,
+const ApiPublicVoicePreviewsMaintainRoute =
+  ApiPublicVoicePreviewsMaintainRouteImport.update({
+    id: '/api/public/voice-previews-maintain',
+    path: '/api/public/voice-previews-maintain',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdminCatalogBackgroundsIdRoute =
   AdminCatalogBackgroundsIdRouteImport.update({
@@ -578,6 +556,28 @@ const AdminCatalogBackgroundsIdRoute =
     path: '/$id',
     getParentRoute: () => AdminCatalogBackgroundsRoute,
   } as any)
+const AdminCatalogBackgroundsNewRoute =
+  AdminCatalogBackgroundsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AdminCatalogBackgroundsRoute,
+  } as any)
+const AdminCatalogVariantsIndexRoute =
+  AdminCatalogVariantsIndexRouteImport.update({
+    id: '/variants/',
+    path: '/variants/',
+    getParentRoute: () => AdminCatalogRoute,
+  } as any)
+const AdminCatalogVariantsIdRoute = AdminCatalogVariantsIdRouteImport.update({
+  id: '/variants/$id',
+  path: '/variants/$id',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
+const AdminCatalogVariantsNewRoute = AdminCatalogVariantsNewRouteImport.update({
+  id: '/variants/new',
+  path: '/variants/new',
+  getParentRoute: () => AdminCatalogRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1191,207 +1191,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/video-greeting-setup': {
-      id: '/video-greeting-setup'
-      path: '/video-greeting-setup'
-      fullPath: '/video-greeting-setup'
-      preLoaderRoute: typeof VideoGreetingSetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/video-greeting': {
-      id: '/video-greeting'
-      path: '/video-greeting'
-      fullPath: '/video-greeting'
-      preLoaderRoute: typeof VideoGreetingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/verify-email': {
-      id: '/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/studio': {
-      id: '/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof StudioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/showcase': {
-      id: '/showcase'
-      path: '/showcase'
-      fullPath: '/showcase'
-      preLoaderRoute: typeof ShowcaseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/replicate-test': {
-      id: '/replicate-test'
-      path: '/replicate-test'
-      fullPath: '/replicate-test'
-      preLoaderRoute: typeof ReplicateTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/personal-orders': {
-      id: '/personal-orders'
-      path: '/personal-orders'
-      fullPath: '/personal-orders'
-      preLoaderRoute: typeof PersonalOrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book-video': {
-      id: '/memory-book-video'
-      path: '/memory-book-video'
-      fullPath: '/memory-book-video'
-      preLoaderRoute: typeof MemoryBookVideoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book-preview': {
-      id: '/memory-book-preview'
-      path: '/memory-book-preview'
-      fullPath: '/memory-book-preview'
-      preLoaderRoute: typeof MemoryBookPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book-packages': {
-      id: '/memory-book-packages'
-      path: '/memory-book-packages'
-      fullPath: '/memory-book-packages'
-      preLoaderRoute: typeof MemoryBookPackagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book-instructions': {
-      id: '/memory-book-instructions'
-      path: '/memory-book-instructions'
-      fullPath: '/memory-book-instructions'
-      preLoaderRoute: typeof MemoryBookInstructionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book-create': {
-      id: '/memory-book-create'
-      path: '/memory-book-create'
-      fullPath: '/memory-book-create'
-      preLoaderRoute: typeof MemoryBookCreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory-book': {
-      id: '/memory-book'
-      path: '/memory-book'
-      fullPath: '/memory-book'
-      preLoaderRoute: typeof MemoryBookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-cards': {
-      id: '/live-cards'
-      path: '/live-cards'
-      fullPath: '/live-cards'
-      preLoaderRoute: typeof LiveCardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/free-greeting': {
-      id: '/free-greeting'
-      path: '/free-greeting'
-      fullPath: '/free-greeting'
-      preLoaderRoute: typeof FreeGreetingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/daily': {
-      id: '/daily'
-      path: '/daily'
-      fullPath: '/daily'
-      preLoaderRoute: typeof DailyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/credits': {
-      id: '/credits'
-      path: '/credits'
-      fullPath: '/credits'
-      preLoaderRoute: typeof CreditsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create-card': {
-      id: '/create-card'
-      path: '/create-card'
-      fullPath: '/create-card'
-      preLoaderRoute: typeof CreateCardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create': {
-      id: '/create'
-      path: '/create'
-      fullPath: '/create'
-      preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1401,25 +1205,207 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof DashboardRoute
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/catalog/': {
-      id: '/catalog/'
-      path: '/catalog'
-      fullPath: '/catalog/'
-      preLoaderRoute: typeof CatalogIndexRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-card': {
+      id: '/create-card'
+      path: '/create-card'
+      fullPath: '/create-card'
+      preLoaderRoute: typeof CreateCardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/credits': {
+      id: '/credits'
+      path: '/credits'
+      fullPath: '/credits'
+      preLoaderRoute: typeof CreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily': {
+      id: '/daily'
+      path: '/daily'
+      fullPath: '/daily'
+      preLoaderRoute: typeof DailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/free-greeting': {
+      id: '/free-greeting'
+      path: '/free-greeting'
+      fullPath: '/free-greeting'
+      preLoaderRoute: typeof FreeGreetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-cards': {
+      id: '/live-cards'
+      path: '/live-cards'
+      fullPath: '/live-cards'
+      preLoaderRoute: typeof LiveCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book': {
+      id: '/memory-book'
+      path: '/memory-book'
+      fullPath: '/memory-book'
+      preLoaderRoute: typeof MemoryBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-create': {
+      id: '/memory-book-create'
+      path: '/memory-book-create'
+      fullPath: '/memory-book-create'
+      preLoaderRoute: typeof MemoryBookCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-instructions': {
+      id: '/memory-book-instructions'
+      path: '/memory-book-instructions'
+      fullPath: '/memory-book-instructions'
+      preLoaderRoute: typeof MemoryBookInstructionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-packages': {
+      id: '/memory-book-packages'
+      path: '/memory-book-packages'
+      fullPath: '/memory-book-packages'
+      preLoaderRoute: typeof MemoryBookPackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-preview': {
+      id: '/memory-book-preview'
+      path: '/memory-book-preview'
+      fullPath: '/memory-book-preview'
+      preLoaderRoute: typeof MemoryBookPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory-book-video': {
+      id: '/memory-book-video'
+      path: '/memory-book-video'
+      fullPath: '/memory-book-video'
+      preLoaderRoute: typeof MemoryBookVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personal-orders': {
+      id: '/personal-orders'
+      path: '/personal-orders'
+      fullPath: '/personal-orders'
+      preLoaderRoute: typeof PersonalOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replicate-test': {
+      id: '/replicate-test'
+      path: '/replicate-test'
+      fullPath: '/replicate-test'
+      preLoaderRoute: typeof ReplicateTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showcase': {
+      id: '/showcase'
+      path: '/showcase'
+      fullPath: '/showcase'
+      preLoaderRoute: typeof ShowcaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio': {
+      id: '/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof StudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/video-greeting': {
+      id: '/video-greeting'
+      path: '/video-greeting'
+      fullPath: '/video-greeting'
+      preLoaderRoute: typeof VideoGreetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/video-greeting-setup': {
+      id: '/video-greeting-setup'
+      path: '/video-greeting-setup'
+      fullPath: '/video-greeting-setup'
+      preLoaderRoute: typeof VideoGreetingSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1429,263 +1415,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/live-editor/$animationId': {
-      id: '/live-editor/$animationId'
-      path: '/live-editor/$animationId'
-      fullPath: '/live-editor/$animationId'
-      preLoaderRoute: typeof LiveEditorAnimationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard/voices': {
-      id: '/dashboard/voices'
-      path: '/voices'
-      fullPath: '/dashboard/voices'
-      preLoaderRoute: typeof DashboardVoicesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/video-greetings': {
-      id: '/dashboard/video-greetings'
-      path: '/video-greetings'
-      fullPath: '/dashboard/video-greetings'
-      preLoaderRoute: typeof DashboardVideoGreetingsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/profile': {
-      id: '/dashboard/profile'
-      path: '/profile'
-      fullPath: '/dashboard/profile'
-      preLoaderRoute: typeof DashboardProfileRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/orders': {
-      id: '/dashboard/orders'
-      path: '/orders'
-      fullPath: '/dashboard/orders'
-      preLoaderRoute: typeof DashboardOrdersRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/notifications': {
-      id: '/dashboard/notifications'
-      path: '/notifications'
-      fullPath: '/dashboard/notifications'
-      preLoaderRoute: typeof DashboardNotificationsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/memory-books': {
-      id: '/dashboard/memory-books'
-      path: '/memory-books'
-      fullPath: '/dashboard/memory-books'
-      preLoaderRoute: typeof DashboardMemoryBooksRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/live-cards': {
-      id: '/dashboard/live-cards'
-      path: '/live-cards'
-      fullPath: '/dashboard/live-cards'
-      preLoaderRoute: typeof DashboardLiveCardsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/favorites': {
-      id: '/dashboard/favorites'
-      path: '/favorites'
-      fullPath: '/dashboard/favorites'
-      preLoaderRoute: typeof DashboardFavoritesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/credits': {
-      id: '/dashboard/credits'
-      path: '/credits'
-      fullPath: '/dashboard/credits'
-      preLoaderRoute: typeof DashboardCreditsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/cards': {
-      id: '/dashboard/cards'
-      path: '/cards'
-      fullPath: '/dashboard/cards'
-      preLoaderRoute: typeof DashboardCardsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/catalog/$category': {
-      id: '/catalog/$category'
-      path: '/catalog/$category'
-      fullPath: '/catalog/$category'
-      preLoaderRoute: typeof CatalogCategoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/$slug': {
-      id: '/c/$slug'
-      path: '/c/$slug'
-      fullPath: '/c/$slug'
-      preLoaderRoute: typeof CSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/your-credits': {
-      id: '/admin/your-credits'
-      path: '/your-credits'
-      fullPath: '/admin/your-credits'
-      preLoaderRoute: typeof AdminYourCreditsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/user-live-cards': {
-      id: '/admin/user-live-cards'
-      path: '/user-live-cards'
-      fullPath: '/admin/user-live-cards'
-      preLoaderRoute: typeof AdminUserLiveCardsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/user-drafts': {
-      id: '/admin/user-drafts'
-      path: '/user-drafts'
-      fullPath: '/admin/user-drafts'
-      preLoaderRoute: typeof AdminUserDraftsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/studio-promos': {
-      id: '/admin/studio-promos'
-      path: '/studio-promos'
-      fullPath: '/admin/studio-promos'
-      preLoaderRoute: typeof AdminStudioPromosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/promotions': {
-      id: '/admin/promotions'
-      path: '/promotions'
-      fullPath: '/admin/promotions'
-      preLoaderRoute: typeof AdminPromotionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/platform-settings': {
-      id: '/admin/platform-settings'
-      path: '/platform-settings'
-      fullPath: '/admin/platform-settings'
-      preLoaderRoute: typeof AdminPlatformSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/orders': {
-      id: '/admin/orders'
-      path: '/orders'
-      fullPath: '/admin/orders'
-      preLoaderRoute: typeof AdminOrdersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/notifications': {
-      id: '/admin/notifications'
-      path: '/notifications'
-      fullPath: '/admin/notifications'
-      preLoaderRoute: typeof AdminNotificationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/music': {
-      id: '/admin/music'
-      path: '/music'
-      fullPath: '/admin/music'
-      preLoaderRoute: typeof AdminMusicRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/memory-book-decorations': {
-      id: '/admin/memory-book-decorations'
-      path: '/memory-book-decorations'
-      fullPath: '/admin/memory-book-decorations'
-      preLoaderRoute: typeof AdminMemoryBookDecorationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/memory-book': {
-      id: '/admin/memory-book'
-      path: '/memory-book'
-      fullPath: '/admin/memory-book'
-      preLoaderRoute: typeof AdminMemoryBookRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/languages': {
-      id: '/admin/languages'
-      path: '/languages'
-      fullPath: '/admin/languages'
-      preLoaderRoute: typeof AdminLanguagesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/homepage-hero': {
-      id: '/admin/homepage-hero'
-      path: '/homepage-hero'
-      fullPath: '/admin/homepage-hero'
-      preLoaderRoute: typeof AdminHomepageHeroRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/economy': {
-      id: '/admin/economy'
-      path: '/economy'
-      fullPath: '/admin/economy'
-      preLoaderRoute: typeof AdminEconomyRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/dev-credits': {
-      id: '/admin/dev-credits'
-      path: '/dev-credits'
-      fullPath: '/admin/dev-credits'
-      preLoaderRoute: typeof AdminDevCreditsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/deleted-video-drafts': {
-      id: '/admin/deleted-video-drafts'
-      path: '/deleted-video-drafts'
-      fullPath: '/admin/deleted-video-drafts'
-      preLoaderRoute: typeof AdminDeletedVideoDraftsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/deleted-live-cards': {
-      id: '/admin/deleted-live-cards'
-      path: '/deleted-live-cards'
-      fullPath: '/admin/deleted-live-cards'
-      preLoaderRoute: typeof AdminDeletedLiveCardsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/deleted-cards': {
-      id: '/admin/deleted-cards'
-      path: '/deleted-cards'
-      fullPath: '/admin/deleted-cards'
-      preLoaderRoute: typeof AdminDeletedCardsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/credit-packages': {
-      id: '/admin/credit-packages'
-      path: '/credit-packages'
-      fullPath: '/admin/credit-packages'
-      preLoaderRoute: typeof AdminCreditPackagesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/catalog': {
-      id: '/admin/catalog'
-      path: '/catalog'
-      fullPath: '/admin/catalog'
-      preLoaderRoute: typeof AdminCatalogRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/calendar-settings': {
-      id: '/admin/calendar-settings'
-      path: '/calendar-settings'
-      fullPath: '/admin/calendar-settings'
-      preLoaderRoute: typeof AdminCalendarSettingsRouteImport
+    '/admin/activity-log': {
+      id: '/admin/activity-log'
+      path: '/activity-log'
+      fullPath: '/admin/activity-log'
+      preLoaderRoute: typeof AdminActivityLogRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/audit-log': {
@@ -1695,109 +1429,284 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/activity-log': {
-      id: '/admin/activity-log'
-      path: '/activity-log'
-      fullPath: '/admin/activity-log'
-      preLoaderRoute: typeof AdminActivityLogRouteImport
+    '/admin/calendar-settings': {
+      id: '/admin/calendar-settings'
+      path: '/calendar-settings'
+      fullPath: '/admin/calendar-settings'
+      preLoaderRoute: typeof AdminCalendarSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/voice-settings/': {
-      id: '/admin/voice-settings/'
-      path: '/voice-settings'
-      fullPath: '/admin/voice-settings/'
-      preLoaderRoute: typeof AdminVoiceSettingsIndexRouteImport
+    '/admin/catalog': {
+      id: '/admin/catalog'
+      path: '/catalog'
+      fullPath: '/admin/catalog'
+      preLoaderRoute: typeof AdminCatalogRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/credit-packages': {
+      id: '/admin/credit-packages'
+      path: '/credit-packages'
+      fullPath: '/admin/credit-packages'
+      preLoaderRoute: typeof AdminCreditPackagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/deleted-cards': {
+      id: '/admin/deleted-cards'
+      path: '/deleted-cards'
+      fullPath: '/admin/deleted-cards'
+      preLoaderRoute: typeof AdminDeletedCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/deleted-live-cards': {
+      id: '/admin/deleted-live-cards'
+      path: '/deleted-live-cards'
+      fullPath: '/admin/deleted-live-cards'
+      preLoaderRoute: typeof AdminDeletedLiveCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/deleted-video-drafts': {
+      id: '/admin/deleted-video-drafts'
+      path: '/deleted-video-drafts'
+      fullPath: '/admin/deleted-video-drafts'
+      preLoaderRoute: typeof AdminDeletedVideoDraftsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dev-credits': {
+      id: '/admin/dev-credits'
+      path: '/dev-credits'
+      fullPath: '/admin/dev-credits'
+      preLoaderRoute: typeof AdminDevCreditsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/economy': {
+      id: '/admin/economy'
+      path: '/economy'
+      fullPath: '/admin/economy'
+      preLoaderRoute: typeof AdminEconomyRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/homepage-hero': {
+      id: '/admin/homepage-hero'
+      path: '/homepage-hero'
+      fullPath: '/admin/homepage-hero'
+      preLoaderRoute: typeof AdminHomepageHeroRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/languages': {
+      id: '/admin/languages'
+      path: '/languages'
+      fullPath: '/admin/languages'
+      preLoaderRoute: typeof AdminLanguagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/memory-book': {
+      id: '/admin/memory-book'
+      path: '/memory-book'
+      fullPath: '/admin/memory-book'
+      preLoaderRoute: typeof AdminMemoryBookRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/memory-book-decorations': {
+      id: '/admin/memory-book-decorations'
+      path: '/memory-book-decorations'
+      fullPath: '/admin/memory-book-decorations'
+      preLoaderRoute: typeof AdminMemoryBookDecorationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/music': {
+      id: '/admin/music'
+      path: '/music'
+      fullPath: '/admin/music'
+      preLoaderRoute: typeof AdminMusicRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/platform-settings': {
+      id: '/admin/platform-settings'
+      path: '/platform-settings'
+      fullPath: '/admin/platform-settings'
+      preLoaderRoute: typeof AdminPlatformSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/promotions': {
+      id: '/admin/promotions'
+      path: '/promotions'
+      fullPath: '/admin/promotions'
+      preLoaderRoute: typeof AdminPromotionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/studio-promos': {
+      id: '/admin/studio-promos'
+      path: '/studio-promos'
+      fullPath: '/admin/studio-promos'
+      preLoaderRoute: typeof AdminStudioPromosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/user-drafts': {
+      id: '/admin/user-drafts'
+      path: '/user-drafts'
+      fullPath: '/admin/user-drafts'
+      preLoaderRoute: typeof AdminUserDraftsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/user-live-cards': {
+      id: '/admin/user-live-cards'
+      path: '/user-live-cards'
+      fullPath: '/admin/user-live-cards'
+      preLoaderRoute: typeof AdminUserLiveCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/your-credits': {
+      id: '/admin/your-credits'
+      path: '/your-credits'
+      fullPath: '/admin/your-credits'
+      preLoaderRoute: typeof AdminYourCreditsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog/': {
+      id: '/catalog/'
+      path: '/catalog'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof CatalogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog/$category': {
+      id: '/catalog/$category'
+      path: '/catalog/$category'
+      fullPath: '/catalog/$category'
+      preLoaderRoute: typeof CatalogCategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cards': {
+      id: '/dashboard/cards'
+      path: '/cards'
+      fullPath: '/dashboard/cards'
+      preLoaderRoute: typeof DashboardCardsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/credits': {
+      id: '/dashboard/credits'
+      path: '/credits'
+      fullPath: '/dashboard/credits'
+      preLoaderRoute: typeof DashboardCreditsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/favorites': {
+      id: '/dashboard/favorites'
+      path: '/favorites'
+      fullPath: '/dashboard/favorites'
+      preLoaderRoute: typeof DashboardFavoritesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/live-cards': {
+      id: '/dashboard/live-cards'
+      path: '/live-cards'
+      fullPath: '/dashboard/live-cards'
+      preLoaderRoute: typeof DashboardLiveCardsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/memory-books': {
+      id: '/dashboard/memory-books'
+      path: '/memory-books'
+      fullPath: '/dashboard/memory-books'
+      preLoaderRoute: typeof DashboardMemoryBooksRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/notifications': {
+      id: '/dashboard/notifications'
+      path: '/notifications'
+      fullPath: '/dashboard/notifications'
+      preLoaderRoute: typeof DashboardNotificationsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/video-greetings': {
+      id: '/dashboard/video-greetings'
+      path: '/video-greetings'
+      fullPath: '/dashboard/video-greetings'
+      preLoaderRoute: typeof DashboardVideoGreetingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/voices': {
+      id: '/dashboard/voices'
+      path: '/voices'
+      fullPath: '/dashboard/voices'
+      preLoaderRoute: typeof DashboardVoicesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/live-editor/$animationId': {
+      id: '/live-editor/$animationId'
+      path: '/live-editor/$animationId'
+      fullPath: '/live-editor/$animationId'
+      preLoaderRoute: typeof LiveEditorAnimationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/catalog/': {
       id: '/admin/catalog/'
       path: '/'
       fullPath: '/admin/catalog/'
       preLoaderRoute: typeof AdminCatalogIndexRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/api/public/voice-previews-maintain': {
-      id: '/api/public/voice-previews-maintain'
-      path: '/api/public/voice-previews-maintain'
-      fullPath: '/api/public/voice-previews-maintain'
-      preLoaderRoute: typeof ApiPublicVoicePreviewsMaintainRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/pvg-reconcile': {
-      id: '/api/public/pvg-reconcile'
-      path: '/api/public/pvg-reconcile'
-      fullPath: '/api/public/pvg-reconcile'
-      preLoaderRoute: typeof ApiPublicPvgReconcileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/purge-deleted-cards': {
-      id: '/api/public/purge-deleted-cards'
-      path: '/api/public/purge-deleted-cards'
-      fullPath: '/api/public/purge-deleted-cards'
-      preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/live-cards-reconcile': {
-      id: '/api/public/live-cards-reconcile'
-      path: '/api/public/live-cards-reconcile'
-      fullPath: '/api/public/live-cards-reconcile'
-      preLoaderRoute: typeof ApiPublicLiveCardsReconcileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/voice-settings/testing': {
-      id: '/admin/voice-settings/testing'
-      path: '/voice-settings/testing'
-      fullPath: '/admin/voice-settings/testing'
-      preLoaderRoute: typeof AdminVoiceSettingsTestingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/voice-settings/library': {
-      id: '/admin/voice-settings/library'
-      path: '/voice-settings/library'
-      fullPath: '/admin/voice-settings/library'
-      preLoaderRoute: typeof AdminVoiceSettingsLibraryRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/catalog/upload': {
-      id: '/admin/catalog/upload'
-      path: '/upload'
-      fullPath: '/admin/catalog/upload'
-      preLoaderRoute: typeof AdminCatalogUploadRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/translations': {
-      id: '/admin/catalog/translations'
-      path: '/translations'
-      fullPath: '/admin/catalog/translations'
-      preLoaderRoute: typeof AdminCatalogTranslationsRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/taxonomy': {
-      id: '/admin/catalog/taxonomy'
-      path: '/taxonomy'
-      fullPath: '/admin/catalog/taxonomy'
-      preLoaderRoute: typeof AdminCatalogTaxonomyRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/published': {
-      id: '/admin/catalog/published'
-      path: '/published'
-      fullPath: '/admin/catalog/published'
-      preLoaderRoute: typeof AdminCatalogPublishedRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/hidden': {
-      id: '/admin/catalog/hidden'
-      path: '/hidden'
-      fullPath: '/admin/catalog/hidden'
-      preLoaderRoute: typeof AdminCatalogHiddenRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/drafts': {
-      id: '/admin/catalog/drafts'
-      path: '/drafts'
-      fullPath: '/admin/catalog/drafts'
-      preLoaderRoute: typeof AdminCatalogDraftsRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
     '/admin/catalog/backgrounds': {
@@ -1807,18 +1716,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogBackgroundsRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/admin/catalog/drafts': {
+      id: '/admin/catalog/drafts'
+      path: '/drafts'
+      fullPath: '/admin/catalog/drafts'
+      preLoaderRoute: typeof AdminCatalogDraftsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/hidden': {
+      id: '/admin/catalog/hidden'
+      path: '/hidden'
+      fullPath: '/admin/catalog/hidden'
+      preLoaderRoute: typeof AdminCatalogHiddenRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/published': {
+      id: '/admin/catalog/published'
+      path: '/published'
+      fullPath: '/admin/catalog/published'
+      preLoaderRoute: typeof AdminCatalogPublishedRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/taxonomy': {
+      id: '/admin/catalog/taxonomy'
+      path: '/taxonomy'
+      fullPath: '/admin/catalog/taxonomy'
+      preLoaderRoute: typeof AdminCatalogTaxonomyRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/translations': {
+      id: '/admin/catalog/translations'
+      path: '/translations'
+      fullPath: '/admin/catalog/translations'
+      preLoaderRoute: typeof AdminCatalogTranslationsRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/catalog/upload': {
+      id: '/admin/catalog/upload'
+      path: '/upload'
+      fullPath: '/admin/catalog/upload'
+      preLoaderRoute: typeof AdminCatalogUploadRouteImport
+      parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/voice-settings/': {
+      id: '/admin/voice-settings/'
+      path: '/voice-settings'
+      fullPath: '/admin/voice-settings/'
+      preLoaderRoute: typeof AdminVoiceSettingsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/voice-settings/library': {
+      id: '/admin/voice-settings/library'
+      path: '/voice-settings/library'
+      fullPath: '/admin/voice-settings/library'
+      preLoaderRoute: typeof AdminVoiceSettingsLibraryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/voice-settings/testing': {
+      id: '/admin/voice-settings/testing'
+      path: '/voice-settings/testing'
+      fullPath: '/admin/voice-settings/testing'
+      preLoaderRoute: typeof AdminVoiceSettingsTestingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/public/live-cards-reconcile': {
+      id: '/api/public/live-cards-reconcile'
+      path: '/api/public/live-cards-reconcile'
+      fullPath: '/api/public/live-cards-reconcile'
+      preLoaderRoute: typeof ApiPublicLiveCardsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/purge-deleted-cards': {
+      id: '/api/public/purge-deleted-cards'
+      path: '/api/public/purge-deleted-cards'
+      fullPath: '/api/public/purge-deleted-cards'
+      preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/pvg-reconcile': {
+      id: '/api/public/pvg-reconcile'
+      path: '/api/public/pvg-reconcile'
+      fullPath: '/api/public/pvg-reconcile'
+      preLoaderRoute: typeof ApiPublicPvgReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/voice-previews-maintain': {
+      id: '/api/public/voice-previews-maintain'
+      path: '/api/public/voice-previews-maintain'
+      fullPath: '/api/public/voice-previews-maintain'
+      preLoaderRoute: typeof ApiPublicVoicePreviewsMaintainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/catalog/backgrounds/$id': {
+      id: '/admin/catalog/backgrounds/$id'
+      path: '/$id'
+      fullPath: '/admin/catalog/backgrounds/$id'
+      preLoaderRoute: typeof AdminCatalogBackgroundsIdRouteImport
+      parentRoute: typeof AdminCatalogBackgroundsRoute
+    }
+    '/admin/catalog/backgrounds/new': {
+      id: '/admin/catalog/backgrounds/new'
+      path: '/new'
+      fullPath: '/admin/catalog/backgrounds/new'
+      preLoaderRoute: typeof AdminCatalogBackgroundsNewRouteImport
+      parentRoute: typeof AdminCatalogBackgroundsRoute
+    }
     '/admin/catalog/variants/': {
       id: '/admin/catalog/variants/'
       path: '/variants'
       fullPath: '/admin/catalog/variants/'
       preLoaderRoute: typeof AdminCatalogVariantsIndexRouteImport
-      parentRoute: typeof AdminCatalogRoute
-    }
-    '/admin/catalog/variants/new': {
-      id: '/admin/catalog/variants/new'
-      path: '/variants/new'
-      fullPath: '/admin/catalog/variants/new'
-      preLoaderRoute: typeof AdminCatalogVariantsNewRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
     '/admin/catalog/variants/$id': {
@@ -1828,19 +1835,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogVariantsIdRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
-    '/admin/catalog/backgrounds/new': {
-      id: '/admin/catalog/backgrounds/new'
-      path: '/new'
-      fullPath: '/admin/catalog/backgrounds/new'
-      preLoaderRoute: typeof AdminCatalogBackgroundsNewRouteImport
-      parentRoute: typeof AdminCatalogBackgroundsRoute
-    }
-    '/admin/catalog/backgrounds/$id': {
-      id: '/admin/catalog/backgrounds/$id'
-      path: '/$id'
-      fullPath: '/admin/catalog/backgrounds/$id'
-      preLoaderRoute: typeof AdminCatalogBackgroundsIdRouteImport
-      parentRoute: typeof AdminCatalogBackgroundsRoute
+    '/admin/catalog/variants/new': {
+      id: '/admin/catalog/variants/new'
+      path: '/variants/new'
+      fullPath: '/admin/catalog/variants/new'
+      preLoaderRoute: typeof AdminCatalogVariantsNewRouteImport
+      parentRoute: typeof AdminCatalogRoute
     }
   }
 }

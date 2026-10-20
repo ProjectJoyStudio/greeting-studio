@@ -124,7 +124,7 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
       context,
     }): Promise<{
       ok: boolean;
-      error?: "not_found" | "too_long" | "failed";
+      error?: "not_found" | "too_long" | "failed" | "r2_missing" | "r2_verification" | "size_mismatch" | "database";
       materials: MemoryBookMaterial[];
     }> => {
       const book = await ownedBook(context, data.bookId);
@@ -152,18 +152,25 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
 
       // Nothing counts as uploaded before the file is really there.
       if (inR2) {
-        const { r2ObjectSize } = await import("./r2.server");
-        const stored = await r2ObjectSize(data.path);
-        if (stored == null || stored <= 0) return { ok: false, error: "failed", materials: [] };
+        const { storageFor } = await import("@/lib/storage/registry.server");
+        const checked = await storageFor("primary")?.check(data.path);
+        if (checked?.state === "missing") return { ok: false, error: "r2_missing", materials: [] };
+        if (checked?.state !== "exists") {
+          console.error("Memory Book material verification", { category: "r2_verification", status: checked?.status ?? null });
+          return { ok: false, error: "r2_verification", materials: [] };
+        }
+        if (checked.info.sizeBytes <= 0 || checked.info.sizeBytes !== data.sizeBytes) return { ok: false, error: "size_mismatch", materials: [] };
       }
 
       const db = await admin();
-      const { data: existing } = await db
+      const { data: existing, error: lookupError } = await db
         .from("memory_book_materials")
         .select("id")
         .eq("bucket", data.storage)
         .eq("path", data.path)
         .maybeSingle();
+
+      if (lookupError) return { ok: false, error: "database", materials: [] };
 
       if (!existing) {
         const { error } = await db.from("memory_book_materials").insert({
@@ -177,7 +184,7 @@ export const registerMemoryBookMaterial = createServerFn({ method: "POST" })
           size_bytes: data.sizeBytes || null,
           duration_seconds: data.durationSeconds,
         });
-        if (error) return { ok: false, error: "failed", materials: [] };
+        if (error) return { ok: false, error: "database", materials: [] };
       }
 
       // Photos and new source videos stored in the working area also get their
