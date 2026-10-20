@@ -338,8 +338,9 @@ export function MemoryBookMaterials({
             ref={videoInput}
             type="file"
             accept="video/*"
+            multiple
             className="hidden"
-            onChange={(e) => void upload(Array.from(e.target.files ?? []), "video")}
+            onChange={(e) => void uploadVideos(Array.from(e.target.files ?? []))}
           />
         </div>
         {uploadingKind === "video" ? (
@@ -347,6 +348,35 @@ export function MemoryBookMaterials({
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             {t("mbm_video_uploading")}
           </p>
+        ) : null}
+        {queue.length > 0 ? (
+          <ul className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-3 text-sm" data-testid="video-queue">
+            {queue.map((item) => (
+              <li key={item.id} className="flex flex-wrap items-center gap-2" data-status={item.status}>
+                {item.status === "uploading" ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+                ) : null}
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                <span
+                  className={
+                    item.status === "failed"
+                      ? "text-destructive"
+                      : item.status === "done"
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                  }
+                >
+                  {item.status === "queued"
+                    ? t("mbm_video_queued")
+                    : item.status === "uploading"
+                      ? t("mbm_uploading")
+                      : item.status === "done"
+                        ? t("mbm_video_done")
+                        : item.error ?? t("mbm_video_failed")}
+                </span>
+              </li>
+            ))}
+          </ul>
         ) : null}
         {videoError ? <p className="text-sm text-destructive">{videoError}</p> : null}
         {videos.length === 0 ? (
