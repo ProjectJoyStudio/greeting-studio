@@ -60,15 +60,14 @@ export const createMemoryBookPhotoUpload = createServerFn({ method: "POST" })
       key?: string;
       uploadUrl?: string;
       contentType?: string;
+      error?: "authorization" | "configuration";
     }> => {
       const book = await ownedBook(context, data.bookId);
-      if (!book) return { ok: false };
+      if (!book) return { ok: false, error: "authorization" };
 
       const { storageFor } = await import("@/lib/storage/registry.server");
       const primary = storageFor("primary");
-      // Without the working area configured the page simply keeps using the
-      // storage it used before, so nothing breaks.
-      if (!primary) return { ok: false };
+      if (!primary) return { ok: false, error: "configuration" };
 
       const { userKey } = await import("@/lib/storage/keys");
       const extension = extensionOf(data.fileName, "jpg");
@@ -84,7 +83,7 @@ export const createMemoryBookPhotoUpload = createServerFn({ method: "POST" })
       );
 
       const uploadUrl = await primary.signedWriteUrl(key, 60 * 60 * 2, data.contentType);
-      if (!uploadUrl) return { ok: false };
+      if (!uploadUrl) return { ok: false, error: "configuration" };
 
       return {
         ok: true,

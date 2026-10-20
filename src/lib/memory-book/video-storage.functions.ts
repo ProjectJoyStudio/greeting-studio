@@ -61,6 +61,7 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
       fileName?: string;
       extension?: string;
       contentType?: string;
+      error?: "authorization" | "configuration";
     }) => ({
       bookId: String(input?.bookId ?? "").slice(0, 64),
       role: input?.role === "prepared" ? ("prepared" as const) : ("source" as const),
@@ -81,19 +82,17 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
       contentType?: string;
     }> => {
       const book = await ownedBook(context, data.bookId);
-      if (!book) return { ok: false };
+      if (!book) return { ok: false, error: "authorization" };
 
       const { r2Ready, r2SignedPutUrl } = await import("./r2.server");
-      // Without the Cloudflare area configured the page simply keeps using
-      // the storage it used before, so nothing breaks.
-      if (!r2Ready()) return { ok: false };
+      if (!r2Ready()) return { ok: false, error: "configuration" };
 
       const extension = data.extension
         ? extensionOf(`x.${data.extension}`, "mp4")
         : extensionOf(data.fileName, "mp4");
       const key = memoryBookVideoKey(context.userId, data.bookId, data.role, extension);
       const uploadUrl = await r2SignedPutUrl(key, 60 * 60 * 6, data.contentType);
-      if (!uploadUrl) return { ok: false };
+      if (!uploadUrl) return { ok: false, error: "configuration" };
 
       return {
         ok: true,
