@@ -2976,6 +2976,68 @@ export type Database = {
           },
         ]
       }
+      memory_book_video_jobs: {
+        Row: {
+          book_id: string
+          completed_at: string | null
+          fragments: Json
+          id: string
+          last_error: Json | null
+          lease_until: string | null
+          material_id: string | null
+          output_path: string
+          output_result: Json | null
+          provider: string
+          provider_job_id: string | null
+          source_material_id: string
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          completed_at?: string | null
+          fragments?: Json
+          id?: string
+          last_error?: Json | null
+          lease_until?: string | null
+          material_id?: string | null
+          output_path: string
+          output_result?: Json | null
+          provider?: string
+          provider_job_id?: string | null
+          source_material_id: string
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          completed_at?: string | null
+          fragments?: Json
+          id?: string
+          last_error?: Json | null
+          lease_until?: string | null
+          material_id?: string | null
+          output_path?: string
+          output_result?: Json | null
+          provider?: string
+          provider_job_id?: string | null
+          source_material_id?: string
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_video_jobs_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_tracks: {
         Row: {
           category: string
