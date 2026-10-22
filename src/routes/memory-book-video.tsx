@@ -185,6 +185,8 @@ function MemoryBookVideoPage() {
           if (response.job) {
             acceptJob(response.job);
             if (response.job.status === "ready" || response.job.status === "failed") return;
+          } else if (!dispatching.current) {
+            setWorking(false);
           }
         } else {
           // Unknown network/provider state must not enable a replacement dispatch.

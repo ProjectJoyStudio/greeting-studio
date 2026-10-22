@@ -119,6 +119,15 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
             .maybeSingle();
           const row = sourceRow as unknown as Row | null;
           if (!row) continue;
+          // Move references before deleting the old row: its foreign key may
+          // otherwise set those page references to null immediately on deletion.
+          const { error: pageError } = await db
+            .from("memory_book_pages")
+            .update({ video_material_id: materialId })
+            .eq("book_id", data.bookId)
+            .eq("user_id", context.userId)
+            .eq("video_material_id", involvedId);
+          if (pageError) continue;
           const { memoryBookFileRemove } = await import("./storage.server");
           // Only the exact file of this one source video is removed.
           await memoryBookFileRemove(text(row.bucket), text(row.path));
@@ -136,14 +145,6 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
               .eq("book_id", data.bookId)
               .eq("source_material_id", involvedId)
               .eq("user_id", context.userId);
-            // A book page that still pointed at a removed working video now
-            // points at the prepared video instead.
-            await db
-              .from("memory_book_pages")
-              .update({ video_material_id: materialId })
-              .eq("book_id", data.bookId)
-              .eq("user_id", context.userId)
-              .eq("video_material_id", involvedId);
           }
         } catch {
           // The prepared video is already safe; cleanup can be retried later.
