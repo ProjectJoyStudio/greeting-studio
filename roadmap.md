@@ -1,10 +1,10 @@
-# Photo/source-video upload fix
 # RunPod processed-video integration
-- [ ] Connect server-only RunPod submit/status with persisted duplicate-safe jobs.
-- [ ] Replace active browser assembly; preserve editor and confirmation flow.
-- [ ] Verify output before existing finalization, backup, and involved-source cleanup.
-- [ ] Run focused contract and controlled RunPod/UI tests; report any blockers.
+- [x] Connect server-only RunPod submit/status with persisted duplicate-safe jobs.
+- [x] Replace active browser assembly; preserve editor and confirmation flow.
+- [x] Verify output before existing finalization, backup, and involved-source cleanup.
+- [x] Run focused contract and controlled RunPod/UI tests: A/B/D passed, 20 tests passed; C skipped (no existing safe silent source). Browser playback could not be verified because sandbox Chromium lacks H264/AAC codecs; independent FFmpeg decode/order and SHA256 passed.
 
+# Previous photo/source-video upload fix
 - [x] Keep direct signed R2 uploads and remove legacy writes for Book Materials only.
 - [x] Preserve diagnostic failure categories and verified registration/backup.
 - [ ] Configure current bucket CORS: blocked by bucket configuration API returning 403; no configuration credential is available. External preview redirects to editor, so the live frame origin needs confirmation before changing its allowlist.

@@ -9,5 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Book Materials uses `materials-upload.ts` for direct signed R2-only photo/source writes; the separate processed-video helper remains unchanged to keep this fix scoped. Origin access belongs in bucket configuration, never upload code.
+- Book Materials uses `materials-upload.ts` for direct signed R2-only photo/source writes, independently of final video processing. Origin access belongs in bucket configuration, never upload code.
 - Memory Book final video assembly uses authenticated RunPod server functions and a durable per-book active-job lock; finalization reuses a server-only helper so browser-supplied paths or durations cannot authorize source cleanup.
