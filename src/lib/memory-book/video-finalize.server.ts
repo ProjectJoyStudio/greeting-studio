@@ -12,7 +12,7 @@ export interface PreparedMaterialInput {
  path: string; storage: string; fileName: string; mimeType: string;
  sizeBytes: number; durationSeconds: number;
 }
-export async function finalizePreparedMaterial(data: PreparedMaterialInput, context: { userId: string }): Promise<{ok: boolean; error?: "not_found" | "too_long" | "failed"; materialId?: string; sourceRemoved?: boolean}> {
+export async function finalizePreparedMaterial(data: PreparedMaterialInput, context: { userId: string }, onFinalized: (materialId: string) => Promise<void>): Promise<{ok: boolean; error?: "not_found" | "too_long" | "failed"; materialId?: string; sourceRemoved?: boolean}> {
       const inR2 = data.storage === MEMORY_BOOK_R2_BUCKET;
       const prefix = inR2
         ? `memory-book/${context.userId}/${data.bookId}/`
@@ -93,8 +93,9 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
         // An independent reserve failure never invalidates the working result.
         await backupToReserve(data.path).catch(() => undefined);
       }
-
-
+      // Persist the successful association before irreversible cleanup. If
+      // this write fails, originals and saved edits remain untouched.
+      await onFinalized(materialId);
 
       // Only now the long original working videos may be removed — and only
       // the ones that really took part in this assembly. Every other video of

@@ -155,9 +155,10 @@ export async function confirmVideoJob(context: JobContext, bookId: string, jobId
     if (check.state !== "exists" || check.info.sizeBytes !== output.size_bytes) throw new Error("output_verification");
     const { finalizePreparedMaterial } = await import("./video-finalize.server");
     const ids: string[] = [...new Set((locked.fragments as MemoryBookVideoFragment[]).map(f => f.sourceId || locked.source_material_id))];
-    const saved = await finalizePreparedMaterial({ bookId, sourceMaterialId: locked.source_material_id, sourceMaterialIds: ids, path: locked.output_path, storage: MEMORY_BOOK_R2_BUCKET, fileName: "prepared.mp4", mimeType: "video/mp4", sizeBytes: output.size_bytes, durationSeconds: output.duration_seconds }, context);
+    const saved = await finalizePreparedMaterial({ bookId, sourceMaterialId: locked.source_material_id, sourceMaterialIds: ids, path: locked.output_path, storage: MEMORY_BOOK_R2_BUCKET, fileName: "prepared.mp4", mimeType: "video/mp4", sizeBytes: output.size_bytes, durationSeconds: output.duration_seconds }, context, async (materialId) => {
+      await update(client, jobId, { status: "completed", material_id: materialId, completed_at: now, lease_until: null, last_error: null });
+    });
     if (!saved.ok || !saved.materialId) throw new Error("finalization_failed");
-    await update(client, jobId, { status: "completed", material_id: saved.materialId, completed_at: now, lease_until: null, last_error: null });
     return { ok: true, materialId: saved.materialId };
   } catch (e) {
     await update(client, jobId, { status: "ready", lease_until: null, last_error: { stage: "finalize", message: e instanceof Error ? e.message : "finalization_failed" } });
