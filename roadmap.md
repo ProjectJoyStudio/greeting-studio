@@ -1,4 +1,10 @@
 # Photo/source-video upload fix
+# RunPod processed-video integration
+- [ ] Connect server-only RunPod submit/status with persisted duplicate-safe jobs.
+- [ ] Replace active browser assembly; preserve editor and confirmation flow.
+- [ ] Verify output before existing finalization, backup, and involved-source cleanup.
+- [ ] Run focused contract and controlled RunPod/UI tests; report any blockers.
+
 - [x] Keep direct signed R2 uploads and remove legacy writes for Book Materials only.
 - [x] Preserve diagnostic failure categories and verified registration/backup.
 - [ ] Configure current bucket CORS: blocked by bucket configuration API returning 403; no configuration credential is available. External preview redirects to editor, so the live frame origin needs confirmation before changing its allowlist.
