@@ -7,11 +7,8 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
 import { type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
-import { uploadMemoryBookVideo } from "@/lib/memory-book/video-upload";
-import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
   MEMORY_BOOK_FRAGMENT_MIN_SECONDS,
@@ -20,10 +17,10 @@ import {
   fragmentsLength,
   type MemoryBookVideoFragment,
 } from "@/lib/memory-book/video-prep";
-import { joinDiagnostics, joinVideoFragments } from "@/lib/memory-book/video-join";
+import { startMemoryBookVideoJob, getMemoryBookVideoJob, confirmMemoryBookVideoJob, discardMemoryBookVideoJob } from "@/lib/memory-book/runpod-video.functions";
+import type { VideoJobView } from "@/lib/memory-book/runpod-video";
 import {
   loadMemoryBookVideoEdit,
-  registerPreparedMemoryBookVideo,
   saveMemoryBookVideoFragments,
 } from "@/lib/memory-book/video-prep.functions";
 
@@ -82,8 +79,10 @@ function MemoryBookVideoPage() {
 
   const loadEdit = useServerFn(loadMemoryBookVideoEdit);
   const saveFragments = useServerFn(saveMemoryBookVideoFragments);
-  const registerPrepared = useServerFn(registerPreparedMemoryBookVideo);
-  const createUpload = useServerFn(createMemoryBookVideoUpload);
+  const startJob = useServerFn(startMemoryBookVideoJob);
+  const getJob = useServerFn(getMemoryBookVideoJob);
+  const confirmJob = useServerFn(confirmMemoryBookVideoJob);
+  const discardJob = useServerFn(discardMemoryBookVideoJob);
   const loadMaterials = useServerFn(loadMemoryBookMaterials);
 
   const player = useRef<HTMLVideoElement | null>(null);
@@ -98,8 +97,11 @@ function MemoryBookVideoPage() {
   const [fragments, setFragments] = useState<MemoryBookVideoFragment[]>([]);
   const [current, setCurrent] = useState(0);
   const [working, setWorking] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<{ url: string; blob: Blob; extension: string; mime: string; seconds: number } | null>(null);
+  const [checkingJob, setCheckingJob] = useState(true);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [result, setResult] = useState<{ url: string; seconds: number } | null>(null);
+  const dispatching = useRef(false);
+  const returning = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<MemoryBookMaterial[] | null>(null);
@@ -154,6 +156,48 @@ function MemoryBookVideoPage() {
       alive = false;
     };
   }, [bookId, materialId, loadEdit, loadMaterials]);
+
+  const acceptJob = useCallback((job: VideoJobView) => {
+    setJobId(job.id);
+    if (job.status === "ready") {
+      setResult(job.result ?? null);
+      setWorking(false);
+    } else if (job.status === "failed") {
+      setWorking(false);
+      setMessage(t("mbv_failed"));
+    } else if (job.status === "completed") {
+      setWorking(false);
+    } else {
+      setWorking(true);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (!bookId || !materialId) { setCheckingJob(false); return; }
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        const response = await getJob({ data: { bookId } });
+        if (!alive) return;
+        if (response.ok) {
+          setCheckingJob(false);
+          if (response.job) {
+            acceptJob(response.job);
+            if (response.job.status === "ready" || response.job.status === "failed") return;
+          }
+        } else {
+          // Unknown network/provider state must not enable a replacement dispatch.
+          setMessage(t("mbv_failed"));
+        }
+      } catch {
+        if (alive) setMessage(t("mbv_failed"));
+      }
+      if (alive) timer = setTimeout(() => void poll(), 4000);
+    };
+    void poll();
+    return () => { alive = false; clearTimeout(timer); };
+  }, [bookId, materialId, getJob, acceptJob, working]);
 
   /** The chosen parts are stored automatically — there is no save button. */
   const persist = useCallback(
@@ -258,98 +302,63 @@ function MemoryBookVideoPage() {
   }
 
   async function runProcess() {
-    if (!source || fragments.length === 0 || overLimit || working) return;
+    if (!source || fragments.length === 0 || overLimit || working || checkingJob || result || dispatching.current) return;
+    dispatching.current = true;
     setWorking(true);
     setMessage(null);
-    setProgress(0);
+    player.current?.pause();
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     try {
-      player.current?.pause();
-      const urls: Record<string, string> = {};
-      for (const item of sources) urls[item.id] = item.url;
-      const firstUrl = sources[0]?.url ?? source.url;
-      const prepared = await joinVideoFragments(
-        firstUrl,
-        fragments,
-        (ratio) => setProgress(Math.round(ratio * 100)),
-        urls,
-      );
-      if (prepared.seconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS + 1) {
-        setMessage(t("mbv_too_long"));
+      const response = await startJob({ data: { bookId, materialId, fragments } });
+      if (!response.ok || !response.job) {
+        setMessage(t("mbv_failed"));
+        setWorking(false);
         return;
       }
-      setResult({
-        url: URL.createObjectURL(prepared.blob),
-        blob: prepared.blob,
-        extension: prepared.extension,
-        mime: prepared.mime,
-        seconds: prepared.seconds,
-      });
-    } catch (error) {
-      // DIAGNOSTIC: keep the real failure visible instead of discarding it.
-      const err = error as { name?: string; message?: string; stack?: string } | undefined;
-      const detail = `${err?.name ?? typeof error}: ${err?.message ?? String(error)} [step: ${joinDiagnostics.stage}${joinDiagnostics.fragmentIndex !== null ? `, piece ${joinDiagnostics.fragmentIndex + 1}` : ""}${joinDiagnostics.sourceId ? `, source ${joinDiagnostics.sourceId}` : ""}]`;
-      console.error("[mb-video-join] FAILED", detail, err?.stack, joinDiagnostics.log.join("\n"));
-      setMessage(`${t("mbv_failed")} — ${detail}`);
+      acceptJob(response.job);
+    } catch {
+      // A lost response may still have started a job. Poll, never locally assemble.
+      setMessage(t("mbv_failed"));
     } finally {
-      setWorking(false);
+      dispatching.current = false;
     }
   }
 
   async function confirmResult() {
-    if (!result || saving) return;
+    if (!result || !jobId || saving || returning.current) return;
+    returning.current = true;
     setSaving(true);
     setMessage(null);
     try {
-      const { data: session } = await supabase.auth.getUser();
-      const userId = session.user?.id;
-      if (!userId) throw new Error("no_user");
-      const path = `${userId}/${bookId}/video-prepared-${Date.now()}.${result.extension}`;
-      // The finished video is stored first; only a really stored file may be
-      // registered, and only then may the sources be cleaned up.
-      const stored = await uploadMemoryBookVideo(createUpload, {
-        bookId,
-        role: "prepared",
-        data: result.blob,
-        fileName: `prepared.${result.extension}`,
-        contentType: result.mime,
-        fallbackPath: path,
-      });
-      if (!stored) throw new Error("upload_failed");
-
-      // Only the source videos that really gave parts to this result.
-      const used = Array.from(new Set(fragments.map((fragment) => sourceIdOf(fragment))));
-
-      const res = await registerPrepared({
-        data: {
-          bookId,
-          sourceMaterialId: materialId,
-          sourceMaterialIds: used,
-          path: stored.path,
-          storage: stored.storage,
-          fileName: `${sources[0]?.fileName ?? "video"} (${formatClock(result.seconds)})`,
-          mimeType: result.mime,
-          sizeBytes: result.blob.size,
-          durationSeconds: result.seconds,
-        },
-      });
-      // Nothing is treated as saved until the stored record comes back.
-      if (!res.ok || !res.materialId) {
-        setMessage(res.error === "too_long" ? t("mbv_too_long") : t("mbv_failed"));
+      const res = await confirmJob({ data: { bookId, jobId } });
+      if (!res.ok) {
+        setMessage(t("mbv_failed"));
         return;
       }
-      URL.revokeObjectURL(result.url);
       await navigate({
         to: "/memory-book-create",
-        search:
-          from === "pages"
-            ? { book: bookId, view: "pages" as const, page: page || 1 }
-            : { book: bookId, view: "materials" as const },
+        search: from === "pages"
+          ? { book: bookId, view: "pages" as const, page: page || 1 }
+          : { book: bookId, view: "materials" as const },
       });
     } catch {
       setMessage(t("mbv_failed"));
     } finally {
+      returning.current = false;
       setSaving(false);
     }
+  }
+
+  async function redoResult() {
+    if (!jobId || saving) return;
+    setSaving(true);
+    try {
+      await discardJob({ data: { bookId, jobId } });
+      setResult(null);
+      setJobId(null);
+      setWorking(false);
+    } catch { setMessage(t("mbv_failed")); }
+    finally { setSaving(false); }
   }
 
   return (
@@ -399,7 +408,7 @@ function MemoryBookVideoPage() {
                         key={item.id}
                         size="sm"
                         variant={item.id === source.id ? "default" : "outline"}
-                        disabled={working}
+                        disabled={working || checkingJob || Boolean(result) || saving}
                         onClick={() => setActiveId(item.id)}
                       >
                         {item.fileName || fill(t("mbv_source_n"), { n: index + 1 })}
@@ -412,7 +421,7 @@ function MemoryBookVideoPage() {
                   size="sm"
                   variant="outline"
                   className="w-full"
-                  disabled={working || pickerBusy}
+                  disabled={working || checkingJob || Boolean(result) || pickerBusy || saving}
                   onClick={() => void openPicker()}
                 >
                   {t("mbv_add_source")}
@@ -447,7 +456,7 @@ function MemoryBookVideoPage() {
                 <Button
                   size="sm"
                   className="w-full"
-                  disabled={working}
+                  disabled={working || checkingJob || Boolean(result) || saving}
                   onClick={addFragment}
                 >
                   <Plus className="mr-1 h-4 w-4" aria-hidden />
@@ -481,7 +490,7 @@ function MemoryBookVideoPage() {
                             size="icon"
                             variant="ghost"
                             aria-label={t("mbv_remove")}
-                            disabled={working}
+                            disabled={working || checkingJob || Boolean(result) || saving}
                             onClick={() =>
                               persist(fragments.filter((item) => item.id !== fragment.id))
                             }
@@ -509,7 +518,7 @@ function MemoryBookVideoPage() {
                               max={Math.max(0, secondsOf(sourceIdOf(fragment)))}
                               step={0.1}
                               value={fragment.start}
-                              disabled={working}
+                              disabled={working || checkingJob || Boolean(result) || saving}
                               className="w-full"
                               onChange={(e) =>
                                 updateFragment(fragment.id, { start: Number(e.target.value) })
@@ -519,7 +528,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || checkingJob || Boolean(result) || saving}
                                 onClick={() => nudge(fragment, "start", -1)}
                               >
                                 {t("mbv_minus1")}
@@ -527,7 +536,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || checkingJob || Boolean(result) || saving}
                                 onClick={() => nudge(fragment, "start", 1)}
                               >
                                 {t("mbv_plus1")}
@@ -535,7 +544,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working || sourceIdOf(fragment) !== source.id}
+                                disabled={working || checkingJob || Boolean(result) || saving || sourceIdOf(fragment) !== source.id}
                                 onClick={() => updateFragment(fragment.id, { start: current })}
                               >
                                 {t("mbv_set_start")}
@@ -552,7 +561,7 @@ function MemoryBookVideoPage() {
                               max={Math.max(0, secondsOf(sourceIdOf(fragment)))}
                               step={0.1}
                               value={fragment.end}
-                              disabled={working}
+                              disabled={working || checkingJob || Boolean(result) || saving}
                               className="w-full"
                               onChange={(e) =>
                                 updateFragment(fragment.id, { end: Number(e.target.value) })
@@ -562,7 +571,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || checkingJob || Boolean(result) || saving}
                                 onClick={() => nudge(fragment, "end", -1)}
                               >
                                 {t("mbv_minus1")}
@@ -570,7 +579,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working}
+                                disabled={working || checkingJob || Boolean(result) || saving}
                                 onClick={() => nudge(fragment, "end", 1)}
                               >
                                 {t("mbv_plus1")}
@@ -578,7 +587,7 @@ function MemoryBookVideoPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={working || sourceIdOf(fragment) !== source.id}
+                                disabled={working || checkingJob || Boolean(result) || saving || sourceIdOf(fragment) !== source.id}
                                 onClick={() => updateFragment(fragment.id, { end: current })}
                               >
                                 {t("mbv_set_end")}
@@ -590,7 +599,7 @@ function MemoryBookVideoPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={working}
+                          disabled={working || checkingJob || Boolean(result) || saving}
                           onClick={() => playFragment(fragment)}
                         >
                           {t("mbv_play")}
@@ -609,13 +618,13 @@ function MemoryBookVideoPage() {
               <div className="space-y-1">
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {fill(t("mbv_processing"), { n: progress })}
+                  {t("mbv_processing")}
                 </p>
                 <p className="text-xs text-muted-foreground">{t("mbv_processing_note")}</p>
               </div>
             ) : (
               <Button
-                disabled={fragments.length === 0 || overLimit || saving}
+                disabled={fragments.length === 0 || overLimit || saving || checkingJob || Boolean(result)}
                 onClick={() => void runProcess()}
               >
                 {t("mbv_process")}
@@ -636,10 +645,7 @@ function MemoryBookVideoPage() {
                   <Button
                     variant="outline"
                     disabled={saving}
-                    onClick={() => {
-                      URL.revokeObjectURL(result.url);
-                      setResult(null);
-                    }}
+                    onClick={() => void redoResult()}
                   >
                     {t("mbv_redo")}
                   </Button>
