@@ -145,6 +145,8 @@ export const saveMemoryBookVideoFragments = createServerFn({ method: "POST" })
     if (!source) return { ok: false };
 
     const db = await admin();
+    const { data: active } = await db.from("memory_book_video_jobs").select("id").eq("book_id", data.bookId).eq("user_id", context.userId).in("status", ["submitting", "queued", "running", "ready", "finalizing"]).maybeSingle();
+    if (active) return { ok: false };
     const { error } = await db.from("memory_book_video_edits").upsert(
       {
         user_id: context.userId,

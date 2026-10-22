@@ -33,7 +33,7 @@ async function update(client: DB, id: string, patch: Record<string, unknown>) {
   if (error) throw new Error("processing_database");
 }
 async function view(job: Job): Promise<VideoJobView> {
-  const result = job.status === "ready" ? validateWorkerResult(job.output_result, job.fragments) : null;
+  const result = ["ready", "finalizing"].includes(job.status) ? validateWorkerResult(job.output_result, job.fragments) : null;
   const url = result ? await memoryBookFileUrl(MEMORY_BOOK_R2_BUCKET, job.output_path, 3600) : null;
   return { id: job.id, status: job.status, sourceMaterialId: job.source_material_id, fragments: job.fragments, ...(result && url ? { result: { url, seconds: result.duration_seconds } } : {}), ...(job.material_id ? { materialId: job.material_id } : {}) };
 }

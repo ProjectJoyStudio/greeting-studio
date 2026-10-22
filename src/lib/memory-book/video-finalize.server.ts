@@ -86,8 +86,12 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
       // The finished video in the working area gets its own independent
       // reserve copy. It can never undo or delay the customer's result.
       if (inR2) {
-        const { protectObject } = await import("@/lib/storage/backup.server");
-        await protectObject(data.path);
+        const { recordPrimary, placementOf, backupToReserve } = await import("@/lib/storage/backup.server");
+        if (!(await recordPrimary(data.path))) return { ok: false, error: "failed" };
+        const primary = await placementOf(data.path, "r2");
+        if (primary?.status !== "present" || Number(primary.size_bytes) !== data.sizeBytes) return { ok: false, error: "failed" };
+        // An independent reserve failure never invalidates the working result.
+        await backupToReserve(data.path).catch(() => undefined);
       }
 
 

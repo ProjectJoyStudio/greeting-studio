@@ -33,7 +33,7 @@ export function validateWorkerResult(value: unknown, fragments: MemoryBookVideoF
       !Number.isFinite(r.width) || Number(r.width) <= 0 || !Number.isFinite(r.height) || Number(r.height) <= 0 ||
       Math.max(Number(r.width), Number(r.height)) > 1280 ||
       r.fps !== 30 || r.container !== "mp4" || r.video_codec !== "h264" || r.audio_codec !== "aac") throw new Error("invalid_output");
-  return r as WorkerResult;
+  return { ok: true, piece_count: r.piece_count, duration_seconds: r.duration_seconds, size_bytes: Number(r.size_bytes), sha256: r.sha256 ?? "", width: Number(r.width), height: Number(r.height), fps: r.fps, container: r.container, video_codec: r.video_codec, audio_codec: r.audio_codec };
 }
 export function workerPayload(pieces: Array<{ source_id: string; source_url: string; start: number; end: number }>, outputPutUrl: string) {
   return { input: { pieces, output_put_url: outputPutUrl, output_headers: { "content-type": "video/mp4" }, max_long_side: 1280 }, policy: RUNPOD_POLICY };

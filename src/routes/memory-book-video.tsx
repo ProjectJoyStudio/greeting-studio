@@ -159,7 +159,7 @@ function MemoryBookVideoPage() {
 
   const acceptJob = useCallback((job: VideoJobView) => {
     setJobId(job.id);
-    if (job.status === "ready") {
+    if (job.status === "ready" || job.status === "finalizing") {
       setResult(job.result ?? null);
       setWorking(false);
     } else if (job.status === "failed") {
