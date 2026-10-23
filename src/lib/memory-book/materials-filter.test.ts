@@ -42,4 +42,17 @@ describe("Memory Book material sections", () => {
     expect(finishedVideoMaterials([photo])).toEqual([]);
     expect(isPreparedVideo(photo)).toBe(false);
   });
+
+  it("page-used videos with no assembled marker are finished and never picker sources", () => {
+    const pageVideo = material({ id: "page", prepared: false, usedOnPage: true });
+    expect(finishedVideoMaterials([pageVideo]).map(m => m.id)).toEqual(["page"]);
+    expect(sourceVideoMaterials([pageVideo])).toEqual([]);
+  });
+
+  it("an assembled video used on multiple pages appears only in the finished partition once", () => {
+    const both = material({ id: "both", prepared: true, usedOnPage: true });
+    const source = material({ id: "source" });
+    expect(finishedVideoMaterials([source, both]).map(m => m.id)).toEqual(["both"]);
+    expect(sourceVideoMaterials([source, both]).map(m => m.id)).toEqual(["source"]);
+  });
 });

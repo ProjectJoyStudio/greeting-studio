@@ -20,3 +20,7 @@
 - [x] Controlled photo and source-video failure checks: direct PUT aborted, no legacy writes, no material added, safe diagnostic category visible.
 - [ ] Successful photo/source-video R2+B2 checks: blocked by localhost CORS denial and unavailable bucket configuration permission. No substitute server upload performed.
 - [x] Apply required package security update; eight targeted tests passed; latest project check is build OK, including the minimal root error-component type compatibility adjustment.
+# Finished-video classification correction
+- [x] Diagnose assembled-marker loss and page references: source FK is ON DELETE SET NULL; completed jobs preserve confirmed output IDs.
+- [x] Apply shared classification and server source rejection without storage/processing changes.
+- [x] Verify 32 targeted tests and real signed-in tabs/picker/direct rejection/return refresh; report distinguishes fresh assembly (not rerun) from verified current output.
