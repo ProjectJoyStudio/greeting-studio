@@ -2408,6 +2408,7 @@ export type Database = {
       }
       memory_book_materials: {
         Row: {
+          accepted_finished_at: string | null
           book_id: string
           bucket: string
           created_at: string
@@ -2422,6 +2423,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepted_finished_at?: string | null
           book_id: string
           bucket: string
           created_at?: string
@@ -2436,6 +2438,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accepted_finished_at?: string | null
           book_id?: string
           bucket?: string
           created_at?: string

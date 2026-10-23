@@ -1,0 +1,2 @@
+ALTER TABLE public.memory_book_materials ADD COLUMN IF NOT EXISTS accepted_finished_at timestamptz NULL;
+COMMENT ON COLUMN public.memory_book_materials.accepted_finished_at IS 'Set when the customer explicitly accepted an uploaded video (<= 5 min) as a finished video without processing.';
