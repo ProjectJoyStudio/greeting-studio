@@ -12,3 +12,4 @@
 - Book Materials uses `materials-upload.ts` for direct signed R2-only photo/source writes, independently of final video processing. Origin access belongs in bucket configuration, never upload code.
 - Memory Book final video assembly uses authenticated RunPod server functions and a durable per-book active-job lock; finalization reuses a server-only helper so browser-supplied paths or durations cannot authorize source cleanup.
 - Keep the Bun lifecycle patches for page-flip/react-pageflip: each wrapper owns disposal, cancels RAF/timers, and restores React-owned pages before destruction to prevent cross-route leaks.
+- Memory Book material lists and source guards share same-book page/confirmed-job classification; completed job associations preserve assembled identity after source cleanup clears its foreign-key marker.

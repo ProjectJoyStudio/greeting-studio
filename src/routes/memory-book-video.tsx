@@ -141,8 +141,8 @@ function MemoryBookVideoPage() {
         if (extra.length === 0) return;
         const list = await loadMaterials({ data: { bookId } }).catch(() => null);
         if (!alive || !list?.ok) return;
-        const found = list.materials.filter(
-          (item) => item.kind === "video" && extra.includes(item.id),
+        const found = sourceVideoMaterials(list.materials).filter(
+          (item) => extra.includes(item.id),
         );
         if (found.length === 0) return;
         setSources((prev) => [...prev, ...found.filter((item) => !prev.some((p) => p.id === item.id))]);
