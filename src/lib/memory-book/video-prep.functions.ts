@@ -68,13 +68,14 @@ async function sourceMaterial(bookId: string, userId: string, materialId: string
   const db = await admin();
   const { data } = await db
     .from("memory_book_materials")
-    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at")
+    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id")
     .eq("id", materialId)
     .eq("book_id", bookId)
     .eq("user_id", userId)
     .maybeSingle();
   const row = data as unknown as Row | null;
-  if (!row || row.kind !== "video") return null;
+  // A finished (assembled) video is never an editing source.
+  if (!row || row.kind !== "video" || row.prepared_from_material_id != null) return null;
   const { memoryBookFileUrl } = await import("./storage.server");
   const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60 * 4);
   if (!url) return null;
