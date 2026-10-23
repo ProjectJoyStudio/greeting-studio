@@ -82,6 +82,7 @@ export function MemoryBookMaterials({
   const [videoError, setVideoError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [queue, setQueue] = useState<VideoQueueItem[]>([]);
+  const [tab, setTab] = useState<"photos" | "videos" | "finished">("photos");
 
   useEffect(() => {
     let alive = true;
@@ -288,7 +289,30 @@ export function MemoryBookMaterials({
         </p>
       ) : null}
 
-      <div className="space-y-3">
+      <div role="tablist" className="flex flex-wrap gap-2 border-b border-border/70 pb-2">
+        {(
+          [
+            ["photos", "mbm_photos", photos.length],
+            ["videos", "mbm_videos_edit", videos.length],
+            ["finished", "mbm_finished", finished.length],
+          ] as const
+        ).map(([key, label, count]) => (
+          <Button
+            key={key}
+            type="button"
+            role="tab"
+            size="sm"
+            aria-selected={tab === key}
+            variant={tab === key ? "default" : "outline"}
+            onClick={() => setTab(key)}
+          >
+            {t(label)} ({count})
+          </Button>
+        ))}
+      </div>
+
+      {tab === "photos" ? (
+      <div className="space-y-3" role="tabpanel">
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-sm font-semibold">{t("mbm_photos")}</h3>
           <Button size="sm" disabled={busy} onClick={() => photoInput.current?.click()}>
@@ -330,8 +354,10 @@ export function MemoryBookMaterials({
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="space-y-3">
+      {tab === "videos" ? (
+      <div className="space-y-3" role="tabpanel">
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-sm font-semibold">{t("mbm_videos_edit")}</h3>
           <Button size="sm" disabled={busy} onClick={() => videoInput.current?.click()}>
@@ -428,8 +454,10 @@ export function MemoryBookMaterials({
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="space-y-3">
+      {tab === "finished" ? (
+      <div className="space-y-3" role="tabpanel">
         <h3 className="text-sm font-semibold">{t("mbm_finished")}</h3>
         {finished.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("mbm_empty_finished")}</p>
@@ -456,6 +484,7 @@ export function MemoryBookMaterials({
           </div>
         )}
       </div>
+      ) : null}
     </section>
   );
 }
