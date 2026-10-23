@@ -24,3 +24,4 @@
 - [x] Diagnose assembled-marker loss and page references: source FK is ON DELETE SET NULL; completed jobs preserve confirmed output IDs.
 - [x] Apply shared classification and server source rejection without storage/processing changes.
 - [x] Verify 32 targeted tests and real signed-in tabs/picker/direct rejection/return refresh; report distinguishes fresh assembly (not rerun) from verified current output.
+- [x] Memory Book: "Use as finished" for ≤5-min uploads + visual finished-only page video gallery
