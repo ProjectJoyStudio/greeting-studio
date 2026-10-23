@@ -25,6 +25,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "One source video may be up to 60 minutes long. One finished video in the book may be up to 5 minutes long.",
     mbm_capacity: "Video positions in this book: {n}",
+    mbm_videos_edit: "Videos for editing",
+    mbm_finished: "Finished videos",
+    mbm_empty_finished: "No finished videos yet.",
   },
   ru: {
     mbm_stage: "Материалы книги",
@@ -49,6 +52,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Одно исходное видео — до 60 минут. Одно готовое видео в книге — до 5 минут.",
     mbm_capacity: "Мест для видео в этой книге: {n}",
+    mbm_videos_edit: "Видео для обработки",
+    mbm_finished: "Готовые видео",
+    mbm_empty_finished: "Готовых видео пока нет.",
   },
   uk: {
     mbm_stage: "Матеріали книги",
@@ -73,6 +79,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Одне вихідне відео — до 60 хвилин. Одне готове відео в книзі — до 5 хвилин.",
     mbm_capacity: "Місць для відео в цій книзі: {n}",
+    mbm_videos_edit: "Відео для обробки",
+    mbm_finished: "Готові відео",
+    mbm_empty_finished: "Готових відео поки немає.",
   },
   pl: {
     mbm_stage: "Materiały książki",
@@ -97,6 +106,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Jeden film źródłowy — do 60 minut. Jeden gotowy film w książce — do 5 minut.",
     mbm_capacity: "Miejsca na filmy w tej książce: {n}",
+    mbm_videos_edit: "Filmy do edycji",
+    mbm_finished: "Gotowe filmy",
+    mbm_empty_finished: "Brak gotowych filmów.",
   },
   de: {
     mbm_stage: "Buchmaterialien",
@@ -122,6 +134,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Ein Quellvideo — bis zu 60 Minuten. Ein fertiges Video im Buch — bis zu 5 Minuten.",
     mbm_capacity: "Videoplätze in diesem Buch: {n}",
+    mbm_videos_edit: "Videos zum Bearbeiten",
+    mbm_finished: "Fertige Videos",
+    mbm_empty_finished: "Noch keine fertigen Videos.",
   },
   fr: {
     mbm_stage: "Matériaux du livre",
@@ -147,5 +162,8 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Une vidéo source — jusqu'à 60 minutes. Une vidéo finale dans le livre — jusqu'à 5 minutes.",
     mbm_capacity: "Emplacements vidéo dans ce livre : {n}",
+    mbm_videos_edit: "Vidéos à monter",
+    mbm_finished: "Vidéos finales",
+    mbm_empty_finished: "Aucune vidéo finale pour l'instant.",
   },
 };
