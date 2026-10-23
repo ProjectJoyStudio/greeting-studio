@@ -52,7 +52,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Одно исходное видео — до 60 минут. Одно готовое видео в книге — до 5 минут.",
     mbm_capacity: "Мест для видео в этой книге: {n}",
-    mbm_videos_edit: "Видео для обработки",
+    mbm_videos_edit: "Видео для монтажа",
     mbm_finished: "Готовые видео",
     mbm_empty_finished: "Готовых видео пока нет.",
   },
@@ -79,7 +79,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_video_note:
       "Одне вихідне відео — до 60 хвилин. Одне готове відео в книзі — до 5 хвилин.",
     mbm_capacity: "Місць для відео в цій книзі: {n}",
-    mbm_videos_edit: "Відео для обробки",
+    mbm_videos_edit: "Відео для монтажу",
     mbm_finished: "Готові відео",
     mbm_empty_finished: "Готових відео поки немає.",
   },
