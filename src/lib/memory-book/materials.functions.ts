@@ -52,7 +52,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
   const classification = await loadVideoClassification(db, bookId, userId);
   const { data } = await db
     .from("memory_book_materials")
-    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id")
+    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id, accepted_finished_at")
     .eq("book_id", bookId)
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
@@ -70,7 +70,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
       durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
       sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
       createdAt: text(row.created_at),
-      ...classifyVideoMaterial({ id: String(row.id), prepared_from_material_id: row.prepared_from_material_id }, classification),
+      ...classifyVideoMaterial({ id: String(row.id), prepared_from_material_id: row.prepared_from_material_id, accepted_finished_at: row.accepted_finished_at }, classification),
     });
   }
   return out;

@@ -68,7 +68,7 @@ async function sourceMaterial(bookId: string, userId: string, materialId: string
   const db = await admin();
   const { data } = await db
     .from("memory_book_materials")
-    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id")
+    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id, accepted_finished_at")
     .eq("id", materialId)
     .eq("book_id", bookId)
     .eq("user_id", userId)
@@ -77,7 +77,7 @@ async function sourceMaterial(bookId: string, userId: string, materialId: string
   if (!row || row.kind !== "video") return null;
   const { loadVideoClassification, isEditingSourceRow } = await import("./material-classification.server");
   const classification = await loadVideoClassification(db, bookId, userId);
-  if (!isEditingSourceRow({ id: String(row.id), kind: row.kind, prepared_from_material_id: row.prepared_from_material_id }, classification)) return null;
+  if (!isEditingSourceRow({ id: String(row.id), kind: row.kind, prepared_from_material_id: row.prepared_from_material_id, accepted_finished_at: row.accepted_finished_at }, classification)) return null;
   const { memoryBookFileUrl } = await import("./storage.server");
   const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60 * 4);
   if (!url) return null;
