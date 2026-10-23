@@ -7,7 +7,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { type MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { sourceVideoMaterials, type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
@@ -106,6 +106,9 @@ function MemoryBookVideoPage() {
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<MemoryBookMaterial[] | null>(null);
   const [pickerBusy, setPickerBusy] = useState(false);
+  /** Picker selection: ids checked for adding, and the card being previewed. */
+  const [picked, setPicked] = useState<string[]>([]);
+  const [previewing, setPreviewing] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -229,12 +232,15 @@ function MemoryBookVideoPage() {
 
   async function openPicker() {
     setPickerBusy(true);
+    setPicked([]);
+    setPreviewing(null);
     try {
       const res = await loadMaterials({ data: { bookId } });
+      // Only original source videos are offered — finished videos never appear.
       setPicker(
         res.ok
-          ? res.materials.filter(
-              (item) => item.kind === "video" && !sources.some((s) => s.id === item.id),
+          ? sourceVideoMaterials(res.materials).filter(
+              (item) => !sources.some((s) => s.id === item.id),
             )
           : [],
       );
