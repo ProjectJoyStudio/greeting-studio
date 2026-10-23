@@ -259,6 +259,20 @@ function MemoryBookVideoPage() {
     setPicker((prev) => (prev ? prev.filter((item) => item.id !== material.id) : prev));
   }
 
+  function togglePicked(id: string) {
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  /** Adds every checked source video to the workspace and closes the picker. */
+  function addPicked() {
+    if (!picker) return;
+    const chosen = picker.filter((item) => picked.includes(item.id));
+    for (const item of chosen) addSource(item);
+    setPicker(null);
+    setPicked([]);
+    setPreviewing(null);
+  }
+
   function addFragment() {
     if (!source) return;
     const limit = secondsOf(source.id);
