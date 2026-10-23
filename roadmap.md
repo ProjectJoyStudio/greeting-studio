@@ -1,3 +1,7 @@
+# Memory Book viewer cleanup
+- [ ] Dispose page-turn engines on route unmount and keyed replacement; cancel owned frames/timers.
+- [ ] Verify five visits, enlarged-media departures, autoplay departure, and resize replacement leave zero old viewer resources.
+
 # RunPod processed-video integration
 - [x] Connect server-only RunPod submit/status with persisted duplicate-safe jobs.
 - [x] Replace active browser assembly; preserve editor and confirmation flow.
