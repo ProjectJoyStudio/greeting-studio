@@ -1,3 +1,8 @@
+# Remaining global interaction freeze
+- [x] Inspect repeated modal/navigation cycles, pointer hit-testing, and global locks; freeze not reproduced.
+- [x] Deliver diagnosis without speculative application or dependency changes; no remaining root cause confirmed.
+- [x] Verify 1/5/12 desktop and touch cycles and five viewer departures; existing viewer cleanup preserved.
+
 # Memory Book viewer cleanup
 - [x] Dispose page-turn engines on route unmount and keyed replacement; cancel owned frames/timers.
 - [x] Verify five visits, enlarged-media departures, autoplay departure, resize replacement, and pending mobile tap departure leave zero old viewer resources.
