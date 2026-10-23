@@ -2852,6 +2852,44 @@ export type Database = {
         }
         Relationships: []
       }
+      memory_book_shares: {
+        Row: {
+          active: boolean
+          book_id: string
+          created_at: string
+          disabled_at: string | null
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          book_id: string
+          created_at?: string
+          disabled_at?: string | null
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          book_id?: string
+          created_at?: string
+          disabled_at?: string | null
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_shares_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_book_storage_extensions: {
         Row: {
           book_id: string

@@ -15,6 +15,13 @@
       "when": 1792752884171,
       "tag": "0001_material_accepted_finished",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792760192174,
+      "tag": "0002_memory_book_shares",
+      "breakpoints": true
     }
   ]
 }
