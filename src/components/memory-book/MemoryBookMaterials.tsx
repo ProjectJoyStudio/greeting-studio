@@ -428,6 +428,34 @@ export function MemoryBookMaterials({
           </div>
         )}
       </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold">{t("mbm_finished")}</h3>
+        {finished.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("mbm_empty_finished")}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {finished.map((video) => (
+              <figure
+                key={video.id}
+                className="overflow-hidden rounded-xl border border-border/70 bg-muted/30"
+              >
+                <video src={video.url} controls preload="metadata" className="h-48 w-full bg-black object-contain" />
+                <figcaption className="flex items-center justify-between gap-2 p-2">
+                  <span className="truncate text-xs text-muted-foreground">
+                    {video.fileName}
+                    {video.durationSeconds
+                      ? ` · ${Math.floor(video.durationSeconds / 60)}:${String(
+                          Math.floor(video.durationSeconds % 60),
+                        ).padStart(2, "0")}`
+                      : ""}
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
