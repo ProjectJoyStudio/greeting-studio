@@ -60,4 +60,33 @@ describe.each(runtimeFiles)("page-turn lifecycle: %s", (file) => {
     expect(frames.size).toBe(0);
     expect(render.drawFrame).not.toHaveBeenCalled();
   });
+
+  it("disposes its owned resources once and preserves the React root", () => {
+    const exports: Record<string, any> = {};
+    const clearTimeout = vi.fn();
+    const context = vm.createContext({ exports, module: { exports }, clearTimeout });
+    const code = source.replace(/export\{\w+ as PageFlip\};?$/, "");
+    const engineClass = file.includes("browser")
+      ? (vm.runInContext(code, context), exports.PageFlip)
+      : vm.runInContext(`${code}; x`, context);
+    const root = { remove: vi.fn() };
+    const engine = new engineClass(root, { width: 300, height: 400 });
+    const order: string[] = [];
+    engine.render = { stop: () => order.push("stop") };
+    engine.ui = {
+      clear: () => order.push("restore pages"),
+      destroy: () => order.push("remove listeners and shells"),
+    };
+    engine.pages = { destroy: () => order.push("release pages") };
+    engine.initTimer = 42;
+    engine.on("flip", vi.fn());
+    engine.dispose();
+    engine.dispose();
+    expect(clearTimeout).toHaveBeenCalledExactlyOnceWith(42);
+    expect(order).toEqual(["stop", "restore pages", "remove listeners and shells", "release pages"]);
+    expect(engine.events.size).toBe(0);
+    expect(root.remove).not.toHaveBeenCalled();
+    engine.destroy();
+    expect(root.remove).toHaveBeenCalledOnce();
+  });
 });

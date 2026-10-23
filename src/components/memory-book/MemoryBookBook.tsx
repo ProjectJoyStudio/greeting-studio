@@ -194,7 +194,7 @@ function PhotoTapLayer({
   const cancelRef = useRef(onCancelTurn);
   cancelRef.current = onCancelTurn;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
@@ -290,6 +290,9 @@ function PhotoTapLayer({
 
     return () => {
       clearPending();
+      start.current = null;
+      moved.current = false;
+      lastTap.current = 0;
       el.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       el.removeEventListener("mouseup", finish);
@@ -704,7 +707,7 @@ export function MemoryBookBook({
   // Turning a leaf by hand should not require dragging it across the whole
   // book: after a short, clear drag, letting go finishes the turn. The leaf
   // itself still follows the finger or mouse exactly as before.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = wrapper.current;
     if (!el) return;
 
@@ -801,7 +804,7 @@ export function MemoryBookBook({
 
 
   // Automatic viewing turns the leaves with the very same page-turn animation.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!auto || photoPage || videoUrl) return;
     const timer = window.setInterval(() => {
       if (position >= faces.length - 1) {
