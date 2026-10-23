@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Play, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { TextStylePanel } from "@/components/greeting-card/TextStylePanel";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
-import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { finishedVideoMaterials, type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import type { CardTextDesign } from "@/lib/greeting-card/types";
 import { MemoryBookDecorations } from "@/components/memory-book/MemoryBookDecorations";
@@ -335,6 +334,9 @@ export function MemoryBookPageEditor({
 
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
+  /** Only finished videos may be chosen for a page. */
+  const finishedVideos = useMemo(() => finishedVideoMaterials(materials), [materials]);
+  const [previewVideoId, setPreviewVideoId] = useState<string | null>(null);
   const videoPagesUsed = useMemo(
     () => Object.values(pages).filter((p) => p.videoMaterialId).length,
     [pages],
@@ -1565,48 +1567,72 @@ export function MemoryBookPageEditor({
           <p className="text-xs text-muted-foreground">
             {fill(t("mbe_video_capacity"), { n: videoPagesUsed, t: videoCapacity })}
           </p>
-          {videos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("mbe_no_videos")}</p>
+          {finishedVideos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("mbe_no_finished_videos")}</p>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {videos.map((video) => {
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="page-video-gallery">
+              {finishedVideos.map((video) => {
                 const tooLong =
                   !video.durationSeconds ||
                   video.durationSeconds > MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS;
                 const chosen = page.videoMaterialId === video.id;
+                const previewing = previewVideoId === video.id;
+                const duration = video.durationSeconds
+                  ? `${Math.floor(video.durationSeconds / 60)}:${String(
+                      Math.floor(video.durationSeconds % 60),
+                    ).padStart(2, "0")}`
+                  : "";
                 return (
-                  <div
+                  <figure
                     key={video.id}
-                    className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-2"
+                    className={`overflow-hidden rounded-xl border bg-muted/30 ${
+                      chosen ? "border-primary" : "border-border/70"
+                    }`}
                   >
-                    <p className="truncate text-xs text-muted-foreground">{video.fileName}</p>
-                    {tooLong ? (
-                      <>
-                        <p className="text-xs text-destructive">{t("mbe_video_needs_prep")}</p>
-                        <Button asChild size="sm" variant="outline">
-                          <Link
-                            to="/memory-book-video"
-                            search={{
-                              book: bookId,
-                              material: video.id,
-                              from: "pages" as const,
-                              page: index,
-                            }}
-                          >
-                            {t("mbv_process")}
-                          </Link>
+                    <div className="relative">
+                      <video
+                        src={previewing ? video.url : `${video.url}#t=0.1`}
+                        controls={previewing}
+                        autoPlay={previewing}
+                        preload="metadata"
+                        playsInline
+                        muted={!previewing}
+                        className="h-40 w-full bg-muted object-contain"
+                      />
+                      {duration ? (
+                        <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1.5 py-0.5 text-xs font-medium">
+                          {duration}
+                        </span>
+                      ) : null}
+                    </div>
+                    <figcaption className="space-y-2 p-2">
+                      <p className="truncate text-xs text-muted-foreground">{video.fileName}</p>
+                      {tooLong ? (
+                        <p className="text-xs text-destructive">{t("mbe_video_too_long")}</p>
+                      ) : null}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPreviewVideoId(previewing ? null : video.id)}
+                        >
+                          <Play className="mr-1 h-3.5 w-3.5" aria-hidden />
+                          {t("mbe_video_preview")}
                         </Button>
-                      </>
-                    ) : null}
-                    <Button
-                      size="sm"
-                      variant={chosen ? "secondary" : "default"}
-                      disabled={tooLong || chosen}
-                      onClick={() => persist({ ...page, videoMaterialId: video.id })}
-                    >
-                      {t("mbe_video_choose")}
-                    </Button>
-                  </div>
+                        <Button
+                          size="sm"
+                          variant={chosen ? "secondary" : "default"}
+                          disabled={tooLong || chosen}
+                          onClick={() => {
+                            setPreviewVideoId(null);
+                            persist({ ...page, videoMaterialId: video.id });
+                          }}
+                        >
+                          {t("mbe_video_choose")}
+                        </Button>
+                      </div>
+                    </figcaption>
+                  </figure>
                 );
               })}
             </div>

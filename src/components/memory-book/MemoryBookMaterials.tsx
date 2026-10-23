@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import {
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
   finishedVideoMaterials,
+  canAcceptAsFinished,
   sourceVideoMaterials,
   type MemoryBookMaterial,
 } from "@/lib/memory-book/materials";
@@ -16,6 +17,7 @@ import { createMemoryBookVideoUpload } from "@/lib/memory-book/video-storage.fun
 import { createMemoryBookPhotoUpload } from "@/lib/memory-book/photo-storage.functions";
 import {
   loadMemoryBookMaterials,
+  acceptMemoryBookVideoAsFinished,
   registerMemoryBookMaterial,
   removeMemoryBookMaterial,
 } from "@/lib/memory-book/materials.functions";
@@ -69,6 +71,21 @@ export function MemoryBookMaterials({
   const load = useServerFn(loadMemoryBookMaterials);
   const register = useServerFn(registerMemoryBookMaterial);
   const drop = useServerFn(removeMemoryBookMaterial);
+  const acceptFinished = useServerFn(acceptMemoryBookVideoAsFinished);
+
+  async function markFinished(materialId: string) {
+    setBusy(true);
+    setVideoError(null);
+    try {
+      const res = await acceptFinished({ data: { bookId, materialId } });
+      if (res.ok) setMaterials(res.materials);
+      else setVideoError(t(res.error === "too_long" ? "mbm_use_finished_too_long" : "mbm_use_finished_failed"));
+    } catch {
+      setVideoError(t("mbm_use_finished_failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
   const createUpload = useServerFn(createMemoryBookVideoUpload);
   const createPhotoUpload = useServerFn(createMemoryBookPhotoUpload);
 
@@ -439,7 +456,7 @@ export function MemoryBookMaterials({
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </Button>
                 </figcaption>
-                <div className="px-2 pb-2">
+                <div className="space-y-2 px-2 pb-2">
                   <Button asChild size="sm" variant="outline" className="w-full">
                     <Link
                       to="/memory-book-video"
@@ -448,6 +465,16 @@ export function MemoryBookMaterials({
                       {t("mbv_process")}
                     </Link>
                   </Button>
+                  {canAcceptAsFinished(video.durationSeconds) ? (
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      disabled={busy}
+                      onClick={() => void markFinished(video.id)}
+                    >
+                      {t("mbm_use_finished")}
+                    </Button>
+                  ) : null}
                 </div>
               </figure>
             ))}

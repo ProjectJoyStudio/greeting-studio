@@ -49,7 +49,7 @@ export async function submitVideoJob(context: JobContext, input: { bookId: strin
   if (active) return view(active);
   const fragments = validateProcessingFragments(input.fragments).map(f => ({ ...f, sourceId: f.sourceId || input.materialId }));
   const ids = [...new Set(fragments.map(f => f.sourceId))];
-  const { data: materials, error } = await client.from("memory_book_materials").select("id, kind, bucket, path, duration_seconds, prepared_from_material_id").eq("book_id", input.bookId).eq("user_id", context.userId).in("id", [...new Set([...ids, input.materialId])]);
+  const { data: materials, error } = await client.from("memory_book_materials").select("id, kind, bucket, path, duration_seconds, prepared_from_material_id, accepted_finished_at").eq("book_id", input.bookId).eq("user_id", context.userId).in("id", [...new Set([...ids, input.materialId])]);
   if (error || !materials?.some((m: any) => m.id === input.materialId && m.kind === "video")) throw new Error("invalid_source");
   const { loadVideoClassification, isEditingSourceRow } = await import("./material-classification.server");
   const classification = await loadVideoClassification(client, input.bookId, context.userId);

@@ -6,6 +6,7 @@ import {
   MEMORY_BOOK_MATERIALS_BUCKET,
   MEMORY_BOOK_R2_BUCKET,
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
+  canAcceptAsFinished,
   type MemoryBookMaterial,
   type MemoryBookMaterialKind,
 } from "./materials";
@@ -52,7 +53,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
   const classification = await loadVideoClassification(db, bookId, userId);
   const { data } = await db
     .from("memory_book_materials")
-    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id")
+    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id, accepted_finished_at")
     .eq("book_id", bookId)
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
@@ -70,7 +71,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
       durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
       sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
       createdAt: text(row.created_at),
-      ...classifyVideoMaterial({ id: String(row.id), prepared_from_material_id: row.prepared_from_material_id }, classification),
+      ...classifyVideoMaterial({ id: String(row.id), prepared_from_material_id: row.prepared_from_material_id, accepted_finished_at: row.accepted_finished_at }, classification),
     });
   }
   return out;
@@ -234,6 +235,46 @@ export const removeMemoryBookMaterial = createServerFn({ method: "POST" })
         .eq("id", data.materialId)
         .eq("user_id", context.userId);
 
+      return { ok: true, materials: await listOf(data.bookId, context.userId) };
+    },
+  );
+
+/**
+ * Marks one existing uploaded source video of THIS book as finished, as-is.
+ * No processing, no copy, no storage change — only a durable flag.
+ */
+export const acceptMemoryBookVideoAsFinished = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; materialId: string }) => ({
+    bookId: String(input?.bookId ?? "").slice(0, 64),
+    materialId: String(input?.materialId ?? "").slice(0, 64),
+  }))
+  .handler(
+    async ({ data, context }): Promise<{ ok: boolean; error?: "not_found" | "too_long" | "failed"; materials: MemoryBookMaterial[] }> => {
+      const book = await ownedBook(context, data.bookId);
+      if (!book) return { ok: false, error: "not_found", materials: [] };
+      const db = await admin();
+      const { data: row, error } = await db
+        .from("memory_book_materials")
+        .select("id, kind, duration_seconds, prepared_from_material_id, accepted_finished_at")
+        .eq("id", data.materialId)
+        .eq("book_id", data.bookId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (error) return { ok: false, error: "failed", materials: [] };
+      if (!row || row.kind !== "video") return { ok: false, error: "not_found", materials: [] };
+      if (row.accepted_finished_at == null) {
+        if (!canAcceptAsFinished(row.duration_seconds == null ? null : Number(row.duration_seconds))) {
+          return { ok: false, error: "too_long", materials: [] };
+        }
+        const { error: upd } = await db
+          .from("memory_book_materials")
+          .update({ accepted_finished_at: new Date().toISOString() })
+          .eq("id", data.materialId)
+          .eq("book_id", data.bookId)
+          .eq("user_id", context.userId);
+        if (upd) return { ok: false, error: "failed", materials: [] };
+      }
       return { ok: true, materials: await listOf(data.bookId, context.userId) };
     },
   );

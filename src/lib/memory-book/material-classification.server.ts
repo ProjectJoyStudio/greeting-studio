@@ -27,19 +27,23 @@ export async function loadVideoClassification(
 }
 
 export function classifyVideoMaterial(
-  row: { id: string; prepared_from_material_id?: unknown },
+  row: { id: string; prepared_from_material_id?: unknown; accepted_finished_at?: unknown },
   classification: VideoClassification,
 ) {
   return {
     // Source cleanup's ON DELETE SET NULL clears the original FK marker.
     // The completed job retains the durable confirmed-output association.
-    prepared: row.prepared_from_material_id != null || classification.assembledIds.has(row.id),
+    // Customer explicitly accepted an uploaded short video as finished.
+    prepared:
+      row.prepared_from_material_id != null ||
+      row.accepted_finished_at != null ||
+      classification.assembledIds.has(row.id),
     usedOnPage: classification.pageUsedIds.has(row.id),
   };
 }
 
 export function isEditingSourceRow(
-  row: { id: string; kind: unknown; prepared_from_material_id?: unknown },
+  row: { id: string; kind: unknown; prepared_from_material_id?: unknown; accepted_finished_at?: unknown },
   classification: VideoClassification,
 ) {
   const state = classifyVideoMaterial(row, classification);
