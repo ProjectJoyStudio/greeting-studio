@@ -65,7 +65,7 @@ describe.each(runtimeFiles)("page-turn lifecycle: %s", (file) => {
     const exports: Record<string, any> = {};
     const clearTimeout = vi.fn();
     const context = vm.createContext({ exports, module: { exports }, clearTimeout });
-    const code = source.replace(/export\{\w+ as PageFlip\};?$/, "");
+    const code = source.replace(/export\{\w+ as PageFlip\};?\s*$/, "");
     const engineClass = file.includes("browser")
       ? (vm.runInContext(code, context), exports.PageFlip)
       : vm.runInContext(`${code}; x`, context);
