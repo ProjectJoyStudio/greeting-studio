@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -170,12 +170,14 @@ function PhotoTapLayer({
   onOpen,
   onTurn,
   onCancelTurn,
+  frozen = false,
 }: {
   label: string;
   canOpen: boolean;
   onOpen: () => void;
   onTurn: (direction: -1 | 1) => void;
   onCancelTurn: () => void;
+  frozen?: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -192,7 +194,7 @@ function PhotoTapLayer({
   const cancelRef = useRef(onCancelTurn);
   cancelRef.current = onCancelTurn;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
@@ -288,6 +290,9 @@ function PhotoTapLayer({
 
     return () => {
       clearPending();
+      start.current = null;
+      moved.current = false;
+      lastTap.current = 0;
       el.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       el.removeEventListener("mouseup", finish);
@@ -296,7 +301,7 @@ function PhotoTapLayer({
       window.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
     };
-  }, []);
+  }, [frozen]);
 
   return <div ref={ref} role="presentation" aria-label={label} className="absolute inset-0" />;
 }
@@ -314,6 +319,7 @@ function BookFace({
   onOpenVideo,
   onTurn,
   onCancelTurn,
+  frozen,
 }: {
   face: Face;
   coverUrl: string | null;
@@ -326,6 +332,7 @@ function BookFace({
   onOpenVideo?: (url: string) => void;
   onTurn: (direction: -1 | 1) => void;
   onCancelTurn: () => void;
+  frozen: boolean;
 }) {
   const { t } = useI18n();
 
@@ -346,6 +353,7 @@ function BookFace({
           onOpen={() => undefined}
           onTurn={onTurn}
           onCancelTurn={onCancelTurn}
+          frozen={frozen}
         />
       </div>
     );
@@ -398,6 +406,7 @@ function BookFace({
         }}
         onTurn={onTurn}
         onCancelTurn={onCancelTurn}
+        frozen={frozen}
       />
 
       {page.text.trim() ? (
@@ -517,6 +526,8 @@ type FlipBookApi = {
   /** Ends a started press WITHOUT turning anything (second argument = handled). */
   userStop?: (point: { x: number; y: number }, handled?: boolean) => void;
   getUI?: () => { touchPoint?: unknown } | null;
+  /** Lifecycle-patched engine cancels folding without changing the current page. */
+  cancelInteraction?: () => void;
 };
 
 /** Everything one assembled Memory Book needs in order to be shown. */
@@ -603,6 +614,10 @@ export function MemoryBookBook({
     const api = book.current?.pageFlip?.();
     if (!api) return;
     try {
+      if (api.cancelInteraction) {
+        api.cancelInteraction();
+        return;
+      }
       api.userStop?.({ x: 0, y: 0 }, true);
       const ui = api.getUI?.();
       if (ui && typeof ui === "object" && "touchPoint" in ui) {
@@ -615,12 +630,14 @@ export function MemoryBookBook({
 
   // Every pointer or touch signal that does not belong to the enlarged view is
   // swallowed before the page-turn engine can see it.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!frozen) return;
     settleBook();
     const block = (e: Event) => {
       const target = e.target;
-      if (target instanceof Node && overlay.current?.contains(target)) return;
+      const activeOverlay = overlay.current;
+      if (!activeOverlay?.isConnected) return;
+      if (target instanceof Node && activeOverlay.contains(target)) return;
       e.stopImmediatePropagation();
       e.stopPropagation();
     };
@@ -673,23 +690,24 @@ export function MemoryBookBook({
     };
 
     const observer = new ResizeObserver(measure);
+    const viewport = window.visualViewport;
     observer.observe(el);
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
-    window.visualViewport?.addEventListener("resize", measure);
+    viewport?.addEventListener("resize", measure);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
-      window.visualViewport?.removeEventListener("resize", measure);
+      viewport?.removeEventListener("resize", measure);
     };
   }, []);
 
   // Turning a leaf by hand should not require dragging it across the whole
   // book: after a short, clear drag, letting go finishes the turn. The leaf
   // itself still follows the finger or mouse exactly as before.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = wrapper.current;
     if (!el) return;
 
@@ -751,7 +769,7 @@ export function MemoryBookBook({
       window.removeEventListener("mouseup", onUp, true);
       window.removeEventListener("touchend", onUp, true);
     };
-  }, []);
+  }, [frozen]);
 
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
@@ -786,7 +804,7 @@ export function MemoryBookBook({
 
 
   // Automatic viewing turns the leaves with the very same page-turn animation.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!auto || photoPage || videoUrl) return;
     const timer = window.setInterval(() => {
       if (position >= faces.length - 1) {
@@ -823,6 +841,8 @@ export function MemoryBookBook({
     music.current = audio;
     return () => {
       audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
       music.current = null;
     };
   }, [musicUrl]);
@@ -875,8 +895,15 @@ export function MemoryBookBook({
     photos,
     videos,
     library,
-    onOpenPhotos: (page: MemoryBookPage) => setPhotoPage(page),
-    onOpenVideo: (url: string) => setVideoUrl(url),
+    onOpenPhotos: (page: MemoryBookPage) => {
+      setVideoUrl(null);
+      setPhotoPage(page);
+    },
+    onOpenVideo: (url: string) => {
+      setPhotoPage(null);
+      setVideoUrl(url);
+    },
+    frozen,
     onTurn: (direction: -1 | 1) => (direction < 0 ? flipPrev() : flipNext()),
     onCancelTurn: settleBook,
   };

@@ -1,0 +1,62 @@
+--- a/build/index.es.js
++++ b/build/index.es.js
+@@ -1,4 +1,4 @@
+-import React, { useRef, useState, useImperativeHandle, useCallback, useEffect } from 'react';
++import React, { useRef, useState, useImperativeHandle, useCallback, useEffect, useLayoutEffect } from 'react';
+ import { PageFlip } from 'page-flip';
+ 
+ const HTMLFlipBookForward = React.forwardRef((props, ref) => {
+@@ -6,6 +6,16 @@
+     const childRef = useRef([]);
+     const pageFlip = useRef();
+     const [pages, setPages] = useState([]);
++    useLayoutEffect(() => {
++        return () => {
++            const ownedEngine = pageFlip.current;
++            if (ownedEngine) {
++                // Patched destroy stops RAF/timers and restores React-owned pages.
++                ownedEngine.dispose();
++                if (pageFlip.current === ownedEngine) pageFlip.current = undefined;
++            }
++        };
++    }, []);
+     useImperativeHandle(ref, () => ({
+         pageFlip: () => pageFlip.current,
+     }));
+@@ -45,7 +55,7 @@
+         }
+         // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [props.children]);
+-    useEffect(() => {
++    useLayoutEffect(() => {
+         const setHandlers = () => {
+             const flip = pageFlip.current;
+             if (flip) {
+--- a/build/index.js
++++ b/build/index.js
+@@ -12,6 +12,16 @@
+     const childRef = React.useRef([]);
+     const pageFlip$1 = React.useRef();
+     const [pages, setPages] = React.useState([]);
++    React.useLayoutEffect(() => {
++        return () => {
++            const ownedEngine = pageFlip$1.current;
++            if (ownedEngine) {
++                // Patched destroy stops RAF/timers and restores React-owned pages.
++                ownedEngine.dispose();
++                if (pageFlip$1.current === ownedEngine) pageFlip$1.current = undefined;
++            }
++        };
++    }, []);
+     React.useImperativeHandle(ref, () => ({
+         pageFlip: () => pageFlip$1.current,
+     }));
+@@ -51,7 +61,7 @@
+         }
+         // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [props.children]);
+-    React.useEffect(() => {
++    React.useLayoutEffect(() => {
+         const setHandlers = () => {
+             const flip = pageFlip$1.current;
+             if (flip) {
