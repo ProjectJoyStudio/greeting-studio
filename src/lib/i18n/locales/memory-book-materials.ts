@@ -28,6 +28,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Videos for editing",
     mbm_finished: "Finished videos",
     mbm_empty_finished: "No finished videos yet.",
+    mbm_use_finished: "Use as finished",
+    mbm_use_finished_too_long: "This video is longer than 5 minutes and must be edited first.",
+    mbm_use_finished_failed: "The video could not be marked as finished. Please try again.",
   },
   ru: {
     mbm_stage: "Материалы книги",
@@ -55,6 +58,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Видео для монтажа",
     mbm_finished: "Готовые видео",
     mbm_empty_finished: "Готовых видео пока нет.",
+    mbm_use_finished: "Использовать как готовое",
+    mbm_use_finished_too_long: "Это видео длиннее 5 минут — сначала его нужно смонтировать.",
+    mbm_use_finished_failed: "Не удалось отметить видео как готовое. Попробуйте ещё раз.",
   },
   uk: {
     mbm_stage: "Матеріали книги",
@@ -82,6 +88,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Відео для монтажу",
     mbm_finished: "Готові відео",
     mbm_empty_finished: "Готових відео поки немає.",
+    mbm_use_finished: "Використати як готове",
+    mbm_use_finished_too_long: "Це відео довше за 5 хвилин — спочатку його потрібно змонтувати.",
+    mbm_use_finished_failed: "Не вдалося позначити відео як готове. Спробуйте ще раз.",
   },
   pl: {
     mbm_stage: "Materiały książki",
@@ -109,6 +118,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Filmy do edycji",
     mbm_finished: "Gotowe filmy",
     mbm_empty_finished: "Brak gotowych filmów.",
+    mbm_use_finished: "Użyj jako gotowy",
+    mbm_use_finished_too_long: "Ten film trwa ponad 5 minut i najpierw trzeba go zmontować.",
+    mbm_use_finished_failed: "Nie udało się oznaczyć filmu jako gotowego. Spróbuj ponownie.",
   },
   de: {
     mbm_stage: "Buchmaterialien",
@@ -137,6 +149,9 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Videos zum Bearbeiten",
     mbm_finished: "Fertige Videos",
     mbm_empty_finished: "Noch keine fertigen Videos.",
+    mbm_use_finished: "Als fertig verwenden",
+    mbm_use_finished_too_long: "Dieses Video ist länger als 5 Minuten und muss zuerst bearbeitet werden.",
+    mbm_use_finished_failed: "Das Video konnte nicht als fertig markiert werden. Bitte erneut versuchen.",
   },
   fr: {
     mbm_stage: "Matériaux du livre",
@@ -165,5 +180,8 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_videos_edit: "Vidéos à monter",
     mbm_finished: "Vidéos finales",
     mbm_empty_finished: "Aucune vidéo finale pour l'instant.",
+    mbm_use_finished: "Utiliser comme finale",
+    mbm_use_finished_too_long: "Cette vidéo dépasse 5 minutes et doit d'abord être montée.",
+    mbm_use_finished_failed: "La vidéo n'a pas pu être marquée comme finale. Veuillez réessayer.",
   },
 };
