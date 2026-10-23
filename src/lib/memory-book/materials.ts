@@ -45,3 +45,16 @@ export function sourceVideoMaterials(materials: MemoryBookMaterial[]): MemoryBoo
 export function finishedVideoMaterials(materials: MemoryBookMaterial[]): MemoryBookMaterial[] {
   return materials.filter(isPreparedVideo);
 }
+
+/** Longest uploaded video a customer may accept as finished without editing (5 min). */
+export const MEMORY_BOOK_ACCEPT_FINISHED_MAX_SECONDS = 5 * 60;
+
+/** A short source video may be accepted as finished as-is; longer ones must be edited. */
+export function canAcceptAsFinished(durationSeconds: number | null | undefined): boolean {
+  return (
+    typeof durationSeconds === "number" &&
+    Number.isFinite(durationSeconds) &&
+    durationSeconds > 0 &&
+    durationSeconds <= MEMORY_BOOK_ACCEPT_FINISHED_MAX_SECONDS
+  );
+}
