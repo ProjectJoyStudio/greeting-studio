@@ -1,7 +1,7 @@
 # Remaining global interaction freeze
-- [ ] Reproduce modal/navigation cycles and inspect pointer hit-testing and global locks.
-- [ ] Apply only a runtime-confirmed minimal fix; otherwise deliver diagnosis without speculative edits.
-- [ ] Verify 1/5/10+ cycles and preserve the existing viewer cleanup.
+- [x] Inspect repeated modal/navigation cycles, pointer hit-testing, and global locks; freeze not reproduced.
+- [x] Deliver diagnosis without speculative application or dependency changes; no remaining root cause confirmed.
+- [x] Verify 1/5/12 desktop and touch cycles and five viewer departures; existing viewer cleanup preserved.
 
 # Memory Book viewer cleanup
 - [x] Dispose page-turn engines on route unmount and keyed replacement; cancel owned frames/timers.
