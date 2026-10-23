@@ -333,7 +333,7 @@ export function MemoryBookMaterials({
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-sm font-semibold">{t("mbm_videos")}</h3>
+          <h3 className="text-sm font-semibold">{t("mbm_videos_edit")}</h3>
           <Button size="sm" disabled={busy} onClick={() => videoInput.current?.click()}>
             {t("mbm_add_video")}
           </Button>
