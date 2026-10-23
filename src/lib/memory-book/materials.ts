@@ -25,4 +25,21 @@ export interface MemoryBookMaterial {
   durationSeconds: number | null;
   sizeBytes: number | null;
   createdAt: string;
+  /** True when this video was assembled from other videos (a finished video). */
+  prepared: boolean;
+}
+
+/** A finished video was assembled by the book and can never be a source again. */
+export function isPreparedVideo(material: MemoryBookMaterial): boolean {
+  return material.kind === "video" && material.prepared;
+}
+
+/** Videos a customer may still cut parts from — never finished videos. */
+export function sourceVideoMaterials(materials: MemoryBookMaterial[]): MemoryBookMaterial[] {
+  return materials.filter((m) => m.kind === "video" && !m.prepared);
+}
+
+/** Videos already assembled by the book. */
+export function finishedVideoMaterials(materials: MemoryBookMaterial[]): MemoryBookMaterial[] {
+  return materials.filter(isPreparedVideo);
 }

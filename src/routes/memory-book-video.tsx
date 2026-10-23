@@ -7,7 +7,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { type MemoryBookMaterial } from "@/lib/memory-book/materials";
+import { sourceVideoMaterials, type MemoryBookMaterial } from "@/lib/memory-book/materials";
 import { loadMemoryBookMaterials } from "@/lib/memory-book/materials.functions";
 import {
   MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS,
@@ -106,6 +106,9 @@ function MemoryBookVideoPage() {
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<MemoryBookMaterial[] | null>(null);
   const [pickerBusy, setPickerBusy] = useState(false);
+  /** Picker selection: ids checked for adding, and the card being previewed. */
+  const [picked, setPicked] = useState<string[]>([]);
+  const [previewing, setPreviewing] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -229,12 +232,15 @@ function MemoryBookVideoPage() {
 
   async function openPicker() {
     setPickerBusy(true);
+    setPicked([]);
+    setPreviewing(null);
     try {
       const res = await loadMaterials({ data: { bookId } });
+      // Only original source videos are offered — finished videos never appear.
       setPicker(
         res.ok
-          ? res.materials.filter(
-              (item) => item.kind === "video" && !sources.some((s) => s.id === item.id),
+          ? sourceVideoMaterials(res.materials).filter(
+              (item) => !sources.some((s) => s.id === item.id),
             )
           : [],
       );
@@ -251,6 +257,20 @@ function MemoryBookVideoPage() {
     setDurations((prev) => ({ ...prev, [material.id]: material.durationSeconds ?? 0 }));
     setActiveId(material.id);
     setPicker((prev) => (prev ? prev.filter((item) => item.id !== material.id) : prev));
+  }
+
+  function togglePicked(id: string) {
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  /** Adds every checked source video to the workspace and closes the picker. */
+  function addPicked() {
+    if (!picker) return;
+    const chosen = picker.filter((item) => picked.includes(item.id));
+    for (const item of chosen) addSource(item);
+    setPicker(null);
+    setPicked([]);
+    setPreviewing(null);
   }
 
   function addFragment() {
@@ -657,7 +677,7 @@ function MemoryBookVideoPage() {
 
             {picker ? (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
-                <div className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl border border-border/70 bg-card p-6">
+                <div className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border/70 bg-card p-6">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <h3 className="font-display text-lg font-semibold">{t("mbv_add_source")}</h3>
                     <Button variant="ghost" onClick={() => setPicker(null)}>
@@ -667,24 +687,73 @@ function MemoryBookVideoPage() {
                   {picker.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{t("mbv_pick_empty")}</p>
                   ) : (
-                    <ul className="space-y-3">
-                      {picker.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3"
-                        >
-                          <span className="min-w-0 truncate text-sm">
-                            {item.fileName || "video"}
-                            {item.durationSeconds
-                              ? ` · ${formatClock(item.durationSeconds)}`
-                              : ""}
-                          </span>
-                          <Button size="sm" onClick={() => addSource(item)}>
-                            {t("mbv_pick_use")}
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <ul className="grid gap-3 sm:grid-cols-2">
+                        {picker.map((item) => {
+                          const checked = picked.includes(item.id);
+                          return (
+                            <li
+                              key={item.id}
+                              className={`overflow-hidden rounded-xl border p-0 ${
+                                checked ? "border-primary" : "border-border/60"
+                              }`}
+                            >
+                              <div className="relative bg-black">
+                                {previewing === item.id ? (
+                                  <video
+                                    src={item.url}
+                                    controls
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className="h-40 w-full object-contain"
+                                  />
+                                ) : (
+                                  <>
+                                    {/* First frame doubles as the recognizable thumbnail. */}
+                                    <video
+                                      src={item.url}
+                                      preload="metadata"
+                                      muted
+                                      playsInline
+                                      className="h-40 w-full object-contain"
+                                    />
+                                    <button
+                                      type="button"
+                                      className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-medium text-primary-foreground"
+                                      onClick={() => setPreviewing(item.id)}
+                                    >
+                                      {t("mbv_pick_preview")}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                              <label className="flex cursor-pointer items-center gap-2 p-3">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => togglePicked(item.id)}
+                                />
+                                <span className="min-w-0 flex-1 truncate text-sm">
+                                  {item.fileName || "video"}
+                                  {item.durationSeconds
+                                    ? ` · ${formatClock(item.durationSeconds)}`
+                                    : ""}
+                                </span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          {fill(t("mbv_pick_selected"), { n: picked.length })}
+                        </p>
+                        <Button disabled={picked.length === 0} onClick={addPicked}>
+                          {t("mbv_pick_add")}
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

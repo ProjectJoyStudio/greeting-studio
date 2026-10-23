@@ -50,7 +50,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
   const db = await admin();
   const { data } = await db
     .from("memory_book_materials")
-    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at")
+    .select("id, kind, bucket, path, file_name, size_bytes, duration_seconds, created_at, prepared_from_material_id")
     .eq("book_id", bookId)
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
@@ -68,6 +68,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
       durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
       sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
       createdAt: text(row.created_at),
+      prepared: row.prepared_from_material_id != null,
     });
   }
   return out;

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import {
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
+  finishedVideoMaterials,
+  sourceVideoMaterials,
   type MemoryBookMaterial,
 } from "@/lib/memory-book/materials";
 import { MaterialUploadError, uploadMemoryBookMaterial } from "@/lib/memory-book/materials-upload";
@@ -262,7 +264,8 @@ export function MemoryBookMaterials({
   }
 
   const photos = materials.filter((m) => m.kind === "photo");
-  const videos = materials.filter((m) => m.kind === "video");
+  const videos = sourceVideoMaterials(materials);
+  const finished = finishedVideoMaterials(materials);
 
   return (
     <section className="space-y-6 text-left">
@@ -330,7 +333,7 @@ export function MemoryBookMaterials({
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-sm font-semibold">{t("mbm_videos")}</h3>
+          <h3 className="text-sm font-semibold">{t("mbm_videos_edit")}</h3>
           <Button size="sm" disabled={busy} onClick={() => videoInput.current?.click()}>
             {t("mbm_add_video")}
           </Button>
@@ -420,6 +423,34 @@ export function MemoryBookMaterials({
                     </Link>
                   </Button>
                 </div>
+              </figure>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold">{t("mbm_finished")}</h3>
+        {finished.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("mbm_empty_finished")}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {finished.map((video) => (
+              <figure
+                key={video.id}
+                className="overflow-hidden rounded-xl border border-border/70 bg-muted/30"
+              >
+                <video src={video.url} controls preload="metadata" className="h-48 w-full bg-black object-contain" />
+                <figcaption className="flex items-center justify-between gap-2 p-2">
+                  <span className="truncate text-xs text-muted-foreground">
+                    {video.fileName}
+                    {video.durationSeconds
+                      ? ` · ${Math.floor(video.durationSeconds / 60)}:${String(
+                          Math.floor(video.durationSeconds % 60),
+                        ).padStart(2, "0")}`
+                      : ""}
+                  </span>
+                </figcaption>
               </figure>
             ))}
           </div>
