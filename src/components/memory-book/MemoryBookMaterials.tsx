@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import {
   MEMORY_BOOK_SOURCE_VIDEO_MAX_SECONDS,
+  finishedVideoMaterials,
+  sourceVideoMaterials,
   type MemoryBookMaterial,
 } from "@/lib/memory-book/materials";
 import { MaterialUploadError, uploadMemoryBookMaterial } from "@/lib/memory-book/materials-upload";
@@ -262,7 +264,8 @@ export function MemoryBookMaterials({
   }
 
   const photos = materials.filter((m) => m.kind === "photo");
-  const videos = materials.filter((m) => m.kind === "video");
+  const videos = sourceVideoMaterials(materials);
+  const finished = finishedVideoMaterials(materials);
 
   return (
     <section className="space-y-6 text-left">
