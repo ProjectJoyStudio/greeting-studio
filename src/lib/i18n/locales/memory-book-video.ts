@@ -43,6 +43,9 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "No other videos in this book yet.",
     mbv_pick_use: "Use",
     mbv_pick_close: "Close",
+    mbv_pick_preview: "Preview",
+    mbv_pick_selected: "Selected: {n}",
+    mbv_pick_add: "Add selected",
   },
   ru: {
     mbv_open: "Обработать видео",
@@ -85,6 +88,9 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "В этой книге больше нет других видео.",
     mbv_pick_use: "Использовать",
     mbv_pick_close: "Закрыть",
+    mbv_pick_preview: "Просмотр",
+    mbv_pick_selected: "Выбрано: {n}",
+    mbv_pick_add: "Добавить выбранные",
   },
   uk: {
     mbv_open: "Обробити відео",
@@ -127,6 +133,9 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "У цій книзі більше немає інших відео.",
     mbv_pick_use: "Використати",
     mbv_pick_close: "Закрити",
+    mbv_pick_preview: "Перегляд",
+    mbv_pick_selected: "Вибрано: {n}",
+    mbv_pick_add: "Додати вибрані",
   },
   pl: {
     mbv_open: "Przetwórz wideo",
@@ -169,6 +178,9 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "W tej książce nie ma innych wideo.",
     mbv_pick_use: "Użyj",
     mbv_pick_close: "Zamknij",
+    mbv_pick_preview: "Podgląd",
+    mbv_pick_selected: "Wybrano: {n}",
+    mbv_pick_add: "Dodaj wybrane",
   },
   de: {
     mbv_open: "Video bearbeiten",
@@ -211,6 +223,9 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "In diesem Buch gibt es keine weiteren Videos.",
     mbv_pick_use: "Verwenden",
     mbv_pick_close: "Schließen",
+    mbv_pick_preview: "Vorschau",
+    mbv_pick_selected: "Ausgewählt: {n}",
+    mbv_pick_add: "Ausgewählte hinzufügen",
   },
   fr: {
     mbv_open: "Traiter la vidéo",
@@ -253,5 +268,8 @@ export const MEMORY_BOOK_VIDEO_I18N: Record<Lang, Dict> = {
     mbv_pick_empty: "Aucune autre vidéo dans ce livre.",
     mbv_pick_use: "Utiliser",
     mbv_pick_close: "Fermer",
+    mbv_pick_preview: "Aperçu",
+    mbv_pick_selected: "Sélection : {n}",
+    mbv_pick_add: "Ajouter la sélection",
   },
 };
