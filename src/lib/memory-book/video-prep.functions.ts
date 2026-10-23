@@ -87,6 +87,7 @@ async function sourceMaterial(bookId: string, userId: string, materialId: string
     durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
     sizeBytes: row.size_bytes == null ? null : Number(row.size_bytes),
     createdAt: text(row.created_at),
+    prepared: false,
   };
   return material;
 }
