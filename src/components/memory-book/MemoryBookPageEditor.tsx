@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Play, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

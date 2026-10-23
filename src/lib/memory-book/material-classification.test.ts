@@ -58,3 +58,14 @@ describe("same-book finished-video server classification", () => {
     expect(classifyVideoMaterial({ id: "new-output" }, after).prepared).toBe(true);
   });
 });
+describe("customer-accepted finished videos", () => {
+  const empty = { pageUsedIds: new Set<string>(), assembledIds: new Set<string>() };
+  it("treats an accepted upload as finished and never as an editing source", () => {
+    const row = { id: "a", kind: "video", prepared_from_material_id: null, accepted_finished_at: "2026-10-23T10:00:00Z" };
+    expect(classifyVideoMaterial(row, empty).prepared).toBe(true);
+    expect(isEditingSourceRow(row, empty)).toBe(false);
+  });
+  it("keeps an unaccepted upload as an editing source", () => {
+    expect(isEditingSourceRow({ id: "b", kind: "video", accepted_finished_at: null }, empty)).toBe(true);
+  });
+});
