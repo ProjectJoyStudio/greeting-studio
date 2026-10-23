@@ -13,3 +13,4 @@
 - Memory Book final video assembly uses authenticated RunPod server functions and a durable per-book active-job lock; finalization reuses a server-only helper so browser-supplied paths or durations cannot authorize source cleanup.
 - Keep the Bun lifecycle patches for page-flip/react-pageflip: each wrapper owns disposal, cancels RAF/timers, and restores React-owned pages before destruction to prevent cross-route leaks.
 - Memory Book material lists and source guards share same-book page/confirmed-job classification; completed job associations preserve assembled identity after source cleanup clears its foreign-key marker.
+- Public Memory Book viewing is authorized only by an active random share token (memory_book_shares); owner functions stay authenticated, the public loader signs only page-used assets and never accepts book/user IDs.

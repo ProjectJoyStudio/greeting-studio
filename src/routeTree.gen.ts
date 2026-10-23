@@ -97,6 +97,7 @@ import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/pu
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
+import { Route as MemoryBookShareTokenRouteImport } from './routes/memory-book_.share.$token'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
 import { Route as AdminCatalogVariantsIndexRouteImport } from './routes/admin.catalog.variants.index'
@@ -550,6 +551,11 @@ const ApiPublicVoicePreviewsMaintainRoute =
     path: '/api/public/voice-previews-maintain',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MemoryBookShareTokenRoute = MemoryBookShareTokenRouteImport.update({
+  id: '/memory-book_/share/$token',
+  path: '/memory-book/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCatalogBackgroundsIdRoute =
   AdminCatalogBackgroundsIdRouteImport.update({
     id: '/$id',
@@ -666,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -758,6 +765,7 @@ export interface FileRoutesByTo {
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/voice-settings': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -854,6 +862,7 @@ export interface FileRoutesById {
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/memory-book_/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
@@ -951,6 +960,7 @@ export interface FileRouteTypes {
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/memory-book/share/$token'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
@@ -1043,6 +1053,7 @@ export interface FileRouteTypes {
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/memory-book/share/$token'
     | '/admin/catalog'
     | '/admin/voice-settings'
     | '/admin/catalog/backgrounds/$id'
@@ -1138,6 +1149,7 @@ export interface FileRouteTypes {
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/memory-book_/share/$token'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
     | '/admin/catalog/backgrounds/$id'
@@ -1187,6 +1199,7 @@ export interface RootRouteChildren {
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
   ApiPublicPvgReconcileRoute: typeof ApiPublicPvgReconcileRoute
   ApiPublicVoicePreviewsMaintainRoute: typeof ApiPublicVoicePreviewsMaintainRoute
+  MemoryBookShareTokenRoute: typeof MemoryBookShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1807,6 +1820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVoicePreviewsMaintainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/memory-book_/share/$token': {
+      id: '/memory-book_/share/$token'
+      path: '/memory-book/share/$token'
+      fullPath: '/memory-book/share/$token'
+      preLoaderRoute: typeof MemoryBookShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/catalog/backgrounds/$id': {
       id: '/admin/catalog/backgrounds/$id'
       path: '/$id'
@@ -2033,6 +2053,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
   ApiPublicPvgReconcileRoute: ApiPublicPvgReconcileRoute,
   ApiPublicVoicePreviewsMaintainRoute: ApiPublicVoicePreviewsMaintainRoute,
+  MemoryBookShareTokenRoute: MemoryBookShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

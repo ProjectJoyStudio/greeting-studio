@@ -14,6 +14,7 @@ import {
   type MemoryBookProject,
 } from "@/lib/memory-book/packages.functions";
 import { buildMemoryBookOfflinePlan } from "@/lib/memory-book/offline-export.functions";
+import { MemoryBookShareDialog } from "@/components/memory-book/MemoryBookShareDialog";
 
 export const Route = createFileRoute("/dashboard/memory-books")({
   component: MyMemoryBooksPage,
@@ -43,6 +44,7 @@ function MyMemoryBooksPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [percent, setPercent] = useState(0);
+  const [sharing, setSharing] = useState<string | null>(null);
 
   /**
    * Prepares and saves the offline copy of ONE completed book. It only reads
@@ -142,8 +144,16 @@ function MyMemoryBooksPage() {
       ) : books.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("mbd_empty")}</p>
       ) : (
+        <>
+        {([
+          ["mbd_in_progress", books.filter((b) => b.status !== "completed")],
+          ["mbd_finished", books.filter((b) => b.status === "completed")],
+        ] as const).map(([titleKey, group]) =>
+          group.length === 0 ? null : (
+        <section key={titleKey} className="mb-8">
+        <h2 className="mb-3 font-display text-xl font-semibold">{t(titleKey)}</h2>
         <ul className="grid gap-4 sm:grid-cols-2">
-          {books.map((book) => {
+          {group.map((book) => {
             const left = daysLeft(book.expiresAt);
             const done = book.status === "completed";
             const keptLeft = book.retentionExpiresAt ? daysLeft(book.retentionExpiresAt) : 0;
@@ -201,7 +211,7 @@ function MyMemoryBooksPage() {
                     <>
                       <Button asChild size="sm" variant="outline">
                         <Link to="/memory-book-preview" search={{ book: book.id }}>
-                          {t("mbd_open")}
+                          {t("mbd_open_book")}
                         </Link>
                       </Button>
                       <Button
@@ -212,6 +222,9 @@ function MyMemoryBooksPage() {
                         {busy === `${book.id}-zip`
                           ? fill(t("mbd_download_working"), { n: percent })
                           : t("mbd_download")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setSharing(book.id)}>
+                        {t("mbs_share")}
                       </Button>
                     </>
                   ) : (
@@ -243,8 +256,18 @@ function MyMemoryBooksPage() {
               </li>
             );
           })}
-
         </ul>
+        </section>
+          ),
+        )}
+        </>
+      )}
+      {sharing && (
+        <MemoryBookShareDialog
+          bookId={sharing}
+          open={sharing !== null}
+          onOpenChange={(open) => !open && setSharing(null)}
+        />
       )}
     </>
   );
