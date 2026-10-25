@@ -2208,6 +2208,27 @@ export type Database = {
           },
         ]
       }
+      memory_book_backup_dispatch_config: {
+        Row: {
+          enabled: boolean
+          endpoint: string | null
+          id: boolean
+          secret: string
+        }
+        Insert: {
+          enabled?: boolean
+          endpoint?: string | null
+          id?: boolean
+          secret?: string
+        }
+        Update: {
+          enabled?: boolean
+          endpoint?: string | null
+          id?: boolean
+          secret?: string
+        }
+        Relationships: []
+      }
       memory_book_decorations: {
         Row: {
           bucket: string
@@ -4451,6 +4472,13 @@ export type Database = {
       storage_placements: {
         Row: {
           attempts: number
+          backup_auto_retry: boolean
+          backup_diagnostics: Json | null
+          backup_history: Json
+          backup_lease_token: string | null
+          backup_lease_until: string | null
+          backup_retry_count: number
+          backup_stage: string | null
           checksum: string | null
           content_type: string | null
           created_at: string
@@ -4472,6 +4500,13 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          backup_auto_retry?: boolean
+          backup_diagnostics?: Json | null
+          backup_history?: Json
+          backup_lease_token?: string | null
+          backup_lease_until?: string | null
+          backup_retry_count?: number
+          backup_stage?: string | null
           checksum?: string | null
           content_type?: string | null
           created_at?: string
@@ -4493,6 +4528,13 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          backup_auto_retry?: boolean
+          backup_diagnostics?: Json | null
+          backup_history?: Json
+          backup_lease_token?: string | null
+          backup_lease_until?: string | null
+          backup_retry_count?: number
+          backup_stage?: string | null
           checksum?: string | null
           content_type?: string | null
           created_at?: string
@@ -5390,6 +5432,48 @@ export type Database = {
           used_at: string
         }[]
       }
+      claim_memory_book_backup: {
+        Args: {
+          _key: string
+          _manual?: boolean
+          _provider: string
+          _token: string
+        }
+        Returns: {
+          attempts: number
+          backup_auto_retry: boolean
+          backup_diagnostics: Json | null
+          backup_history: Json
+          backup_lease_token: string | null
+          backup_lease_until: string | null
+          backup_retry_count: number
+          backup_stage: string | null
+          checksum: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          last_backup_at: string | null
+          last_error: string | null
+          object_key: string
+          product: string | null
+          project_id: string | null
+          provider: string
+          retry_after: string | null
+          role: string
+          size_bytes: number | null
+          status: string
+          transfer_state: Json | null
+          updated_at: string
+          user_id: string | null
+          verified_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "storage_placements"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_memory_book_generation: {
         Args: { _book_id: string; _stage: string; _user_id: string }
         Returns: Json
@@ -5430,6 +5514,7 @@ export type Database = {
         }
         Returns: Json
       }
+      dispatch_memory_book_backups: { Args: never; Returns: undefined }
       extend_memory_book_storage: {
         Args: {
           _book_id: string

@@ -50,6 +50,13 @@
       "when": 1792926536102,
       "tag": "0006_memory_book_shared_dependency_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792932041321,
+      "tag": "0007_durable_memory_book_backup_retries",
+      "breakpoints": true
     }
   ]
 }
