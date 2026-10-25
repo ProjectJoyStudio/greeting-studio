@@ -2,9 +2,7 @@
 //
 // Every new customer file of a book goes to the working area under one stable
 // address, is verified there, and then gets its own independent reserve copy.
-// Nothing is written to the older area first. When the working area is not
-// available at all, the previous area still accepts the file so the customer
-// never loses a result.
+// Nothing is written to the older area; primary failures are reported safely.
 
 import { memoryBookWorkingKey } from "@/lib/storage/keys";
 import { storageFor } from "@/lib/storage/registry.server";
@@ -23,7 +21,7 @@ export async function storeMemoryBookFile(options: {
   parts: string[];
   bytes: Uint8Array;
   contentType: string;
-  /** Previous area, used only when the working area is unavailable. */
+  /** Compatibility input from generators; never used for a new storage write. */
   legacyBucket: string;
   legacyPath: string;
 }): Promise<StoredMemoryBookFile> {

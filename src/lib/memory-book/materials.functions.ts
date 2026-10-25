@@ -39,7 +39,7 @@ async function ownedBook(context: { supabase: unknown; userId: string }, bookId:
   };
   const { data } = await db
     .from("memory_book_projects")
-    .select("id, credits_spent")
+    .select("id, credits_spent, storage_version")
     .eq("user_id", context.userId)
     .eq("id", bookId)
     .maybeSingle();
@@ -217,6 +217,7 @@ export const removeMemoryBookMaterial = createServerFn({ method: "POST" })
       if (!book) return { ok: false, materials: [] };
 
       const db = await admin();
+      if (book.storage_version !== 2) return { ok: false, materials: await listOf(data.bookId, context.userId) };
       const { data: row } = await db
         .from("memory_book_materials")
         .select("id, bucket, path")

@@ -72,8 +72,7 @@ export const createMemoryBookPhotoUpload = createServerFn({ method: "POST" })
       const { memoryBookWorkingKey } = await import("@/lib/storage/keys");
       const extension = extensionOf(data.fileName, "jpg");
       const unique = `${Date.now()}-${crypto.randomUUID()}`;
-      // The address never contains a lifecycle status: a photo is not moved
-      // because the book becomes completed.
+      // Newly uploaded originals belong to this book's working hierarchy.
       const key = memoryBookWorkingKey(
         context.userId,
         data.bookId,
