@@ -57,7 +57,17 @@ export async function transferObject(options: {
     const number: number = state.parts.length + 1;
     await options.progress?.("multipart_part", { part: number });
     const bytes = await source.readRange(sourceKey, offset, Math.min(sourceInfo.sizeBytes - 1, offset + partSize - 1));
-    const etag = await destination.writePart(destinationKey, state.uploadId, number, bytes);
+    let etag: string;
+    try { etag = await destination.writePart(destinationKey, state.uploadId, number, bytes); }
+    catch (error) {
+      // An expired multipart session is not a missing destination object.
+      // Drop only its checkpoint; a later leased attempt starts a fresh session.
+      if (error instanceof Error && error.message === "multipart_part_http_404") {
+        await save(null);
+        throw new Error("multipart_expired_restart");
+      }
+      throw error;
+    }
     state = { ...state, parts: [...state.parts, { number, etag }] };
     await save(state);
   }

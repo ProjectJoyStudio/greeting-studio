@@ -50,4 +50,19 @@ describe("verified exact-object transfers", () => {
     expect(a.deleteObject).not.toHaveBeenCalled();
     expect(a.deleteVersion).not.toHaveBeenCalled();
   });
+  it("persistent 403 never starts or deletes a transfer", async () => {
+    const source=adapter(true), destination=adapter(false);
+    vi.mocked(destination.check).mockResolvedValue({state:"error",status:403,detail:"http_403"});
+    await expect(transferObject({source,destination,sourceKey:"source",destinationKey:"target",save:async()=>{}})).rejects.toThrow("transfer_destination_check:http_403");
+    expect(destination.check).toHaveBeenCalledTimes(4);
+    expect(destination.beginMultipart).not.toHaveBeenCalled(); expect(destination.deleteObject).not.toHaveBeenCalled();
+  });
+  it("resumes checkpointed multipart after a process restart", async () => {
+    const source=adapter(true), destination=adapter(false);
+    vi.mocked(destination.check).mockResolvedValueOnce({state:"missing",status:404}).mockResolvedValueOnce({state:"missing",status:404}).mockResolvedValue({state:"exists",info:{key:"target",sizeBytes:10,contentType:"image/png"}});
+    const state:TransferState={uploadId:"retained",sourceKey:"source",destinationKey:"target",sourceSize:10,sourceEtag:"stable",sourceChecksum:"sha256:equal",parts:[{number:1,etag:"etag"}]};
+    await transferObject({source,destination,sourceKey:"source",destinationKey:"target",state,save:async()=>{}});
+    expect(destination.beginMultipart).not.toHaveBeenCalled(); expect(destination.writePart).not.toHaveBeenCalled();
+    expect(destination.completeMultipart).toHaveBeenCalledWith("target","retained",state.parts);
+  });
 });
