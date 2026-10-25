@@ -1,4 +1,5 @@
 # Memory Book storage restructuring — current Greeting Studio only
+- [ ] Fix destination checks, durable leased automatic retries and safe diagnostics; validate dispatcher with disposable assets and repair only cb891cbc-a2b6-4fd1-b530-ecb4a41332f3 backups.
 - [x] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
 - [x] Add working keys, retained video originals, checksum/multipart copies, atomic completion, resumable cleanup and existing Admin controls; preserve existing books and tokens.
 - [x] Verify disposable-book R2/B2 checksums, final package, exact-version cleanup, restore, manual emergency resolution, signed-in Admin verification and signed-out share controls; remove only test assets/book/link.
