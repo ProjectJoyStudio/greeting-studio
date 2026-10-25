@@ -30,6 +30,7 @@ describe("verified exact-object transfers", () => {
   });
   it("checkpoints multipart state and clears it only after verification", async () => {
     const saved: Array<TransferState | null> = [], source = adapter(true), destination = adapter(false);
+    vi.mocked(destination.check).mockResolvedValueOnce({ state: "missing", status: 404 }).mockResolvedValueOnce({ state: "missing", status: 404 }).mockResolvedValue({ state: "exists", info: { key: "target", sizeBytes: 10, contentType: "image/png" } });
     await transferObject({ source, destination, sourceKey: "source", destinationKey: "target", save: async state => { saved.push(state); } });
     expect(saved[1]?.parts).toEqual([{ number: 1, etag: "etag" }]);
     expect(saved.at(-1)).toBe(null);
