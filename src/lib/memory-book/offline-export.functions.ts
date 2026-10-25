@@ -116,7 +116,13 @@ export const buildMemoryBookOfflinePlan = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true });
 
     const materials = [];
+    const usedMaterials = new Set<string>();
+    for (const page of Object.values(pages)) {
+      for (const slot of page.slots) if (slot.materialId) usedMaterials.add(slot.materialId);
+      if (page.videoMaterialId) usedMaterials.add(page.videoMaterialId);
+    }
     for (const raw of ((matRows ?? []) as unknown as Row[])) {
+      if (!usedMaterials.has(String(raw.id))) continue;
       const url = await localCopy(text(raw.bucket), text(raw.path));
       if (!url) continue;
       materials.push({
@@ -167,6 +173,11 @@ export const buildMemoryBookOfflinePlan = createServerFn({ method: "POST" })
       .eq("book_id", data.bookId);
     const designs = new Map<string, Row>();
     for (const raw of ((designRows ?? []) as unknown as Row[])) designs.set(String(raw.id), raw);
+    const selectedIds = [book.selected_cover_id, book.selected_leaf_id, book.back_cover_design_id].filter((id): id is string => typeof id === "string" && !designs.has(id));
+    if (selectedIds.length) {
+      const { data: extra } = await db.from("memory_book_designs").select("id, stage, bucket, path").in("id", selectedIds);
+      for (const raw of (extra ?? []) as Row[]) designs.set(String(raw.id), raw);
+    }
 
     const pick = async (id: unknown) => {
       const row = typeof id === "string" ? designs.get(id) : null;

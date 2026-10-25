@@ -138,8 +138,8 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         const bucket = typeof row.background_bucket === "string" ? row.background_bucket : "";
         const path = typeof row.background_path === "string" ? row.background_path : "";
         if (bucket && path) {
-          const { data: signed } = await db.storage.from(bucket).createSignedUrl(path, 60 * 60);
-          page.backgroundUrl = signed?.signedUrl ?? null;
+          const { memoryBookFileUrl } = await import("./storage.server");
+          page.backgroundUrl = await memoryBookFileUrl(bucket, path, 60 * 60);
         }
         pages.push(page);
       }
