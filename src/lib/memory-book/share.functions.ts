@@ -140,7 +140,7 @@ export const loadSharedMemoryBook = createServerFn({ method: "POST" })
     const sign = async (bucket: unknown, path: unknown) => {
       const b = text(bucket);
       const p = text(path);
-      return b && p ? await memoryBookFileUrl(b, p, SIGNED_SECONDS) : null;
+      return b && p ? await memoryBookFileUrl(b, p, SIGNED_SECONDS, bookId) : null;
     };
 
     const internalPages = Number(book.internal_pages ?? 0);

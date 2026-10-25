@@ -62,7 +62,7 @@ export const buildMemoryBookOfflinePlan = createServerFn({ method: "POST" })
       const cached = known.get(key);
       if (cached) return cached;
       const { memoryBookFileUrl } = await import("./storage.server");
-      const url = await memoryBookFileUrl(bucket, path, SIGNED_SECONDS);
+      const url = await memoryBookFileUrl(bucket, path, SIGNED_SECONDS, data.bookId);
       if (!url) return null;
       const ext = path.includes(".") ? path.slice(path.lastIndexOf(".")) : "";
       const name = `${String(++counter).padStart(3, "0")}${ext}`;
@@ -75,7 +75,7 @@ export const buildMemoryBookOfflinePlan = createServerFn({ method: "POST" })
     /** Small mask files travel inside the data itself. */
     async function inlineCopy(bucket: string, path: string): Promise<string | null> {
       const { memoryBookFileUrl } = await import("./storage.server");
-      const signedUrl = await memoryBookFileUrl(bucket, path, SIGNED_SECONDS);
+      const signedUrl = await memoryBookFileUrl(bucket, path, SIGNED_SECONDS, data.bookId);
       if (!signedUrl) return null;
       const token = `__JOY_INLINE_${++inlineCounter}__`;
       inline.push({

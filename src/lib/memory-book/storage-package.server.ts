@@ -74,6 +74,7 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
   if (error) throw new Error("operation_lock_failed");
   if (!locked) return { ok: false, pending: true };
   op = locked;
+  if (!op) throw new Error("operation_not_found");
   const manifest = op.manifest as PackageAsset[];
   try {
     const primary = storageFor("primary"), backup = storageFor("backup");

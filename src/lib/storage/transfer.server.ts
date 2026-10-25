@@ -41,7 +41,7 @@ export async function transferObject(options: {
   // Do not exceed the runtime's memory ceiling for very large files.
   if (partSize > 32 * 1024 * 1024) throw new Error("transfer_external_worker_required");
   for (let offset = state.parts.length * partSize; offset < sourceInfo.sizeBytes; offset += partSize) {
-    const number = state.parts.length + 1;
+    const number: number = state.parts.length + 1;
     const bytes = await source.readRange(sourceKey, offset, Math.min(sourceInfo.sizeBytes - 1, offset + partSize - 1));
     const etag = await destination.writePart(destinationKey, state.uploadId, number, bytes);
     state = { ...state, parts: [...state.parts, { number, etag }] };
