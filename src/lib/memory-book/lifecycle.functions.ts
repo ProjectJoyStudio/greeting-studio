@@ -102,7 +102,7 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MemoryBookCompletionResult> => {
     const { data: book } = await context.supabase
       .from("memory_book_projects")
-      .select("id, status, completed_at, retention_expires_at, selected_cover_id, selected_leaf_id, credits_spent")
+      .select("id, status, completed_at, retention_expires_at, selected_cover_id, selected_leaf_id, credits_spent, storage_version")
       .eq("user_id", context.userId)
       .eq("id", data.bookId)
       .maybeSingle();
@@ -126,6 +126,13 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
     }
 
     try {
+      if (row.storage_version !== 2) {
+        // No migration or cleanup of historical files is authorized by this order.
+        const completedAt = new Date().toISOString();
+        const retentionExpiresAt = new Date(Date.now() + await retentionDays() * 86400000).toISOString();
+        const { error } = await context.supabase.from("memory_book_projects").update({ status: "completed", completed_at: completedAt, completion_method: data.method, retention_expires_at: retentionExpiresAt }).eq("id", data.bookId).eq("user_id", context.userId).neq("status", "completed");
+        return error ? { ok: false, error: "failed" } : { ok: true, completedAt, retentionExpiresAt };
+      }
       const { advanceBookPackage } = await import("./storage-package.server");
       const result = await advanceBookPackage(context.userId, data.bookId, data.method, await retentionDays());
       return { ok: result.ok, pending: result.ok || result.pending };

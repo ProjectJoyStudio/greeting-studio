@@ -26,6 +26,7 @@ export async function inventoryBook(userId: string, bookId: string) {
   if (error || !book) throw new Error("book_not_found");
   const pages = await read("memory_book_pages");
   const materials = await read("memory_book_materials"), designs = await read("memory_book_designs"), music = await read("memory_book_music_variants");
+  const backgrounds = await read("memory_book_page_backgrounds");
   const ids = pageDependencyIds(pages);
   const selected = [book.selected_cover_id, book.selected_leaf_id, ...(book.back_cover_overridden ? [book.back_cover_design_id] : [])].filter(Boolean);
   const missingDesigns = selected.filter(id => !designs.some(d => d.id === id));
@@ -58,7 +59,7 @@ export async function inventoryBook(userId: string, bookId: string) {
     const selectedMusic = music.find(m => m.id === book.music_variant_id);
     if (!selectedMusic) throw new Error("music_dependency_missing"); add(selectedMusic.bucket, selectedMusic.path);
   }
-  return { manifest, snapshot: { book, pages, materials: materials.filter(m => ids.materials.has(m.id)), designs: designs.filter(d => selected.includes(d.id)), music: music.filter(m => m.id === book.music_variant_id), decorations } };
+  return { manifest, snapshot: { book, pages, materials: materials.filter(m => ids.materials.has(m.id)), designs: designs.filter(d => selected.includes(d.id)), music: music.filter(m => m.id === book.music_variant_id), decorations, backgrounds } };
 }
 
 /** One asset per invocation: persisted cursor and lease make interruption safe. */
@@ -163,6 +164,6 @@ export async function cleanupBookWorking(userId: string, bookId: string) {
     if (updateError) throw new Error("cleanup_timestamp_failed");
     return { pending: false };
   } catch (e) {
-    await save(bookId, { stage: "cleanup_failed", last_error: e instanceof Error ? e.message : "cleanup_failed", cleanup_results: results, lease_token: null, lease_until: null }); throw e;
+    await save(bookId, { stage: "cleanup_failed", last_error: e instanceof Error ? e.message : "cleanup_failed", cleanup_results: results, lease_token: null, lease_until: null }, token); throw e;
   }
 }
