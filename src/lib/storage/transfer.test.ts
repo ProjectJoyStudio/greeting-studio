@@ -6,7 +6,7 @@ function adapter(exists: boolean): StorageAdapter {
   return {
     id: "r2", isReady: () => true, describe: () => "test",
     head: vi.fn(async () => ({ key: "source", sizeBytes: 10, contentType: "image/png", etag: "stable" })),
-    check: vi.fn(async () => exists ? { state: "exists" as const, info: { key: "target", sizeBytes: 10, contentType: "image/png" } } : { state: "missing" as const, status: 404 }),
+    check: vi.fn(async () => exists ? { state: "exists" as const, info: { key: "target", sizeBytes: 10, contentType: "image/png", etag: "stable" } } : { state: "missing" as const, status: 404 }),
     digest: vi.fn(async () => ({ checksum: "sha256:equal", sizeBytes: 10 })),
     put: vi.fn(async () => true), getBytes: vi.fn(async () => new Uint8Array(10)),
     signedReadUrl: vi.fn(async () => null), signedWriteUrl: vi.fn(async () => null), deleteObject: vi.fn(async () => true),
