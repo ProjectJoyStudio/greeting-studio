@@ -64,6 +64,13 @@
       "when": 1792932203204,
       "tag": "0008_enqueue_backup_on_primary_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792932458276,
+      "tag": "0009_backup_scheduler_drain_when_disabled",
+      "breakpoints": true
     }
   ]
 }
