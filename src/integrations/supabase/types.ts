@@ -5252,6 +5252,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_memory_book_storage: {
+        Args: {
+          _book_id: string
+          _lease_token: string
+          _retention_days: number
+          _user_id: string
+        }
+        Returns: boolean
+      }
       admin_adjust_test_credits: {
         Args: { _amount: number; _reason?: string; _user_id: string }
         Returns: number
