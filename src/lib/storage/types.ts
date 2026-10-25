@@ -31,7 +31,11 @@ export interface StorageObjectInfo {
   key: string;
   sizeBytes: number;
   contentType: string | null;
+  etag?: string | null;
 }
+
+export interface StorageVersion { key: string; versionId: string }
+export interface StoragePart { number: number; etag: string }
 
 export type StorageCheckResult =
   | { state: "exists"; info: StorageObjectInfo }
@@ -60,6 +64,14 @@ export interface StorageAdapter {
   signedWriteUrl(key: string, seconds: number, contentType: string): Promise<string | null>;
   /** Removes exactly ONE object. Never a folder and never a prefix. */
   deleteObject(key: string): Promise<boolean>;
+  readRange(key: string, start: number, end: number): Promise<Uint8Array>;
+  digest(key: string): Promise<{ checksum: string; sizeBytes: number }>;
+  beginMultipart(key: string, contentType: string): Promise<string>;
+  writePart(key: string, uploadId: string, number: number, bytes: Uint8Array): Promise<string>;
+  completeMultipart(key: string, uploadId: string, parts: StoragePart[]): Promise<void>;
+  abortMultipart(key: string, uploadId: string): Promise<void>;
+  listVersions(key: string): Promise<StorageVersion[]>;
+  deleteVersion(key: string, versionId: string): Promise<void>;
 }
 
 /**

@@ -63,3 +63,9 @@ export function isInsideUserProject(
 ): boolean {
   return key.startsWith(userProjectPrefix(userId, product, projectId));
 }
+
+/** Lifecycle hierarchy is explicit at creation; existing keys are never renamed. */
+export function memoryBookWorkingKey(userId: string, bookId: string, ...parts: string[]): string {
+  if (![userId, bookId].every(id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) throw new Error("invalid_storage_owner");
+  return userKey(userId, "memory-book", bookId, "working", ...parts);
+}

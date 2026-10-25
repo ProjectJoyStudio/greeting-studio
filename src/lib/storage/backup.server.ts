@@ -71,13 +71,15 @@ interface PlacementPatch {
   lastBackupAt?: string | null;
   lastError?: string | null;
   bumpAttempts?: boolean;
+  checksum?: string | null;
+  transferState?: unknown;
 }
 
 /**
  * Writes exactly one row per file and provider. Repeating the same call can
  * never create a second record for the same physical copy.
  */
-async function writePlacement(
+export async function writePlacement(
   objectKey: string,
   provider: StorageProviderId,
   patch: PlacementPatch,
@@ -95,13 +97,23 @@ async function writePlacement(
   if (patch.verifiedAt !== undefined) row.verified_at = patch.verifiedAt;
   if (patch.lastBackupAt !== undefined) row.last_backup_at = patch.lastBackupAt;
   if (patch.lastError !== undefined) row.last_error = patch.lastError;
+  if (patch.checksum !== undefined) row.checksum = patch.checksum;
+  if (patch.transferState !== undefined) row.transfer_state = patch.transferState;
+  const owner = /^users\/([^/]+)\/([^/]+)\/([^/]+)\//.exec(objectKey);
+  if (owner && /^[0-9a-f-]{36}$/i.test(owner[1]) && /^[0-9a-f-]{36}$/i.test(owner[3])) {
+    row.user_id = owner[1]; row.product = owner[2]; row.project_id = owner[3];
+  }
+  if (patch.status === "failed") row.retry_after = new Date(Date.now() + 60000 * Math.min(60, 2 ** Number(existing?.attempts ?? 0))).toISOString();
+  if (patch.status === "present") row.retry_after = null;
   if (patch.bumpAttempts) row.attempts = Number(existing?.attempts ?? 0) + 1;
 
   if (existing) {
-    await client.from(TABLE).update(row).eq("id", existing.id as string);
+    const { error } = await client.from(TABLE).update(row).eq("id", existing.id as string);
+    if (error) throw new Error("storage_placement_update_failed");
     return;
   }
-  await client.from(TABLE).insert(row);
+  const { error } = await client.from(TABLE).upsert(row, { onConflict: "object_key,provider" });
+  if (error) throw new Error("storage_placement_insert_failed");
 }
 
 /** Removes the bookkeeping of one copy. Never touches a stored file. */
@@ -191,6 +203,23 @@ export async function backupToReserve(objectKey: string): Promise<BackupResult> 
   if (!objectKey) return { ok: false, status: "failed", error: "no_key" };
   if (!primary) return { ok: false, status: "failed", error: "primary_not_configured" };
   if (!backup) return { ok: false, status: "failed", error: "backup_not_configured" };
+  if (/^users\/[^/]+\/memory-book\/[^/]+\/(working|completed)\//.test(objectKey)) {
+    const existing = await placementOf(objectKey, backup.id);
+    try {
+      const { transferObject } = await import("./transfer.server");
+      const result = await transferObject({ source: primary, destination: backup, sourceKey: objectKey, destinationKey: objectKey,
+        state: existing?.transfer_state as import("./transfer.server").TransferState | null,
+        save: state => writePlacement(objectKey, backup.id, { role: "backup", status: "copying", transferState: state }),
+      });
+      await writePlacement(objectKey, primary.id, { role: "primary", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
+      await writePlacement(objectKey, backup.id, { role: "backup", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastBackupAt: new Date().toISOString(), lastError: null, bumpAttempts: true });
+      return { ok: true, status: "present", skipped: existing?.status === "present" };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "transfer_failed";
+      await writePlacement(objectKey, backup.id, { role: "backup", status: "failed", lastError: error, bumpAttempts: true });
+      return { ok: false, status: "failed", error };
+    }
+  }
 
   const source = await primary.head(objectKey);
   if (!source) {
@@ -346,6 +375,25 @@ export async function restoreFromReserve(objectKey: string): Promise<BackupResul
   if (!objectKey) return { ok: false, status: "failed", error: "no_key" };
   if (!primary) return { ok: false, status: "failed", error: "primary_not_configured" };
   if (!backup) return { ok: false, status: "failed", error: "backup_not_configured" };
+  if (/^users\/[^/]+\/memory-book\/[^/]+\/(working|completed)\//.test(objectKey)) {
+    try {
+      const { transferObject } = await import("./transfer.server");
+      const placement = await placementOf(objectKey, primary.id);
+      const reservePlacement = await placementOf(objectKey, backup.id);
+      const expectedChecksum = placement?.checksum ?? reservePlacement?.checksum;
+      const sourceDigest = await backup.digest(objectKey);
+      if (expectedChecksum && sourceDigest.checksum !== expectedChecksum) throw new Error("restore_source_integrity_mismatch");
+      const result = await transferObject({ source: backup, destination: primary, sourceKey: objectKey, destinationKey: objectKey, state: placement?.transfer_state as import("./transfer.server").TransferState | null,
+        save: state => writePlacement(objectKey, primary.id, { role: "primary", status: "copying", transferState: state }),
+      });
+      await writePlacement(objectKey, primary.id, { role: "primary", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
+      return { ok: true, status: "present" };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "restore_failed";
+      await writePlacement(objectKey, primary.id, { role: "primary", status: "failed", lastError: error });
+      return { ok: false, status: "failed", error };
+    }
+  }
 
   const source = await backup.head(objectKey);
   if (!source) return { ok: false, status: "failed", error: "reserve_object_missing" };

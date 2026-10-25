@@ -22,6 +22,34 @@
       "when": 1792760192174,
       "tag": "0002_memory_book_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792925387013,
+      "tag": "0003_memory_book_verified_storage_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792925712251,
+      "tag": "0004_memory_book_atomic_package_activation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792925930888,
+      "tag": "0005_memory_book_snapshot_lock_safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792926536102,
+      "tag": "0006_memory_book_shared_dependency_guards",
+      "breakpoints": true
     }
   ]
 }

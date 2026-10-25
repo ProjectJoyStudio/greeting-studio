@@ -10,7 +10,9 @@
 <!-- LOVABLE:END -->
 
 - Book Materials uses `materials-upload.ts` for direct signed R2-only photo/source writes, independently of final video processing. Origin access belongs in bucket configuration, never upload code.
-- Memory Book final video assembly uses authenticated RunPod server functions and a durable per-book active-job lock; finalization reuses a server-only helper so browser-supplied paths or durations cannot authorize source cleanup.
+- Memory Book final video assembly uses authenticated RunPod server functions and a durable per-book active-job lock; confirmation retains originals and edits, while verified whole-book storage finalization exclusively owns later working cleanup.
 - Keep the Bun lifecycle patches for page-flip/react-pageflip: each wrapper owns disposal, cancels RAF/timers, and restores React-owned pages before destruction to prevent cross-route leaks.
 - Memory Book material lists and source guards share same-book page/confirmed-job classification; completed job associations preserve assembled identity after source cleanup clears its foreign-key marker.
 - Public Memory Book viewing is authorized only by an active random share token (memory_book_shares); owner functions stay authenticated, the public loader signs only page-used assets and never accepts book/user IDs.
+- New Memory Book files use the shared working/completed key hierarchy; durable per-book storage operations hold immutable dependency snapshots and leases, and completed reads resolve through their activated manifests instead of rewriting customer references.
+- Exact-version permanent deletion is a separate adapter operation from ordinary independent provider deletion; multipart transfers checkpoint parts and verify SHA-256 through bounded range reads so large media is not buffered wholesale.

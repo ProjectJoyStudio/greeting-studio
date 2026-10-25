@@ -4,6 +4,9 @@
 // work lives here once and each provider only supplies its own settings.
 
 import { AwsClient } from "aws4fetch";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex } from "@noble/hashes/utils.js";
+import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import type {
   StorageAdapter,
@@ -117,7 +120,7 @@ export function createS3Adapter(
       }
       return {
         state: "exists",
-        info: { key, sizeBytes, contentType: res.headers.get("content-type") },
+        info: { key, sizeBytes, contentType: res.headers.get("content-type"), etag: res.headers.get("etag") },
       };
     },
 
@@ -171,6 +174,101 @@ export function createS3Adapter(
       if (!c || !key) return false;
       const res = await c.client.fetch(objectUrl(c, key), { method: "DELETE" });
       return res.ok || res.status === 404;
+    },
+
+    async readRange(key, start, end) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const res = await c.client.fetch(objectUrl(c, key), { headers: { range: `bytes=${start}-${end}` } });
+      if (res.status !== 206) { await res.body?.cancel(); throw new Error(`storage_range_http_${res.status}`); }
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.byteLength !== end - start + 1) throw new Error("storage_range_size");
+      return bytes;
+    },
+
+    async digest(key) {
+      const info = await adapter.head(key);
+      if (!info || info.sizeBytes <= 0) throw new Error("storage_digest_missing");
+      const hash = sha256.create();
+      // Range reads bound memory even when the provider has no streaming support.
+      const chunk = 8 * 1024 * 1024;
+      for (let offset = 0; offset < info.sizeBytes; offset += chunk) {
+        hash.update(await adapter.readRange(key, offset, Math.min(info.sizeBytes - 1, offset + chunk - 1)));
+      }
+      const after = await adapter.head(key);
+      if (!after || after.sizeBytes !== info.sizeBytes || after.etag !== info.etag) throw new Error("storage_changed_during_digest");
+      return { checksum: `sha256:${bytesToHex(hash.digest())}`, sizeBytes: info.sizeBytes };
+    },
+
+    async beginMultipart(key, contentType) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const res = await c.client.fetch(`${objectUrl(c, key)}?uploads`, { method: "POST", headers: { "content-type": contentType } });
+      if (!res.ok) throw new Error(`multipart_begin_http_${res.status}`);
+      const xml = new XMLParser({ parseTagValue: false }).parse(await res.text());
+      const uploadId = xml.InitiateMultipartUploadResult?.UploadId;
+      if (typeof uploadId !== "string" || !uploadId) throw new Error("multipart_missing_id");
+      return uploadId;
+    },
+
+    async writePart(key, uploadId, number, bytes) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const res = await c.client.fetch(`${objectUrl(c, key)}?uploadId=${encodeURIComponent(uploadId)}&partNumber=${number}`, { method: "PUT", body: bytes as unknown as BodyInit });
+      if (!res.ok) throw new Error(`multipart_part_http_${res.status}`);
+      const etag = res.headers.get("etag");
+      await res.body?.cancel();
+      if (!etag) throw new Error("multipart_missing_etag");
+      return etag;
+    },
+
+    async completeMultipart(key, uploadId, parts) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const body = new XMLBuilder().build({ CompleteMultipartUpload: { Part: parts.map(p => ({ PartNumber: p.number, ETag: p.etag })) } });
+      const res = await c.client.fetch(`${objectUrl(c, key)}?uploadId=${encodeURIComponent(uploadId)}`, { method: "POST", headers: { "content-type": "application/xml" }, body });
+      const xml = new XMLParser().parse(await res.text());
+      if (!res.ok || xml.Error) throw new Error(`multipart_complete_http_${res.status}`);
+    },
+
+    async abortMultipart(key, uploadId) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const res = await c.client.fetch(`${objectUrl(c, key)}?uploadId=${encodeURIComponent(uploadId)}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 404) throw new Error(`multipart_abort_http_${res.status}`);
+    },
+
+    async listVersions(key) {
+      const c = cfg();
+      if (!c || !key) throw new Error("storage_not_configured");
+      const out: Array<{ key: string; versionId: string }> = [];
+      let keyMarker = "", versionMarker = "";
+      for (let page = 0; page < 100; page++) {
+        const query = new URLSearchParams({ versions: "", prefix: key, "max-keys": "1000" });
+        if (keyMarker) query.set("key-marker", keyMarker);
+        if (versionMarker) query.set("version-id-marker", versionMarker);
+        const res = await c.client.fetch(`${c.base}?${query}`);
+        // R2 is unversioned; its documented ListObjectVersions response is 501.
+        if (id === "r2" && res.status === 501) return [];
+        if (!res.ok) throw new Error(`versions_list_http_${res.status}`);
+        const result = new XMLParser({ parseTagValue: false, isArray: name => name === "Version" || name === "DeleteMarker" }).parse(await res.text()).ListVersionsResult;
+        if (!result) throw new Error("versions_invalid_response");
+        for (const row of [...(result.Version ?? []), ...(result.DeleteMarker ?? [])]) {
+          if (row.Key === key && typeof row.VersionId === "string") out.push({ key, versionId: row.VersionId });
+        }
+        if (String(result.IsTruncated) !== "true") return out;
+        const next = String(result.NextKeyMarker ?? "");
+        if (!next || (next === keyMarker && String(result.NextVersionIdMarker ?? "") === versionMarker)) throw new Error("versions_pagination_stalled");
+        keyMarker = next; versionMarker = String(result.NextVersionIdMarker ?? "");
+      }
+      throw new Error("versions_pagination_limit");
+    },
+
+    async deleteVersion(key, versionId) {
+      const c = cfg();
+      if (!c || !key || !versionId) throw new Error("storage_not_configured");
+      const res = await c.client.fetch(`${objectUrl(c, key)}?versionId=${encodeURIComponent(versionId)}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 404) throw new Error(`versions_delete_http_${res.status}`);
     },
   };
   return adapter;

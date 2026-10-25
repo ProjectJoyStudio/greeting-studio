@@ -45,7 +45,11 @@ export function MemoryBookCompleteAction({
     setBusy(true);
     setError(null);
     try {
-      const res = await complete({ data: { bookId, method: "cabinet" } });
+      let res = await complete({ data: { bookId, method: "cabinet" } });
+      while (res.pending) {
+        await new Promise(resolve => setTimeout(resolve, 750));
+        res = await complete({ data: { bookId, method: "cabinet" } });
+      }
       if (res.ok) {
         setDone(true);
         setOpen(false);

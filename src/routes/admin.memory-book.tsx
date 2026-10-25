@@ -23,6 +23,14 @@ import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPa
 import { ReadyDesignsPanel } from "@/components/admin/memory-book/ReadyDesignsPanel";
 
 export const Route = createFileRoute("/admin/memory-book")({
+  head: () => ({ meta: [
+    { title: "Memory Book administration — Project Joy" },
+    { name: "description", content: "Manage Memory Book storage, libraries and tariffs in Project Joy." },
+    { property: "og:title", content: "Memory Book administration — Project Joy" },
+    { property: "og:description", content: "Memory Book storage, libraries and tariffs administration." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminMemoryBookPage,
 });
 

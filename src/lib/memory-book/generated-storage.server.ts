@@ -2,11 +2,9 @@
 //
 // Every new customer file of a book goes to the working area under one stable
 // address, is verified there, and then gets its own independent reserve copy.
-// Nothing is written to the older area first. When the working area is not
-// available at all, the previous area still accepts the file so the customer
-// never loses a result.
+// Nothing is written to the older area; primary failures are reported safely.
 
-import { userKey } from "@/lib/storage/keys";
+import { memoryBookWorkingKey } from "@/lib/storage/keys";
 import { storageFor } from "@/lib/storage/registry.server";
 
 import { MEMORY_BOOK_R2_BUCKET } from "./storage.server";
@@ -23,13 +21,13 @@ export async function storeMemoryBookFile(options: {
   parts: string[];
   bytes: Uint8Array;
   contentType: string;
-  /** Previous area, used only when the working area is unavailable. */
+  /** Compatibility input from generators; never used for a new storage write. */
   legacyBucket: string;
   legacyPath: string;
 }): Promise<StoredMemoryBookFile> {
   const primary = storageFor("primary");
   if (primary?.isReady()) {
-    const key = userKey(options.userId, "memory-book", options.bookId, ...options.parts);
+    const key = memoryBookWorkingKey(options.userId, options.bookId, ...options.parts);
     const stored = await primary.put(
       key,
       options.bytes as unknown as BodyInit,
@@ -51,13 +49,5 @@ export async function storeMemoryBookFile(options: {
     }
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const upload = await supabaseAdmin.storage
-    .from(options.legacyBucket)
-    .upload(options.legacyPath, options.bytes, {
-      contentType: options.contentType,
-      upsert: false,
-    });
-  if (upload.error) throw new Error(upload.error.message);
-  return { bucket: options.legacyBucket, path: options.legacyPath };
+  throw new Error("primary_write_or_verification_failed");
 }

@@ -1,8 +1,7 @@
-// Server-only existing prepared-material finalization and involved-source cleanup.
+// Server-only prepared-material confirmation. Originals survive until book completion.
 import { MEMORY_BOOK_MATERIALS_BUCKET, MEMORY_BOOK_R2_BUCKET } from "./materials";
 import { MEMORY_BOOK_FINAL_VIDEO_MAX_SECONDS } from "./video-prep";
 type Row = Record<string, unknown>;
-const text = (value: unknown) => typeof value === "string" ? value : "";
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -17,7 +16,7 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
       const prefix = inR2
         ? `memory-book/${context.userId}/${data.bookId}/`
         : `${context.userId}/${data.bookId}/`;
-      if (!data.path.startsWith(prefix)) {
+      if (!data.path.startsWith(prefix) && !(inR2 && data.path.startsWith(`users/${context.userId}/memory-book/${data.bookId}/working/`))) {
         return { ok: false, error: "not_found" };
       }
       if (
@@ -97,61 +96,7 @@ export async function finalizePreparedMaterial(data: PreparedMaterialInput, cont
       // this write fails, originals and saved edits remain untouched.
       await onFinalized(materialId);
 
-      // Only now the long original working videos may be removed — and only
-      // the ones that really took part in this assembly. Every other video of
-      // the Materials page stays untouched.
-      let sourceRemoved = false;
-      const involved = Array.from(
-        new Set(
-          (data.sourceMaterialIds.length > 0
-            ? data.sourceMaterialIds
-            : [data.sourceMaterialId]
-          ).filter(Boolean),
-        ),
-      );
-      for (const involvedId of involved) {
-        try {
-          const { data: sourceRow } = await db
-            .from("memory_book_materials")
-            .select("id, bucket, path")
-            .eq("id", involvedId)
-            .eq("book_id", data.bookId)
-            .eq("user_id", context.userId)
-            .maybeSingle();
-          const row = sourceRow as unknown as Row | null;
-          if (!row) continue;
-          // Move references before deleting the old row: its foreign key may
-          // otherwise set those page references to null immediately on deletion.
-          const { error: pageError } = await db
-            .from("memory_book_pages")
-            .update({ video_material_id: materialId })
-            .eq("book_id", data.bookId)
-            .eq("user_id", context.userId)
-            .eq("video_material_id", involvedId);
-          if (pageError) continue;
-          const { memoryBookFileRemove } = await import("./storage.server");
-          // Only the exact file of this one source video is removed.
-          await memoryBookFileRemove(text(row.bucket), text(row.path));
-          const { error: delError } = await db
-            .from("memory_book_materials")
-            .delete()
-            .eq("id", involvedId)
-            .eq("book_id", data.bookId)
-            .eq("user_id", context.userId);
-          if (!delError) {
-            sourceRemoved = true;
-            await db
-              .from("memory_book_video_edits")
-              .delete()
-              .eq("book_id", data.bookId)
-              .eq("source_material_id", involvedId)
-              .eq("user_id", context.userId);
-          }
-        } catch {
-          // The prepared video is already safe; cleanup can be retried later.
-        }
-      }
-
-
-      return { ok: true, materialId, sourceRemoved };
+      // Confirmation never deletes originals, edits or rewrites page references.
+      // Whole-book verified activation owns later working-file cleanup.
+      return { ok: true, materialId, sourceRemoved: false };
 }

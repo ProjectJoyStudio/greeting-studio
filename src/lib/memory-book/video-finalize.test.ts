@@ -20,6 +20,12 @@ beforeEach(() => {
   });
 });
 describe("verified processing finalization safety", () => {
+  it("retains all participating originals after successful processed-video confirmation", async () => {
+    const saved = await finalizePreparedMaterial(input, { userId: "user" }, vi.fn());
+    expect(saved).toMatchObject({ ok: true, sourceRemoved: false });
+    expect(mocks.remove).not.toHaveBeenCalled();
+    expect(mocks.from.mock.calls.map(([table]) => table)).not.toContain("memory_book_video_edits");
+  });
   it("does not clean sources when durable successful association cannot be written", async () => {
     await expect(finalizePreparedMaterial(input, { userId: "user" }, async () => { throw new Error("database"); })).rejects.toThrow("database");
     expect(mocks.remove).not.toHaveBeenCalled();

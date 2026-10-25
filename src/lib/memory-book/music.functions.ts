@@ -28,12 +28,12 @@ async function admin() {
   return supabaseAdmin;
 }
 
-async function signed(bucket: string | null, path: string | null): Promise<string | null> {
+async function signed(bucket: string | null, path: string | null, bookId?: string): Promise<string | null> {
   if (!bucket || !path) return null;
   // The file may live in the older storage or in the working area; the shared
   // helper knows both and always returns a short-lived read address.
   const { memoryBookFileUrl } = await import("./storage.server");
-  return await memoryBookFileUrl(bucket, path, 60 * 60 * 6);
+  return await memoryBookFileUrl(bucket, path, 60 * 60 * 6, bookId);
 }
 
 /** The paid book of the signed-in customer, or nothing. */
@@ -66,7 +66,7 @@ async function stateOf(userId: string, bookId: string, row: Row): Promise<Memory
     variants.push({
       id: String(raw.id),
       prompt: typeof raw.prompt === "string" ? raw.prompt : "",
-      url: await signed(String(raw.bucket ?? ""), String(raw.path ?? "")),
+      url: await signed(String(raw.bucket ?? ""), String(raw.path ?? ""), bookId),
       durationSeconds: Number(raw.duration_seconds ?? MEMORY_BOOK_MUSIC_SECONDS),
       createdAt: String(raw.created_at ?? ""),
     });
@@ -84,6 +84,7 @@ async function stateOf(userId: string, bookId: string, row: Row): Promise<Memory
       ? await signed(
           typeof row.music_track_bucket === "string" ? row.music_track_bucket : null,
           typeof row.music_track_path === "string" ? row.music_track_path : null,
+          bookId,
         )
       : source === "created"
         ? (variants.find((v) => v.id === variantId)?.url ?? null)
