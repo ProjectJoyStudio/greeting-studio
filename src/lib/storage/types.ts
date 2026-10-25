@@ -40,7 +40,7 @@ export interface StoragePart { number: number; etag: string }
 export type StorageCheckResult =
   | { state: "exists"; info: StorageObjectInfo }
   | { state: "missing"; status: number }
-  | { state: "error"; status: number | null; detail: string };
+  | { state: "error"; status: number | null; detail: string; code?: string; requestId?: string };
 
 /**
  * Everything one storage company must be able to do for Project Joy.

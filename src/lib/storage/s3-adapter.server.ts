@@ -7,6 +7,7 @@ import { AwsClient } from "aws4fetch";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import { safeCode } from "./check-retry.server";
 
 import type {
   StorageAdapter,
@@ -89,18 +90,20 @@ export function createS3Adapter(
       let res: Response;
       try {
         res = await c.client.fetch(objectUrl(c, key), { method: "HEAD" });
-      } catch (err) {
+      } catch {
         return {
           state: "error",
           status: null,
-          detail: `network:${err instanceof Error ? err.message.slice(0, 200) : "unknown"}`,
+          detail: "network_failure",
         };
       }
       // Only a real "not found" counts as missing. Everything else is retryable.
       if (res.status === 404) return { state: "missing", status: 404 };
       if (!res.ok) {
-        const code = res.headers.get("x-amz-error-code") ?? res.statusText ?? "";
-        return { state: "error", status: res.status, detail: `http_${res.status}${code ? `:${code}` : ""}` };
+        const code = safeCode(res.headers.get("x-amz-error-code"));
+        const requestId = safeCode(res.headers.get("x-amz-request-id"));
+        await res.body?.cancel();
+        return { state: "error", status: res.status, detail: `http_${res.status}${code ? `:${code}` : ""}`, code, requestId };
       }
       const header = Number(res.headers.get("content-length") ?? 0);
       let sizeBytes = Number.isFinite(header) ? header : 0;
