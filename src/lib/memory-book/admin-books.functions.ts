@@ -53,7 +53,7 @@ export interface AdminBookDetail {
   book: AdminBookRow;
   providers: AdminBookProviderSummary[];
   objects: AdminBookStorageObject[];
-  operation?: { stage: string; cursor: number; total: number; error: string | null; activatedAt: string | null; emergencyUntil: string | null; cleanup: unknown } | null;
+  operation?: { stage: string; cursor: number; total: number; error: string | null; activatedAt: string | null; emergencyUntil: string | null; cleanup: string } | null;
 }
 
 type Client = { from: (t: string) => any; rpc: (fn: string, args: any) => Promise<any> };
@@ -273,7 +273,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
         ),
         providers,
         objects,
-        operation: operation ? { stage: operation.stage, cursor: operation.cursor, total: operation.manifest.length, error: operation.last_error, activatedAt: operation.activated_at, emergencyUntil: operation.emergency_until, cleanup: operation.cleanup_results } : null,
+        operation: operation ? { stage: operation.stage, cursor: operation.cursor, total: operation.manifest.length, error: operation.last_error, activatedAt: operation.activated_at, emergencyUntil: operation.emergency_until, cleanup: JSON.stringify(operation.cleanup_results) } : null,
       },
     };
   });

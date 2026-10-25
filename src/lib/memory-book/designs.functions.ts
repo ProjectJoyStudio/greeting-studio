@@ -62,10 +62,10 @@ async function patchBook(bookId: string, patch: Record<string, unknown>) {
 }
 
 /** A short-lived read address for a design file, wherever it is stored. */
-async function signed(bucket: string, path: string): Promise<string | null> {
+async function signed(bucket: string, path: string, bookId?: string): Promise<string | null> {
   if (!bucket || !path) return null;
   const { memoryBookFileUrl } = await import("./storage.server");
-  return await memoryBookFileUrl(bucket, path, 60 * 60);
+  return await memoryBookFileUrl(bucket, path, 60 * 60, bookId);
 }
 
 async function variantsOf(bookId: string, stage: MemoryBookStage): Promise<MemoryBookDesignVariant[]> {
@@ -79,7 +79,7 @@ async function variantsOf(bookId: string, stage: MemoryBookStage): Promise<Memor
   const rows = (data ?? []) as unknown as Row[];
   const out: MemoryBookDesignVariant[] = [];
   for (const row of rows) {
-    const url = await signed(text(row.bucket), text(row.path));
+    const url = await signed(text(row.bucket), text(row.path), bookId);
     if (!url) continue;
     out.push({
       id: String(row.id),

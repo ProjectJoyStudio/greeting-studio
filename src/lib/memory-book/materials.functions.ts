@@ -61,7 +61,7 @@ async function listOf(bookId: string, userId: string): Promise<MemoryBookMateria
   const out: MemoryBookMaterial[] = [];
   for (const row of rows) {
     const { memoryBookFileUrl } = await import("./storage.server");
-    const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60);
+    const url = await memoryBookFileUrl(text(row.bucket), text(row.path), 60 * 60, bookId);
     if (!url) continue;
     out.push({
       id: String(row.id),
