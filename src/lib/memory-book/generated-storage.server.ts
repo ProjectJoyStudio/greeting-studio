@@ -6,7 +6,7 @@
 // available at all, the previous area still accepts the file so the customer
 // never loses a result.
 
-import { userKey } from "@/lib/storage/keys";
+import { memoryBookWorkingKey } from "@/lib/storage/keys";
 import { storageFor } from "@/lib/storage/registry.server";
 
 import { MEMORY_BOOK_R2_BUCKET } from "./storage.server";
@@ -29,7 +29,7 @@ export async function storeMemoryBookFile(options: {
 }): Promise<StoredMemoryBookFile> {
   const primary = storageFor("primary");
   if (primary?.isReady()) {
-    const key = userKey(options.userId, "memory-book", options.bookId, ...options.parts);
+    const key = memoryBookWorkingKey(options.userId, options.bookId, ...options.parts);
     const stored = await primary.put(
       key,
       options.bytes as unknown as BodyInit,
@@ -51,13 +51,5 @@ export async function storeMemoryBookFile(options: {
     }
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const upload = await supabaseAdmin.storage
-    .from(options.legacyBucket)
-    .upload(options.legacyPath, options.bytes, {
-      contentType: options.contentType,
-      upsert: false,
-    });
-  if (upload.error) throw new Error(upload.error.message);
-  return { bucket: options.legacyBucket, path: options.legacyPath };
+  throw new Error("primary_write_or_verification_failed");
 }

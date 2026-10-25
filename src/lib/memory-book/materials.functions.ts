@@ -227,13 +227,30 @@ export const removeMemoryBookMaterial = createServerFn({ method: "POST" })
       if (!row) return { ok: true, materials: await listOf(data.bookId, context.userId) };
 
       const record = row as unknown as Row;
-      const { memoryBookFileRemove } = await import("./storage.server");
-      await memoryBookFileRemove(text(record.bucket), text(record.path));
-      await db
+      const { isWorkingObject, pageDependencyIds } = await import("./storage-policy");
+      // Existing/historical objects are never permanently removed by this order.
+      if (!isWorkingObject(context.userId, data.bookId, text(record.path))) return { ok: false, materials: await listOf(data.bookId, context.userId) };
+      const { data: pages, error: pageError } = await db.from("memory_book_pages").select("slots, video_material_id").eq("book_id", data.bookId).eq("user_id", context.userId);
+      const { data: jobs, error: jobError } = await db.from("memory_book_video_jobs").select("source_material_id, fragments").eq("book_id", data.bookId).eq("user_id", context.userId).in("status", ["submitting", "queued", "running", "ready", "finalizing"]);
+      if (pageError || jobError || pageDependencyIds((pages ?? []) as Row[]).materials.has(data.materialId) || (jobs ?? []).some(job => job.source_material_id === data.materialId || (Array.isArray(job.fragments) && job.fragments.some(fragment => fragment && typeof fragment === "object" && "sourceId" in fragment && fragment.sourceId === data.materialId)))) return { ok: false, materials: await listOf(data.bookId, context.userId) };
+      const { storageOperation } = await import("./storage-package.server");
+      if (await storageOperation(data.bookId)) return { ok: false, materials: await listOf(data.bookId, context.userId) };
+      const { storageFor } = await import("@/lib/storage/registry.server");
+      const { deleteExactObjectVersions } = await import("@/lib/storage/transfer.server");
+      const { writePlacement } = await import("@/lib/storage/backup.server");
+      try {
+        for (const role of ["primary", "backup"] as const) {
+          const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
+          await deleteExactObjectVersions(adapter, text(record.path));
+          await writePlacement(text(record.path), adapter.id, { role, status: "deleted", verifiedAt: null, lastError: null });
+        }
+      } catch { return { ok: false, materials: await listOf(data.bookId, context.userId) }; }
+      const { error: deleteError } = await db
         .from("memory_book_materials")
         .delete()
         .eq("id", data.materialId)
         .eq("user_id", context.userId);
+      if (deleteError) return { ok: false, materials: await listOf(data.bookId, context.userId) };
 
       return { ok: true, materials: await listOf(data.bookId, context.userId) };
     },

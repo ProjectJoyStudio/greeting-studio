@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { MEMORY_BOOK_R2_BUCKET } from "./materials";
+import { memoryBookWorkingKey } from "@/lib/storage/keys";
 
 type Row = Record<string, unknown>;
 
@@ -49,7 +50,7 @@ export function memoryBookVideoKey(
   extension: string,
 ): string {
   const unique = `${Date.now()}-${crypto.randomUUID()}`;
-  return `memory-book/${userId}/${bookId}/${role}-${unique}.${extension}`;
+  return memoryBookWorkingKey(userId, bookId, "videos", `${role}-${unique}.${extension}`);
 }
 
 export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
