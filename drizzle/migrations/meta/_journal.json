@@ -36,6 +36,13 @@
       "when": 1792925712251,
       "tag": "0004_memory_book_atomic_package_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792925930888,
+      "tag": "0005_memory_book_snapshot_lock_safety",
+      "breakpoints": true
     }
   ]
 }
