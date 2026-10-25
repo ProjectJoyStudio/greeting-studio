@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 
 import { useI18n } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
 import {
   adminDeleteBookProviderCopies,
   adminListMemoryBooks,
@@ -10,6 +11,7 @@ import {
   adminRestoreBookFromReserve,
   adminRetryBookBackups,
   adminSetBookRetention,
+  adminBookStorageAction,
   type AdminBookDetail,
   type AdminBookRow,
 } from "@/lib/memory-book/admin-books.functions";
@@ -189,6 +191,7 @@ function BookDetail({ bookId, onChanged }: { bookId: string; onChanged: () => vo
   const deleteCopies = useServerFn(adminDeleteBookProviderCopies);
   const restore = useServerFn(adminRestoreBookFromReserve);
   const retry = useServerFn(adminRetryBookBackups);
+  const storageAction = useServerFn(adminBookStorageAction);
 
   const [detail, setDetail] = useState<AdminBookDetail | null>(null);
   const [busy, setBusy] = useState(false);
@@ -229,7 +232,8 @@ function BookDetail({ bookId, onChanged }: { bookId: string; onChanged: () => vo
     setBusy(true);
     setNote(null);
     try {
-      await action();
+      const result = await action();
+      if (result && typeof result === "object" && "ok" in result && result.ok === false) throw new Error("action_failed");
       setNote(message);
       load();
       onChanged();
@@ -249,6 +253,19 @@ function BookDetail({ bookId, onChanged }: { bookId: string; onChanged: () => vo
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("mba_detail_readonly_hint")}</p>
       </header>
+
+      {detail.operation ? <div className="space-y-2 border-b border-border pb-4">
+        <p className="text-sm">{detail.operation.stage} · {detail.operation.cursor}/{detail.operation.total}</p>
+        {detail.operation.error ? <p className="text-sm text-destructive">{detail.operation.error}</p> : null}
+        <p className="text-xs text-muted-foreground">B2 emergency: {date(detail.operation.emergencyUntil)}</p>
+        <div className="flex flex-wrap gap-2">
+          {([['verify', 'Проверить контрольные суммы'], ['cleanup', 'Продолжить очистку'], ['emergency', 'Временно открыть через B2'], ['primary', 'Вернуть чтение PRIMARY']] as const).map(([action, label]) => <Button key={action} size="sm" variant="outline" disabled={busy || !detail.operation?.activatedAt} onClick={() => {
+            const confirm = action === "verify" ? undefined : window.prompt(t("mba_delete_confirm_prompt"), "") ?? undefined;
+            if (action !== "verify" && confirm !== bookId) return;
+            void run(() => storageAction({ data: { bookId, action, confirm } }), t("mba_saved"));
+          }}>{label}</Button>)}
+        </div>
+      </div> : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {detail.providers.map((p) => (

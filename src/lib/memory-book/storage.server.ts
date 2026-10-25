@@ -3,7 +3,7 @@
 // Older files stay exactly where they are; only new book videos are kept in
 // the Cloudflare area. Every caller asks here and never has to care which.
 
-import { MEMORY_BOOK_R2_BUCKET, r2DeleteObject, r2SignedGetUrl } from "./r2.server";
+import { MEMORY_BOOK_R2_BUCKET, r2DeleteObject } from "./r2.server";
 
 export { MEMORY_BOOK_R2_BUCKET };
 

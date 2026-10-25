@@ -53,6 +53,7 @@ export interface AdminBookDetail {
   book: AdminBookRow;
   providers: AdminBookProviderSummary[];
   objects: AdminBookStorageObject[];
+  operation?: { stage: string; cursor: number; total: number; error: string | null; activatedAt: string | null; emergencyUntil: string | null; cleanup: unknown } | null;
 }
 
 type Client = { from: (t: string) => any; rpc: (fn: string, args: any) => Promise<any> };
@@ -256,12 +257,13 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
         problemObjects: own.filter((o) => ["pending", "copying", "failed"].includes(o.status))
           .length,
         totalBytes: present.reduce((sum, o) => sum + o.sizeBytes, 0),
-        lastVerifiedAt: verified.length > 0 ? verified[verified.length - 1]! : null,
+        lastVerifiedAt: verified[verified.length - 1] ?? null,
         deleteAfter: retentionBy.get(provider)?.delete_after ?? null,
         note: retentionBy.get(provider)?.note ?? null,
       };
     });
 
+    const { data: operation } = await db.from("memory_book_storage_operations").select("stage,cursor,manifest,last_error,activated_at,emergency_until,cleanup_results").eq("book_id", data.bookId).maybeSingle();
     return {
       detail: {
         book: rowToBook(
@@ -271,6 +273,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
         ),
         providers,
         objects,
+        operation: operation ? { stage: operation.stage, cursor: operation.cursor, total: operation.manifest.length, error: operation.last_error, activatedAt: operation.activated_at, emergencyUntil: operation.emergency_until, cleanup: operation.cleanup_results } : null,
       },
     };
   });
@@ -334,6 +337,10 @@ export const adminDeleteBookProviderCopies = createServerFn({ method: "POST" })
     }): Promise<{ ok: boolean; deleted?: number; failed?: number; error?: string }> => {
       await assertAdmin(context);
       if (data.confirm !== data.bookId) return { ok: false, error: "confirm_mismatch" };
+
+      const { storageOperation } = await import("./storage-package.server");
+      // Never destructively operate on pre-existing books under this order.
+      if (!(await storageOperation(data.bookId))) return { ok: false, error: "existing_book_protected" };
 
       const db = await admin();
       const { data: row } = await db
@@ -530,4 +537,44 @@ export const adminMemoryBookHistory = createServerFn({ method: "POST" })
       })),
 
     };
+  });
+
+export const adminBookStorageAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookId: string; action: "verify" | "cleanup" | "emergency" | "primary"; confirm?: string }) => {
+    if (!/^[0-9a-f-]{36}$/i.test(input.bookId) || !["verify", "cleanup", "emergency", "primary"].includes(input.action)) throw new Error("invalid_request");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { storageOperation, cleanupBookWorking } = await import("./storage-package.server");
+    const op = await storageOperation(data.bookId);
+    if (!op?.activated_at) return { ok: false, error: "verified_package_required" };
+    if (data.action !== "verify" && data.confirm !== data.bookId) return { ok: false, error: "confirm_mismatch" };
+    const db = await admin();
+    try {
+      if (data.action === "cleanup") {
+        const result = await cleanupBookWorking(op.user_id, data.bookId);
+        await logAction(context.userId, "memory_book.cleanup", data.bookId, null, result);
+        return { ok: true, pending: result.pending };
+      }
+      const { storageFor } = await import("@/lib/storage/registry.server");
+      for (const asset of op.manifest) {
+        for (const role of (data.action === "emergency" ? ["backup"] : data.action === "primary" ? ["primary"] : ["primary", "backup"]) as Array<"primary" | "backup">) {
+          const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
+          const digest = await adapter.digest(asset.target);
+          if (digest.checksum !== asset.checksum || digest.sizeBytes !== asset.sizeBytes) throw new Error("integrity_mismatch");
+        }
+      }
+      if (data.action === "emergency" || data.action === "primary") {
+        const { error } = await db.from("memory_book_storage_operations").update({ emergency_until: data.action === "emergency" ? new Date(Date.now() + 3600000).toISOString() : null }).eq("book_id", data.bookId);
+        if (error) throw new Error("operation_update_failed");
+      }
+      await logAction(context.userId, `memory_book.storage_${data.action}`, data.bookId, null, { verified: true });
+      return { ok: true };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "storage_action_failed";
+      await logAction(context.userId, `memory_book.storage_${data.action}_failed`, data.bookId, null, { error });
+      return { ok: false, error };
+    }
   });

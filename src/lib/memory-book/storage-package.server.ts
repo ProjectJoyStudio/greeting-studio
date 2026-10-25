@@ -41,7 +41,7 @@ export async function inventoryBook(userId: string, bookId: string) {
     const shared = path.startsWith("system/") || bucket === "memory-book-library" || bucket === "music-library" || bucket === "memory-book-decorations";
     // Existing nonworking files are inventoried but cannot be copied/cleaned without approved migration.
     if (!shared && !isWorkingObject(userId, bookId, path)) throw new Error("legacy_migration_approval_required");
-    const target = shared ? path : userKey(userId, "memory-book", bookId, "completed", ...path.split("/working/")[1].split("/"));
+    const target = shared ? path : `users/${userId}/memory-book/${bookId}/completed/${path.split("/working/")[1]}`;
     manifest.push({ bucket, path, target, shared });
   };
   for (const p of pages) add(p.background_bucket, p.background_path);
@@ -102,11 +102,10 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
     }
     if (!manifest.every(a => a.primaryVerified && a.backupVerified && a.checksum)) throw new Error("package_not_verified");
     await save(bookId, { stage: "activating" }, token);
-    // Snapshot manifest is activated before the public completed status; no DB reference rewriting.
-    await save(bookId, { activated_at: now, stage: "cleanup_pending" }, token);
-    const { error: activationError } = await client.from("memory_book_projects").update({ status: "completed", completed_at: now, completion_method: method, retention_expires_at: new Date(Date.now() + retentionDays * 86400000).toISOString(), storage_version: 2, working_cleaned_at: null }).eq("id", bookId).eq("user_id", userId);
-    if (activationError) { await save(bookId, { activated_at: null, stage: "failed", last_error: "activation_failed" }, token); throw new Error("activation_failed"); }
-    await save(bookId, { lease_token: null, lease_until: null }, token);
+    // Atomic activation: an interrupted request cannot publish half a transition.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: activated, error: activationError } = await supabaseAdmin.rpc("activate_memory_book_storage", { _book_id: bookId, _user_id: userId, _lease_token: token, _retention_days: retentionDays });
+    if (activationError || !activated) throw new Error("activation_failed");
     return { ok: true, pending: false };
   } catch (e) {
     await save(bookId, { stage: "failed", last_error: e instanceof Error ? e.message : "package_failed", lease_token: null, lease_until: null }, token);
