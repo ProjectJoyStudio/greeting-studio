@@ -36,6 +36,10 @@ export interface AdminBookStorageObject {
   lastBackupAt: string | null;
   lastError: string | null;
   attempts: number;
+  retryAfter: string | null;
+  retryCount: number;
+  leaseUntil: string | null;
+  backupStage: string | null;
 }
 
 export interface AdminBookProviderSummary {
@@ -231,6 +235,10 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
       lastBackupAt: (p.last_backup_at as string | null) ?? null,
       lastError: (p.last_error as string | null) ?? null,
       attempts: Number(p.attempts ?? 0),
+      retryAfter: (p.retry_after as string | null) ?? null,
+      retryCount: Number(p.backup_retry_count ?? 0),
+      leaseUntil: (p.backup_lease_until as string | null) ?? null,
+      backupStage: (p.backup_stage as string | null) ?? null,
     }));
 
     const { data: retention } = await db
@@ -465,7 +473,7 @@ export const adminRetryBookBackups = createServerFn({ method: "POST" })
       let done = 0;
       const rows = (placements ?? []) as Array<{ object_key: string }>;
       for (const p of rows) {
-        const res = await backupToReserve(p.object_key);
+        const res = await backupToReserve(p.object_key, { manual: true });
         if (res.ok) done += 1;
       }
       // Files that were never recorded in the reserve area at all.
@@ -478,7 +486,7 @@ export const adminRetryBookBackups = createServerFn({ method: "POST" })
         .limit(500);
       for (const p of (primaries ?? []) as Array<{ object_key: string }>) {
         if (rows.some((r) => r.object_key === p.object_key)) continue;
-        const res = await backupToReserve(p.object_key);
+        const res = await backupToReserve(p.object_key, { manual: true });
         if (res.ok && !res.skipped) done += 1;
       }
 

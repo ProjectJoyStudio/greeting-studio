@@ -8,6 +8,7 @@
 // stays a deliberate administrator decision, made elsewhere, later.
 
 import { storageFor } from "./registry.server";
+import { BACKUP_RETRY_LIMIT, backupRetryDelay, safeBackupError } from "./backup-policy";
 import type {
   StorageAdapter,
   StorageCheckResult,
@@ -35,6 +36,7 @@ async function db() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin as unknown as {
     from: (table: string) => any;
+    rpc: (name: string, args?: Record<string, unknown>) => Promise<any>;
   };
 }
 
@@ -171,7 +173,7 @@ export async function recordPrimary(objectKey: string): Promise<boolean> {
 }
 
 /** Highest number of automatic attempts before a copy waits for a human. */
-export const BACKUP_MAX_ATTEMPTS = 5;
+export const BACKUP_MAX_ATTEMPTS = BACKUP_RETRY_LIMIT;
 
 /**
  * Checks one stored copy, asking again (at most 3 checks, ~2.5 s total) when
@@ -197,26 +199,51 @@ export async function verifyWithRetry(
  * Copies one file from the working area to the reserve area and verifies it.
  * Safe to call again at any time: a verified matching copy is left alone.
  */
-export async function backupToReserve(objectKey: string): Promise<BackupResult> {
+export async function backupToReserve(objectKey: string, options: { manual?: boolean } = {}): Promise<BackupResult> {
   const primary = storageFor("primary");
   const backup = storageFor("backup");
   if (!objectKey) return { ok: false, status: "failed", error: "no_key" };
   if (!primary) return { ok: false, status: "failed", error: "primary_not_configured" };
   if (!backup) return { ok: false, status: "failed", error: "backup_not_configured" };
   if (/^users\/[^/]+\/memory-book\/[^/]+\/(working|completed)\//.test(objectKey)) {
-    const existing = await placementOf(objectKey, backup.id);
+    const client = await db();
+    const token = crypto.randomUUID();
+    const { data: claimed, error: claimError } = await client.rpc("claim_memory_book_backup", { _key: objectKey, _provider: backup.id, _token: token, _manual: options.manual ?? false });
+    if (claimError) return { ok: false, status: "failed", error: "backup_claim_failed" };
+    const existing = claimed?.[0] as Record<string, unknown> | undefined;
+    if (!existing) {
+      const current = await placementOf(objectKey, backup.id);
+      return { ok: current?.status === "present", status: (current?.status as PlacementStatus) ?? "pending", skipped: true, error: current?.status === "present" ? undefined : "backup_busy_waiting_or_exhausted" };
+    }
+    const attempt = Number(existing.backup_retry_count);
+    let stage = "claimed";
+    let diagnostics: Record<string, unknown> = {};
+    const history = Array.isArray(existing.backup_history) ? existing.backup_history : [];
+    const update = async (patch: Record<string, unknown>) => {
+      const { data, error } = await client.from(TABLE).update({ ...patch, backup_lease_until: new Date(Date.now() + 15 * 60_000).toISOString() }).eq("id", existing.id).eq("backup_lease_token", token).select("id");
+      if (error || !data?.length) throw new Error("backup_lease_lost");
+    };
+    const finish = async (patch: Record<string, unknown>) => {
+      const { error, data } = await client.from(TABLE).update({ ...patch, backup_lease_token: null, backup_lease_until: null,
+        backup_stage: stage, backup_diagnostics: diagnostics, backup_history: [...history, { at: new Date().toISOString(), attempt, stage, status: patch.status, error: patch.last_error ?? null, diagnostics }].slice(-20),
+      }).eq("id", existing.id).eq("backup_lease_token", token).select("id");
+      if (error || !data?.length) throw new Error("backup_lease_lost");
+      await client.rpc("dispatch_memory_book_backups");
+    };
     try {
       const { transferObject } = await import("./transfer.server");
       const result = await transferObject({ source: primary, destination: backup, sourceKey: objectKey, destinationKey: objectKey,
         state: existing?.transfer_state as import("./transfer.server").TransferState | null,
-        save: state => writePlacement(objectKey, backup.id, { role: "backup", status: "copying", transferState: state }),
+        save: state => update({ transfer_state: state }),
+        progress: async (next, detail) => { stage = next; diagnostics = { ...diagnostics, ...detail, provider: backup.id, role: "backup", attempt }; await update({ backup_stage: stage, backup_diagnostics: diagnostics }); },
       });
       await writePlacement(objectKey, primary.id, { role: "primary", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
-      await writePlacement(objectKey, backup.id, { role: "backup", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastBackupAt: new Date().toISOString(), lastError: null, bumpAttempts: true });
+      stage = "verified";
+      await finish({ status: "present", checksum: result.checksum, size_bytes: result.sizeBytes, verified_at: new Date().toISOString(), last_backup_at: new Date().toISOString(), last_error: null, retry_after: null, transfer_state: null });
       return { ok: true, status: "present", skipped: existing?.status === "present" };
     } catch (e) {
-      const error = e instanceof Error ? e.message : "transfer_failed";
-      await writePlacement(objectKey, backup.id, { role: "backup", status: "failed", lastError: error, bumpAttempts: true });
+      const error = safeBackupError(e);
+      await finish({ status: "failed", last_error: error, retry_after: attempt < BACKUP_MAX_ATTEMPTS ? new Date(Date.now() + backupRetryDelay(attempt)).toISOString() : null });
       return { ok: false, status: "failed", error };
     }
   }
@@ -327,10 +354,14 @@ export async function retryPendingBackups(limit = 10): Promise<{ tried: number; 
   const client = await db();
   const { data } = await client
     .from(TABLE)
-    .select("object_key, attempts")
+    .select("object_key")
     .eq("provider", backup.id)
+    .eq("role", "backup")
+    .eq("backup_auto_retry", true)
     .in("status", ["pending", "copying", "failed"])
-    .lt("attempts", BACKUP_MAX_ATTEMPTS)
+    .lt("backup_retry_count", BACKUP_MAX_ATTEMPTS)
+    .or(`retry_after.is.null,retry_after.lte.${new Date().toISOString()}`)
+    .or(`backup_lease_until.is.null,backup_lease_until.lte.${new Date().toISOString()}`)
     .order("updated_at", { ascending: true })
     .limit(Math.max(1, Math.min(100, limit)));
 
@@ -340,6 +371,7 @@ export async function retryPendingBackups(limit = 10): Promise<{ tried: number; 
     const res = await backupToReserve(row.object_key);
     if (res.ok) done += 1;
   }
+  await client.rpc("dispatch_memory_book_backups");
   return { tried: rows.length, done };
 }
 

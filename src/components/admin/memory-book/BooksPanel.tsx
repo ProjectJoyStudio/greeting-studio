@@ -375,6 +375,8 @@ function BookDetail({ bookId, onChanged }: { bookId: string; onChanged: () => vo
               <li key={`${o.provider}-${o.objectKey}`} className="break-all">
                 {o.provider} · {o.status} · {o.objectKey}
                 {o.lastError ? ` · ${o.lastError}` : ""}
+                <div>{`Попытки: ${o.attempts} · Автоматические: ${o.retryCount}/5 · Этап: ${o.backupStage ?? "—"}`}</div>
+                <div>{o.leaseUntil && new Date(o.leaseUntil).getTime() > Date.now() ? `Выполняется до: ${date(o.leaseUntil)}` : o.retryAfter ? `Следующий повтор: ${date(o.retryAfter)}` : o.retryCount >= 5 ? "Лимит автоматических повторов исчерпан" : "—"}</div>
               </li>
             ))}
           </ul>
