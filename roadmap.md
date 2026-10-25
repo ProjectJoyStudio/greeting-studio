@@ -1,8 +1,10 @@
 # Memory Book storage restructuring — current Greeting Studio only
 - [x] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
-- [ ] Extend existing storage/finalization/deletion/backup/admin mechanisms per uploaded specification, preserving all existing books/records/files/share links and the protected October family book.
-- [ ] Run disposable-book lifecycle, checksum, sharing/offline, restore/emergency, interruption/concurrency and version-aware deletion checks; never destructively test existing books.
-- [ ] Deliver Russian implementation/test report; do not migrate existing books without separate approval.
+- [x] Add working keys, retained video originals, checksum/multipart copies, atomic completion, resumable cleanup and existing Admin controls; preserve existing books and tokens.
+- [x] Verify disposable-book R2/B2 checksums, final package, exact-version cleanup, restore, manual emergency resolution, signed-in Admin verification and signed-out share controls; remove only test assets/book/link.
+- [ ] Full browser photo/video/music/ZIP lifecycle: localhost storage access prevents reliable media/ZIP checks; no migration acceptance until verified from an allowed origin.
+- [ ] Automatic durable retry dispatcher and approved existing-book migration remain disabled; permission/approval and full lifecycle verification required before deployment of those operations.
+- [x] Deliver Russian implementation/test report distinguishing tested subset from incomplete acceptance; do not migrate existing books without separate approval.
 
 # Remaining global interaction freeze
 - [x] Inspect repeated modal/navigation cycles, pointer hit-testing, and global locks; freeze not reproduced.
@@ -16,7 +18,7 @@
 # RunPod processed-video integration
 - [x] Connect server-only RunPod submit/status with persisted duplicate-safe jobs.
 - [x] Replace active browser assembly; preserve editor and confirmation flow.
-- [x] Verify output before existing finalization, backup, and involved-source cleanup.
+- [x] Verify output before finalization and backup; originals now survive until verified whole-book cleanup.
 - [x] Run focused contract and controlled RunPod/UI tests: A/B/D passed, 20 tests passed; C skipped (no existing safe silent source). Browser playback could not be verified because sandbox Chromium lacks H264/AAC codecs; independent FFmpeg decode/order and SHA256 passed.
 
 # Previous photo/source-video upload fix
