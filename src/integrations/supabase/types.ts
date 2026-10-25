@@ -2761,6 +2761,7 @@ export type Database = {
           selected_cover_id: string | null
           selected_leaf_id: string | null
           status: string
+          storage_version: number | null
           updated_at: string
           user_id: string
           video_capacity: number
@@ -2803,6 +2804,7 @@ export type Database = {
           selected_cover_id?: string | null
           selected_leaf_id?: string | null
           status?: string
+          storage_version?: number | null
           updated_at?: string
           user_id: string
           video_capacity: number
@@ -2845,6 +2847,7 @@ export type Database = {
           selected_cover_id?: string | null
           selected_leaf_id?: string | null
           status?: string
+          storage_version?: number | null
           updated_at?: string
           user_id?: string
           video_capacity?: number
@@ -2926,6 +2929,71 @@ export type Database = {
             foreignKeyName: "memory_book_storage_extensions_book_id_fkey"
             columns: ["book_id"]
             isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_book_storage_operations: {
+        Row: {
+          activated_at: string | null
+          book_id: string
+          cleanup_results: Json
+          created_at: string
+          cursor: number
+          emergency_until: string | null
+          kind: string
+          last_error: string | null
+          lease_token: string | null
+          lease_until: string | null
+          manifest: Json
+          method: string
+          snapshot: Json | null
+          stage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          book_id: string
+          cleanup_results?: Json
+          created_at?: string
+          cursor?: number
+          emergency_until?: string | null
+          kind: string
+          last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          manifest?: Json
+          method?: string
+          snapshot?: Json | null
+          stage?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          book_id?: string
+          cleanup_results?: Json
+          created_at?: string
+          cursor?: number
+          emergency_until?: string | null
+          kind?: string
+          last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          manifest?: Json
+          method?: string
+          snapshot?: Json | null
+          stage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_storage_operations_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: true
             referencedRelation: "memory_book_projects"
             referencedColumns: ["id"]
           },
@@ -4390,11 +4458,16 @@ export type Database = {
           last_backup_at: string | null
           last_error: string | null
           object_key: string
+          product: string | null
+          project_id: string | null
           provider: string
+          retry_after: string | null
           role: string
           size_bytes: number | null
           status: string
+          transfer_state: Json | null
           updated_at: string
+          user_id: string | null
           verified_at: string | null
         }
         Insert: {
@@ -4406,11 +4479,16 @@ export type Database = {
           last_backup_at?: string | null
           last_error?: string | null
           object_key: string
+          product?: string | null
+          project_id?: string | null
           provider: string
+          retry_after?: string | null
           role: string
           size_bytes?: number | null
           status?: string
+          transfer_state?: Json | null
           updated_at?: string
+          user_id?: string | null
           verified_at?: string | null
         }
         Update: {
@@ -4422,11 +4500,16 @@ export type Database = {
           last_backup_at?: string | null
           last_error?: string | null
           object_key?: string
+          product?: string | null
+          project_id?: string | null
           provider?: string
+          retry_after?: string | null
           role?: string
           size_bytes?: number | null
           status?: string
+          transfer_state?: Json | null
           updated_at?: string
+          user_id?: string | null
           verified_at?: string | null
         }
         Relationships: []
