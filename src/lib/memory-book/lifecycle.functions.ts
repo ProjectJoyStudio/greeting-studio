@@ -110,6 +110,12 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
     if (!row || Number(row.credits_spent ?? 0) <= 0) return { ok: false, error: "not_found" };
 
     if (row.status === "completed" && typeof row.completed_at === "string") {
+      const { storageOperation, cleanupBookWorking } = await import("./storage-package.server");
+      const op = await storageOperation(data.bookId);
+      if (op?.activated_at && ["cleanup_pending", "cleanup_running"].includes(op.stage)) {
+        try { const cleanup = await cleanupBookWorking(context.userId, data.bookId); return { ok: true, pending: cleanup.pending }; }
+        catch { /* A cleanup failure never makes the verified completed book unavailable. */ }
+      }
       return {
         ok: true,
         alreadyCompleted: true,
@@ -122,7 +128,7 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
     try {
       const { advanceBookPackage } = await import("./storage-package.server");
       const result = await advanceBookPackage(context.userId, data.bookId, data.method, await retentionDays());
-      return { ok: result.ok, pending: result.pending };
+      return { ok: result.ok, pending: result.ok || result.pending };
     } catch {
       return { ok: false, error: "failed" };
     }
