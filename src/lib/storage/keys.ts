@@ -63,3 +63,8 @@ export function isInsideUserProject(
 ): boolean {
   return key.startsWith(userProjectPrefix(userId, product, projectId));
 }
+
+/** Lifecycle hierarchy is explicit at creation; existing keys are never renamed. */
+export function memoryBookWorkingKey(userId: string, bookId: string, ...parts: string[]): string {
+  return userKey(userId, "memory-book", bookId, "working", ...parts);
+}

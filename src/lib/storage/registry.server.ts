@@ -3,9 +3,8 @@
 // Product code asks for a role ("the working area"), never for a company.
 // Swapping a company later, or adding a third one, happens only here.
 //
-// IMPORTANT for today: only the working area is actually used. The backup
-// area is registered so it can be reported on, but nothing writes to it, and
-// no emergency switching exists. Both are deliberate future steps.
+// Independent backup writes are enabled. Emergency reads require an explicit
+// per-book administrator decision; the primary role never switches itself.
 
 import { b2Adapter, r2Adapter } from "./providers.server";
 import type { StorageAdapter, StorageRole } from "./types";
@@ -29,12 +28,10 @@ export function storageReady(role: StorageRole): boolean {
 }
 
 /**
- * Deliberately false: copying Project Joy files to the backup area is a
- * separate, later decision. Nothing in the app may write there until this
- * returns true.
+ * Whether an independent reserve is configured for automatic protection.
  */
 export function backupWritesEnabled(): boolean {
-  return false;
+  return storageReady("backup");
 }
 
 /** Plain overview for reports and checks. Contains no keys or secrets. */
