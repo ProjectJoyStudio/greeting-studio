@@ -1,9 +1,11 @@
 # Memory Book storage restructuring — current Greeting Studio only
+- [x] Fix bounded destination checks, durable leased retry queue and diagnostics; verify real callback, disposable R2/B2 files, concurrency/expired leases and repair only authorized test-book video; both reserves SHA-256 verified, Admin 2/2.
+- [ ] Activate and verify external automatic scheduling: stable preview callback returns HTTP 404; callback works on localhost but external dispatcher remains disabled until a reachable deployment serves the route. No publish permission requested or assumed.
 - [x] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
 - [x] Add working keys, retained video originals, checksum/multipart copies, atomic completion, resumable cleanup and existing Admin controls; preserve existing books and tokens.
 - [x] Verify disposable-book R2/B2 checksums, final package, exact-version cleanup, restore, manual emergency resolution, signed-in Admin verification and signed-out share controls; remove only test assets/book/link.
 - [ ] Full browser photo/video/music/ZIP lifecycle: localhost storage access prevents reliable media/ZIP checks; no migration acceptance until verified from an allowed origin.
-- [ ] Automatic durable retry dispatcher and approved existing-book migration remain disabled; permission/approval and full lifecycle verification required before deployment of those operations.
+- [ ] Existing-book migration remains disabled; separate approval and full lifecycle verification required.
 - [x] Deliver Russian implementation/test report distinguishing tested subset from incomplete acceptance; do not migrate existing books without separate approval.
 
 # Remaining global interaction freeze

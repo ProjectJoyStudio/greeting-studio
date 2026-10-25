@@ -6,7 +6,7 @@ function adapter(exists: boolean): StorageAdapter {
   return {
     id: "r2", isReady: () => true, describe: () => "test",
     head: vi.fn(async () => ({ key: "source", sizeBytes: 10, contentType: "image/png", etag: "stable" })),
-    check: vi.fn(async () => exists ? { state: "exists" as const, info: { key: "target", sizeBytes: 10, contentType: "image/png" } } : { state: "missing" as const, status: 404 }),
+    check: vi.fn(async () => exists ? { state: "exists" as const, info: { key: "target", sizeBytes: 10, contentType: "image/png", etag: "stable" } } : { state: "missing" as const, status: 404 }),
     digest: vi.fn(async () => ({ checksum: "sha256:equal", sizeBytes: 10 })),
     put: vi.fn(async () => true), getBytes: vi.fn(async () => new Uint8Array(10)),
     signedReadUrl: vi.fn(async () => null), signedWriteUrl: vi.fn(async () => null), deleteObject: vi.fn(async () => true),
@@ -30,6 +30,7 @@ describe("verified exact-object transfers", () => {
   });
   it("checkpoints multipart state and clears it only after verification", async () => {
     const saved: Array<TransferState | null> = [], source = adapter(true), destination = adapter(false);
+    vi.mocked(destination.check).mockResolvedValueOnce({ state: "missing", status: 404 }).mockResolvedValueOnce({ state: "missing", status: 404 }).mockResolvedValue({ state: "exists", info: { key: "target", sizeBytes: 10, contentType: "image/png" } });
     await transferObject({ source, destination, sourceKey: "source", destinationKey: "target", save: async state => { saved.push(state); } });
     expect(saved[1]?.parts).toEqual([{ number: 1, etag: "etag" }]);
     expect(saved.at(-1)).toBe(null);
@@ -48,5 +49,20 @@ describe("verified exact-object transfers", () => {
     await expect(deleteExactObjectVersions(a, "selected")).rejects.toThrow("permission_denied");
     expect(a.deleteObject).not.toHaveBeenCalled();
     expect(a.deleteVersion).not.toHaveBeenCalled();
+  });
+  it("persistent 403 never starts or deletes a transfer", async () => {
+    const source=adapter(true), destination=adapter(false);
+    vi.mocked(destination.check).mockResolvedValue({state:"error",status:403,detail:"http_403"});
+    await expect(transferObject({source,destination,sourceKey:"source",destinationKey:"target",save:async()=>{}})).rejects.toThrow("transfer_destination_check:http_403");
+    expect(destination.check).toHaveBeenCalledTimes(4);
+    expect(destination.beginMultipart).not.toHaveBeenCalled(); expect(destination.deleteObject).not.toHaveBeenCalled();
+  });
+  it("resumes checkpointed multipart after a process restart", async () => {
+    const source=adapter(true), destination=adapter(false);
+    vi.mocked(destination.check).mockResolvedValueOnce({state:"missing",status:404}).mockResolvedValueOnce({state:"missing",status:404}).mockResolvedValue({state:"exists",info:{key:"target",sizeBytes:10,contentType:"image/png"}});
+    const state:TransferState={uploadId:"retained",sourceKey:"source",destinationKey:"target",sourceSize:10,sourceEtag:"stable",sourceChecksum:"sha256:equal",parts:[{number:1,etag:"etag"}]};
+    await transferObject({source,destination,sourceKey:"source",destinationKey:"target",state,save:async()=>{}});
+    expect(destination.beginMultipart).not.toHaveBeenCalled(); expect(destination.writePart).not.toHaveBeenCalled();
+    expect(destination.completeMultipart).toHaveBeenCalledWith("target","retained",state.parts);
   });
 });
