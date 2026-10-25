@@ -1,3 +1,9 @@
+# Memory Book storage restructuring — Laboratory only
+- [ ] Confirm the intended Laboratory surface and isolated database, R2/B2 buckets and credentials; current thread is Main and preview/published share a backend. No application/database/storage changes until isolation is verified.
+- [ ] Extend existing storage/finalization/deletion/backup/admin mechanisms per uploaded specification, preserving legacy reads and the protected October family book; blocked by Laboratory isolation.
+- [ ] Run disposable-book lifecycle, checksum, sharing/offline, restore/emergency, interruption/concurrency and version-aware deletion checks; blocked by Laboratory isolation and implementation.
+- [ ] Deliver Russian implementation/test report; do not migrate existing books without separate approval.
+
 # Remaining global interaction freeze
 - [x] Inspect repeated modal/navigation cycles, pointer hit-testing, and global locks; freeze not reproduced.
 - [x] Deliver diagnosis without speculative application or dependency changes; no remaining root cause confirmed.
