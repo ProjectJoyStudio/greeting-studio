@@ -1,7 +1,6 @@
 import { storageFor } from "@/lib/storage/registry.server";
 import { transferObject, deleteExactObjectVersions, type TransferState } from "@/lib/storage/transfer.server";
 import { writePlacement, backupToReserve } from "@/lib/storage/backup.server";
-import { userKey } from "@/lib/storage/keys";
 import { isWorkingObject, pageDependencyIds } from "./storage-policy";
 import { MEMORY_BOOK_R2_BUCKET } from "./materials";
 type Row = Record<string, any>;
@@ -29,6 +28,12 @@ export async function inventoryBook(userId: string, bookId: string) {
   const materials = await read("memory_book_materials"), designs = await read("memory_book_designs"), music = await read("memory_book_music_variants");
   const ids = pageDependencyIds(pages);
   const selected = [book.selected_cover_id, book.selected_leaf_id, ...(book.back_cover_overridden ? [book.back_cover_design_id] : [])].filter(Boolean);
+  const missingDesigns = selected.filter(id => !designs.some(d => d.id === id));
+  if (missingDesigns.length) {
+    const { data: sharedDesigns, error: sharedError } = await client.from("memory_book_designs").select("*").in("id", missingDesigns).eq("source", "library");
+    if (sharedError) throw new Error("shared_design_read_failed");
+    designs.push(...(sharedDesigns ?? []));
+  }
   for (const id of selected) if (!designs.some(d => d.id === id)) throw new Error("design_dependency_missing");
   for (const id of ids.materials) if (!materials.some(m => m.id === id)) throw new Error("material_dependency_missing");
   const { data: decorations, error: decorationError } = ids.decorations.size ? await client.from("memory_book_decorations").select("*").in("id", [...ids.decorations]) : { data: [], error: null };
@@ -61,6 +66,8 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
   const client = await db();
   let op = await storageOperation(bookId);
   if (!op) {
+    const { data: book } = await client.from("memory_book_projects").select("storage_version").eq("id", bookId).eq("user_id", userId).single();
+    if (book?.storage_version !== 2) throw new Error("existing_book_protected");
     const inventory = await inventoryBook(userId, bookId);
     const { error } = await client.from("memory_book_storage_operations").upsert({ book_id: bookId, user_id: userId, kind: "finalize", method, ...inventory }, { onConflict: "book_id", ignoreDuplicates: true });
     if (error) throw new Error("operation_create_failed");
@@ -85,6 +92,7 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
       // Shared legacy assets need explicit verified migration, not silent copies.
       if (asset.bucket !== MEMORY_BOOK_R2_BUCKET) throw new Error("shared_legacy_verification_required");
       await save(bookId, { stage: "preparing", last_error: null }, token);
+      await save(bookId, { stage: "primary_verifying" }, token);
       const digest = asset.shared ? await primary.digest(asset.path) : await transferObject({ source: primary, destination: primary, sourceKey: asset.path, destinationKey: asset.target, state: asset.transfer,
         save: async state => { asset.transfer = state; await save(bookId, { manifest }, token); },
       });

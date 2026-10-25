@@ -139,7 +139,7 @@ export const loadMemoryBookPages = createServerFn({ method: "POST" })
         const path = typeof row.background_path === "string" ? row.background_path : "";
         if (bucket && path) {
           const { memoryBookFileUrl } = await import("./storage.server");
-          page.backgroundUrl = await memoryBookFileUrl(bucket, path, 60 * 60);
+          page.backgroundUrl = await memoryBookFileUrl(bucket, path, 60 * 60, data.bookId);
         }
         pages.push(page);
       }
