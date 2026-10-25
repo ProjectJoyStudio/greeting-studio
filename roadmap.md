@@ -1,7 +1,7 @@
 # Memory Book storage restructuring — Laboratory only
-- [ ] Confirm the intended Laboratory surface and isolated database, R2/B2 buckets and credentials; current thread is Main and preview/published share a backend. No application/database/storage changes until isolation is verified.
-- [ ] Extend existing storage/finalization/deletion/backup/admin mechanisms per uploaded specification, preserving legacy reads and the protected October family book; blocked by Laboratory isolation.
-- [ ] Run disposable-book lifecycle, checksum, sharing/offline, restore/emergency, interruption/concurrency and version-aware deletion checks; blocked by Laboratory isolation and implementation.
+- [ ] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
+- [ ] Extend existing storage/finalization/deletion/backup/admin mechanisms per uploaded specification, preserving all existing books/records/files/share links and the protected October family book.
+- [ ] Run disposable-book lifecycle, checksum, sharing/offline, restore/emergency, interruption/concurrency and version-aware deletion checks; never destructively test existing books.
 - [ ] Deliver Russian implementation/test report; do not migrate existing books without separate approval.
 
 # Remaining global interaction freeze
