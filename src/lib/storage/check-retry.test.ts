@@ -5,14 +5,14 @@ import type { StorageAdapter } from "./types";
 describe("bounded destination checks", () => {
   const absent = { state: "missing" as const, status: 404 };
   const denied = { state: "error" as const, status: 403, detail: "http_403" };
-  const run = (check: ReturnType<typeof vi.fn>, sleep = vi.fn(async () => {})) =>
+  const run = (check: ReturnType<typeof vi.fn>, sleep = vi.fn(async (_ms: number) => {})) =>
     checkWithRetry({ check } as unknown as StorageAdapter, "key", { sleep, random: () => 0.5 });
   it("retries temporary 403 before accepting verified 404", async () => {
     const check = vi.fn().mockResolvedValueOnce(denied).mockResolvedValue(absent);
     expect(await run(check)).toEqual(absent); expect(check).toHaveBeenCalledTimes(2);
   });
   it("persistent 403 remains access denied after exactly four checks", async () => {
-    const check = vi.fn().mockResolvedValue(denied), sleep = vi.fn(async () => {});
+    const check = vi.fn().mockResolvedValue(denied), sleep = vi.fn(async (_ms: number) => {});
     expect(await run(check, sleep)).toEqual(denied); expect(check).toHaveBeenCalledTimes(4);
     expect(sleep.mock.calls.map(args => args[0])).toEqual([250, 500, 1000]);
   });
