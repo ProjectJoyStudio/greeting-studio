@@ -147,7 +147,7 @@ export async function cleanupBookWorking(userId: string, bookId: string) {
       // Reverify every final dependency immediately before any destructive step.
       for (const asset of op.manifest as PackageAsset[]) for (const role of ["primary", "backup"] as const) {
         const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
-        const digest = await adapter.digest(asset.target); if (digest.checksum !== asset.checksum) throw new Error("cleanup_final_dependency_unverified");
+        const digest = await adapter.digest(asset.target); if (digest.checksum !== asset.checksum || digest.sizeBytes !== asset.sizeBytes) throw new Error("cleanup_final_dependency_unverified");
       }
       for (const role of ["primary", "backup"] as const) {
         const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
@@ -159,9 +159,9 @@ export async function cleanupBookWorking(userId: string, bookId: string) {
       await save(bookId, { stage: "cleanup_pending", lease_token: null, lease_until: null }, token);
       return { pending: true };
     }
-    await save(bookId, { stage: "cleanup_completed", lease_token: null, lease_until: null, last_error: null }, token);
     const { error: updateError } = await client.from("memory_book_projects").update({ working_cleaned_at: now }).eq("id", bookId).eq("user_id", userId);
     if (updateError) throw new Error("cleanup_timestamp_failed");
+    await save(bookId, { stage: "cleanup_completed", lease_token: null, lease_until: null, last_error: null }, token);
     return { pending: false };
   } catch (e) {
     await save(bookId, { stage: "cleanup_failed", last_error: e instanceof Error ? e.message : "cleanup_failed", cleanup_results: results, lease_token: null, lease_until: null }, token); throw e;

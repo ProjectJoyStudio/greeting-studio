@@ -379,6 +379,10 @@ export async function restoreFromReserve(objectKey: string): Promise<BackupResul
     try {
       const { transferObject } = await import("./transfer.server");
       const placement = await placementOf(objectKey, primary.id);
+      const reservePlacement = await placementOf(objectKey, backup.id);
+      const expectedChecksum = placement?.checksum ?? reservePlacement?.checksum;
+      const sourceDigest = await backup.digest(objectKey);
+      if (expectedChecksum && sourceDigest.checksum !== expectedChecksum) throw new Error("restore_source_integrity_mismatch");
       const result = await transferObject({ source: backup, destination: primary, sourceKey: objectKey, destinationKey: objectKey, state: placement?.transfer_state as import("./transfer.server").TransferState | null,
         save: state => writePlacement(objectKey, primary.id, { role: "primary", status: "copying", transferState: state }),
       });
