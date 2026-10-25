@@ -248,6 +248,8 @@ export function createS3Adapter(
         if (keyMarker) query.set("key-marker", keyMarker);
         if (versionMarker) query.set("version-id-marker", versionMarker);
         const res = await c.client.fetch(`${c.base}?${query}`);
+        // R2 is unversioned; its documented ListObjectVersions response is 501.
+        if (id === "r2" && res.status === 501) return [];
         if (!res.ok) throw new Error(`versions_list_http_${res.status}`);
         const result = new XMLParser({ parseTagValue: false, isArray: name => name === "Version" || name === "DeleteMarker" }).parse(await res.text()).ListVersionsResult;
         if (!result) throw new Error("versions_invalid_response");
