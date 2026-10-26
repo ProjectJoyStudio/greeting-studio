@@ -35,3 +35,8 @@
 - [x] Apply shared classification and server source rejection without storage/processing changes.
 - [x] Verify 32 targeted tests and real signed-in tabs/picker/direct rejection/return refresh; report distinguishes fresh assembly (not rerun) from verified current output.
 - [x] Memory Book: "Use as finished" for ≤5-min uploads + visual finished-only page video gallery
+
+## Automatic R2 → B2 backup (Oct 26)
+- [x] Explain HEAD 403 in the adapter (provider code/message, NoSuchKey or exact-key listing) and record a code-version marker per attempt.
+- [ ] Confirm the online preview runs the new code (engine marker), then enable the scheduler and verify automatic recovery of the 4 failed test-book files: waits for the preview rebuild after this message.
+- [ ] Disposable upload/failure/recovery tests (15 cases) and idle-shutdown check: same blocker.
