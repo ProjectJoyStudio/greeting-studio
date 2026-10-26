@@ -51,7 +51,7 @@ export const MEMORY_BOOKS_DASHBOARD_I18N: Record<Lang, Dict> = {
     mbd_download_missing: "A file of your book could not be found. Nothing was saved; please try again later.",
     mbd_download_network: "Some book files could not be loaded. Check your connection and try again.",
     mbd_download_save_failed: "The file could not be saved on your computer. Please try again.",
-    mbd_download_started: "Your book is downloading. Check your browser"s downloads.",
+    mbd_download_started: "Your book is downloading. Check your browser’s downloads.",
     mbd_download_stage_preparing: "Preparing book…",
     mbd_download_stage_loading: "Loading materials… {n}%",
     mbd_download_stage_building: "Building ZIP… {n}%",
