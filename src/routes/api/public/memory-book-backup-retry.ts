@@ -12,8 +12,8 @@ export const Route = createFileRoute("/api/public/memory-book-backup-retry")({
     const { timingSafeEqual } = await import("node:crypto");
     const a = new TextEncoder().encode(expected), b = new TextEncoder().encode(supplied);
     if (!config?.enabled || !expected || a.length !== b.length || !timingSafeEqual(a, b)) return Response.json({ error: "unauthorized" }, { status: 401 });
-    const { retryPendingBackups } = await import("@/lib/storage/backup.server");
+    const { retryPendingBackups, BACKUP_ENGINE } = await import("@/lib/storage/backup.server");
     const result = await retryPendingBackups(2);
-    return Response.json({ ok: true, ...result });
+    return Response.json({ ok: true, engine: BACKUP_ENGINE, ...result });
   } } },
 });
