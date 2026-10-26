@@ -1,6 +1,6 @@
 import { storageFor } from "@/lib/storage/registry.server";
 import { transferObject, deleteExactObjectVersions, type TransferState } from "@/lib/storage/transfer.server";
-import { writePlacement, backupToReserve } from "@/lib/storage/backup.server";
+import { writePlacement, backupToReserve, appendPlacementHistory } from "@/lib/storage/backup.server";
 import { isWorkingObject, pageDependencyIds } from "./storage-policy";
 import { MEMORY_BOOK_R2_BUCKET } from "./materials";
 type Row = Record<string, any>;
@@ -84,6 +84,7 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
   op = locked;
   if (!op) throw new Error("operation_not_found");
   const manifest = op.manifest as PackageAsset[];
+  let phase = "preparing";
   try {
     const primary = storageFor("primary"), backup = storageFor("backup");
     if (!primary || !backup) throw new Error("storage_not_configured");
@@ -93,19 +94,24 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
       // Shared legacy assets need explicit verified migration, not silent copies.
       if (asset.bucket !== MEMORY_BOOK_R2_BUCKET) throw new Error("shared_legacy_verification_required");
       await save(bookId, { stage: "preparing", last_error: null }, token);
-      await save(bookId, { stage: "primary_verifying" }, token);
+      phase = "primary_verifying"; await save(bookId, { stage: "primary_verifying" }, token);
       const digest = asset.shared ? await primary.digest(asset.path) : await transferObject({ source: primary, destination: primary, sourceKey: asset.path, destinationKey: asset.target, state: asset.transfer,
         save: async state => { asset.transfer = state; await save(bookId, { manifest }, token); },
       });
       Object.assign(asset, { checksum: digest.checksum, sizeBytes: digest.sizeBytes, primaryVerified: true });
       await writePlacement(asset.target, primary.id, { role: "primary", status: "present", checksum: digest.checksum, sizeBytes: digest.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
-      await save(bookId, { stage: "backup_verifying", manifest }, token);
-      const reserve = await backupToReserve(asset.target);
-      if (!reserve.ok) throw new Error(reserve.error || "backup_failed");
-      const reserveDigest = await backup.digest(asset.target);
+      phase = "backup_verifying"; await save(bookId, { stage: "backup_verifying", manifest }, token);
+      // Finalization is customer-initiated: claim the reserve copy even inside a
+      // scheduler back-off window. Leases still prevent concurrent writers.
+      const reserve = await backupToReserve(asset.target, { manual: true });
+      if (!reserve.ok) throw new Error(`backup_verifying:b2:${reserve.error || "backup_failed"}`);
+      // A digest returned by this call was read back from B2 independently of
+      // the source; otherwise (copy already present) re-read B2 ourselves.
+      const reserveDigest = reserve.checksum && reserve.sizeBytes ? { checksum: reserve.checksum, sizeBytes: reserve.sizeBytes } : await backup.digest(asset.target);
       if (reserveDigest.checksum !== digest.checksum || reserveDigest.sizeBytes !== digest.sizeBytes) throw new Error("backup_integrity_mismatch");
       asset.backupVerified = true;
       await writePlacement(asset.target, backup.id, { role: "backup", status: "present", checksum: digest.checksum, sizeBytes: digest.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
+      await appendPlacementHistory(asset.target, backup.id, { stage: "finalize_verified", status: "present", provider: backup.id, checksum: digest.checksum, cursor: index, error: null });
       await save(bookId, { manifest, cursor: index + 1, lease_token: null, lease_until: null }, token);
       return { ok: false, pending: true };
     }
@@ -117,7 +123,13 @@ export async function advanceBookPackage(userId: string, bookId: string, method:
     if (activationError || !activated) throw new Error("activation_failed");
     return { ok: true, pending: false };
   } catch (e) {
-    await save(bookId, { stage: "failed", last_error: e instanceof Error ? e.message : "package_failed", lease_token: null, lease_until: null }, token);
+    const message = e instanceof Error ? e.message.slice(0, 300) : "package_failed";
+    const failing = manifest[Number(op.cursor)];
+    if (failing && phase === "backup_verifying") {
+      const b = storageFor("backup");
+      if (b) await appendPlacementHistory(failing.target, b.id, { stage: "finalize_failed", status: "unchanged", provider: b.id, cursor: Number(op.cursor), error: message });
+    }
+    await save(bookId, { stage: "failed", last_error: `${phase}:${message}`, lease_token: null, lease_until: null }, token);
     throw e;
   }
 }

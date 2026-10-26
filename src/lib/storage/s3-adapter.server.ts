@@ -7,7 +7,7 @@ import { AwsClient } from "aws4fetch";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
-import { safeCode } from "./check-retry.server";
+import { safeCode, checkWithRetry } from "./check-retry.server";
 
 import type {
   StorageAdapter,
@@ -245,16 +245,23 @@ export function createS3Adapter(
     },
 
     async digest(key) {
-      const info = await adapter.head(key);
-      if (!info || info.sizeBytes <= 0) throw new Error("storage_digest_missing");
+      // Bounded, classified checks: a provider error (incl. 403) is never "missing".
+      const located = async () => {
+        const r = await checkWithRetry(adapter, key);
+        if (r.state === "missing") throw new Error(`storage_digest_missing:${id}`);
+        if (r.state === "error") throw new Error(`storage_digest_check:${id}:${r.detail}`);
+        if (r.info.sizeBytes <= 0) throw new Error(`storage_digest_check:${id}:size_unknown`);
+        return r.info;
+      };
+      const info = await located();
       const hash = sha256.create();
       // Range reads bound memory even when the provider has no streaming support.
       const chunk = 8 * 1024 * 1024;
       for (let offset = 0; offset < info.sizeBytes; offset += chunk) {
         hash.update(await adapter.readRange(key, offset, Math.min(info.sizeBytes - 1, offset + chunk - 1)));
       }
-      const after = await adapter.head(key);
-      if (!after || after.sizeBytes !== info.sizeBytes || after.etag !== info.etag) throw new Error("storage_changed_during_digest");
+      const after = await located();
+      if (after.sizeBytes !== info.sizeBytes || after.etag !== info.etag) throw new Error("storage_changed_during_digest");
       return { checksum: `sha256:${bytesToHex(hash.digest())}`, sizeBytes: info.sizeBytes };
     },
 
