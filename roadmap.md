@@ -42,3 +42,4 @@
 - [x] Preview runs explain-403-v1; scheduler enabled; 4 test-book reserves recovered automatically; 6/6 SHA-256 match.
 - [x] 15 disposable live-scheduler cases passed and idle shutdown confirmed; disposable files removed. Published site still has no build (not published by request).
 - [x] Oct 26 browser-upload 403: investigated real execution; failed attempt came from an older server code version (no lease/history), recovered automatically by the scheduler; real browser photo/video uploads with a temporary reserve outage recovered automatically; no code change required.
+- [x] Oct 26 fix completed-book ZIP download (save dialog timing, fallback, errors, real e2e).
