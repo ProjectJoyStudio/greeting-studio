@@ -1,6 +1,6 @@
 # Memory Book storage restructuring — current Greeting Studio only
 - [x] Fix bounded destination checks, durable leased retry queue and diagnostics; verify real callback, disposable R2/B2 files, concurrency/expired leases and repair only authorized test-book video; both reserves SHA-256 verified, Admin 2/2.
-- [ ] Activate and verify external automatic scheduling: stable preview callback returns HTTP 404; callback works on localhost but external dispatcher remains disabled until a reachable deployment serves the route. No publish permission requested or assumed.
+- [x] Activate and verify external automatic scheduling on the stable preview callback (Oct 26).
 - [x] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
 - [x] Add working keys, retained video originals, checksum/multipart copies, atomic completion, resumable cleanup and existing Admin controls; preserve existing books and tokens.
 - [x] Verify disposable-book R2/B2 checksums, final package, exact-version cleanup, restore, manual emergency resolution, signed-in Admin verification and signed-out share controls; remove only test assets/book/link.
@@ -38,5 +38,5 @@
 
 ## Automatic R2 → B2 backup (Oct 26)
 - [x] Explain HEAD 403 in the adapter (provider code/message, NoSuchKey or exact-key listing) and record a code-version marker per attempt.
-- [ ] Confirm the online preview runs the new code (engine marker), then enable the scheduler and verify automatic recovery of the 4 failed test-book files: waits for the preview rebuild after this message.
-- [ ] Disposable upload/failure/recovery tests (15 cases) and idle-shutdown check: same blocker.
+- [x] Preview runs explain-403-v1; scheduler enabled; 4 test-book reserves recovered automatically; 6/6 SHA-256 match.
+- [x] 15 disposable live-scheduler cases passed and idle shutdown confirmed; disposable files removed. Published site still has no build (not published by request).
