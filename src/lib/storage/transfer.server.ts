@@ -27,7 +27,8 @@ export async function transferObject(options: {
   if (!sourceInfo || sourceInfo.sizeBytes <= 0) throw new Error("transfer_source_missing");
   const destinationInfo = await checkWithRetry(destination, destinationKey, { report: async (result, attempt) => {
     await options.progress?.("destination_check", { provider: destination.id, checkAttempt: attempt, state: result.state,
-      ...(result.state === "error" ? { httpStatus: result.status, code: result.code, requestId: result.requestId } : {}) });
+      ...(result.state === "missing" ? { confirmedBy: result.confirmedBy ?? "head" } : {}),
+      ...(result.state === "error" ? { httpStatus: result.status, code: result.code, message: result.message, requestId: result.requestId } : {}) });
   } });
   if (destinationInfo.state === "error") throw new Error(`transfer_destination_check:${destinationInfo.detail}`);
   await options.progress?.("source_digest");
