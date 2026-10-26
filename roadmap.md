@@ -1,5 +1,5 @@
 # Memory Book storage restructuring — current Greeting Studio only
-- [ ] Oct 26 full disposable finalization: inventory/hashes, production activation, safe cleanup, viewer/media/ZIP, bounded failure/recovery, exact test-data removal and Russian report; both named existing books protected.
+- [x] Oct 26 disposable finalization executed: 6/6 R2+B2 package hashes, atomic activation, 7 working keys/versions cleaned with failure/resume, viewer/video/music and controlled offline ZIP, exact 13-key removal; existing books/shares/wallets/placements unchanged. Full photo composition and normal-origin ZIP acceptance remain unverified; see Russian report.
 - [x] Fix bounded destination checks, durable leased retry queue and diagnostics; verify real callback, disposable R2/B2 files, concurrency/expired leases and repair only authorized test-book video; both reserves SHA-256 verified, Admin 2/2.
 - [x] Activate and verify external automatic scheduling on the stable preview callback (Oct 26).
 - [x] Verify current Greeting Studio database/R2/B2 connections read-only; owner's clarification supersedes separate-environment assumptions. No other project access.
