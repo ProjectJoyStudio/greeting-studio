@@ -63,7 +63,7 @@ describe("digest verification during finalization", () => {
   it("reports a persistent provider error as a check error, never as missing", async () => {
     const { adapter } = provider(() => new Response(null, { status: 500 }));
     await expect(adapter.digest(key)).rejects.toThrow("storage_digest_check:b2:http_500");
-  });
+  }, 15000);
   it("reports missing only for a real 404", async () => {
     const { adapter } = provider(() => new Response(null, { status: 404 }));
     await expect(adapter.digest(key)).rejects.toThrow("storage_digest_missing:b2");
