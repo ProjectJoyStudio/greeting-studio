@@ -24,7 +24,7 @@ export interface S3Settings {
   region?: string;
 }
 
-interface Resolved {
+export interface Resolved {
   base: string;
   bucket: string;
   client: AwsClient;
