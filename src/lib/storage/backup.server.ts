@@ -175,6 +175,9 @@ export async function recordPrimary(objectKey: string): Promise<boolean> {
 /** Highest number of automatic attempts before a copy waits for a human. */
 export const BACKUP_MAX_ATTEMPTS = BACKUP_RETRY_LIMIT;
 
+/** Recorded with every attempt so the running code version is provable. */
+export const BACKUP_ENGINE = "explain-403-v1";
+
 /**
  * Checks one stored copy, asking again (at most 3 checks, ~2.5 s total) when
  * the answer is not definitive. A genuine "not found" right after writing is
@@ -217,7 +220,7 @@ export async function backupToReserve(objectKey: string, options: { manual?: boo
     }
     const attempt = Number(existing.backup_retry_count);
     let stage = "claimed";
-    let diagnostics: Record<string, unknown> = {};
+    let diagnostics: Record<string, unknown> = { engine: BACKUP_ENGINE };
     const history = Array.isArray(existing.backup_history) ? existing.backup_history : [];
     const update = async (patch: Record<string, unknown>) => {
       const { data, error } = await client.from(TABLE).update({ ...patch, backup_lease_until: new Date(Date.now() + 15 * 60_000).toISOString() }).eq("id", existing.id).eq("backup_lease_token", token).select("id");

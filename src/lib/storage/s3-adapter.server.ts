@@ -24,7 +24,7 @@ export interface S3Settings {
   region?: string;
 }
 
-interface Resolved {
+export interface Resolved {
   base: string;
   bucket: string;
   client: AwsClient;
@@ -57,6 +57,54 @@ function resolve(settings: S3Settings | null): Resolved | null {
 
 function objectUrl(cfg: Resolved, key: string): string {
   return `${cfg.base}/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+/** Provider wording only; never URLs, signatures or long opaque values. */
+export function safeMessage(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const clean = value.replace(/[^A-Za-z0-9 _.,:()'-]/g, "").trim().slice(0, 120);
+  return clean && !/AWS4|[0-9a-f]{32}/i.test(clean) ? clean : undefined;
+}
+
+/**
+ * Called only after a 403 on HEAD. 403 is never absence by itself:
+ * absence is accepted only from an authoritative NoSuchKey or an authorized
+ * exact-key listing that succeeds and does not contain the key.
+ */
+export async function explainDenied(c: Resolved, key: string, headRequestId?: string): Promise<StorageCheckResult> {
+  let code: string | undefined, message: string | undefined, requestId = headRequestId;
+  try {
+    const probe = await c.client.fetch(objectUrl(c, key), { headers: { range: "bytes=0-0" } });
+    requestId = safeCode(probe.headers.get("x-amz-request-id")) ?? requestId;
+    if (probe.status === 206 || probe.status === 200) {
+      await probe.body?.cancel();
+      const total = Number(/\/(\d+)\s*$/.exec(probe.headers.get("content-range") ?? "")?.[1] ?? probe.headers.get("content-length") ?? 0);
+      if (Number.isFinite(total) && total > 0) {
+        return { state: "exists", info: { key, sizeBytes: total, contentType: probe.headers.get("content-type"), etag: probe.headers.get("etag") } };
+      }
+    } else {
+      const xml = new XMLParser({ parseTagValue: false }).parse(await probe.text().catch(() => ""));
+      code = safeCode(String(xml?.Error?.Code ?? "")) ?? undefined;
+      message = safeMessage(xml?.Error?.Message);
+      if (probe.status === 404 && code === "NoSuchKey") return { state: "missing", status: 404, confirmedBy: "get" };
+    }
+  } catch { /* keep the HEAD denial */ }
+  try {
+    const query = new URLSearchParams({ "list-type": "2", prefix: key, "max-keys": "5" });
+    const list = await c.client.fetch(`${c.base}?${query}`);
+    if (list.ok) {
+      const parsed = new XMLParser({ parseTagValue: false, isArray: name => name === "Contents" }).parse(await list.text()).ListBucketResult;
+      if (parsed) {
+        const rows = (parsed.Contents ?? []) as Array<{ Key?: string }>;
+        if (!rows.some(row => row.Key === key)) return { state: "missing", status: 404, confirmedBy: "list" };
+        return { state: "error", status: 403, detail: "http_403:listed_but_denied", code, message, requestId };
+      }
+    } else {
+      await list.body?.cancel();
+      message = message ?? `list_http_${list.status}`;
+    }
+  } catch { /* keep the denial */ }
+  return { state: "error", status: 403, detail: `http_403${code ? `:${code}` : ""}`, code, message, requestId };
 }
 
 /** Builds one provider from its settings. Settings are read on every call. */
@@ -98,7 +146,14 @@ export function createS3Adapter(
         };
       }
       // Only a real "not found" counts as missing. Everything else is retryable.
-      if (res.status === 404) return { state: "missing", status: 404 };
+      if (res.status === 404) return { state: "missing", status: 404, confirmedBy: "head" };
+      if (res.status === 403) {
+        await res.body?.cancel();
+        // A HEAD answer has no body, and some providers deny HEAD/GET of an
+        // ABSENT key when the key may not see bucket metadata. Ask the provider
+        // to explain, then confirm absence only through an authorized exact listing.
+        return await explainDenied(c, key, safeCode(res.headers.get("x-amz-request-id")));
+      }
       if (!res.ok) {
         const code = safeCode(res.headers.get("x-amz-error-code"));
         const requestId = safeCode(res.headers.get("x-amz-request-id"));

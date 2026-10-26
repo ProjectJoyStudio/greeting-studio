@@ -39,8 +39,9 @@ export interface StoragePart { number: number; etag: string }
 
 export type StorageCheckResult =
   | { state: "exists"; info: StorageObjectInfo }
-  | { state: "missing"; status: number }
-  | { state: "error"; status: number | null; detail: string; code?: string; requestId?: string };
+  /** confirmedBy: which authoritative answer proved absence. */
+  | { state: "missing"; status: number; confirmedBy?: "head" | "get" | "list" }
+  | { state: "error"; status: number | null; detail: string; code?: string; message?: string; requestId?: string };
 
 /**
  * Everything one storage company must be able to do for Project Joy.

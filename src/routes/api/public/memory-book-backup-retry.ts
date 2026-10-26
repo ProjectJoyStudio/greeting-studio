@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+// Non-secret code-version marker so deployment freshness is observable.
+const ENGINE = "explain-403-v1";
+
 export const Route = createFileRoute("/api/public/memory-book-backup-retry")({
   server: { handlers: { POST: async ({ request }) => {
     const header = request.headers.get("authorization") ?? "";
-    if (!header.startsWith("Bearer ") || header.length > 200) return Response.json({ error: "unauthorized" }, { status: 401 });
+    if (!header.startsWith("Bearer ") || header.length > 200) return Response.json({ error: "unauthorized", engine: ENGINE }, { status: 401 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // The scheduler credential lives in a service-only application table, never in browser config.
     const { data: config } = await supabaseAdmin.from("memory_book_backup_dispatch_config").select("secret,enabled").eq("id", true).maybeSingle();
@@ -12,8 +15,8 @@ export const Route = createFileRoute("/api/public/memory-book-backup-retry")({
     const { timingSafeEqual } = await import("node:crypto");
     const a = new TextEncoder().encode(expected), b = new TextEncoder().encode(supplied);
     if (!config?.enabled || !expected || a.length !== b.length || !timingSafeEqual(a, b)) return Response.json({ error: "unauthorized" }, { status: 401 });
-    const { retryPendingBackups } = await import("@/lib/storage/backup.server");
+    const { retryPendingBackups, BACKUP_ENGINE } = await import("@/lib/storage/backup.server");
     const result = await retryPendingBackups(2);
-    return Response.json({ ok: true, ...result });
+    return Response.json({ ok: true, engine: BACKUP_ENGINE, ...result });
   } } },
 });
