@@ -30,6 +30,25 @@ export interface BackupResult {
   /** True when a verified copy already existed and nothing was copied again. */
   skipped?: boolean;
   error?: string;
+  /** SHA-256 of the DESTINATION object, freshly read back in this call. */
+  checksum?: string;
+  sizeBytes?: number;
+}
+
+/**
+ * Appends one verification event to a placement's history without changing
+ * its status: a temporary provider error never turns a valid copy "missing".
+ */
+export async function appendPlacementHistory(objectKey: string, provider: StorageProviderId, entry: Record<string, unknown>): Promise<void> {
+  try {
+    const existing = await placementOf(objectKey, provider);
+    if (!existing) return;
+    const history = Array.isArray(existing.backup_history) ? existing.backup_history : [];
+    const client = await db();
+    await client.from(TABLE).update({ backup_history: [...history, { at: new Date().toISOString(), ...entry }].slice(-20) }).eq("id", existing.id as string);
+  } catch {
+    // History is diagnostic only and must never break the caller.
+  }
 }
 
 async function db() {
@@ -243,7 +262,7 @@ export async function backupToReserve(objectKey: string, options: { manual?: boo
       await writePlacement(objectKey, primary.id, { role: "primary", status: "present", checksum: result.checksum, sizeBytes: result.sizeBytes, verifiedAt: new Date().toISOString(), lastError: null });
       stage = "verified";
       await finish({ status: "present", checksum: result.checksum, size_bytes: result.sizeBytes, verified_at: new Date().toISOString(), last_backup_at: new Date().toISOString(), last_error: null, retry_after: null, transfer_state: null });
-      return { ok: true, status: "present", skipped: existing?.status === "present" };
+      return { ok: true, status: "present", skipped: existing?.status === "present", checksum: result.checksum, sizeBytes: result.sizeBytes };
     } catch (e) {
       const error = safeBackupError(e);
       await finish({ status: "failed", last_error: error, retry_after: attempt < BACKUP_MAX_ATTEMPTS ? new Date(Date.now() + backupRetryDelay(attempt)).toISOString() : null });
