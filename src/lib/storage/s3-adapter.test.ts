@@ -56,14 +56,14 @@ describe("digest verification during finalization", () => {
     : new Response(null, { status: 200, headers: { "content-length": "3", etag: "\"e\"" } });
   it("retries a temporary HEAD failure and still computes SHA-256", async () => {
     let heads = 0;
-    const { adapter } = provider(req => req.method === "HEAD" && heads++ === 0 ? new Response(null, { status: 503 }) : ok(req));
+    const { adapter } = provider(req => req.method === "HEAD" && heads++ === 0 ? new Response(null, { status: 408 }) : ok(req));
     const d = await adapter.digest(key);
     expect(d).toEqual({ checksum: "sha256:039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81", sizeBytes: 3 });
   });
   it("reports a persistent provider error as a check error, never as missing", async () => {
-    const { adapter } = provider(() => new Response(null, { status: 500 }));
-    await expect(adapter.digest(key)).rejects.toThrow("storage_digest_check:b2:http_500");
-  }, 15000);
+    const { adapter } = provider(req => req.method === "HEAD" ? new Response(null, { status: 403 }) : new Response(xmlError("AccessDenied", "denied"), { status: 403 }));
+    await expect(adapter.digest(key)).rejects.toThrow("storage_digest_check:b2:http_403:AccessDenied");
+  }, 10000);
   it("reports missing only for a real 404", async () => {
     const { adapter } = provider(() => new Response(null, { status: 404 }));
     await expect(adapter.digest(key)).rejects.toThrow("storage_digest_missing:b2");
