@@ -13,7 +13,12 @@ import {
   listMemoryBooks,
   type MemoryBookProject,
 } from "@/lib/memory-book/packages.functions";
-import { buildMemoryBookOfflinePlan } from "@/lib/memory-book/offline-export.functions";
+import {
+  buildMemoryBookOfflinePlan,
+  reportOfflineExportIssue,
+} from "@/lib/memory-book/offline-export.functions";
+import { requestOfflineSaveTarget } from "@/lib/memory-book/offline-save";
+import { OFFLINE_PACKAGE_NAME } from "@/lib/memory-book/offline-package";
 import { MemoryBookShareDialog } from "@/components/memory-book/MemoryBookShareDialog";
 
 export const Route = createFileRoute("/dashboard/memory-books")({
@@ -39,6 +44,8 @@ function MyMemoryBooksPage() {
   const fetchBooks = useServerFn(listMemoryBooks);
   const extend = useServerFn(extendMemoryBookStorage);
   const buildPlan = useServerFn(buildMemoryBookOfflinePlan);
+  const reportIssue = useServerFn(reportOfflineExportIssue);
+  const [stage, setStage] = useState<string>("preparing");
   const { refresh } = useCreditBalance();
 
   const [busy, setBusy] = useState<string | null>(null);
@@ -265,10 +272,10 @@ function MyMemoryBooksPage() {
                       <Button
                         size="sm"
                         disabled={busy !== null}
-                        onClick={() => void runDownload(book)}
+                        onClick={() => runDownload(book)}
                       >
                         {busy === `${book.id}-zip`
-                          ? fill(t("mbd_download_working"), { n: percent })
+                          ? fill(t(`mbd_download_stage_${stage}`), { n: percent })
                           : t("mbd_download")}
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => setSharing(book.id)}>
