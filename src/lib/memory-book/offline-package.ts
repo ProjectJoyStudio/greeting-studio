@@ -35,6 +35,8 @@ export interface OfflinePackageFile {
   name: string;
   /** Temporary read link used only while the package is being built. */
   url: string;
+  /** Safe identifier for diagnostics (kind and record id, never a key). */
+  asset: string;
 }
 
 /**
@@ -45,6 +47,7 @@ export interface OfflineInlineFile {
   token: string;
   url: string;
   mime: string;
+  asset: string;
 }
 
 /** Everything the browser needs to assemble the package. */

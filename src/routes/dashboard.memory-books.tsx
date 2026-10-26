@@ -13,7 +13,12 @@ import {
   listMemoryBooks,
   type MemoryBookProject,
 } from "@/lib/memory-book/packages.functions";
-import { buildMemoryBookOfflinePlan } from "@/lib/memory-book/offline-export.functions";
+import {
+  buildMemoryBookOfflinePlan,
+  reportOfflineExportIssue,
+} from "@/lib/memory-book/offline-export.functions";
+import { requestOfflineSaveTarget } from "@/lib/memory-book/offline-save";
+import { OFFLINE_PACKAGE_NAME } from "@/lib/memory-book/offline-package";
 import { MemoryBookShareDialog } from "@/components/memory-book/MemoryBookShareDialog";
 
 export const Route = createFileRoute("/dashboard/memory-books")({
@@ -39,6 +44,8 @@ function MyMemoryBooksPage() {
   const fetchBooks = useServerFn(listMemoryBooks);
   const extend = useServerFn(extendMemoryBookStorage);
   const buildPlan = useServerFn(buildMemoryBookOfflinePlan);
+  const reportIssue = useServerFn(reportOfflineExportIssue);
+  const [stage, setStage] = useState<string>("preparing");
   const { refresh } = useCreditBalance();
 
   const [busy, setBusy] = useState<string | null>(null);
@@ -50,25 +57,73 @@ function MyMemoryBooksPage() {
    * Prepares and saves the offline copy of ONE completed book. It only reads
    * the book: nothing is stored on Project Joy and nothing is changed.
    */
-  async function runDownload(book: MemoryBookProject) {
+  function runDownload(book: MemoryBookProject) {
     if (busy) return;
+    // MUST stay first and synchronous: the browser only opens the "Save as"
+    // dialog while it is still handling this click.
+    const targetPromise = requestOfflineSaveTarget(`${OFFLINE_PACKAGE_NAME}.zip`);
     setNotice(null);
     setPercent(0);
+    setStage("preparing");
     setBusy(`${book.id}-zip`);
-    try {
-      const res = await buildPlan({ data: { bookId: book.id } });
-      if (!res.ok || !res.plan) throw new Error("no_plan");
-      const { downloadOfflineBookPackage } = await import("@/lib/memory-book/offline-zip");
-      const saved = await downloadOfflineBookPackage(res.plan, ({ done: ready, total }) =>
-        setPercent(total > 0 ? Math.min(99, Math.round((ready / total) * 100)) : 0),
-      );
-      if (saved) setNotice(t("mbd_download_done"));
-    } catch {
-      setNotice(t("mbd_download_failed"));
-    } finally {
-      setBusy(null);
-      setPercent(0);
-    }
+    void (async () => {
+      let targetKind = "unknown";
+      const record = (stage: string, category: string, detail: { status?: number; asset?: string } = {}) => {
+        console.warn("[memory-book-offline-export]", { stage, category, ...detail, target: targetKind });
+        void reportIssue({ data: { bookId: book.id, stage, category, ...detail, target: targetKind } }).catch(() => {});
+      };
+      try {
+        const target = await targetPromise;
+        targetKind = target.kind === "download" ? `download:${target.reason}` : target.kind;
+        if (target.kind === "cancelled") {
+          record("choosing_file", "cancelled");
+          setNotice(t("mbd_download_cancelled"));
+          return;
+        }
+        setStage("preparing");
+        let res;
+        try {
+          res = await buildPlan({ data: { bookId: book.id } });
+        } catch {
+          record("preparing", "plan_failed");
+          setNotice(t("mbd_download_failed"));
+          return;
+        }
+        if (!res.ok) {
+          record("preparing", res.error, { asset: res.asset });
+          setNotice(t(res.error === "missing_asset" ? "mbd_download_missing" : "mbd_download_failed"));
+          return;
+        }
+        const { saveOfflineBookPackage } = await import("@/lib/memory-book/offline-zip");
+        await saveOfflineBookPackage(res.plan, target, ({ stage, done: ready, total }) => {
+          setStage(stage);
+          setPercent(total > 0 ? Math.min(99, Math.round((ready / total) * 100)) : 0);
+        });
+        setNotice(t(target.kind === "file" ? "mbd_download_done" : "mbd_download_started"));
+      } catch (error) {
+        const { OfflineExportError } = await import("@/lib/memory-book/offline-zip");
+        if (error instanceof OfflineExportError) {
+          record(error.stage, error.category, error.detail);
+          setNotice(
+            t(
+              error.category === "missing_asset"
+                ? "mbd_download_missing"
+                : error.category === "save_failed"
+                  ? "mbd_download_save_failed"
+                  : error.category === "asset_network" || error.category === "asset_http"
+                    ? "mbd_download_network"
+                    : "mbd_download_failed",
+            ),
+          );
+        } else {
+          record("unknown", "unexpected");
+          setNotice(t("mbd_download_failed"));
+        }
+      } finally {
+        setBusy(null);
+        setPercent(0);
+      }
+    })();
   }
 
   // One stable key per book + option, so a repeated click never charges twice.
@@ -217,10 +272,10 @@ function MyMemoryBooksPage() {
                       <Button
                         size="sm"
                         disabled={busy !== null}
-                        onClick={() => void runDownload(book)}
+                        onClick={() => runDownload(book)}
                       >
                         {busy === `${book.id}-zip`
-                          ? fill(t("mbd_download_working"), { n: percent })
+                          ? fill(t(`mbd_download_stage_${stage}`), { n: percent })
                           : t("mbd_download")}
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => setSharing(book.id)}>
