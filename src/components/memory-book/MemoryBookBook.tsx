@@ -943,7 +943,7 @@ export function MemoryBookBook({
     <>
       <div
         ref={wrapper}
-        className={`mb-book mx-auto w-full max-w-5xl select-none ${frozen ? "pointer-events-none" : ""}`}
+        className={`mb-book mx-auto w-full max-w-5xl select-none [overflow-x:clip] ${frozen ? "pointer-events-none" : ""}`}
       >
         {Flip && width > 0 ? (
           <div
