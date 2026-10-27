@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { useI18n } from "@/lib/i18n";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { viewerStartPage } from "@/lib/memory-book/viewer-position";
 import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import type { MemoryBookDecoration } from "@/lib/memory-book/decorations";
 import {
@@ -577,6 +578,9 @@ export function MemoryBookBook({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [auto, setAuto] = useState(false);
   const [position, setPosition] = useState(0);
+  // The engine may emit a flip before React commits the corresponding state.
+  // Keep its last physical face synchronously for responsive replacement.
+  const positionRef = useRef(0);
   const [width, setWidth] = useState(0);
   const [availableHeight, setAvailableHeight] = useState(0);
   const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
@@ -799,6 +803,7 @@ export function MemoryBookBook({
     const flip = book.current?.pageFlip();
     if (!flip) return;
     flip.turnToPage?.(0);
+    positionRef.current = 0;
     setPosition(0);
   }, []);
 
@@ -953,8 +958,11 @@ export function MemoryBookBook({
               drawShadow
               maxShadowOpacity={0.5}
               flippingTime={800}
-              startPage={0}
-              onFlip={(e: { data: number }) => setPosition(e.data)}
+              startPage={viewerStartPage(positionRef.current, faces.length, isMobile)}
+              onFlip={(e: { data: number }) => {
+                positionRef.current = e.data;
+                setPosition(e.data);
+              }}
             >
               {faces.map((face, i) => (
                 <div

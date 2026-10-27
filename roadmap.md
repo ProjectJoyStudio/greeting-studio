@@ -1,4 +1,5 @@
 # Memory Book storage restructuring — current Greeting Studio only
+- [x] Oct 27 public viewer: fixed reproduced responsive engine reset (1px height change); both existing links passed full forward/back navigation in 14 viewport sizes, Firefox, auto/end/restart, photo enlargement and owner/offline navigation. Russian report records unverified physical devices/Safari, unavailable video codecs and inconclusive forward swipe. No books/links/storage/export changes or publish.
 - [x] Oct 26 disposable finalization executed: 6/6 R2+B2 package hashes, atomic activation, 7 working keys/versions cleaned with failure/resume, viewer/video/music and controlled offline ZIP, exact 13-key removal; existing books/shares/wallets/placements unchanged. Full photo composition and normal-origin ZIP acceptance remain unverified; see Russian report.
 - [x] Fix bounded destination checks, durable leased retry queue and diagnostics; verify real callback, disposable R2/B2 files, concurrency/expired leases and repair only authorized test-book video; both reserves SHA-256 verified, Admin 2/2.
 - [x] Activate and verify external automatic scheduling on the stable preview callback (Oct 26).
