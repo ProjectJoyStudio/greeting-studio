@@ -581,6 +581,10 @@ export function MemoryBookBook({
   // The engine may emit a flip before React commits the corresponding state.
   // Keep its last physical face synchronously for responsive replacement.
   const positionRef = useRef(0);
+  // True while the engine is folding or turning a leaf. Replacing the engine
+  // in that window loses the turn it has not reported yet, so new sizes wait.
+  const turningRef = useRef(false);
+  const [idleTick, setIdleTick] = useState(0);
   const [width, setWidth] = useState(0);
   const [availableHeight, setAvailableHeight] = useState(0);
   const [Flip, setFlip] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
@@ -918,20 +922,28 @@ export function MemoryBookBook({
   const widthLimit = Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460);
   const heightLimit = availableHeight > 0 ? Math.floor((availableHeight * 3) / 4) : widthLimit;
   const pageWidth = Math.max(160, Math.min(widthLimit, heightLimit));
-  const pageHeight = Math.round((pageWidth * 4) / 3);
+  // Only the committed layout reaches the engine; it is updated while no
+  // leaf is moving (a scrollbar appearing during a turn must not rebuild it).
+  const [layout, setLayout] = useState({ mobile: isMobile, pageWidth });
+  useEffect(() => {
+    if (turningRef.current) return;
+    if (layout.mobile === isMobile && layout.pageWidth === pageWidth) return;
+    setLayout({ mobile: isMobile, pageWidth });
+  }, [isMobile, pageWidth, layout, idleTick]);
+  const pageHeight = Math.round((layout.pageWidth * 4) / 3);
 
   const current = faces[position] ?? null;
   // A closed book shows the cover alone, centered; the open book is a
   // two-page spread, so the whole block slides half a page sideways.
-  const closed = !isMobile && position === 0;
-  const finished = !isMobile && position >= faces.length - 1;
-  const shift = closed ? -pageWidth / 2 : finished ? pageWidth / 2 : 0;
+  const closed = !layout.mobile && position === 0;
+  const finished = !layout.mobile && position >= faces.length - 1;
+  const shift = closed ? -layout.pageWidth / 2 : finished ? layout.pageWidth / 2 : 0;
 
   return (
     <>
       <div
         ref={wrapper}
-        className={`mb-book mx-auto w-full max-w-5xl select-none ${frozen ? "pointer-events-none" : ""}`}
+        className={`mb-book mx-auto w-full max-w-5xl select-none [overflow-x:clip] ${frozen ? "pointer-events-none" : ""}`}
       >
         {Flip && width > 0 ? (
           <div
@@ -939,11 +951,11 @@ export function MemoryBookBook({
             style={{ transform: `translateX(${shift}px)` }}
           >
             <Flip
-              key={`${isMobile ? "one" : "two"}-${pageWidth}-${order.join("-")}`}
+              key={`${layout.mobile ? "one" : "two"}-${layout.pageWidth}-${order.join("-")}`}
               ref={book as never}
               className="mx-auto"
               style={{}}
-              width={pageWidth}
+              width={layout.pageWidth}
               height={pageHeight}
               size="fixed"
               minWidth={220}
@@ -951,14 +963,19 @@ export function MemoryBookBook({
               minHeight={290}
               maxHeight={900}
               showCover
-              usePortrait={isMobile}
+              usePortrait={layout.mobile}
               mobileScrollSupport
               swipeDistance={20}
               useMouseEvents
               drawShadow
               maxShadowOpacity={0.5}
               flippingTime={800}
-              startPage={viewerStartPage(positionRef.current, faces.length, isMobile)}
+              startPage={viewerStartPage(positionRef.current, faces.length, layout.mobile)}
+              onChangeState={(e: { data: string }) => {
+                const turning = e.data !== "read";
+                turningRef.current = turning;
+                if (!turning) setIdleTick((n) => n + 1);
+              }}
               onFlip={(e: { data: number }) => {
                 positionRef.current = e.data;
                 setPosition(e.data);
