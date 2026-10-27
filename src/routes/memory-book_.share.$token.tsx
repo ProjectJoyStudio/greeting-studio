@@ -48,6 +48,17 @@ function SharedMemoryBookPage() {
     };
   }, [token, load]);
 
+  // Reserve the scrollbar's space so a scrollbar appearing near the end of
+  // the book does not change the reading width.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.scrollbarGutter;
+    root.style.scrollbarGutter = "stable";
+    return () => {
+      root.style.scrollbarGutter = previous;
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
       <div className="mx-auto w-full max-w-5xl space-y-6">
