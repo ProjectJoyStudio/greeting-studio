@@ -3,9 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 
-import { useI18n } from "@/lib/i18n";
+import { LANGS, useI18n, type Lang } from "@/lib/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MemoryBookBook } from "@/components/memory-book/MemoryBookBook";
 import type { MemoryBookBookData } from "@/components/memory-book/MemoryBookBook";
+import { Button } from "@/components/ui/button";
 import { loadSharedMemoryBook } from "@/lib/memory-book/share.functions";
 
 export const Route = createFileRoute("/memory-book_/share/$token")({
@@ -25,10 +27,11 @@ export const Route = createFileRoute("/memory-book_/share/$token")({
 });
 
 function SharedMemoryBookPage() {
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const { token } = Route.useParams();
   const load = useServerFn(loadSharedMemoryBook);
-  const [state, setState] = useState<"loading" | "ok" | "denied">("loading");
+  const [state, setState] = useState<"loading" | "ok" | "denied" | "error">("loading");
+  const [reload, setReload] = useState(0);
   const [book, setBook] = useState<MemoryBookBookData | null>(null);
 
   useEffect(() => {
@@ -42,11 +45,11 @@ function SharedMemoryBookPage() {
           setState("ok");
         } else setState("denied");
       })
-      .catch(() => alive && setState("denied"));
+      .catch(() => alive && setState("error"));
     return () => {
       alive = false;
     };
-  }, [token, load]);
+  }, [token, load, reload]);
 
   // Reserve the scrollbar's space so a scrollbar appearing near the end of
   // the book does not change the reading width.
@@ -60,9 +63,15 @@ function SharedMemoryBookPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
+    <main className="min-h-screen bg-background px-3 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto w-full max-w-5xl space-y-6">
-        <p className="text-center font-display text-lg font-semibold text-primary">Project Joy</p>
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-display text-lg font-semibold text-primary">Project Joy</p>
+          <Select value={lang} onValueChange={(value) => setLang(value as Lang)}>
+            <SelectTrigger aria-label="English / Русский / Українська / Polski / Deutsch / Français" className="h-11 w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>{LANGS.map(language => <SelectItem key={language.code} value={language.code} className="min-h-11">{language.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </header>
         {state === "loading" ? (
           <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -70,6 +79,11 @@ function SharedMemoryBookPage() {
           </p>
         ) : state === "ok" && book ? (
           <MemoryBookBook data={book} />
+        ) : state === "error" ? (
+          <div className="text-center text-sm text-muted-foreground" role="alert">
+            <p>{t("mbpv_load_error")}</p>
+            <Button variant="outline" className="mt-3" onClick={() => setReload(n => n + 1)}>{t("mbpv_retry")}</Button>
+          </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground">{t("mbs_unavailable")}</p>
         )}

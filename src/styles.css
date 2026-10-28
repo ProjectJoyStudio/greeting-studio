@@ -4,6 +4,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.mb-reader-controls > button {
+  min-height: 44px;
+  height: auto;
+  max-width: 100%;
+  white-space: normal;
+  padding-block: 10px;
+}
+.mb-reader-controls > button svg { flex-shrink: 0; }
+.mb-photo-overlay {
+  max-width: min(48rem, calc((100dvh - 120px) * .75));
+}
+.mb-page-shade {
+  background: linear-gradient(to right, var(--mb-page-shadow), transparent);
+}
+
 /*
  * Design system definition.
  *
@@ -67,6 +82,7 @@
 }
 
 :root {
+  --mb-page-shadow: oklch(0 0 0 / 25%);
   --radius: 0.875rem;
   --background: oklch(0.98 0.012 78);
   --foreground: oklch(0.24 0.03 35);
