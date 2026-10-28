@@ -758,32 +758,15 @@ export function MemoryBookBook({
       const dx = ended.x - started.x;
       const dy = ended.y - started.y;
       if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) * 1.5) return;
-      if ((e as TouchEvent).changedTouches) {
-        // Touch release is owned here, rather than by two competing gesture
-        // handlers. Cancel the fold, then use the engine's normal animation.
-        e.stopImmediatePropagation();
-        if (e.cancelable) e.preventDefault();
-        settleBook();
-        const api = book.current?.pageFlip?.();
-        if (!api) return;
-        try { if (dx < 0) api.flipNext(); else api.flipPrev(); }
-        catch { setAuto(false); setReaderError(true); }
-        return;
-      }
-      const page = el.querySelector(".stf__parent");
-      if (!page) return;
-      const rect = page.getBoundingClientRect();
-      // Nudge the book's own physics past its commit point, so the turn it is
-      // already animating simply finishes.
-      const x = dx < 0 ? rect.left - 60 : rect.right + 60;
-      const type = (e as TouchEvent).changedTouches ? "touchmove" : "mousemove";
-      const synthetic = new Event(type, { bubbles: true, cancelable: true });
-      Object.defineProperty(synthetic, "clientX", { value: x });
-      Object.defineProperty(synthetic, "clientY", { value: ended.y });
-      Object.defineProperty(synthetic, "changedTouches", {
-        value: [{ clientX: x, clientY: ended.y }],
-      });
-      window.dispatchEvent(synthetic);
+      // One release owns a completed drag/swipe. A synthetic movement plus
+      // the engine's release used to compete and could return the leaf.
+      e.stopImmediatePropagation();
+      if (e.cancelable) e.preventDefault();
+      settleBook();
+      const api = book.current?.pageFlip?.();
+      if (!api) return;
+      try { if (dx < 0) api.flipNext(); else api.flipPrev(); }
+      catch { setAuto(false); setReaderError(true); }
     };
 
     window.addEventListener("mousedown", onDown, true);
