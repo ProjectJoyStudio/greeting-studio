@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { useI18n } from "@/lib/i18n";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { autoTurnAction, viewerPageWidth } from "@/lib/memory-book/viewer-navigation";
 import { viewerStartPage } from "@/lib/memory-book/viewer-position";
 import type { MemoryBookMaterial } from "@/lib/memory-book/materials";
 import type { MemoryBookDecoration } from "@/lib/memory-book/decorations";
@@ -368,7 +369,8 @@ function BookFace({
     );
   }
 
-  const page = face.page!;
+  const page = face.page;
+  if (!page) return null;
   const background =
     face.kind === "cover"
       ? coverUrl
@@ -457,8 +459,8 @@ function BookFace({
             className="pointer-events-none h-full w-full bg-black object-cover"
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-            <button
-              type="button"
+            <Button
+              type="button" size="icon" variant="secondary"
               aria-label={t("mbpv_play")}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-background/85"
               onPointerDown={(e) => e.stopPropagation()}
@@ -469,7 +471,7 @@ function BookFace({
               }}
             >
               <Play className="h-6 w-6" aria-hidden />
-            </button>
+            </Button>
           </div>
         </VideoTouchGuard>
       ) : null}
@@ -560,7 +562,7 @@ export function MemoryBookBook({
   onMusicEnabledChange?: (enabled: boolean) => void;
   onMusicVolumeChange?: (volume: number) => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const isMobile = useIsMobile();
 
   const {
@@ -577,6 +579,10 @@ export function MemoryBookBook({
   const [photoPage, setPhotoPage] = useState<MemoryBookPage | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [auto, setAuto] = useState(false);
+  const [readerError, setReaderError] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+  const [loadVersion, setLoadVersion] = useState(0);
+  const controls = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState(0);
   // The engine may emit a flip before React commits the corresponding state.
   // Keep its last physical face synchronously for responsive replacement.
@@ -672,12 +678,15 @@ export function MemoryBookBook({
   useEffect(() => {
     let alive = true;
     void import("react-pageflip").then((mod) => {
-      if (alive) setFlip(() => mod.default as unknown as React.ComponentType<Record<string, unknown>>);
-    });
+      if (alive) {
+        setReaderError(false);
+        setFlip(() => mod.default as unknown as React.ComponentType<Record<string, unknown>>);
+      }
+    }).catch(() => { if (alive) setReaderError(true); });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [loadVersion]);
 
   // The book is scaled to the space available, keeping the page proportions.
   // Both the free width and the free height below the header are measured, so
@@ -694,12 +703,13 @@ export function MemoryBookBook({
       // Space kept for the buttons under the book; the book is expected to sit
       // right below the header, so a long scroll position is ignored.
       const top = Math.max(0, Math.min(rect.top, 96));
-      setAvailableHeight(Math.max(220, Math.round(viewH - top - 130)));
+      setAvailableHeight(Math.max(80, Math.round(viewH - top - (controls.current?.offsetHeight ?? 130) - 32)));
     };
 
     const observer = new ResizeObserver(measure);
     const viewport = window.visualViewport;
     observer.observe(el);
+    if (controls.current) observer.observe(controls.current);
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
@@ -798,35 +808,54 @@ export function MemoryBookBook({
     return list;
   }, [order, pages]);
 
-  const flipNext = useCallback(() => book.current?.pageFlip()?.flipNext(), []);
-  const flipPrev = useCallback(() => book.current?.pageFlip()?.flipPrev(), []);
+  const turn = useCallback((direction: -1 | 1) => {
+    if (frozenRef.current || turningRef.current) return;
+    const api = book.current?.pageFlip?.();
+    if (!api) return;
+    try {
+      if (direction < 0) api.flipPrev(); else api.flipNext();
+    } catch {
+      setAuto(false);
+      setReaderError(true);
+    }
+  }, []);
+  const flipNext = useCallback(() => turn(1), [turn]);
+  const flipPrev = useCallback(() => turn(-1), [turn]);
 
   // Returns the reader to the front cover without starting automatic viewing.
   const restart = useCallback(() => {
     setAuto(false);
     const flip = book.current?.pageFlip();
     if (!flip) return;
+    settleBook();
     flip.turnToPage?.(0);
     positionRef.current = 0;
     setPosition(0);
-  }, []);
+  }, [settleBook]);
 
 
-  // Automatic viewing turns the leaves with the very same page-turn animation.
-  useLayoutEffect(() => {
-    if (!auto || photoPage || videoUrl) return;
+  // Keep a single clock: read live engine position, not a captured render.
+  const faceCountRef = useRef(faces.length);
+  faceCountRef.current = faces.length;
+  useEffect(() => {
+    if (!auto) return;
     const timer = window.setInterval(() => {
-      if (position >= faces.length - 1) {
-        setAuto(false);
-        return;
-      }
-      flipNext();
+      const api = book.current?.pageFlip?.();
+      const action = autoTurnAction({
+        position: positionRef.current, faceCount: faceCountRef.current,
+        ready: Boolean(api), turning: turningRef.current,
+        frozen: frozenRef.current, hidden: document.hidden,
+      });
+      if (action === "stop") setAuto(false);
+      else if (action === "next") flipNext();
     }, 3200);
     return () => window.clearInterval(timer);
-  }, [auto, position, faces.length, flipNext, photoPage, videoUrl]);
+  }, [auto, flipNext]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) return;
       if (photoPage || videoUrl) {
         if (e.key === "Escape") {
           setPhotoPage(null);
@@ -865,9 +894,9 @@ export function MemoryBookBook({
   useEffect(() => {
     const audio = music.current;
     if (!audio) return;
-    if (musicOn) void audio.play().catch(() => undefined);
+    if (musicOn && !videoUrl) void audio.play().catch(() => setMusicOn(false));
     else audio.pause();
-  }, [musicOn, musicUrl]);
+  }, [musicOn, musicUrl, videoUrl]);
 
   // A page video always takes the sound: the music waits and then continues
   // from exactly the same moment, unless it was switched off by hand.
@@ -897,31 +926,30 @@ export function MemoryBookBook({
     void music.current?.play().catch(() => undefined);
   }, [videoUrl]);
 
-  const faceProps = {
-    coverUrl,
-    backCoverUrl,
-    leafBackgroundUrl,
-    photos,
-    videos,
-    library,
-    onOpenPhotos: (page: MemoryBookPage) => {
-      setVideoUrl(null);
-      setPhotoPage(page);
-    },
-    onOpenVideo: (url: string) => {
-      setPhotoPage(null);
-      setVideoUrl(url);
-    },
-    frozen,
-    onTurn: (direction: -1 | 1) => (direction < 0 ? flipPrev() : flipNext()),
-    onCancelTurn: settleBook,
-  };
+  const openPhotos = useCallback((page: MemoryBookPage) => {
+    setVideoUrl(null); setPhotoPage(page);
+  }, []);
+  const openVideo = useCallback((url: string) => {
+    setPhotoPage(null); setMediaError(false); setVideoUrl(url);
+  }, []);
+  // react-pageflip rebuilds its page collection when children change. Control
+  // state must NEVER recreate those children during an in-flight animation.
+  const renderedFaces = useMemo(() => faces.map((face, i) => (
+    <div key={i} className="mb-book-page bg-card" data-face-index={i}
+      data-density={i === 0 || i === faces.length - 1 ? "hard" : "soft"}>
+      <div className="relative h-full w-full overflow-hidden">
+        <BookFace face={face} coverUrl={coverUrl} backCoverUrl={backCoverUrl}
+          leafBackgroundUrl={leafBackgroundUrl} photos={photos} videos={videos}
+          library={library} onOpenPhotos={openPhotos} onOpenVideo={openVideo}
+          onTurn={turn} onCancelTurn={settleBook} frozen={false} />
+        <span aria-hidden className={`mb-page-shade pointer-events-none absolute inset-y-0 w-6 ${i % 2 === 0 ? "left-0" : "right-0 rotate-180"}`} />
+      </div>
+    </div>
+  )), [faces, coverUrl, backCoverUrl, leafBackgroundUrl, photos, videos, library, openPhotos, openVideo, turn, settleBook, lang]);
 
   // The page is limited by the free width and, just as strictly, by the free
   // height, so the whole book always stays inside the screen.
-  const widthLimit = Math.min(isMobile ? width : Math.floor(width / 2), isMobile ? 420 : 460);
-  const heightLimit = availableHeight > 0 ? Math.floor((availableHeight * 3) / 4) : widthLimit;
-  const pageWidth = Math.max(160, Math.min(widthLimit, heightLimit));
+  const pageWidth = viewerPageWidth(width, availableHeight, isMobile);
   // Only the committed layout reaches the engine; it is updated while no
   // leaf is moving (a scrollbar appearing during a turn must not rebuild it).
   const [layout, setLayout] = useState({ mobile: isMobile, pageWidth });
@@ -979,27 +1007,10 @@ export function MemoryBookBook({
               onFlip={(e: { data: number }) => {
                 positionRef.current = e.data;
                 setPosition(e.data);
+                if (e.data >= faceCountRef.current - 1) setAuto(false);
               }}
             >
-              {faces.map((face, i) => (
-                <div
-                  key={i}
-                  className="mb-book-page bg-card"
-                  data-density={i === 0 || i === faces.length - 1 ? "hard" : "soft"}
-                >
-                  <div className="relative h-full w-full overflow-hidden">
-                    <BookFace face={face} {...faceProps} />
-                    <span
-                      aria-hidden
-                      className={`pointer-events-none absolute inset-y-0 w-6 ${
-                        i % 2 === 0
-                          ? "left-0 bg-gradient-to-r from-black/25 to-transparent"
-                          : "right-0 bg-gradient-to-l from-black/25 to-transparent"
-                      }`}
-                    />
-                  </div>
-                </div>
-              ))}
+              {renderedFaces}
             </Flip>
           </div>
         ) : (
@@ -1009,8 +1020,12 @@ export function MemoryBookBook({
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <Button variant="outline" size="sm" onClick={flipPrev}>
+        {readerError ? <p role="alert" className="mt-3 text-center text-sm text-destructive">
+          {t("mbpv_reader_error")}
+          <Button variant="outline" className="ml-2" onClick={() => { setReaderError(false); setLoadVersion(v => v + 1); }}>{t("mbpv_retry")}</Button>
+        </p> : null}
+        <div ref={controls} className="mb-reader-controls mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={position === 0} onClick={flipPrev}>
             <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
             {t("mbpv_prev")}
           </Button>
@@ -1023,11 +1038,11 @@ export function MemoryBookBook({
                   ? fill(t("mbpv_page"), { n: current.number })
                   : t("mbpv_end")}
           </span>
-          <Button variant="outline" size="sm" onClick={flipNext}>
+          <Button variant="outline" size="sm" disabled={position >= faces.length - 1} onClick={flipNext}>
             {t("mbpv_next")}
             <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setAuto((v) => !v)}>
+          <Button variant="secondary" size="sm" aria-pressed={auto} disabled={position >= faces.length - 1} onClick={() => setAuto((v) => !v)}>
             {auto ? (
               <>
                 <Pause className="mr-1 h-4 w-4" aria-hidden />
@@ -1040,7 +1055,7 @@ export function MemoryBookBook({
               </>
             )}
           </Button>
-          {position >= faces.length - 1 ? (
+          {position > 0 ? (
             <Button variant="default" size="sm" onClick={restart}>
               <RotateCcw className="mr-1 h-4 w-4" aria-hidden />
               {t("mbpv_restart")}
@@ -1054,6 +1069,7 @@ export function MemoryBookBook({
                 size="sm"
                 onClick={() => {
                   const next = !musicOn;
+                  if (next && !videoUrl) void music.current?.play().catch(() => setMusicOn(false));
                   setMusicOn(next);
                   onMusicEnabledChange?.(next);
                 }}
@@ -1069,7 +1085,7 @@ export function MemoryBookBook({
                   value={Math.round(musicVolume * 100)}
                   onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
                   onPointerUp={() => onMusicVolumeChange?.(musicVolume)}
-                  className="h-1 w-28 cursor-pointer"
+                  className="h-11 w-28 cursor-pointer"
                   aria-label={t("mbpv_music_volume")}
                 />
               </label>
@@ -1085,8 +1101,8 @@ export function MemoryBookBook({
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
           onClick={() => setPhotoPage(null)}
         >
-          <button
-            type="button"
+          <Button
+            type="button" size="icon" variant="outline"
             aria-label={t("mbpv_close")}
             className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg"
             onClick={(e) => {
@@ -1095,8 +1111,8 @@ export function MemoryBookBook({
             }}
           >
             <X className="h-6 w-6" aria-hidden />
-          </button>
-          <div className="relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+          </Button>
+          <div className="mb-photo-overlay relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <div
               className="relative w-full overflow-hidden rounded-2xl bg-card"
               style={{ aspectRatio: "3 / 4", containerType: "inline-size" }}
@@ -1122,21 +1138,23 @@ export function MemoryBookBook({
           ref={photoPage ? undefined : overlay}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/95 p-4"
         >
-          <button
-            type="button"
+          <Button
+            type="button" size="icon" variant="outline"
             aria-label={t("mbpv_close")}
             className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/70 text-white shadow-lg"
             onClick={() => setVideoUrl(null)}
           >
             <X className="h-6 w-6" aria-hidden />
-          </button>
+          </Button>
           <video
             src={videoUrl}
             controls
             autoPlay
+            onError={() => setMediaError(true)}
             playsInline
             className="max-h-[80vh] w-full max-w-4xl rounded-xl bg-black"
           />
+          {mediaError ? <p role="alert" className="text-center text-sm text-background">{t("mbpv_media_error")}</p> : null}
           <Button variant="secondary" onClick={() => setVideoUrl(null)}>
             <X className="mr-1 h-4 w-4" aria-hidden />
             {t("mbpv_close")}
