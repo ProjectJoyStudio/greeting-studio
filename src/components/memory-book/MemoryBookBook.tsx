@@ -741,7 +741,7 @@ export function MemoryBookBook({
 
     const onDown = (e: Event) => {
       if (frozenRef.current) return;
-      if (!(e.target instanceof Node) || !el.contains(e.target)) return;
+      if (!(e.target instanceof Element) || !e.target.closest(".stf__parent") || e.target.closest("[data-video-guard]")) return;
       from = point(e);
       now = from;
     };
@@ -757,6 +757,18 @@ export function MemoryBookBook({
       const dx = ended.x - started.x;
       const dy = ended.y - started.y;
       if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) * 1.5) return;
+      if ((e as TouchEvent).changedTouches) {
+        // Touch release is owned here, rather than by two competing gesture
+        // handlers. Cancel the fold, then use the engine's normal animation.
+        e.stopImmediatePropagation();
+        if (e.cancelable) e.preventDefault();
+        settleBook();
+        const api = book.current?.pageFlip?.();
+        if (!api) return;
+        try { if (dx < 0) api.flipNext(); else api.flipPrev(); }
+        catch { setAuto(false); setReaderError(true); }
+        return;
+      }
       const page = el.querySelector(".stf__parent");
       if (!page) return;
       const rect = page.getBoundingClientRect();
@@ -778,7 +790,7 @@ export function MemoryBookBook({
     window.addEventListener("mousemove", onMove, true);
     window.addEventListener("touchmove", onMove, true);
     window.addEventListener("mouseup", onUp, true);
-    window.addEventListener("touchend", onUp, true);
+    window.addEventListener("touchend", onUp, { capture: true, passive: false });
     return () => {
       window.removeEventListener("mousedown", onDown, true);
       window.removeEventListener("touchstart", onDown, true);
@@ -787,7 +799,7 @@ export function MemoryBookBook({
       window.removeEventListener("mouseup", onUp, true);
       window.removeEventListener("touchend", onUp, true);
     };
-  }, [frozen]);
+  }, [frozen, settleBook]);
 
   const photos = useMemo(() => materials.filter((m) => m.kind === "photo"), [materials]);
   const videos = useMemo(() => materials.filter((m) => m.kind === "video"), [materials]);
