@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { MemoryBookBook } from "@/components/memory-book/MemoryBookBook";
 import type { MemoryBookBookData } from "@/components/memory-book/MemoryBookBook";
+import { Button } from "@/components/ui/button";
 import { loadSharedMemoryBook } from "@/lib/memory-book/share.functions";
 
 export const Route = createFileRoute("/memory-book_/share/$token")({
@@ -28,7 +29,8 @@ function SharedMemoryBookPage() {
   const { t } = useI18n();
   const { token } = Route.useParams();
   const load = useServerFn(loadSharedMemoryBook);
-  const [state, setState] = useState<"loading" | "ok" | "denied">("loading");
+  const [state, setState] = useState<"loading" | "ok" | "denied" | "error">("loading");
+  const [reload, setReload] = useState(0);
   const [book, setBook] = useState<MemoryBookBookData | null>(null);
 
   useEffect(() => {
@@ -42,11 +44,11 @@ function SharedMemoryBookPage() {
           setState("ok");
         } else setState("denied");
       })
-      .catch(() => alive && setState("denied"));
+      .catch(() => alive && setState("error"));
     return () => {
       alive = false;
     };
-  }, [token, load]);
+  }, [token, load, reload]);
 
   // Reserve the scrollbar's space so a scrollbar appearing near the end of
   // the book does not change the reading width.
@@ -60,7 +62,7 @@ function SharedMemoryBookPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
+    <main className="min-h-screen bg-background px-3 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <p className="text-center font-display text-lg font-semibold text-primary">Project Joy</p>
         {state === "loading" ? (
@@ -70,6 +72,11 @@ function SharedMemoryBookPage() {
           </p>
         ) : state === "ok" && book ? (
           <MemoryBookBook data={book} />
+        ) : state === "error" ? (
+          <div className="text-center text-sm text-muted-foreground" role="alert">
+            <p>{t("mbpv_load_error")}</p>
+            <Button variant="outline" className="mt-3" onClick={() => setReload(n => n + 1)}>{t("mbpv_retry")}</Button>
+          </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground">{t("mbs_unavailable")}</p>
         )}
