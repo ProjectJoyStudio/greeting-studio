@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, X } from "lucide-react";
 
+import { ViewerImage } from "./ViewerImage";
 import { Button } from "@/components/ui/button";
 import { hexToRgba } from "@/components/greeting-card/CardPreview";
 import { useI18n } from "@/lib/i18n";
@@ -72,7 +73,7 @@ export function PhotoComposition({
             }}
           >
             {photo ? (
-              <img
+              <ViewerImage
                 src={photo.url}
                 alt=""
                 draggable={false}
@@ -150,7 +151,7 @@ function VideoTouchGuard({
   }, []);
 
   return (
-    <div ref={ref} className={className} style={style}>
+    <div ref={ref} data-video-guard className={className} style={style}>
       {children}
     </div>
   );
@@ -443,7 +444,7 @@ function BookFace({
       {video ? (
         <VideoTouchGuard
           onOpen={() => onOpenVideo?.(video.url)}
-          className="absolute overflow-hidden rounded-xl bg-black shadow-lg"
+          className="absolute overflow-hidden rounded-xl bg-foreground shadow-lg"
           style={{
             left: `${videoFrame.x}%`,
             top: `${videoFrame.y}%`,
@@ -456,9 +457,9 @@ function BookFace({
             preload="metadata"
             playsInline
             muted
-            className="pointer-events-none h-full w-full bg-black object-cover"
+            className="pointer-events-none h-full w-full bg-foreground object-cover"
           />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/20">
             <Button
               type="button" size="icon" variant="secondary"
               aria-label={t("mbpv_play")}
@@ -1148,12 +1149,12 @@ export function MemoryBookBook({
       {videoUrl ? (
         <div
           ref={photoPage ? undefined : overlay}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/95 p-4"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-foreground/95 p-4"
         >
           <Button
             type="button" size="icon" variant="outline"
             aria-label={t("mbpv_close")}
-            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/70 text-white shadow-lg"
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-background/30 bg-foreground/70 text-background shadow-lg"
             onClick={() => setVideoUrl(null)}
           >
             <X className="h-6 w-6" aria-hidden />
@@ -1164,7 +1165,7 @@ export function MemoryBookBook({
             autoPlay
             onError={() => setMediaError(true)}
             playsInline
-            className="max-h-[80vh] w-full max-w-4xl rounded-xl bg-black"
+            className="max-h-[70dvh] w-full max-w-4xl rounded-xl bg-foreground"
           />
           {mediaError ? <p role="alert" className="text-center text-sm text-background">{t("mbpv_media_error")}</p> : null}
           <Button variant="secondary" onClick={() => setVideoUrl(null)}>
