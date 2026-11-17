@@ -110,12 +110,7 @@ export const completeMemoryBook = createServerFn({ method: "POST" })
     if (!row || Number(row.credits_spent ?? 0) <= 0) return { ok: false, error: "not_found" };
 
     if (row.status === "completed" && typeof row.completed_at === "string") {
-      const { storageOperation, cleanupBookWorking } = await import("./storage-package.server");
-      const op = await storageOperation(data.bookId);
-      if (op?.activated_at && ["cleanup_pending", "cleanup_running"].includes(op.stage)) {
-        try { const cleanup = await cleanupBookWorking(context.userId, data.bookId); return { ok: true, pending: cleanup.pending }; }
-        catch { /* A cleanup failure never makes the verified completed book unavailable. */ }
-      }
+      // Working-file cleanup runs automatically on the server after activation.
       return {
         ok: true,
         alreadyCompleted: true,

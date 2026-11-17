@@ -2959,7 +2959,15 @@ export type Database = {
         Row: {
           activated_at: string | null
           book_id: string
+          cleanup_completed_at: string | null
+          cleanup_deleted_backup: number
+          cleanup_deleted_primary: number
+          cleanup_last_success_at: string | null
+          cleanup_next_at: string | null
+          cleanup_remaining: number | null
           cleanup_results: Json
+          cleanup_retry_count: number
+          cleanup_total: number | null
           created_at: string
           cursor: number
           emergency_until: string | null
@@ -2977,7 +2985,15 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           book_id: string
+          cleanup_completed_at?: string | null
+          cleanup_deleted_backup?: number
+          cleanup_deleted_primary?: number
+          cleanup_last_success_at?: string | null
+          cleanup_next_at?: string | null
+          cleanup_remaining?: number | null
           cleanup_results?: Json
+          cleanup_retry_count?: number
+          cleanup_total?: number | null
           created_at?: string
           cursor?: number
           emergency_until?: string | null
@@ -2995,7 +3011,15 @@ export type Database = {
         Update: {
           activated_at?: string | null
           book_id?: string
+          cleanup_completed_at?: string | null
+          cleanup_deleted_backup?: number
+          cleanup_deleted_primary?: number
+          cleanup_last_success_at?: string | null
+          cleanup_next_at?: string | null
+          cleanup_remaining?: number | null
           cleanup_results?: Json
+          cleanup_retry_count?: number
+          cleanup_total?: number | null
           created_at?: string
           cursor?: number
           emergency_until?: string | null
@@ -5515,6 +5539,7 @@ export type Database = {
         Returns: Json
       }
       dispatch_memory_book_backups: { Args: never; Returns: undefined }
+      dispatch_memory_book_cleanups: { Args: never; Returns: undefined }
       extend_memory_book_storage: {
         Args: {
           _book_id: string

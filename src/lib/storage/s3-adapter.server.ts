@@ -306,6 +306,9 @@ export function createS3Adapter(
     async listVersions(key) {
       const c = cfg();
       if (!c || !key) throw new Error("storage_not_configured");
+      // R2 has no object versioning; its ListObjectVersions request only answers
+      // 501 after ~30 s, which made each exact deletion take about a minute.
+      if (id === "r2") return [];
       const out: Array<{ key: string; versionId: string }> = [];
       let keyMarker = "", versionMarker = "";
       for (let page = 0; page < 100; page++) {
@@ -334,6 +337,45 @@ export function createS3Adapter(
       if (!c || !key || !versionId) throw new Error("storage_not_configured");
       const res = await c.client.fetch(`${objectUrl(c, key)}?versionId=${encodeURIComponent(versionId)}`, { method: "DELETE" });
       if (!res.ok && res.status !== 404) throw new Error(`versions_delete_http_${res.status}`);
+    },
+    async listKeys(prefix) {
+      const c = cfg();
+      if (!c || !prefix.endsWith("/")) throw new Error("storage_not_configured");
+      const keys = new Set<string>();
+      let token = "";
+      for (let page = 0; page < 100; page++) {
+        const query = new URLSearchParams({ "list-type": "2", prefix, "max-keys": "1000" });
+        if (token) query.set("continuation-token", token);
+        const res = await c.client.fetch(`${c.base}?${query}`);
+        if (!res.ok) throw new Error(`list_http_${res.status}`);
+        const result = new XMLParser({ parseTagValue: false, isArray: name => name === "Contents" }).parse(await res.text()).ListBucketResult;
+        if (!result) throw new Error("list_invalid_response");
+        for (const row of result.Contents ?? []) if (typeof row.Key === "string") keys.add(row.Key);
+        if (String(result.IsTruncated) !== "true") break;
+        token = String(result.NextContinuationToken ?? "");
+        if (!token) throw new Error("list_pagination_stalled");
+        if (page === 99) throw new Error("list_pagination_limit");
+      }
+      // Versioned providers can keep hidden versions after the current object is gone.
+      if (id === "r2") return [...keys].filter(k => k.startsWith(prefix));
+      let keyMarker = "", versionMarker = "";
+      for (let page = 0; page < 100; page++) {
+        const query = new URLSearchParams({ versions: "", prefix, "max-keys": "1000" });
+        if (keyMarker) query.set("key-marker", keyMarker);
+        if (versionMarker) query.set("version-id-marker", versionMarker);
+        const res = await c.client.fetch(`${c.base}?${query}`);
+        if (id === "r2" && res.status === 501) break;
+        if (!res.ok) throw new Error(`versions_list_http_${res.status}`);
+        const result = new XMLParser({ parseTagValue: false, isArray: name => name === "Version" || name === "DeleteMarker" }).parse(await res.text()).ListVersionsResult;
+        if (!result) throw new Error("versions_invalid_response");
+        for (const row of [...(result.Version ?? []), ...(result.DeleteMarker ?? [])]) if (typeof row.Key === "string") keys.add(row.Key);
+        if (String(result.IsTruncated) !== "true") break;
+        const next = String(result.NextKeyMarker ?? "");
+        if (!next || (next === keyMarker && String(result.NextVersionIdMarker ?? "") === versionMarker)) throw new Error("versions_pagination_stalled");
+        keyMarker = next; versionMarker = String(result.NextVersionIdMarker ?? "");
+        if (page === 99) throw new Error("versions_pagination_limit");
+      }
+      return [...keys].filter(k => k.startsWith(prefix));
     },
   };
   return adapter;

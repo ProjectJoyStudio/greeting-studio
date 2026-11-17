@@ -57,7 +57,7 @@ export interface AdminBookDetail {
   book: AdminBookRow;
   providers: AdminBookProviderSummary[];
   objects: AdminBookStorageObject[];
-  operation?: { stage: string; cursor: number; total: number; error: string | null; activatedAt: string | null; emergencyUntil: string | null; cleanup: string } | null;
+  operation?: { stage: string; cursor: number; total: number; error: string | null; activatedAt: string | null; emergencyUntil: string | null; cleanup: string; cleanupTotal: number | null; cleanupDeletedPrimary: number; cleanupDeletedBackup: number; cleanupRemaining: number | null; cleanupLastSuccessAt: string | null; cleanupNextAt: string | null; cleanupCompletedAt: string | null; cleanupRetryCount: number; leaseUntil: string | null } | null;
 }
 
 type Client = { from: (t: string) => any; rpc: (fn: string, args: any) => Promise<any> };
@@ -271,7 +271,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
       };
     });
 
-    const { data: operation } = await db.from("memory_book_storage_operations").select("stage,cursor,manifest,last_error,activated_at,emergency_until,cleanup_results").eq("book_id", data.bookId).maybeSingle();
+    const { data: operation } = await db.from("memory_book_storage_operations").select("stage,cursor,manifest,last_error,activated_at,emergency_until,cleanup_results,cleanup_total,cleanup_deleted_primary,cleanup_deleted_backup,cleanup_remaining,cleanup_last_success_at,cleanup_next_at,cleanup_completed_at,cleanup_retry_count,lease_until").eq("book_id", data.bookId).maybeSingle();
     return {
       detail: {
         book: rowToBook(
@@ -281,7 +281,7 @@ export const adminMemoryBookDetail = createServerFn({ method: "POST" })
         ),
         providers,
         objects,
-        operation: operation ? { stage: operation.stage, cursor: operation.cursor, total: operation.manifest.length, error: operation.last_error, activatedAt: operation.activated_at, emergencyUntil: operation.emergency_until, cleanup: JSON.stringify(operation.cleanup_results) } : null,
+        operation: operation ? { stage: operation.stage, cursor: operation.cursor, total: operation.manifest.length, error: operation.last_error, activatedAt: operation.activated_at, emergencyUntil: operation.emergency_until, cleanup: JSON.stringify(operation.cleanup_results), cleanupTotal: operation.cleanup_total, cleanupDeletedPrimary: operation.cleanup_deleted_primary ?? 0, cleanupDeletedBackup: operation.cleanup_deleted_backup ?? 0, cleanupRemaining: operation.cleanup_remaining, cleanupLastSuccessAt: operation.cleanup_last_success_at, cleanupNextAt: operation.cleanup_next_at, cleanupCompletedAt: operation.cleanup_completed_at, cleanupRetryCount: operation.cleanup_retry_count ?? 0, leaseUntil: operation.lease_until } : null,
       },
     };
   });
@@ -562,6 +562,7 @@ export const adminBookStorageAction = createServerFn({ method: "POST" })
     const db = await admin();
     try {
       if (data.action === "cleanup") {
+        // Manual recovery: one bounded batch; automatic continuation is server-side.
         const result = await cleanupBookWorking(op.user_id, data.bookId);
         await logAction(context.userId, "memory_book.cleanup", data.bookId, null, result);
         return { ok: true, pending: result.pending };

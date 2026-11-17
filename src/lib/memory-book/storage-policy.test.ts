@@ -22,4 +22,18 @@ describe("Memory Book storage safeguards", () => {
     expect([...ids.materials]).toEqual(["back-photo", "video"]);
     expect([...ids.decorations]).toEqual(["sticker"]);
   });
+});import { cleanupRetryDelayMs, cleanupErrorIsTerminal, CLEANUP_RETRY_LIMIT } from "./storage-policy";
+describe("automatic working cleanup policy", () => {
+  it("retries temporary failures after one minute, growing to at most 30 minutes", () => {
+    expect(cleanupRetryDelayMs(1)).toBe(60_000);
+    expect(cleanupRetryDelayMs(2)).toBe(120_000);
+    expect(cleanupRetryDelayMs(20)).toBe(30 * 60_000);
+    expect(CLEANUP_RETRY_LIMIT).toBe(8);
+  });
+  it("never automatically retries a failed final-copy verification or an out-of-scope key", () => {
+    expect(cleanupErrorIsTerminal("cleanup_final_dependency_unverified")).toBe(true);
+    expect(cleanupErrorIsTerminal("cleanup_key_invalid")).toBe(true);
+    expect(cleanupErrorIsTerminal("delete_verify:http_403")).toBe(false);
+    expect(cleanupErrorIsTerminal("list_http_503")).toBe(false);
+  });
 });

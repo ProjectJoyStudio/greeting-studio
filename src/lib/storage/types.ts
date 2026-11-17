@@ -73,6 +73,8 @@ export interface StorageAdapter {
   abortMultipart(key: string, uploadId: string): Promise<void>;
   listVersions(key: string): Promise<StorageVersion[]>;
   deleteVersion(key: string, versionId: string): Promise<void>;
+  /** Read-only inventory: every key (current objects, versions and delete markers) under a folder prefix ending in "/". Never used to delete by prefix. */
+  listKeys?(prefix: string): Promise<string[]>;
 }
 
 /**

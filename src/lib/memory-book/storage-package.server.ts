@@ -1,7 +1,7 @@
 import { storageFor } from "@/lib/storage/registry.server";
 import { transferObject, deleteExactObjectVersions, type TransferState } from "@/lib/storage/transfer.server";
 import { writePlacement, backupToReserve, appendPlacementHistory } from "@/lib/storage/backup.server";
-import { isWorkingObject, pageDependencyIds } from "./storage-policy";
+import { isWorkingObject, pageDependencyIds, cleanupRetryDelayMs, cleanupErrorIsTerminal, CLEANUP_RETRY_LIMIT } from "./storage-policy";
 import { MEMORY_BOOK_R2_BUCKET } from "./materials";
 type Row = Record<string, any>;
 export interface PackageAsset { bucket: string; path: string; target: string; shared: boolean; checksum?: string; sizeBytes?: number; primaryVerified?: boolean; backupVerified?: boolean; transfer?: TransferState | null }
@@ -142,40 +142,91 @@ export async function resolvePackageAsset(bookId: string, bucket: string, path: 
   return { bucket: MEMORY_BOOK_R2_BUCKET, path: asset.target, emergency: !!op.emergency_until && Date.parse(op.emergency_until) > Date.now() };
 }
 
-export async function cleanupBookWorking(userId: string, bookId: string) {
+/**
+ * Automatic, resumable cleanup of ONE completed book's working/ area.
+ * Bounded batch per call; the server dispatcher calls it again while work remains.
+ * The physical provider listing is authoritative; the ledger only records progress.
+ */
+export async function cleanupBookWorking(userId: string, bookId: string, options: { budgetMs?: number; maxObjects?: number } = {}) {
+  const started = Date.now(), budgetMs = options.budgetMs ?? 40_000, maxObjects = options.maxObjects ?? 25;
   const op = await storageOperation(bookId);
   if (!op?.activated_at || op.user_id !== userId || !(op.manifest as PackageAsset[]).every(a => a.primaryVerified && a.backupVerified && a.checksum)) throw new Error("cleanup_not_authorized");
+  if (op.stage === "cleanup_completed") return { pending: false };
+  if (!["cleanup_pending", "cleanup_running", "cleanup_failed"].includes(op.stage)) throw new Error("cleanup_not_authorized");
   const client = await db();
   const token = crypto.randomUUID(), now = new Date().toISOString();
-  const { data: locked } = await client.from("memory_book_storage_operations").update({ lease_token: token, lease_until: new Date(Date.now() + 15 * 60000).toISOString(), stage: "cleanup_running" }).eq("book_id", bookId).or(`lease_until.is.null,lease_until.lt.${now}`).select("*").maybeSingle();
-  if (!locked) throw new Error("cleanup_busy");
-  const results: Row[] = locked.cleanup_results ?? [];
+  // One worker per book: the lease is claimed atomically; an expired lease is resumable.
+  const { data: locked } = await client.from("memory_book_storage_operations").update({ lease_token: token, lease_until: new Date(Date.now() + 5 * 60000).toISOString(), stage: "cleanup_running" }).eq("book_id", bookId).or(`lease_until.is.null,lease_until.lt.${now}`).select("*").maybeSingle();
+  if (!locked) return { pending: true, busy: true };
+  const prefix = `users/${userId}/memory-book/${bookId}/working/`;
+  const results: Row[] = Array.isArray(locked.cleanup_results) ? locked.cleanup_results : [];
+  const entry = (key: string) => { let r = results.find(x => x.key === key); if (!r) { r = { key }; results.push(r); } return r; };
+  const counts = () => ({ cleanup_deleted_primary: results.filter(r => r.primary || r.ok).length, cleanup_deleted_backup: results.filter(r => r.backup || r.ok).length });
   try {
-    const { data: rows, error } = await client.from("storage_placements").select("object_key").like("object_key", `users/${userId}/memory-book/${bookId}/working/%`);
-    if (error) throw new Error("cleanup_inventory_failed");
-    for (const key of new Set<string>((rows ?? []).map((r: Row) => r.object_key))) {
-      if (!isWorkingObject(userId, bookId, key)) throw new Error("cleanup_key_invalid");
-      if (results.some(r => r.key === key && r.ok)) continue;
-      // Reverify every final dependency immediately before any destructive step.
-      for (const asset of op.manifest as PackageAsset[]) for (const role of ["primary", "backup"] as const) {
-        const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
-        const digest = await adapter.digest(asset.target); if (digest.checksum !== asset.checksum || digest.sizeBytes !== asset.sizeBytes) throw new Error("cleanup_final_dependency_unverified");
-      }
+    const primary = storageFor("primary"), backup = storageFor("backup");
+    if (!primary || !backup) throw new Error("storage_not_configured");
+    if (!primary.listKeys || !backup.listKeys) throw new Error("storage_listing_unsupported");
+    const manifest = op.manifest as PackageAsset[];
+    for (const asset of manifest) if (asset.target.startsWith(prefix)) throw new Error("cleanup_final_dependency_is_working");
+    // Every final dependency is re-read from BOTH providers before any deletion in this batch.
+    for (const asset of manifest) for (const adapter of [primary, backup]) {
+      const digest = await adapter.digest(asset.target);
+      if (digest.checksum !== asset.checksum || digest.sizeBytes !== asset.sizeBytes) throw new Error("cleanup_final_dependency_unverified");
+    }
+    const inventory = async () => {
+      const { data: rows, error } = await client.from("storage_placements").select("object_key,provider,status").like("object_key", `${prefix}%`);
+      if (error) throw new Error("cleanup_inventory_failed");
+      const physical = { primary: new Set(await primary.listKeys!(prefix)), backup: new Set(await backup.listKeys!(prefix)) };
+      const keys = new Set<string>([...physical.primary, ...physical.backup, ...(rows ?? []).filter((r: Row) => r.status !== "deleted").map((r: Row) => String(r.object_key))]);
+      for (const key of keys) if (!isWorkingObject(userId, bookId, key)) throw new Error("cleanup_key_invalid");
+      return { keys, physical };
+    };
+    let { keys, physical } = await inventory();
+    const total = new Set([...keys, ...results.map(r => String(r.key))]).size;
+    await save(bookId, { cleanup_total: total, cleanup_remaining: keys.size, last_error: null }, token);
+    let processed = 0;
+    for (const key of keys) {
+      if (processed >= maxObjects || Date.now() - started > budgetMs) break;
+      const r = entry(key);
       for (const role of ["primary", "backup"] as const) {
-        const adapter = storageFor(role); if (!adapter) throw new Error("storage_not_configured");
+        const adapter = role === "primary" ? primary : backup;
+        // Ledger is a hint only: anything still physically listed is deleted again (idempotent).
+        if (r[role] && !physical[role].has(key)) continue;
         await deleteExactObjectVersions(adapter, key);
         await writePlacement(key, adapter.id, { role, status: "deleted", verifiedAt: null, lastError: null });
+        r[role] = true; r.ok = !!(r.primary && r.backup); r.at = new Date().toISOString();
+        await save(bookId, { cleanup_results: results, ...counts() }, token);
       }
-      results.push({ key, ok: true }); await save(bookId, { cleanup_results: results }, token);
-      // Bound work; next explicit retry resumes the same cleanup ledger.
-      await save(bookId, { stage: "cleanup_pending", lease_token: null, lease_until: null }, token);
-      return { pending: true };
+      processed++;
     }
-    const { error: updateError } = await client.from("memory_book_projects").update({ working_cleaned_at: now }).eq("id", bookId).eq("user_id", userId);
+    ({ keys } = await inventory());
+    if (keys.size) {
+      await save(bookId, { stage: "cleanup_pending", cleanup_remaining: keys.size, cleanup_retry_count: 0, cleanup_next_at: null, cleanup_last_success_at: new Date().toISOString(), lease_token: null, lease_until: null, ...counts() }, token);
+      return { pending: true, remaining: keys.size };
+    }
+    const done = new Date().toISOString();
+    const { error: updateError } = await client.from("memory_book_projects").update({ working_cleaned_at: done }).eq("id", bookId).eq("user_id", userId);
     if (updateError) throw new Error("cleanup_timestamp_failed");
-    await save(bookId, { stage: "cleanup_completed", lease_token: null, lease_until: null, last_error: null }, token);
-    return { pending: false };
+    await save(bookId, { stage: "cleanup_completed", cleanup_remaining: 0, cleanup_completed_at: done, cleanup_last_success_at: done, cleanup_next_at: null, cleanup_retry_count: 0, lease_token: null, lease_until: null, last_error: null, ...counts() }, token);
+    return { pending: false, remaining: 0 };
   } catch (e) {
-    await save(bookId, { stage: "cleanup_failed", last_error: e instanceof Error ? e.message : "cleanup_failed", cleanup_results: results, lease_token: null, lease_until: null }, token); throw e;
+    const message = (e instanceof Error ? e.message : "cleanup_failed").slice(0, 300);
+    const retry = Number(locked.cleanup_retry_count ?? 0) + 1;
+    const terminal = cleanupErrorIsTerminal(message) || retry >= CLEANUP_RETRY_LIMIT;
+    await save(bookId, { stage: terminal ? "cleanup_failed" : "cleanup_pending", last_error: message, cleanup_results: results, cleanup_retry_count: retry, cleanup_next_at: terminal ? null : new Date(Date.now() + cleanupRetryDelayMs(retry)).toISOString(), lease_token: null, lease_until: null, ...counts() }, token);
+    throw e;
   }
+}
+
+/** Server-only: processes due cleanups (called by the authorized dispatcher). */
+export async function runDueCleanups(limit = 2) {
+  const client = await db(), now = new Date().toISOString();
+  const { data, error } = await client.from("memory_book_storage_operations").select("book_id,user_id").not("activated_at", "is", null).in("stage", ["cleanup_pending", "cleanup_running"]).or(`cleanup_next_at.is.null,cleanup_next_at.lte.${now}`).or(`lease_until.is.null,lease_until.lt.${now}`).limit(limit);
+  if (error) throw new Error("cleanup_queue_read_failed");
+  const out: Row[] = [];
+  for (const row of data ?? []) {
+    try { out.push({ book: row.book_id, ...(await cleanupBookWorking(row.user_id, row.book_id)) }); }
+    catch (e) { out.push({ book: row.book_id, error: e instanceof Error ? e.message.slice(0, 120) : "failed" }); }
+  }
+  return out;
 }

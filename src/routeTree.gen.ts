@@ -95,6 +95,7 @@ import { Route as AdminVoiceSettingsLibraryRouteImport } from './routes/admin.vo
 import { Route as AdminVoiceSettingsTestingRouteImport } from './routes/admin.voice-settings.testing'
 import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/public/live-cards-reconcile'
 import { Route as ApiPublicMemoryBookBackupRetryRouteImport } from './routes/api/public/memory-book-backup-retry'
+import { Route as ApiPublicMemoryBookCleanupRouteImport } from './routes/api/public/memory-book-cleanup'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
@@ -541,6 +542,12 @@ const ApiPublicMemoryBookBackupRetryRoute =
     path: '/api/public/memory-book-backup-retry',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMemoryBookCleanupRoute =
+  ApiPublicMemoryBookCleanupRouteImport.update({
+    id: '/api/public/memory-book-cleanup',
+    path: '/api/public/memory-book-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPurgeDeletedCardsRoute =
   ApiPublicPurgeDeletedCardsRouteImport.update({
     id: '/api/public/purge-deleted-cards',
@@ -677,6 +684,7 @@ export interface FileRoutesByFullPath {
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
+  '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
@@ -771,6 +779,7 @@ export interface FileRoutesByTo {
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
+  '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
@@ -869,6 +878,7 @@ export interface FileRoutesById {
   '/admin/voice-settings/testing': typeof AdminVoiceSettingsTestingRoute
   '/api/public/live-cards-reconcile': typeof ApiPublicLiveCardsReconcileRoute
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
+  '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
@@ -968,6 +978,7 @@ export interface FileRouteTypes {
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/memory-book-backup-retry'
+    | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
@@ -1062,6 +1073,7 @@ export interface FileRouteTypes {
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/memory-book-backup-retry'
+    | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
@@ -1159,6 +1171,7 @@ export interface FileRouteTypes {
     | '/admin/voice-settings/testing'
     | '/api/public/live-cards-reconcile'
     | '/api/public/memory-book-backup-retry'
+    | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
@@ -1210,6 +1223,7 @@ export interface RootRouteChildren {
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicLiveCardsReconcileRoute: typeof ApiPublicLiveCardsReconcileRoute
   ApiPublicMemoryBookBackupRetryRoute: typeof ApiPublicMemoryBookBackupRetryRoute
+  ApiPublicMemoryBookCleanupRoute: typeof ApiPublicMemoryBookCleanupRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
   ApiPublicPvgReconcileRoute: typeof ApiPublicPvgReconcileRoute
   ApiPublicVoicePreviewsMaintainRoute: typeof ApiPublicVoicePreviewsMaintainRoute
@@ -1820,6 +1834,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMemoryBookBackupRetryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/memory-book-cleanup': {
+      id: '/api/public/memory-book-cleanup'
+      path: '/api/public/memory-book-cleanup'
+      fullPath: '/api/public/memory-book-cleanup'
+      preLoaderRoute: typeof ApiPublicMemoryBookCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/purge-deleted-cards': {
       id: '/api/public/purge-deleted-cards'
       path: '/api/public/purge-deleted-cards'
@@ -2072,6 +2093,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicLiveCardsReconcileRoute: ApiPublicLiveCardsReconcileRoute,
   ApiPublicMemoryBookBackupRetryRoute: ApiPublicMemoryBookBackupRetryRoute,
+  ApiPublicMemoryBookCleanupRoute: ApiPublicMemoryBookCleanupRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
   ApiPublicPvgReconcileRoute: ApiPublicPvgReconcileRoute,
   ApiPublicVoicePreviewsMaintainRoute: ApiPublicVoicePreviewsMaintainRoute,

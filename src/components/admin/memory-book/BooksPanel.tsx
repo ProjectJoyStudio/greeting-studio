@@ -255,7 +255,16 @@ function BookDetail({ bookId, onChanged }: { bookId: string; onChanged: () => vo
       </header>
 
       {detail.operation ? <div className="space-y-2 border-b border-border pb-4">
-        <p className="text-sm">{detail.operation.stage} · {detail.operation.cursor}/{detail.operation.total}</p>
+        <p className="text-sm">{detail.operation.stage === "cleanup_pending" && detail.operation.leaseUntil && Date.parse(detail.operation.leaseUntil) > Date.now() ? "cleanup_running" : detail.operation.stage} · {detail.operation.cursor}/{detail.operation.total}</p>
+        {detail.operation.activatedAt ? <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+          <div><dt className="inline text-muted-foreground">Рабочих файлов к очистке: </dt><dd className="inline">{detail.operation.cleanupTotal ?? "—"}</dd></div>
+          <div><dt className="inline text-muted-foreground">Удалено из R2: </dt><dd className="inline">{detail.operation.cleanupDeletedPrimary}</dd></div>
+          <div><dt className="inline text-muted-foreground">Удалено из B2: </dt><dd className="inline">{detail.operation.cleanupDeletedBackup}</dd></div>
+          <div><dt className="inline text-muted-foreground">Осталось: </dt><dd className="inline">{detail.operation.cleanupRemaining ?? "—"}</dd></div>
+          <div><dt className="inline text-muted-foreground">Последняя успешная обработка: </dt><dd className="inline">{date(detail.operation.cleanupLastSuccessAt)}</dd></div>
+          <div><dt className="inline text-muted-foreground">Следующая попытка: </dt><dd className="inline">{detail.operation.cleanupNextAt ? `${date(detail.operation.cleanupNextAt)} (#${detail.operation.cleanupRetryCount})` : "—"}</dd></div>
+          <div><dt className="inline text-muted-foreground">Очистка завершена: </dt><dd className="inline">{date(detail.operation.cleanupCompletedAt)}</dd></div>
+        </dl> : null}
         {detail.operation.error ? <p className="text-sm text-destructive">{detail.operation.error}</p> : null}
         <p className="text-xs text-muted-foreground">B2 emergency: {date(detail.operation.emergencyUntil)}</p>
         <div className="flex flex-wrap gap-2">

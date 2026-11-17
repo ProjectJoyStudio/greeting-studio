@@ -71,6 +71,13 @@
       "when": 1792932458276,
       "tag": "0009_backup_scheduler_drain_when_disabled",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794923003439,
+      "tag": "0010_memory_book_cleanup_dispatch",
+      "breakpoints": true
     }
   ]
 }
