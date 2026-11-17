@@ -75,6 +75,8 @@ export interface StorageAdapter {
   deleteVersion(key: string, versionId: string): Promise<void>;
   /** Read-only inventory: every key (current objects, versions and delete markers) under a folder prefix ending in "/". Never used to delete by prefix. */
   listKeys?(prefix: string): Promise<string[]>;
+  /** Read-only, bounded inventory page: current objects with sizes under a prefix ("" = whole area). */
+  listPage?(prefix: string, continuation?: string | null): Promise<{ objects: Array<{ key: string; sizeBytes: number }>; next: string | null }>;
 }
 
 /**

@@ -15,6 +15,9 @@ export const Route = createFileRoute("/api/public/memory-book-cleanup")({
     const { timingSafeEqual } = await import("node:crypto");
     const a = new TextEncoder().encode(expected), b = new TextEncoder().encode(supplied);
     if (!config?.enabled || !expected || a.length !== b.length || !timingSafeEqual(a, b)) return Response.json({ error: "unauthorized" }, { status: 401 });
+    // Emergency/recovery: no deletions or R2→B2 copies; queued work waits (retry counts untouched).
+    const { readPlatformState } = await import("@/lib/storage/platform-state.server");
+    if ((await readPlatformState("global", true)).mode !== "normal") return Response.json({ ok: true, paused: "storage_emergency" });
     const { runDueCleanups } = await import("@/lib/memory-book/storage-package.server");
     const results = await runDueCleanups(2);
     // Re-arm or unschedule depending on remaining work (no polling once drained).

@@ -20,6 +20,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Remove",
     mbm_uploading: "Uploading…",
     mbm_failed: "This file could not be uploaded. Please try again.",
+    mbm_storage_maintenance: "Uploads are temporarily paused for storage maintenance. Your book is safe — please try again later.",
     mbm_video_too_long: "One source video may be no longer than 60 minutes.",
     mbm_video_unreadable: "The length of this video could not be read. Please try another file.",
     mbm_video_note:
@@ -50,6 +51,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Удалить",
     mbm_uploading: "Загрузка…",
     mbm_failed: "Этот файл не удалось загрузить. Попробуйте ещё раз.",
+    mbm_storage_maintenance: "Загрузка файлов временно приостановлена из-за обслуживания хранилища. Ваша книга в безопасности — попробуйте позже.",
     mbm_video_too_long: "Одно исходное видео может быть не длиннее 60 минут.",
     mbm_video_unreadable: "Не удалось определить длительность видео. Попробуйте другой файл.",
     mbm_video_note:
@@ -80,6 +82,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Видалити",
     mbm_uploading: "Завантаження…",
     mbm_failed: "Цей файл не вдалося завантажити. Спробуйте ще раз.",
+    mbm_storage_maintenance: "Завантаження файлів тимчасово призупинено через обслуговування сховища. Ваша книга в безпеці — спробуйте пізніше.",
     mbm_video_too_long: "Одне вихідне відео може бути не довшим за 60 хвилин.",
     mbm_video_unreadable: "Не вдалося визначити тривалість відео. Спробуйте інший файл.",
     mbm_video_note:
@@ -110,6 +113,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Usuń",
     mbm_uploading: "Przesyłanie…",
     mbm_failed: "Nie udało się przesłać tego pliku. Spróbuj ponownie.",
+    mbm_storage_maintenance: "Przesyłanie plików jest tymczasowo wstrzymane z powodu konserwacji magazynu. Twoja książka jest bezpieczna — spróbuj później.",
     mbm_video_too_long: "Jeden film źródłowy może trwać maksymalnie 60 minut.",
     mbm_video_unreadable: "Nie udało się odczytać długości filmu. Wybierz inny plik.",
     mbm_video_note:
@@ -140,6 +144,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Entfernen",
     mbm_uploading: "Wird hochgeladen…",
     mbm_failed: "Diese Datei konnte nicht hochgeladen werden. Bitte erneut versuchen.",
+    mbm_storage_maintenance: "Uploads sind wegen Speicherwartung vorübergehend pausiert. Ihr Buch ist sicher — bitte später erneut versuchen.",
     mbm_video_too_long: "Ein Quellvideo darf höchstens 60 Minuten lang sein.",
     mbm_video_unreadable:
       "Die Länge dieses Videos konnte nicht gelesen werden. Bitte eine andere Datei wählen.",
@@ -171,6 +176,7 @@ export const MEMORY_BOOK_MATERIALS_I18N: Record<Lang, Dict> = {
     mbm_remove: "Supprimer",
     mbm_uploading: "Téléversement…",
     mbm_failed: "Ce fichier n'a pas pu être téléversé. Veuillez réessayer.",
+    mbm_storage_maintenance: "Les téléversements sont temporairement suspendus pour maintenance du stockage. Votre livre est en sécurité — réessayez plus tard.",
     mbm_video_too_long: "Une vidéo source ne peut pas dépasser 60 minutes.",
     mbm_video_unreadable:
       "La durée de cette vidéo n'a pas pu être lue. Veuillez choisir un autre fichier.",

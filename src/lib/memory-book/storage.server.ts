@@ -30,6 +30,12 @@ export async function memoryBookFileUrl(
     }
   }
   if (isR2Bucket(bucket)) {
+    const { readPlatformState } = await import("@/lib/storage/platform-state.server");
+    if ((await readPlatformState()).mode !== "normal") {
+      // Global emergency: only a VERIFIED reserve copy may be served.
+      const { verifiedBackupReadUrl } = await import("@/lib/storage/emergency-read.server");
+      return await verifiedBackupReadUrl(path, seconds);
+    }
     const { storageFor } = await import("@/lib/storage/registry.server");
     return await storageFor("primary")?.signedReadUrl(path, seconds) ?? null;
   }

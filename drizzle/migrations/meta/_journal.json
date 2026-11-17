@@ -78,6 +78,20 @@
       "when": 1794923003439,
       "tag": "0010_memory_book_cleanup_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794932016674,
+      "tag": "0011_storage_admin_control",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794932183515,
+      "tag": "0012_storage_admin_bucket_usage",
+      "breakpoints": true
     }
   ]
 }

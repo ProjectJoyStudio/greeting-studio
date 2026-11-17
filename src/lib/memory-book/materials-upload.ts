@@ -1,6 +1,6 @@
 import { MEMORY_BOOK_R2_BUCKET } from "./materials";
 
-export type MaterialUploadFailure = "authorization" | "validation" | "r2_network" | "r2_http" | "registration" | "server";
+export type MaterialUploadFailure = "authorization" | "validation" | "r2_network" | "r2_http" | "registration" | "server" | "maintenance";
 
 export class MaterialUploadError extends Error {
   constructor(public readonly category: MaterialUploadFailure, public readonly detail: string) {
@@ -14,7 +14,7 @@ interface Ticket {
   key?: string;
   uploadUrl?: string;
   contentType?: string;
-  error?: "authorization" | "configuration";
+  error?: "authorization" | "configuration" | "maintenance";
 }
 
 /** Book Materials only: direct R2 writes, never a legacy write fallback. */
@@ -30,6 +30,7 @@ export async function uploadMemoryBookMaterial(
     const status = typeof error === "object" && error !== null && "status" in error ? Number(error.status) : 0;
     throw new MaterialUploadError(status === 401 || status === 403 ? "authorization" : "server", "ticket_failed");
   }
+  if (ticket.error === "maintenance") throw new MaterialUploadError("maintenance", "storage_emergency_writes_blocked");
   if (!ticket.ok || !ticket.uploadUrl || !ticket.key || ticket.storage !== MEMORY_BOOK_R2_BUCKET) {
     throw new MaterialUploadError(ticket.error === "authorization" ? "authorization" : "server", ticket.error === "configuration" ? "r2_not_configured" : "ticket_rejected");
   }

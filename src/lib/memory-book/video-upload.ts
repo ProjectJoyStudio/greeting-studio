@@ -62,6 +62,8 @@ export async function uploadMemoryBookVideo(
     ticket = { ok: false };
   }
 
+  // Storage maintenance: never fall back to another storage area.
+  if ((ticket as { error?: string }).error === "maintenance") return null;
   if (ticket.ok && ticket.uploadUrl && ticket.key) {
     try {
       const res = await fetch(ticket.uploadUrl, {

@@ -60,10 +60,13 @@ export const createMemoryBookPhotoUpload = createServerFn({ method: "POST" })
       key?: string;
       uploadUrl?: string;
       contentType?: string;
-      error?: "authorization" | "configuration";
+      error?: "authorization" | "configuration" | "maintenance";
     }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "authorization" };
+      // Emergency/recovery mode: PRIMARY accepts no writes and nothing is written elsewhere.
+      const { readPlatformState } = await import("@/lib/storage/platform-state.server");
+      if ((await readPlatformState()).mode !== "normal") return { ok: false, error: "maintenance" };
 
       const { storageFor } = await import("@/lib/storage/registry.server");
       const primary = storageFor("primary");

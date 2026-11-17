@@ -171,7 +171,7 @@ export function MemoryBookMaterials({
         console.error("Memory Book upload", cause instanceof MaterialUploadError
           ? { category: cause.category, detail: cause.detail }
           : { category: "server", detail: "request_failed" });
-        fail(kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
+        fail(cause instanceof MaterialUploadError && cause.category === "maintenance" ? t("mbm_storage_maintenance") : kind === "video" ? t("mbm_video_failed") : t("mbm_failed"));
       } finally {
         uploadingRef.current = false;
         setBusy(false);
@@ -246,7 +246,7 @@ export function MemoryBookMaterials({
           console.error("Memory Book upload", cause instanceof MaterialUploadError
             ? { category: cause.category, detail: cause.detail }
             : { category: "server", detail: "request_failed" });
-          patch(id, { status: "failed", error: t("mbm_video_failed") });
+          patch(id, { status: "failed", error: cause instanceof MaterialUploadError && cause.category === "maintenance" ? t("mbm_storage_maintenance") : t("mbm_video_failed") });
         }
       };
 

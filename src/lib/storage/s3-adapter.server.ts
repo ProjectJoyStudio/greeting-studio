@@ -337,6 +337,21 @@ export function createS3Adapter(
       const res = await c.client.fetch(`${objectUrl(c, key)}?versionId=${encodeURIComponent(versionId)}`, { method: "DELETE" });
       if (!res.ok && res.status !== 404) throw new Error(`versions_delete_http_${res.status}`);
     },
+    async listPage(prefix, continuation) {
+      const c = cfg();
+      if (!c) throw new Error("storage_not_configured");
+      const query = new URLSearchParams({ "list-type": "2", "max-keys": "1000" });
+      if (prefix) query.set("prefix", prefix);
+      if (continuation) query.set("continuation-token", continuation);
+      const res = await c.client.fetch(`${c.base}?${query}`);
+      if (!res.ok) throw new Error(`list_http_${res.status}`);
+      const result = new XMLParser({ parseTagValue: false, isArray: name => name === "Contents" }).parse(await res.text()).ListBucketResult;
+      if (!result) throw new Error("list_invalid_response");
+      const objects = (result.Contents ?? []).filter((r: { Key?: unknown }) => typeof r.Key === "string").map((r: { Key: string; Size?: unknown }) => ({ key: r.Key, sizeBytes: Number(r.Size ?? 0) }));
+      const next = String(result.IsTruncated) === "true" ? String(result.NextContinuationToken ?? "") || null : null;
+      if (String(result.IsTruncated) === "true" && !next) throw new Error("list_pagination_stalled");
+      return { objects, next };
+    },
     async listKeys(prefix) {
       const c = cfg();
       if (!c || !prefix.endsWith("/")) throw new Error("storage_not_configured");

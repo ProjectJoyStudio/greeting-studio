@@ -4493,6 +4493,122 @@ export type Database = {
           },
         ]
       }
+      storage_admin_operations: {
+        Row: {
+          actor_user_id: string | null
+          bytes: number
+          conflicts: number
+          cursor: string | null
+          destination_provider: string | null
+          done: number
+          error: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          key_prefix: string | null
+          kind: string
+          lease_token: string | null
+          lease_until: string | null
+          result: Json | null
+          scope: string
+          source_provider: string | null
+          started_at: string
+          status: string
+          total: number
+          updated_at: string
+          verified: number
+        }
+        Insert: {
+          actor_user_id?: string | null
+          bytes?: number
+          conflicts?: number
+          cursor?: string | null
+          destination_provider?: string | null
+          done?: number
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          key_prefix?: string | null
+          kind: string
+          lease_token?: string | null
+          lease_until?: string | null
+          result?: Json | null
+          scope?: string
+          source_provider?: string | null
+          started_at?: string
+          status?: string
+          total?: number
+          updated_at?: string
+          verified?: number
+        }
+        Update: {
+          actor_user_id?: string | null
+          bytes?: number
+          conflicts?: number
+          cursor?: string | null
+          destination_provider?: string | null
+          done?: number
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          key_prefix?: string | null
+          kind?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          result?: Json | null
+          scope?: string
+          source_provider?: string | null
+          started_at?: string
+          status?: string
+          total?: number
+          updated_at?: string
+          verified?: number
+        }
+        Relationships: []
+      }
+      storage_inventory_snapshots: {
+        Row: {
+          by_area: Json
+          bytes: number
+          complete: boolean
+          id: string
+          objects: number
+          operation_id: string | null
+          provider: string
+          taken_at: string
+        }
+        Insert: {
+          by_area?: Json
+          bytes?: number
+          complete?: boolean
+          id?: string
+          objects?: number
+          operation_id?: string | null
+          provider: string
+          taken_at?: string
+        }
+        Update: {
+          by_area?: Json
+          bytes?: number
+          complete?: boolean
+          id?: string
+          objects?: number
+          operation_id?: string | null
+          provider?: string
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_inventory_snapshots_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "storage_admin_operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storage_placements: {
         Row: {
           attempts: number
@@ -4579,6 +4695,134 @@ export type Database = {
           verified_at?: string | null
         }
         Relationships: []
+      }
+      storage_platform_state: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          lock_token: string | null
+          lock_until: string | null
+          mode: string
+          operation_id: string | null
+          read_provider: string
+          reason: string | null
+          scope: string
+          version: number
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          lock_token?: string | null
+          lock_until?: string | null
+          mode?: string
+          operation_id?: string | null
+          read_provider?: string
+          reason?: string | null
+          scope: string
+          version?: number
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          lock_token?: string | null
+          lock_until?: string | null
+          mode?: string
+          operation_id?: string | null
+          read_provider?: string
+          reason?: string | null
+          scope?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      storage_provider_health: {
+        Row: {
+          actor_user_id: string | null
+          checked_at: string
+          delete_ok: boolean | null
+          error: string | null
+          id: string
+          latency_ms: number | null
+          ok: boolean
+          provider: string
+          read_ok: boolean | null
+          scope: string
+          write_ok: boolean | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          checked_at?: string
+          delete_ok?: boolean | null
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok: boolean
+          provider: string
+          read_ok?: boolean | null
+          scope?: string
+          write_ok?: boolean | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          checked_at?: string
+          delete_ok?: boolean | null
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok?: boolean
+          provider?: string
+          read_ok?: boolean | null
+          scope?: string
+          write_ok?: boolean | null
+        }
+        Relationships: []
+      }
+      storage_recovery_items: {
+        Row: {
+          attempts: number
+          destination_checksum: string | null
+          error: string | null
+          expected_checksum: string | null
+          expected_size: number | null
+          object_key: string
+          operation_id: string
+          state: string
+          transfer_state: Json | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          destination_checksum?: string | null
+          error?: string | null
+          expected_checksum?: string | null
+          expected_size?: number | null
+          object_key: string
+          operation_id: string
+          state?: string
+          transfer_state?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          destination_checksum?: string | null
+          error?: string | null
+          expected_checksum?: string | null
+          expected_size?: number | null
+          object_key?: string
+          operation_id?: string
+          state?: string
+          transfer_state?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_recovery_items_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "storage_admin_operations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       studio_promo_windows: {
         Row: {
@@ -5634,6 +5878,14 @@ export type Database = {
       release_memory_book_page_improvement: {
         Args: { _book_id: string; _claim_key: string; _user_id: string }
         Returns: Json
+      }
+      storage_admin_bucket_usage: {
+        Args: never
+        Returns: {
+          bucket_id: string
+          bytes: number
+          objects: number
+        }[]
       }
     }
     Enums: {

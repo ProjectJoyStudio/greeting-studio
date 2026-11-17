@@ -80,10 +80,13 @@ export const createMemoryBookVideoUpload = createServerFn({ method: "POST" })
       key?: string;
       uploadUrl?: string;
       contentType?: string;
-      error?: "authorization" | "configuration";
+      error?: "authorization" | "configuration" | "maintenance";
     }> => {
       const book = await ownedBook(context, data.bookId);
       if (!book) return { ok: false, error: "authorization" };
+      // Emergency/recovery mode: PRIMARY accepts no writes and nothing is written elsewhere.
+      const { readPlatformState } = await import("@/lib/storage/platform-state.server");
+      if ((await readPlatformState()).mode !== "normal") return { ok: false, error: "maintenance" };
 
       const { r2Ready, r2SignedPutUrl } = await import("./r2.server");
       if (!r2Ready()) return { ok: false, error: "configuration" };
