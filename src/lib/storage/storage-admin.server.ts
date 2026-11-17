@@ -353,3 +353,36 @@ export async function operationsHistory(limit = 50) {
 
 export { storageFor };
 export type { PlatformState };
+
+/**
+ * Records SHA-256 for backup copies that were verified before checksums were
+ * stored. Read-only on storage: both copies are digested independently and a
+ * checksum is written only when R2 and B2 agree; disagreement is recorded as
+ * an integrity problem and nothing is changed in either provider.
+ */
+export async function advanceChecksumBackfill(actor: string, budgetMs = 25000) {
+  const client = await db();
+  const r2 = need("r2"), b2 = need("b2");
+  const started = Date.now();
+  let done = 0, matched = 0, mismatched = 0, skipped = 0;
+  const { data: rows, error } = await client.from("storage_placements").select("object_key").eq("provider", "b2").eq("status", "present").is("checksum", null).not("verified_at", "is", null).is("last_error", null).order("object_key").limit(100);
+  if (error) throw new Error("placements_read_failed");
+  for (const r of rows ?? []) {
+    if (Date.now() - started > budgetMs) break;
+    const key = r.object_key as string;
+    try {
+      const a = await r2.check(key);
+      if (a.state !== "exists") { skipped++; await client.from("storage_placements").update({ last_error: a.state === "missing" ? "checksum_backfill_primary_missing" : `checksum_backfill_primary_${a.detail}` }).eq("object_key", key).eq("provider", "b2"); continue; }
+      const [d1, d2] = [await r2.digest(key), await b2.digest(key)];
+      if (d1.checksum === d2.checksum && d1.sizeBytes === d2.sizeBytes) {
+        matched++;
+        await writePlacement(key, "b2", { role: "backup", status: "present", checksum: d2.checksum, sizeBytes: d2.sizeBytes, verifiedAt: nowIso(), lastError: null });
+        await writePlacement(key, "r2", { role: "primary", status: "present", checksum: d1.checksum, sizeBytes: d1.sizeBytes, verifiedAt: nowIso(), lastError: null });
+      } else { mismatched++; await client.from("storage_placements").update({ last_error: "checksum_backfill_mismatch" }).eq("object_key", key).eq("provider", "b2"); }
+    } catch (e) { skipped++; }
+    done++;
+  }
+  const { count } = await client.from("storage_placements").select("object_key", { count: "exact", head: true }).eq("provider", "b2").eq("status", "present").is("checksum", null).not("verified_at", "is", null).is("last_error", null);
+  await audit(actor, "checksum_backfill_batch", null, null, { done, matched, mismatched, skipped, remaining: count ?? null });
+  return { pending: (count ?? 0) > 0 && done > 0, done, matched, mismatched, skipped, remaining: count ?? 0 };
+}

@@ -99,7 +99,6 @@ import {
 import {
   PaymentsTab,
   AuthTab,
-  StorageMgmtTab,
   ServicesTab,
   SandboxTab,
   ControlTab,
@@ -229,6 +228,8 @@ function Progress({ value }: { value: number }) {
     </div>
   );
 }
+
+import { StorageAdminPanel } from "@/components/admin/storage-admin/StorageAdminPanel";
 
 export function PlatformSettingsPage() {
   const { lang } = useI18n();
@@ -2158,7 +2159,7 @@ export function PlatformSettingsPage() {
 
       {tab === "payments" && <PaymentsTab state={infra} setState={setInfra} t={t} />}
       {tab === "auth" && <AuthTab state={infra} setState={setInfra} t={t} />}
-      {tab === "storage_mgmt" && <StorageMgmtTab state={infra} setState={setInfra} t={t} />}
+      {tab === "storage_mgmt" && <StorageAdminPanel lang={lang} />}
       {tab === "services" && <ServicesTab state={infra} setState={setInfra} t={t} />}
       {tab === "sandbox" && <SandboxTab state={infra} setState={setInfra} t={t} />}
       {tab === "control" && <ControlTab state={infra} setState={setInfra} t={t} lang={lang} />}

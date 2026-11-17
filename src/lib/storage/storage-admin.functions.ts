@@ -22,7 +22,7 @@ export const storageAdminOverview = createServerFn({ method: "POST" }).middlewar
 
 export const storageAdminAction = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: { action: string; provider?: string; reason?: string; phrase?: string; expectedVersion?: number; operationId?: string; key?: string }) => {
-    const actions = ["health", "inventory", "preflight", "activate_emergency", "start_recovery", "advance_recovery", "resolve_conflict", "return_primary", "verify_file", "retry_backup"];
+    const actions = ["health", "inventory", "preflight", "activate_emergency", "start_recovery", "advance_recovery", "resolve_conflict", "return_primary", "verify_file", "retry_backup", "checksum_backfill"];
     if (!actions.includes(input.action)) throw new Error("invalid_action");
     if (input.provider && !/^[a-z0-9]{1,12}$/.test(input.provider)) throw new Error("invalid_provider");
     if (input.key && (input.key.length > 600 || input.key.includes(".."))) throw new Error("invalid_key");
@@ -42,6 +42,7 @@ export const storageAdminAction = createServerFn({ method: "POST" }).middleware(
         case "advance_recovery": return c.advanceRecovery(String(data.operationId), actor);
         case "resolve_conflict": return c.resolveConflictFromBackup(String(data.operationId), String(data.key), actor);
         case "return_primary": return c.returnToPrimary({ actor, phrase: data.phrase, expectedVersion: Number(data.expectedVersion) });
+        case "checksum_backfill": return c.advanceChecksumBackfill(actor);
         case "verify_file": return c.verifyFile(String(data.key), actor);
         case "retry_backup": {
           const { readPlatformState } = await import("./platform-state.server");
