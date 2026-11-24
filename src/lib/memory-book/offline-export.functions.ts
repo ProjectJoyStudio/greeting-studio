@@ -256,7 +256,11 @@ async function buildPlan(bookId: string, userId: string): Promise<OfflinePackage
     const leafBackgroundUrl = await pick(book.selected_leaf_id, "leaf");
     const backCoverUrl =
       book.back_cover_overridden === true
-        ? ((await pick(book.back_cover_design_id, "back")) ?? coverUrl)
+        ? // Same fallback as the viewer: a separately chosen back cover whose
+          // record no longer exists is shown as the front cover, not an error.
+          (typeof book.back_cover_design_id === "string" && designs.has(book.back_cover_design_id)
+            ? ((await pick(book.back_cover_design_id, "back")) ?? coverUrl)
+            : coverUrl)
         : coverUrl;
 
     // ---- background music ----
