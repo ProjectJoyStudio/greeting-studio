@@ -113,6 +113,27 @@
       "when": 1795539991583,
       "tag": "0015_pvg_atomic_scene_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795548243767,
+      "tag": "0016_pvg_atomic_final_payment",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795548401360,
+      "tag": "0017_pvg_payment_compatibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795548565900,
+      "tag": "0018_pvg_refund_debit_resolution",
+      "breakpoints": true
     }
   ]
 }

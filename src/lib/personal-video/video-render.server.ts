@@ -9,7 +9,7 @@
 import type { PvgVideoJob, PvgVideoStatus } from "./video-render";
 
 export const VIDEO_COLUMNS =
-  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at, mix_storage_path, mix_signature";
+  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at, mix_storage_path, mix_signature, submission_state, charge_txn_id, reconcile_token, reconcile_until, updated_at";
 
 export interface VideoRow {
   id: string;
@@ -17,6 +17,11 @@ export interface VideoRow {
   user_id: string;
   job_id: string;
   status: string;
+  submission_state?: string | null;
+  charge_txn_id?: string | null;
+  reconcile_token?: string | null;
+  reconcile_until?: string | null;
+  updated_at?: string;
   duration_seconds: number;
   scene_sounds: boolean;
   credits_charged: number;
@@ -77,6 +82,7 @@ export async function toVideoJob(row: VideoRow): Promise<PvgVideoJob> {
     durationSeconds: row.duration_seconds,
     sceneSounds: Boolean(row.scene_sounds),
     creditsCharged: row.credits_charged,
+    paymentUncertain: row.submission_state === "uncertain",
     videoUrl,
     errorCode: row.error_code,
     errorMessage: row.error_message,
@@ -132,7 +138,6 @@ export async function refundVideo(row: VideoRow, reason: string): Promise<number
   return Number(data ?? 0);
 }
 
-
 /**
  * Moves one running film forward. It runs with service rights, so the work
  * completes even when nobody is on the page. Never throws.
@@ -146,89 +151,137 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
     .maybeSingle();
   const row = data as VideoRow | null;
   if (!row) return "failed";
-  if (["ready", "failed"].includes(row.status)) return statusOf(row.status);
-
-  const patch = async (values: Record<string, unknown>) => {
-    await supabaseAdmin
+  if (row.status === "ready" || (row.status === "failed" && row.credits_charged <= 0))
+    return statusOf(row.status);
+  const lease = crypto.randomUUID();
+  const claim = await supabaseAdmin.rpc("claim_pvg_video_reconcile", {
+    _video_id: row.id,
+    _token: lease,
+  });
+  if (claim.error || !claim.data) return statusOf(row.status);
+  try {
+    // Re-read after acquiring the lease: another request may have finished while we waited.
+    const fresh = await supabaseAdmin
       .from("pvg_videos")
-      .update(values as never)
-      .eq("id", row.id);
-  };
-
-  const predictionId = row.video_prediction_id ?? row.prediction_id;
-  if (!predictionId) return statusOf(row.status);
-
-  const { pollStage, finalVideoCostUsd } = await import("./generator/pipeline.server");
-  const progress = await pollStage(predictionId);
-
-  if (progress.state === "processing") {
-    if (row.status !== "processing") await patch({ status: "processing" });
-    return "processing";
-  }
-  if (progress.state === "failed") {
-    await patch({
-      status: "failed",
-      error_code: progress.errorCode,
-      error_message: progress.errorMessage,
-      completed_at: new Date().toISOString(),
-    });
-    // The refund is attempted here and nowhere else for this film. If it
-    // cannot be completed the charge stays visible on the film, so nobody is
-    // ever told that credits came back when they did not.
-    try {
-      await refundVideo(row, progress.errorCode);
-    } catch {
-      // Left charged on purpose; the next reconcile pass tries again.
+      .select(VIDEO_COLUMNS)
+      .eq("id", row.id)
+      .maybeSingle();
+    if (!fresh.data || fresh.data.status === "ready") return "ready";
+    Object.assign(row, fresh.data);
+    if (row.status === "failed") {
+      await refundVideo(row, row.error_code ?? "generation_failed");
+      return "failed";
     }
 
-    await supabaseAdmin
-      .from("pvg_projects")
-      .update({ status: "video_failed" } as never)
-      .eq("id", row.project_id);
-    return "failed";
-  }
+    const patch = async (values: Record<string, unknown>) => {
+      await supabaseAdmin
+        .from("pvg_videos")
+        .update(values as never)
+        .eq("id", row.id)
+        .eq("reconcile_token", lease)
+        .in("status", ["pending", "processing", "lipsync", "assets"]);
+    };
 
-  await patch({ status: "assets" });
-  try {
-    const bucket = pvgVideoBucket();
-    const res = await fetch(progress.url);
-    if (!res.ok) throw new Error(`download_failed_${res.status}`);
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    const storagePath = `${row.user_id}/${row.project_id}/${crypto.randomUUID()}.${progress.fileExtension}`;
-    const upload = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(storagePath, bytes, { contentType: progress.contentType, upsert: false });
-    if (upload.error) throw new Error(upload.error.message);
-    await patch({
-      status: "ready",
-      storage_bucket: bucket,
-      storage_path: storagePath,
-      video_predict_seconds: progress.predictSeconds,
-      video_cost_usd: finalVideoCostUsd(
-        row.video_generator_key ?? "",
-        Number(row.audio_seconds ?? row.duration_seconds ?? 0),
-      ),
-      error_code: null,
-      error_message: null,
-      completed_at: new Date().toISOString(),
-    });
-    // A brand new film becomes the preferred one; earlier variants stay.
-    await markSelectedVariant(row.project_id, row.id);
+    const predictionId = row.video_prediction_id ?? row.prediction_id;
+    if (!predictionId) {
+      const stale = Date.now() - Date.parse(row.created_at) > 10 * 60_000;
+      if (stale && row.submission_state === "paid") {
+        await patch({
+          status: "failed",
+          submission_state: "rejected",
+          error_code: "submission_not_started",
+        });
+        await refundVideo(row, "submission_not_started");
+        return "failed";
+      }
+      if (stale && row.submission_state === "dispatching")
+        await patch({ submission_state: "uncertain", error_code: "submission_uncertain" });
+      return statusOf(row.status);
+    }
+
+    const { pollStage, finalVideoCostUsd } = await import("./generator/pipeline.server");
+    let progress;
+    try {
+      progress = await pollStage(predictionId);
+    } catch {
+      return statusOf(row.status);
+    }
+
+    if (progress.state === "processing") {
+      if (row.status !== "processing") await patch({ status: "processing" });
+      return "processing";
+    }
+    if (progress.state === "failed") {
+      await patch({
+        status: "failed",
+        error_code: progress.errorCode,
+        error_message: progress.errorMessage,
+        completed_at: new Date().toISOString(),
+      });
+      // The refund is attempted here and nowhere else for this film. If it
+      // cannot be completed the charge stays visible on the film, so nobody is
+      // ever told that credits came back when they did not.
+      try {
+        await refundVideo(row, progress.errorCode);
+      } catch {
+        // Left charged on purpose; the next reconcile pass tries again.
+      }
+
+      await supabaseAdmin
+        .from("pvg_projects")
+        .update({ status: "video_failed" } as never)
+        .eq("id", row.project_id);
+      return "failed";
+    }
+
+    await patch({ status: "assets" });
+    try {
+      const bucket = pvgVideoBucket();
+      const res = await fetch(progress.url);
+      if (!res.ok) throw new Error(`download_failed_${res.status}`);
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      const storagePath = `${row.user_id}/${row.project_id}/${crypto.randomUUID()}.${progress.fileExtension}`;
+      const upload = await supabaseAdmin.storage
+        .from(bucket)
+        .upload(storagePath, bytes, { contentType: progress.contentType, upsert: false });
+      if (upload.error) throw new Error(upload.error.message);
+      await patch({
+        status: "ready",
+        storage_bucket: bucket,
+        storage_path: storagePath,
+        video_predict_seconds: progress.predictSeconds,
+        video_cost_usd: finalVideoCostUsd(
+          row.video_generator_key ?? "",
+          Number(row.audio_seconds ?? row.duration_seconds ?? 0),
+        ),
+        error_code: null,
+        error_message: null,
+        completed_at: new Date().toISOString(),
+      });
+      // A brand new film becomes the preferred one; earlier variants stay.
+      await markSelectedVariant(row.project_id, row.id);
+      await supabaseAdmin
+        .from("pvg_projects")
+        .update({ status: "video_ready" } as never)
+        .eq("id", row.project_id);
+      return "ready";
+    } catch (err) {
+      await patch({
+        status: "failed",
+        error_code: "storage_failed",
+        error_message:
+          err instanceof Error ? err.message.slice(0, 300) : "The film could not be stored.",
+        completed_at: new Date().toISOString(),
+      });
+      await refundVideo(row, "storage_failed");
+      return "failed";
+    }
+  } finally {
     await supabaseAdmin
-      .from("pvg_projects")
-      .update({ status: "video_ready" } as never)
-      .eq("id", row.project_id);
-    return "ready";
-  } catch (err) {
-    await patch({
-      status: "failed",
-      error_code: "storage_failed",
-      error_message:
-        err instanceof Error ? err.message.slice(0, 300) : "The film could not be stored.",
-      completed_at: new Date().toISOString(),
-    });
-    await refundVideo(row, "storage_failed");
-    return "failed";
+      .from("pvg_videos")
+      .update({ reconcile_token: null, reconcile_until: null })
+      .eq("id", row.id)
+      .eq("reconcile_token", lease);
   }
 }
 
@@ -238,7 +291,7 @@ export async function reconcilePendingVideos(limit = 20): Promise<{ checkedVideo
   const { data } = await supabaseAdmin
     .from("pvg_videos")
     .select("id")
-    .in("status", ["pending", "processing", "lipsync", "assets"])
+    .or("status.in.(pending,processing,lipsync,assets),and(status.eq.failed,credits_charged.gt.0)")
     .order("created_at", { ascending: true })
     .limit(limit);
   const rows = (data ?? []) as { id: string }[];

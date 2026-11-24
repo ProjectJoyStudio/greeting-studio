@@ -5,11 +5,7 @@
 // touches the Lovable AI gateway and never touches Replicate.
 // ---------------------------------------------------------------------------
 
-import {
-  RUNWARE_IMAGE_MODELS,
-  RUNWARE_VIDEO_MODELS,
-  type RunwareVideoModel,
-} from "./catalog";
+import { RUNWARE_IMAGE_MODELS, RUNWARE_VIDEO_MODELS, type RunwareVideoModel } from "./catalog";
 
 const API_URL = "https://api.runware.ai/v1";
 
@@ -25,12 +21,19 @@ export type RunwareErrorCode =
 export class RunwareError extends Error {
   code: RunwareErrorCode;
   taskUUID: string | null;
+  definitelyRejected: boolean;
 
-  constructor(code: RunwareErrorCode, message: string, taskUUID: string | null = null) {
+  constructor(
+    code: RunwareErrorCode,
+    message: string,
+    taskUUID: string | null = null,
+    definitelyRejected = false,
+  ) {
     super(message);
     this.name = "RunwareError";
     this.code = code;
     this.taskUUID = taskUUID;
+    this.definitelyRejected = definitelyRejected;
   }
 }
 
@@ -97,13 +100,18 @@ export async function runwareTasks(tasks: RunwareTask[]): Promise<RunwareRow[]> 
     throw new RunwareError(
       codeForStatus(res.status),
       `Runware error [${res.status}]: ${raw.slice(0, 300)}`,
+      null,
+      res.status < 500 && res.status !== 408,
     );
   }
   if (parsed.errors?.length) {
-    const first = parsed.errors[0]!;
+    const first = parsed.errors[0];
+    if (!first) throw new RunwareError("api_error", "Empty provider error response.");
     throw new RunwareError(
       codeForError(first),
       `Runware error [${first.code ?? res.status}]: ${(first.message ?? raw).slice(0, 300)}`,
+      null,
+      res.status < 500 && res.status !== 408,
     );
   }
   return parsed.data ?? [];
@@ -176,7 +184,6 @@ export function runwareVideoSize(
   const table = (generatorKey && ENGINE_VIDEO_SIZES[generatorKey]) || VIDEO_SIZES;
   return table[aspectRatio ?? "16:9"] ?? table["16:9"] ?? VIDEO_SIZES["16:9"]!;
 }
-
 
 // --- pictures --------------------------------------------------------------
 
@@ -261,7 +268,11 @@ export async function runwareRenderImageBytes(input: RunwareImageInput): Promise
   return {
     bytes: new Uint8Array(await download.arrayBuffer()),
     contentType,
-    fileExtension: contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg",
+    fileExtension: contentType.includes("png")
+      ? "png"
+      : contentType.includes("webp")
+        ? "webp"
+        : "jpg",
     model: rendered.model,
     costUsd: rendered.costUsd,
   };
@@ -277,6 +288,8 @@ export async function runwareStartImage(input: RunwareImageInput): Promise<strin
 // --- animations ------------------------------------------------------------
 
 export interface RunwareVideoInput {
+  /** Optional durable task ID for PVG payment reconciliation. */
+  taskUUID?: string;
   generatorKey: string;
   prompt: string;
   /** Publicly reachable starting picture. */
@@ -301,7 +314,7 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
   if (!model) {
     throw new RunwareError("api_error", `Unknown Runware video engine: ${input.generatorKey}.`);
   }
-  const taskUUID = crypto.randomUUID();
+  const taskUUID = input.taskUUID ?? crypto.randomUUID();
   const resolution = ENGINE_VIDEO_RESOLUTION[model.key];
   const size = resolution ? null : runwareVideoSize(input.aspectRatio, model.key);
   const inputs: Record<string, unknown> = { frameImages: [input.imageUrl] };
@@ -316,7 +329,7 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     inputs,
     // Kling takes a quality and keeps the shape of the starting picture; the
     // other engines take an exact size from their own supported list.
-    ...(resolution ? { resolution } : { width: size!.width, height: size!.height }),
+    ...(resolution ? { resolution } : size ? { width: size.width, height: size.height } : {}),
     // Engines that read the length from the prepared greeting take no duration.
     ...(model.acceptsDuration === false
       ? {}
@@ -328,13 +341,13 @@ export async function runwareStartVideo(input: RunwareVideoInput): Promise<strin
     includeCost: true,
   };
 
-
   // Native audio is switched off model by model — but never when a prepared
   // voice track was handed in: switching audio off would silence that voice
   // too and the film would show moving lips without a greeting.
   if (!preparedAudio) {
     if (model.key === "rw_wan26_flash") task["providerSettings"] = { alibaba: { audio: false } };
-    if (model.key === "rw_kling3_standard") task["providerSettings"] = { klingai: { sound: false } };
+    if (model.key === "rw_kling3_standard")
+      task["providerSettings"] = { klingai: { sound: false } };
     if (model.key === "rw_pixverse_v6") task["settings"] = { audio: false };
   }
 
@@ -366,7 +379,10 @@ export async function runwareProgress(taskUUID: string): Promise<RunwareProgress
       return {
         state: "failed",
         errorCode: "generation_failed",
-        errorMessage: String(row["errorMessage"] ?? "Runware could not finish the job.").slice(0, 300),
+        errorMessage: String(row["errorMessage"] ?? "Runware could not finish the job.").slice(
+          0,
+          300,
+        ),
       };
     }
     const url = outputUrl(row);

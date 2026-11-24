@@ -182,22 +182,36 @@ export interface FinalVideoStartResult {
   audioSeconds: number;
 }
 
-async function createPrediction(model: string, input: Record<string, unknown>): Promise<string> {
-  const res = await fetch(`${API_BASE}/models/${model}/predictions`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ input }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new PvgStageError(
-      codeForStatus(res.status),
-      `[${res.status}] ${model}: ${body.slice(0, 300)}`,
-    );
+export class PvgSubmissionUncertain extends Error {
+  constructor() {
+    super("submission_uncertain");
+    this.name = "PvgSubmissionUncertain";
   }
-  const prediction = (await res.json()) as { id?: string };
-  if (!prediction.id) throw new PvgStageError("api_error", "The engine did not accept the request.");
-  return prediction.id;
+}
+
+async function createPrediction(model: string, input: Record<string, unknown>): Promise<string> {
+  const apiToken = token(); // Missing configuration is a definite pre-submit failure.
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/models/${model}/predictions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ input }),
+    });
+  } catch {
+    throw new PvgSubmissionUncertain();
+  }
+  if (!res.ok) {
+    if (res.status >= 500 || res.status === 408) throw new PvgSubmissionUncertain();
+    throw new PvgStageError(codeForStatus(res.status), `Provider rejected request (${res.status})`);
+  }
+  try {
+    const prediction = (await res.json()) as { id?: string };
+    if (prediction.id) return prediction.id;
+  } catch {
+    /* Acceptance is unknown; never fall through to a second engine. */
+  }
+  throw new PvgSubmissionUncertain();
 }
 
 /**
@@ -206,7 +220,15 @@ async function createPrediction(model: string, input: Record<string, unknown>): 
  * refused openly instead.
  */
 export async function startFinalVideo(
-  input: FinalVideoInput & { audioSeconds: number; route?: FinalVideoRoute },
+  input: FinalVideoInput & {
+    audioSeconds: number;
+    route?: FinalVideoRoute;
+    beforeSubmit?: (attempt: {
+      engineKey: string;
+      model: string;
+      predictionId: string | null;
+    }) => Promise<void>;
+  },
 ): Promise<FinalVideoStartResult> {
   const route: FinalVideoRoute = input.route ?? "person";
   let lastError: unknown = null;
@@ -227,24 +249,49 @@ export async function startFinalVideo(
       );
       continue;
     }
+    let attempted = false;
     try {
       const { withGeneratorSlot } = await import("@/lib/admin/generators/runtime.server");
       const predictionId = await withGeneratorSlot(engine.key, async () => {
+        const taskUUID = engine.provider === "runware" ? crypto.randomUUID() : null;
+        await input.beforeSubmit?.({
+          engineKey: engine.key,
+          model: engine.model,
+          predictionId: taskUUID ? `${RUNWARE_PREFIX}${taskUUID}` : null,
+        });
+        attempted = true;
         if (engine.provider === "runware") {
-          const { runwareStartVideo } = await import("@/lib/runware/runware.server");
-          const taskUUID = await runwareStartVideo({
-            generatorKey: engine.key,
-            prompt: input.prompt,
-            imageUrl: input.imageUrl,
-            // The film lasts as long as the sound it receives: the greeting
-            // plus the silence that carries the scene to the chosen length.
-            durationSeconds: Math.ceil(input.audioSeconds),
-            aspectRatio: "16:9",
-            // Engines that accept a voice track receive the ElevenLabs
-            // greeting; no engine ever speaks the greeting a second time.
-            audioUrl: input.audioUrl,
-          });
-          return `${RUNWARE_PREFIX}${taskUUID}`;
+          const { runwareStartVideo, RunwareError } = await import("@/lib/runware/runware.server");
+          try {
+            if (!process.env["RUNWARE_API_KEY"])
+              throw new PvgStageError("missing_token", "The video engine is not configured.");
+            const acceptedTask = await runwareStartVideo({
+              ...(taskUUID ? { taskUUID } : {}),
+              generatorKey: engine.key,
+              prompt: input.prompt,
+              imageUrl: input.imageUrl,
+              // The film lasts as long as the sound it receives: the greeting
+              // plus the silence that carries the scene to the chosen length.
+              durationSeconds: Math.ceil(input.audioSeconds),
+              aspectRatio: "16:9",
+              // Engines that accept a voice track receive the ElevenLabs
+              // greeting; no engine ever speaks the greeting a second time.
+              audioUrl: input.audioUrl,
+            });
+            return `${RUNWARE_PREFIX}${acceptedTask}`;
+          } catch (err) {
+            if (err instanceof PvgStageError) throw err;
+            if (
+              err instanceof RunwareError &&
+              (err.definitelyRejected ||
+                ["missing_token", "invalid_token", "insufficient_credit", "rate_limited"].includes(
+                  err.code,
+                ))
+            ) {
+              throw new PvgStageError(err.code as PvgStageErrorCode, err.message);
+            }
+            throw new PvgSubmissionUncertain();
+          }
         }
         return createPrediction(engine.model, engine.buildInput(input));
       });
@@ -255,6 +302,8 @@ export async function startFinalVideo(
         audioSeconds: input.audioSeconds,
       };
     } catch (err) {
+      if (err instanceof PvgSubmissionUncertain) throw err;
+      if (attempted && !(err instanceof PvgStageError)) throw new PvgSubmissionUncertain();
       lastError = err;
     }
   }
@@ -265,7 +314,13 @@ export async function startFinalVideo(
 
 export type StageProgress =
   | { state: "processing" }
-  | { state: "ready"; url: string; contentType: string; fileExtension: string; predictSeconds: number }
+  | {
+      state: "ready";
+      url: string;
+      contentType: string;
+      fileExtension: string;
+      predictSeconds: number;
+    }
   | { state: "failed"; errorCode: string; errorMessage: string };
 
 function extractUrl(output: unknown): string | null {
@@ -291,6 +346,7 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
     const state = await runwareProgress(predictionId.slice(RUNWARE_PREFIX.length));
     if (state.state === "processing") return { state: "processing" };
     if (state.state === "failed") {
+      if (state.errorCode !== "generation_failed") return { state: "processing" };
       return { state: "failed", errorCode: state.errorCode, errorMessage: state.errorMessage };
     }
     return {
@@ -325,11 +381,19 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
         typeof prediction.error === "string"
           ? prediction.error
           : JSON.stringify(prediction.error ?? null);
-      return { state: "failed", errorCode: "generation_failed", errorMessage: detail.slice(0, 300) };
+      return {
+        state: "failed",
+        errorCode: "generation_failed",
+        errorMessage: detail.slice(0, 300),
+      };
     }
     const url = extractUrl(prediction.output);
     if (!url) {
-      return { state: "failed", errorCode: "no_output", errorMessage: "The engine returned no film." };
+      return {
+        state: "failed",
+        errorCode: "no_output",
+        errorMessage: "The engine returned no film.",
+      };
     }
     return {
       state: "ready",
@@ -338,12 +402,9 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
       fileExtension: "mp4",
       predictSeconds: Number(prediction.metrics?.predict_time ?? 0),
     };
-  } catch (err) {
-    return {
-      state: "failed",
-      errorCode: "engine_unreachable",
-      errorMessage: err instanceof Error ? err.message : "The engine could not be reached.",
-    };
+  } catch {
+    // An unreachable polling endpoint is not evidence that generation failed.
+    return { state: "processing" };
   }
 }
 

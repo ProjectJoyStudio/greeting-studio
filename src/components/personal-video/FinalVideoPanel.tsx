@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Film, Loader2, Pause, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 import { useI18n } from "@/lib/i18n";
 import { creditWord } from "@/lib/credits/i18n";
@@ -66,6 +67,7 @@ export function FinalVideoPanel({
   const word = creditWord(lang, isTest, t("pvg_credits_word"));
 
   const [starting, setStarting] = useState(false);
+  const paymentClick = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [delivering, setDelivering] = useState(false);
@@ -76,14 +78,17 @@ export function FinalVideoPanel({
   const [descriptionEdited, setDescriptionEdited] = useState(false);
   const mixAttempts = useRef<Set<string>>(new Set());
 
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
 
   const query = useQuery({
     queryKey: ["pvg", "video", projectId],
     queryFn: () => load({ data: { projectId } }),
-    refetchInterval: (q) => (isPvgVideoRunning(q.state.data?.video ?? null) ? 5000 : false),
+    refetchInterval: (q) =>
+      isPvgVideoRunning(q.state.data?.video ?? null) ||
+      (q.state.data?.video?.status === "failed" && q.state.data.video.creditsCharged > 0)
+        ? 5000
+        : false,
   });
   const state = query.data ?? null;
   const video = state?.video ?? null;
@@ -101,6 +106,11 @@ export function FinalVideoPanel({
     [readyVariants, activeId, state],
   );
   const balance = state?.balance ?? 0;
+  const confirmedBalance = state?.balance;
+  useEffect(() => {
+    // Background failure reconciliation can refund while this page is open.
+    if (typeof confirmedBalance === "number") refreshCredits(confirmedBalance);
+  }, [confirmedBalance, refreshCredits]);
 
   const bucket = music.mode === "upload" ? music.uploadBucket : music.trackBucket;
   const path = music.mode === "upload" ? music.uploadPath : music.trackPath;
@@ -196,15 +206,31 @@ export function FinalVideoPanel({
   }
 
   async function create(again = false) {
-    if (starting || running || disabled) return;
+    if (paymentClick.current || starting || running || disabled || !state) return;
     if (again && balance < PVR_REGENERATION_CREDITS) {
       toast.error(t("pvr_err_credits"));
       return;
     }
     stopAll();
+    paymentClick.current = true;
     setStarting(true);
+    const storageKey = `pvg:payment:${projectId}`;
+    let previousVideoId = state.previousVideoId;
+    // A lost response must not become a new purchase on the next click/refresh.
     try {
-      const res = await start({ data: { projectId, again } });
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) previousVideoId = saved === "initial" ? null : saved;
+      else sessionStorage.setItem(storageKey, previousVideoId ?? "initial");
+    } catch {
+      /* Database predecessor validation remains authoritative. */
+    }
+    try {
+      const res = await start({ data: { projectId, previousVideoId, again } });
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch {
+        /* optional local safety */
+      }
       if (!res.ok) {
         toast.error(t(res.error ?? "pvr_err_generic"));
       } else if (again) {
@@ -214,9 +240,10 @@ export function FinalVideoPanel({
       refreshCredits(res.balance);
       await query.refetch();
       onChanged?.();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("pvr_err_generic"));
+    } catch {
+      toast.error(t("pvr_err_temporary"));
     } finally {
+      paymentClick.current = false;
       setStarting(false);
     }
   }
@@ -236,7 +263,6 @@ export function FinalVideoPanel({
     setAskAgain(true);
   }
 
-
   async function pick(videoId: string) {
     setActiveId(videoId);
     stopAll();
@@ -249,8 +275,9 @@ export function FinalVideoPanel({
   }
 
   async function tryAgain() {
+    if (paymentClick.current || starting || running || disabled) return;
+    // Failed jobs are retained; a deliberate retry is a new successor purchase.
     await retry({ data: { projectId } });
-    await query.refetch();
     await create(readyVariants.length > 0);
   }
 
@@ -293,26 +320,28 @@ export function FinalVideoPanel({
             onEnded={stopAll}
           />
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
               type="button"
               onClick={togglePlay}
-              className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
+              className="h-auto whitespace-normal inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm"
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? t("pvr_pause") : t("pvr_play")}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               type="button"
               disabled={mixing}
               onClick={() => {
                 stopAll();
                 setDelivering(true);
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
+              className="h-auto whitespace-normal inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
             >
               {mixing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {t("pvr_deliver_open")}
-            </button>
+            </Button>
           </div>
           <p className="text-xs text-primary">
             {mixing ? t("pvr_mixing_music") : t("pvr_status_ready")}
@@ -328,7 +357,8 @@ export function FinalVideoPanel({
                   .slice()
                   .sort((a, b) => a.variantIndex - b.variantIndex)
                   .map((v) => (
-                    <button
+                    <Button
+                      variant="ghost"
                       key={v.id}
                       type="button"
                       onClick={() => void pick(v.id)}
@@ -340,7 +370,7 @@ export function FinalVideoPanel({
                     >
                       {v.id === selected.id && <Check className="h-3.5 w-3.5" />}
                       {t("pvr_variant")} {v.variantIndex}
-                    </button>
+                    </Button>
                   ))}
               </div>
             </div>
@@ -349,15 +379,20 @@ export function FinalVideoPanel({
           {running ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {t(pvgVideoStatusKey(video!.status))}
+              {t(
+                video?.paymentUncertain
+                  ? "pvr_payment_uncertain"
+                  : pvgVideoStatusKey(video?.status ?? "pending"),
+              )}
             </p>
           ) : (
             <div className="space-y-2 border-t border-border/60 pt-3">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 disabled={disabled || starting || balance < PVR_REGENERATION_CREDITS}
                 onClick={requestAgain}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/50 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
+                className="h-auto whitespace-normal inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/50 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60"
               >
                 {starting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -365,7 +400,7 @@ export function FinalVideoPanel({
                   <Sparkles className="h-4 w-4" />
                 )}
                 {t("pvr_again")} — {PVR_REGENERATION_CREDITS} {word}
-              </button>
+              </Button>
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                 {balance < PVR_REGENERATION_CREDITS ? t("pvr_err_credits") : t("pvr_again_note")}
               </p>
@@ -377,33 +412,34 @@ export function FinalVideoPanel({
                     {t("pvr_again_confirm_note")}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
                       type="button"
                       onClick={() => {
                         setAskAgain(false);
                         setDescriptionEdited(true);
                         onEditDescription?.();
                       }}
-                      className="inline-flex flex-1 items-center justify-center rounded-full border border-border/60 px-4 py-2.5 text-xs font-medium transition hover:border-primary/50"
+                      className="h-auto whitespace-normal inline-flex flex-1 items-center justify-center rounded-full border border-border/60 px-4 py-2.5 text-xs font-medium transition hover:border-primary/50"
                     >
                       {t("pvr_again_edit")}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
                       type="button"
                       onClick={() => {
                         setAskAgain(false);
                         void create(true);
                       }}
-                      className="inline-flex flex-1 items-center justify-center rounded-full bg-gold-gradient px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-warm"
+                      className="h-auto whitespace-normal inline-flex flex-1 items-center justify-center rounded-full bg-gold-gradient px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-warm"
                     >
                       {t("pvr_again_now")} — {PVR_REGENERATION_CREDITS} {word}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
           )}
-
 
           {trackUrl && (
             <audio ref={musicRef} src={trackUrl} preload="metadata" className="hidden" />
@@ -421,22 +457,28 @@ export function FinalVideoPanel({
         <div className="space-y-3">
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {t(pvgVideoStatusKey(video!.status))}
+            {t(
+              video?.paymentUncertain
+                ? "pvr_payment_uncertain"
+                : pvgVideoStatusKey(video?.status ?? "pending"),
+            )}
           </p>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-primary transition-all"
               style={{
                 width:
-                  video!.status === "pending"
+                  video?.status === "pending"
                     ? "20%"
-                    : video!.status === "processing"
+                    : video?.status === "processing"
                       ? "60%"
                       : "92%",
               }}
             />
           </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{t("pvr_leave_note")}</p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t(video?.paymentUncertain ? "pvr_payment_uncertain_note" : "pvr_leave_note")}
+          </p>
         </div>
       ) : video?.status === "failed" ? (
         <div className="space-y-3">
@@ -445,26 +487,28 @@ export function FinalVideoPanel({
             {t(video.creditsCharged > 0 ? "pvr_status_failed" : "pvr_status_failed_refunded")}
           </p>
 
-          <button
+          <Button
+            variant="ghost"
             type="button"
-            disabled={disabled || starting}
+            disabled={disabled || starting || !state}
             onClick={() => void tryAgain()}
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
+            className="h-auto whitespace-normal inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2.5 text-sm font-medium transition hover:border-primary/50 disabled:opacity-60"
           >
             <RotateCcw className="h-4 w-4" />
             {t("pvr_retry")}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">
-          <button
+          <Button
+            variant="ghost"
             type="button"
-            disabled={disabled || starting}
+            disabled={disabled || starting || !state}
             onClick={() => void create(false)}
-            className="w-full rounded-full bg-gold-gradient px-6 py-4 text-base font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
+            className="h-auto w-full whitespace-normal rounded-full bg-gold-gradient px-6 py-4 text-base font-semibold text-primary-foreground shadow-warm disabled:opacity-60"
           >
             {starting ? t("pvr_creating") : t("pvr_create")}
-          </button>
+          </Button>
           <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
             {t("pvr_confirm_note")}
           </p>

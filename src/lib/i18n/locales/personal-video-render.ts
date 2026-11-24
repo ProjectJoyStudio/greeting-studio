@@ -2,8 +2,18 @@ import type { Dict, Lang } from "../types";
 
 export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
   en: {
+    pvr_payment_uncertain_note:
+      "The launch is not yet confirmed. Your payment and generation job are saved.",
+    pvr_payment_uncertain: "The existing payment is being checked. No new credits will be taken.",
+    pvr_err_duplicate:
+      "This purchase already exists or the project has changed. Refresh to see its state.",
+    pvr_err_unauthorized: "You cannot pay for this project. Please sign in to the correct account.",
+    pvr_err_temporary:
+      "The server response was interrupted. Your existing payment will be checked before any retry.",
+
     pvr_mixing_music: "Adding your music to the film…",
-    pvr_mix_failed: "The music could not be added to the file. The video contains the greeting voice only.",
+    pvr_mix_failed:
+      "The music could not be added to the file. The video contains the greeting voice only.",
     pvr_sounds_title: "Scene sounds",
     pvr_sounds_hint:
       "The quiet life of the picture: wind, water, a room, a street. Never speech, singing or music.",
@@ -18,7 +28,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Creating the moving picture…",
     pvr_status_assets: "Adding the voice, the music and the finishing touches…",
     pvr_status_lipsync: "Bringing the voices to the lips…",
-    pvr_status_lipsync_failed: "The lip movement could not be added. No credits were taken for this — you may try again.",
+    pvr_status_lipsync_failed:
+      "The lip movement could not be added. No credits were taken for this — you may try again.",
     pvr_retry_lipsync: "Try the lip movement again",
     pvr_status_ready: "Your video greeting is ready.",
     pvr_status_failed: "The film could not be made.",
@@ -37,8 +48,10 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download_failed: "The video could not be downloaded. Please try again.",
     pvr_err_credits: "There are not enough credits for this video.",
     pvr_action_title: "What happens in the video?",
-    pvr_action_ph: "For example: everyone looks toward the camera, smiles and warmly congratulates the viewer with small natural gestures.",
-    pvr_action_hint: "These are the actions during the film. The starting picture stays exactly as you approved it. If you leave this empty, everyone simply greets the viewer warmly.",
+    pvr_action_ph:
+      "For example: everyone looks toward the camera, smiles and warmly congratulates the viewer with small natural gestures.",
+    pvr_action_hint:
+      "These are the actions during the film. The starting picture stays exactly as you approved it. If you leave this empty, everyone simply greets the viewer warmly.",
     pvr_variants_title: "Your films",
     pvr_variant: "Film",
     pvr_again: "Create another video",
@@ -46,16 +59,28 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Another film is being made.",
     pvr_err_no_scene: "Choose and approve a starting scene first.",
     pvr_err_no_voice: "Your greeting voice is not ready yet. Create the greeting voice first.",
-    pvr_err_no_person_engine: "A personal video greeting needs a person who speaks it. Add a person with a photo to this scene, then create the video.",
-    pvr_err_audio_too_long: "The greeting voice is too long for the film. Please shorten the greeting a little and create the voice again.",
+    pvr_err_no_person_engine:
+      "A personal video greeting needs a person who speaks it. Add a person with a photo to this scene, then create the video.",
+    pvr_err_audio_too_long:
+      "The greeting voice is too long for the film. Please shorten the greeting a little and create the voice again.",
     pvr_err_generic: "The film could not be started. Please try again.",
-    pvr_err_refund_pending: "The film could not be started. We are returning your credits — please check your balance in a moment.",
-    pvr_again_confirm_title: "Would you like to change the animation description before creating the video again?",
-    pvr_again_confirm_note: "Editing the description is free. Credits are taken only when you create the video.",
+    pvr_err_refund_pending:
+      "The film could not be started. We are returning your credits — please check your balance in a moment.",
+    pvr_again_confirm_title:
+      "Would you like to change the animation description before creating the video again?",
+    pvr_again_confirm_note:
+      "Editing the description is free. Credits are taken only when you create the video.",
     pvr_again_edit: "Edit description",
     pvr_again_now: "Create now",
   },
   ru: {
+    pvr_payment_uncertain_note: "Запуск ещё не подтверждён. Оплата и задание сохранены.",
+    pvr_payment_uncertain: "Проверяем существующую оплату. Новые кредиты не списываются.",
+    pvr_err_duplicate:
+      "Эта покупка уже существует или проект изменился. Обновите страницу, чтобы увидеть состояние.",
+    pvr_err_unauthorized: "Вы не можете оплатить этот проект. Войдите в нужный аккаунт.",
+    pvr_err_temporary: "Ответ сервера прервался. Перед повтором проверим существующую оплату.",
+
     pvr_mixing_music: "Добавляем вашу музыку в фильм…",
     pvr_mix_failed: "Музыку не удалось встроить в файл. В видео есть только голос поздравления.",
     pvr_sounds_title: "Звуки сцены",
@@ -72,7 +97,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Создаём движущуюся картину…",
     pvr_status_assets: "Добавляем голос, музыку и финальные штрихи…",
     pvr_status_lipsync: "Совмещаем голос с движением губ…",
-    pvr_status_lipsync_failed: "Не удалось совместить голос с губами. Кредиты за это не списаны — можно попробовать снова.",
+    pvr_status_lipsync_failed:
+      "Не удалось совместить голос с губами. Кредиты за это не списаны — можно попробовать снова.",
     pvr_retry_lipsync: "Повторить синхронизацию губ",
     pvr_status_ready: "Ваше видеопоздравление готово.",
     pvr_status_failed: "Видео не удалось создать.",
@@ -91,8 +117,10 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download_failed: "Видео не удалось скачать. Попробуйте ещё раз.",
     pvr_err_credits: "Кредитов для этого видео недостаточно.",
     pvr_action_title: "Что происходит в видео?",
-    pvr_action_ph: "Например: все смотрят в камеру, улыбаются и тепло поздравляют зрителя, делая естественные жесты.",
-    pvr_action_hint: "Это действия внутри видео. Утверждённая картинка остаётся прежней. Если оставить поле пустым, все просто тепло поздравят зрителя.",
+    pvr_action_ph:
+      "Например: все смотрят в камеру, улыбаются и тепло поздравляют зрителя, делая естественные жесты.",
+    pvr_action_hint:
+      "Это действия внутри видео. Утверждённая картинка остаётся прежней. Если оставить поле пустым, все просто тепло поздравят зрителя.",
     pvr_variants_title: "Ваши видео",
     pvr_variant: "Видео",
     pvr_again: "Создать ещё одно видео",
@@ -100,18 +128,34 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Создаётся ещё одно видео.",
     pvr_err_no_scene: "Сначала выберите и подтвердите начальную сцену.",
     pvr_err_no_voice: "Голос поздравления ещё не готов. Сначала создайте голос поздравления.",
-    pvr_err_no_person_engine: "Для персонального видеопоздравления нужен человек, который его произнесёт. Добавьте человека с фотографией в эту сцену, затем создайте видео.",
-    pvr_err_audio_too_long: "Голос поздравления слишком длинный для видео. Немного сократите текст и создайте голос заново.",
+    pvr_err_no_person_engine:
+      "Для персонального видеопоздравления нужен человек, который его произнесёт. Добавьте человека с фотографией в эту сцену, затем создайте видео.",
+    pvr_err_audio_too_long:
+      "Голос поздравления слишком длинный для видео. Немного сократите текст и создайте голос заново.",
     pvr_err_generic: "Не удалось начать создание видео. Попробуйте ещё раз.",
-    pvr_err_refund_pending: "Не удалось начать создание видео. Кредиты возвращаются — проверьте баланс через минуту.",
+    pvr_err_refund_pending:
+      "Не удалось начать создание видео. Кредиты возвращаются — проверьте баланс через минуту.",
     pvr_again_confirm_title: "Хотите изменить описание анимации перед повторным созданием видео?",
-    pvr_again_confirm_note: "Изменение описания бесплатно. Кредиты списываются только при создании видео.",
+    pvr_again_confirm_note:
+      "Изменение описания бесплатно. Кредиты списываются только при создании видео.",
     pvr_again_edit: "Изменить описание",
     pvr_again_now: "Создать сейчас",
   },
   de: {
+    pvr_payment_uncertain_note:
+      "Der Start ist noch nicht bestätigt. Zahlung und Auftrag sind gespeichert.",
+    pvr_payment_uncertain:
+      "Die bestehende Zahlung wird geprüft. Es werden keine weiteren Credits abgebucht.",
+    pvr_err_duplicate:
+      "Dieser Kauf besteht bereits oder das Projekt wurde geändert. Aktualisieren Sie die Seite, um den Status zu sehen.",
+    pvr_err_unauthorized:
+      "Sie können dieses Projekt nicht bezahlen. Melden Sie sich mit dem richtigen Konto an.",
+    pvr_err_temporary:
+      "Die Serverantwort wurde unterbrochen. Vor einem erneuten Versuch wird die bestehende Zahlung geprüft.",
+
     pvr_mixing_music: "Ihre Musik wird in den Film eingefügt…",
-    pvr_mix_failed: "Die Musik konnte nicht in die Datei eingefügt werden. Das Video enthält nur die Grußstimme.",
+    pvr_mix_failed:
+      "Die Musik konnte nicht in die Datei eingefügt werden. Das Video enthält nur die Grußstimme.",
     pvr_sounds_title: "Szenengeräusche",
     pvr_sounds_hint:
       "Das leise Leben des Bildes: Wind, Wasser, ein Raum, eine Straße. Keine Sprache, kein Gesang, keine Musik.",
@@ -126,11 +170,13 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Das bewegte Bild entsteht…",
     pvr_status_assets: "Stimme, Musik und letzter Schliff kommen dazu…",
     pvr_status_lipsync: "Die Stimmen kommen an die Lippen…",
-    pvr_status_lipsync_failed: "Die Lippenbewegung konnte nicht ergänzt werden. Dafür wurden keine Credits abgezogen — Sie können es erneut versuchen.",
+    pvr_status_lipsync_failed:
+      "Die Lippenbewegung konnte nicht ergänzt werden. Dafür wurden keine Credits abgezogen — Sie können es erneut versuchen.",
     pvr_retry_lipsync: "Lippenbewegung erneut versuchen",
     pvr_status_ready: "Ihr Videogruß ist fertig.",
     pvr_status_failed: "Der Film konnte nicht erstellt werden.",
-    pvr_status_failed_refunded: "Der Film konnte nicht erstellt werden. Ihre Credits wurden zurückgegeben.",
+    pvr_status_failed_refunded:
+      "Der Film konnte nicht erstellt werden. Ihre Credits wurden zurückgegeben.",
     pvr_leave_note:
       "Sie dürfen die Seite schließen — der Film entsteht weiter und wartet hier auf Sie.",
     pvr_retry: "Erneut versuchen",
@@ -142,12 +188,16 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_share: "Teilen",
     pvr_close: "Schließen",
     pvr_delivered: "Ihr Video wurde übergeben. Es wird hier nicht mehr angezeigt.",
-    pvr_share_failed: "Teilen ist auf diesem Gerät nicht möglich. Bitte laden Sie das Video herunter.",
-    pvr_download_failed: "Das Video konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut.",
+    pvr_share_failed:
+      "Teilen ist auf diesem Gerät nicht möglich. Bitte laden Sie das Video herunter.",
+    pvr_download_failed:
+      "Das Video konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut.",
     pvr_err_credits: "Für dieses Video reichen die Credits nicht.",
     pvr_action_title: "Was passiert im Video?",
-    pvr_action_ph: "Zum Beispiel: alle schauen in die Kamera, lächeln und gratulieren der Zuschauerin oder dem Zuschauer herzlich mit natürlichen Gesten.",
-    pvr_action_hint: "Das sind die Handlungen im Film. Das freigegebene Bild bleibt unverändert. Bleibt das Feld leer, gratulieren alle einfach herzlich.",
+    pvr_action_ph:
+      "Zum Beispiel: alle schauen in die Kamera, lächeln und gratulieren der Zuschauerin oder dem Zuschauer herzlich mit natürlichen Gesten.",
+    pvr_action_hint:
+      "Das sind die Handlungen im Film. Das freigegebene Bild bleibt unverändert. Bleibt das Feld leer, gratulieren alle einfach herzlich.",
     pvr_variants_title: "Ihre Filme",
     pvr_variant: "Film",
     pvr_again: "Weiteres Video erstellen",
@@ -155,16 +205,28 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Ein weiterer Film wird erstellt.",
     pvr_err_no_scene: "Wählen und bestätigen Sie zuerst eine Startszene.",
     pvr_err_no_voice: "Ihre Grußstimme ist noch nicht fertig. Erstellen Sie zuerst die Stimme.",
-    pvr_err_no_person_engine: "Ein persönlicher Videogruß braucht eine Person, die ihn spricht. Fügen Sie dieser Szene eine Person mit Foto hinzu und erstellen Sie dann das Video.",
-    pvr_err_audio_too_long: "Die Grußstimme ist für den Film zu lang. Kürzen Sie den Text etwas und erstellen Sie die Stimme erneut.",
+    pvr_err_no_person_engine:
+      "Ein persönlicher Videogruß braucht eine Person, die ihn spricht. Fügen Sie dieser Szene eine Person mit Foto hinzu und erstellen Sie dann das Video.",
+    pvr_err_audio_too_long:
+      "Die Grußstimme ist für den Film zu lang. Kürzen Sie den Text etwas und erstellen Sie die Stimme erneut.",
     pvr_err_generic: "Der Film konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
-    pvr_err_refund_pending: "Der Film konnte nicht gestartet werden. Ihre Credits werden zurückgegeben — bitte prüfen Sie gleich Ihr Guthaben.",
-    pvr_again_confirm_title: "Möchten Sie die Animationsbeschreibung ändern, bevor das Video erneut erstellt wird?",
-    pvr_again_confirm_note: "Das Bearbeiten der Beschreibung ist kostenlos. Credits werden erst beim Erstellen abgezogen.",
+    pvr_err_refund_pending:
+      "Der Film konnte nicht gestartet werden. Ihre Credits werden zurückgegeben — bitte prüfen Sie gleich Ihr Guthaben.",
+    pvr_again_confirm_title:
+      "Möchten Sie die Animationsbeschreibung ändern, bevor das Video erneut erstellt wird?",
+    pvr_again_confirm_note:
+      "Das Bearbeiten der Beschreibung ist kostenlos. Credits werden erst beim Erstellen abgezogen.",
     pvr_again_edit: "Beschreibung bearbeiten",
     pvr_again_now: "Jetzt erstellen",
   },
   uk: {
+    pvr_payment_uncertain_note: "Запуск ще не підтверджено. Оплату й завдання збережено.",
+    pvr_payment_uncertain: "Перевіряємо наявну оплату. Нові кредити не списуються.",
+    pvr_err_duplicate:
+      "Ця покупка вже існує або проєкт змінився. Оновіть сторінку, щоб побачити стан.",
+    pvr_err_unauthorized: "Ви не можете оплатити цей проєкт. Увійдіть у потрібний обліковий запис.",
+    pvr_err_temporary: "Відповідь сервера перервалася. Перед повтором перевіримо наявну оплату.",
+
     pvr_mixing_music: "Додаємо вашу музику у фільм…",
     pvr_mix_failed: "Музику не вдалося вбудувати у файл. У відео лише голос привітання.",
     pvr_sounds_title: "Звуки сцени",
@@ -181,7 +243,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Створюємо рухому картину…",
     pvr_status_assets: "Додаємо голос, музику та останні штрихи…",
     pvr_status_lipsync: "Поєднуємо голос із рухом губ…",
-    pvr_status_lipsync_failed: "Не вдалося додати рух губ. Кредити за це не списано — можна спробувати ще раз.",
+    pvr_status_lipsync_failed:
+      "Не вдалося додати рух губ. Кредити за це не списано — можна спробувати ще раз.",
     pvr_retry_lipsync: "Повторити синхронізацію губ",
     pvr_status_ready: "Ваше відеопривітання готове.",
     pvr_status_failed: "Відео не вдалося створити.",
@@ -200,8 +263,10 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download_failed: "Відео не вдалося завантажити. Спробуйте ще раз.",
     pvr_err_credits: "Кредитів для цього відео недостатньо.",
     pvr_action_title: "Що відбувається у відео?",
-    pvr_action_ph: "Наприклад: усі дивляться в камеру, усміхаються й тепло вітають глядача природними жестами.",
-    pvr_action_hint: "Це дії у відео. Затверджене зображення лишається таким самим. Якщо поле порожнє, усі просто тепло вітають глядача.",
+    pvr_action_ph:
+      "Наприклад: усі дивляться в камеру, усміхаються й тепло вітають глядача природними жестами.",
+    pvr_action_hint:
+      "Це дії у відео. Затверджене зображення лишається таким самим. Якщо поле порожнє, усі просто тепло вітають глядача.",
     pvr_variants_title: "Ваші відео",
     pvr_variant: "Відео",
     pvr_again: "Створити ще одне відео",
@@ -209,18 +274,33 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Створюється ще одне відео.",
     pvr_err_no_scene: "Спершу оберіть і підтвердьте початкову сцену.",
     pvr_err_no_voice: "Голос привітання ще не готовий. Спершу створіть голос привітання.",
-    pvr_err_no_person_engine: "Для персонального відеопривітання потрібна людина, яка його промовить. Додайте людину з фотографією до цієї сцени, а потім створіть відео.",
-    pvr_err_audio_too_long: "Голос привітання задовгий для відео. Трохи скоротіть текст і створіть голос знову.",
+    pvr_err_no_person_engine:
+      "Для персонального відеопривітання потрібна людина, яка його промовить. Додайте людину з фотографією до цієї сцени, а потім створіть відео.",
+    pvr_err_audio_too_long:
+      "Голос привітання задовгий для відео. Трохи скоротіть текст і створіть голос знову.",
     pvr_err_generic: "Не вдалося розпочати створення відео. Спробуйте ще раз.",
-    pvr_err_refund_pending: "Не вдалося розпочати створення відео. Кредити повертаються — перевірте баланс за хвилину.",
+    pvr_err_refund_pending:
+      "Не вдалося розпочати створення відео. Кредити повертаються — перевірте баланс за хвилину.",
     pvr_again_confirm_title: "Бажаєте змінити опис анімації перед повторним створенням відео?",
-    pvr_again_confirm_note: "Редагування опису безкоштовне. Кредити списуються лише під час створення відео.",
+    pvr_again_confirm_note:
+      "Редагування опису безкоштовне. Кредити списуються лише під час створення відео.",
     pvr_again_edit: "Змінити опис",
     pvr_again_now: "Створити зараз",
   },
   fr: {
+    pvr_payment_uncertain_note:
+      "Le lancement n’est pas encore confirmé. Le paiement et la tâche sont enregistrés.",
+    pvr_payment_uncertain:
+      "Le paiement existant est en cours de vérification. Aucun nouveau crédit ne sera débité.",
+    pvr_err_duplicate:
+      "Cet achat existe déjà ou le projet a changé. Actualisez la page pour voir son état.",
+    pvr_err_unauthorized: "Vous ne pouvez pas payer ce projet. Connectez-vous au bon compte.",
+    pvr_err_temporary:
+      "La réponse du serveur a été interrompue. Le paiement existant sera vérifié avant toute nouvelle tentative.",
+
     pvr_mixing_music: "Ajout de votre musique au film…",
-    pvr_mix_failed: "La musique n’a pas pu être intégrée au fichier. La vidéo ne contient que la voix.",
+    pvr_mix_failed:
+      "La musique n’a pas pu être intégrée au fichier. La vidéo ne contient que la voix.",
     pvr_sounds_title: "Sons de la scène",
     pvr_sounds_hint:
       "La vie discrète de l'image : le vent, l'eau, une pièce, une rue. Jamais de parole, de chant ni de musique.",
@@ -235,13 +315,13 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Création de l'image animée…",
     pvr_status_assets: "Ajout de la voix, de la musique et des dernières touches…",
     pvr_status_lipsync: "Les voix rejoignent les lèvres…",
-    pvr_status_lipsync_failed: "La synchronisation labiale a échoué. Aucun crédit n'a été prélevé — vous pouvez réessayer.",
+    pvr_status_lipsync_failed:
+      "La synchronisation labiale a échoué. Aucun crédit n'a été prélevé — vous pouvez réessayer.",
     pvr_retry_lipsync: "Réessayer la synchro labiale",
     pvr_status_ready: "Votre vidéo de vœux est prête.",
     pvr_status_failed: "Le film n'a pas pu être créé.",
     pvr_status_failed_refunded: "Le film n'a pas pu être créé. Vos crédits ont été rendus.",
-    pvr_leave_note:
-      "Vous pouvez fermer cette page — le film continue et vous attendra ici.",
+    pvr_leave_note: "Vous pouvez fermer cette page — le film continue et vous attendra ici.",
     pvr_retry: "Réessayer",
     pvr_play: "Lire",
     pvr_pause: "Pause",
@@ -255,8 +335,10 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download_failed: "La vidéo n’a pas pu être téléchargée. Veuillez réessayer.",
     pvr_err_credits: "Les crédits sont insuffisants pour cette vidéo.",
     pvr_action_title: "Que se passe-t-il dans la vidéo ?",
-    pvr_action_ph: "Par exemple : tout le monde regarde la caméra, sourit et félicite chaleureusement le spectateur avec des gestes naturels.",
-    pvr_action_hint: "Ce sont les actions du film. L'image approuvée reste inchangée. Si le champ reste vide, tout le monde félicite simplement le spectateur.",
+    pvr_action_ph:
+      "Par exemple : tout le monde regarde la caméra, sourit et félicite chaleureusement le spectateur avec des gestes naturels.",
+    pvr_action_hint:
+      "Ce sont les actions du film. L'image approuvée reste inchangée. Si le champ reste vide, tout le monde félicite simplement le spectateur.",
     pvr_variants_title: "Vos films",
     pvr_variant: "Film",
     pvr_again: "Créer une autre vidéo",
@@ -264,21 +346,34 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Un autre film est en cours de création.",
     pvr_err_no_scene: "Choisissez et validez d'abord une scène de départ.",
     pvr_err_no_voice: "Votre voix de vœux n'est pas encore prête. Créez-la d'abord.",
-    pvr_err_no_person_engine: "Un message vidéo personnel a besoin d'une personne qui le prononce. Ajoutez une personne avec une photo à cette scène, puis créez la vidéo.",
-    pvr_err_audio_too_long: "La voix des vœux est trop longue pour le film. Raccourcissez un peu le texte et recréez la voix.",
+    pvr_err_no_person_engine:
+      "Un message vidéo personnel a besoin d'une personne qui le prononce. Ajoutez une personne avec une photo à cette scène, puis créez la vidéo.",
+    pvr_err_audio_too_long:
+      "La voix des vœux est trop longue pour le film. Raccourcissez un peu le texte et recréez la voix.",
     pvr_err_generic: "Le film n'a pas pu démarrer. Veuillez réessayer.",
-    pvr_err_refund_pending: "Le film n'a pas pu démarrer. Vos crédits sont en cours de restitution — vérifiez votre solde dans un instant.",
-    pvr_again_confirm_title: "Souhaitez-vous modifier la description de l'animation avant de recréer la vidéo ?",
-    pvr_again_confirm_note: "Modifier la description est gratuit. Les crédits sont pris seulement à la création.",
+    pvr_err_refund_pending:
+      "Le film n'a pas pu démarrer. Vos crédits sont en cours de restitution — vérifiez votre solde dans un instant.",
+    pvr_again_confirm_title:
+      "Souhaitez-vous modifier la description de l'animation avant de recréer la vidéo ?",
+    pvr_again_confirm_note:
+      "Modifier la description est gratuit. Les crédits sont pris seulement à la création.",
     pvr_again_edit: "Modifier la description",
     pvr_again_now: "Créer maintenant",
   },
   pl: {
+    pvr_payment_uncertain_note:
+      "Uruchomienie nie zostało jeszcze potwierdzone. Płatność i zadanie są zapisane.",
+    pvr_payment_uncertain: "Sprawdzamy istniejącą płatność. Nie pobieramy nowych kredytów.",
+    pvr_err_duplicate:
+      "Ten zakup już istnieje lub projekt się zmienił. Odśwież stronę, aby zobaczyć stan.",
+    pvr_err_unauthorized: "Nie możesz zapłacić za ten projekt. Zaloguj się na właściwe konto.",
+    pvr_err_temporary:
+      "Odpowiedź serwera została przerwana. Przed ponowieniem sprawdzimy istniejącą płatność.",
+
     pvr_mixing_music: "Dodajemy Twoją muzykę do filmu…",
     pvr_mix_failed: "Nie udało się wbudować muzyki w plik. Wideo zawiera tylko głos życzeń.",
     pvr_sounds_title: "Dźwięki sceny",
-    pvr_sounds_hint:
-      "Ciche życie obrazu: wiatr, woda, pokój, ulica. Nigdy mowa, śpiew ani muzyka.",
+    pvr_sounds_hint: "Ciche życie obrazu: wiatr, woda, pokój, ulica. Nigdy mowa, śpiew ani muzyka.",
     pvr_sounds_off: "Wyłączone",
     pvr_sounds_on: "Dodaj dźwięki sceny",
     pvr_title: "Twoje wideo z życzeniami",
@@ -290,7 +385,8 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_status_generating: "Tworzymy ruchomy obraz…",
     pvr_status_assets: "Dodajemy głos, muzykę i ostatnie szlify…",
     pvr_status_lipsync: "Głosy trafiają na usta…",
-    pvr_status_lipsync_failed: "Nie udało się dodać ruchu ust. Nie pobrano za to kredytów — możesz spróbować ponownie.",
+    pvr_status_lipsync_failed:
+      "Nie udało się dodać ruchu ust. Nie pobrano za to kredytów — możesz spróbować ponownie.",
     pvr_retry_lipsync: "Ponów synchronizację ust",
     pvr_status_ready: "Twoje wideo z życzeniami jest gotowe.",
     pvr_status_failed: "Nie udało się utworzyć filmu.",
@@ -309,8 +405,10 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_download_failed: "Nie udało się pobrać wideo. Spróbuj ponownie.",
     pvr_err_credits: "Za mało kredytów na to wideo.",
     pvr_action_title: "Co dzieje się w filmie?",
-    pvr_action_ph: "Na przykład: wszyscy patrzą w kamerę, uśmiechają się i ciepło składają życzenia widzowi, wykonując naturalne gesty.",
-    pvr_action_hint: "To działania w filmie. Zatwierdzony obraz pozostaje bez zmian. Puste pole oznacza, że wszyscy po prostu ciepło pozdrawiają widza.",
+    pvr_action_ph:
+      "Na przykład: wszyscy patrzą w kamerę, uśmiechają się i ciepło składają życzenia widzowi, wykonując naturalne gesty.",
+    pvr_action_hint:
+      "To działania w filmie. Zatwierdzony obraz pozostaje bez zmian. Puste pole oznacza, że wszyscy po prostu ciepło pozdrawiają widza.",
     pvr_variants_title: "Twoje filmy",
     pvr_variant: "Film",
     pvr_again: "Utwórz kolejne wideo",
@@ -318,12 +416,16 @@ export const PERSONAL_VIDEO_RENDER_I18N: Record<Lang, Dict> = {
     pvr_again_started: "Powstaje kolejny film.",
     pvr_err_no_scene: "Najpierw wybierz i zatwierdź scenę początkową.",
     pvr_err_no_voice: "Głos życzeń nie jest jeszcze gotowy. Najpierw utwórz głos życzeń.",
-    pvr_err_no_person_engine: "Osobiste życzenia wideo wymagają osoby, która je wypowie. Dodaj do tej sceny osobę ze zdjęciem, a następnie utwórz wideo.",
-    pvr_err_audio_too_long: "Głos życzeń jest za długi na film. Skróć nieco tekst i utwórz głos ponownie.",
+    pvr_err_no_person_engine:
+      "Osobiste życzenia wideo wymagają osoby, która je wypowie. Dodaj do tej sceny osobę ze zdjęciem, a następnie utwórz wideo.",
+    pvr_err_audio_too_long:
+      "Głos życzeń jest za długi na film. Skróć nieco tekst i utwórz głos ponownie.",
     pvr_err_generic: "Nie udało się rozpocząć tworzenia filmu. Spróbuj ponownie.",
-    pvr_err_refund_pending: "Nie udało się rozpocząć tworzenia filmu. Kredyty są zwracane — sprawdź saldo za chwilę.",
+    pvr_err_refund_pending:
+      "Nie udało się rozpocząć tworzenia filmu. Kredyty są zwracane — sprawdź saldo za chwilę.",
     pvr_again_confirm_title: "Czy chcesz zmienić opis animacji przed ponownym utworzeniem wideo?",
-    pvr_again_confirm_note: "Edycja opisu jest bezpłatna. Kredyty pobieramy dopiero przy tworzeniu wideo.",
+    pvr_again_confirm_note:
+      "Edycja opisu jest bezpłatna. Kredyty pobieramy dopiero przy tworzeniu wideo.",
     pvr_again_edit: "Edytuj opis",
     pvr_again_now: "Utwórz teraz",
   },

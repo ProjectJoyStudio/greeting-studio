@@ -1,3 +1,9 @@
+# PVG atomic final payment
+- [x] Trace existing debit, job creation, provider submission and refund paths.
+- [x] Secure atomic paid jobs, stable retries, provider uncertainty and linked refunds without changing prices or attempts.
+- [x] Execute 22 isolated database checks (real concurrent purchases/refunds), 15 PVG unit/mock tests, six-language browser checks and 12 viewport categories; verify orphan refund in signed-in UI and remove disposable data; deliver Russian coverage report.
+- [ ] Full live provider/download and physical OS/device acceptance: requires paid external generation and physical devices unavailable in sandbox; uncertain Replicate acceptance without a returned ID requires provider-side reconciliation, never automatic resubmission.
+
 # Memory Book storage restructuring — current Greeting Studio only
 - [x] Oct 28 public viewer: memoized pages/live auto clock, end stop, reproduced swipe repair, six-language controls/selector, responsive media and localized recovery; 18 Chromium matrix cases, 4 portrait auto cases, 2 Firefox full cases, owner navigation and 20 unit tests; Russian report delivered. Books/shares hashes unchanged, no storage/ZIP/publish changes.
 - [ ] Oct 28 full viewer acceptance: original PJ-GAHSSL needs the affected Android or its exception log; physical Safari/Edge/device and H264 video/audio/fullscreen checks unavailable in sandbox. Historical crash not reproduced, so its exact cause/final resolution is not claimed.

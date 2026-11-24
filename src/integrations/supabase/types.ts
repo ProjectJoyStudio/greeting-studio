@@ -4170,6 +4170,7 @@ export type Database = {
         Row: {
           action_description: string | null
           audio_seconds: number | null
+          charge_txn_id: string | null
           completed_at: string | null
           created_at: string
           credits_charged: number
@@ -4190,8 +4191,13 @@ export type Database = {
           lipsync_prediction_id: string | null
           mix_signature: string | null
           mix_storage_path: string | null
+          payment_key: string | null
           prediction_id: string | null
           project_id: string
+          reconcile_token: string | null
+          reconcile_until: string | null
+          refund_txn_id: string | null
+          request_snapshot: Json | null
           scene_sounds: boolean
           seed: number | null
           silent_bucket: string | null
@@ -4201,6 +4207,7 @@ export type Database = {
           status: string
           storage_bucket: string | null
           storage_path: string | null
+          submission_state: string | null
           updated_at: string
           user_id: string
           variant_index: number
@@ -4215,6 +4222,7 @@ export type Database = {
         Insert: {
           action_description?: string | null
           audio_seconds?: number | null
+          charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -4235,8 +4243,13 @@ export type Database = {
           lipsync_prediction_id?: string | null
           mix_signature?: string | null
           mix_storage_path?: string | null
+          payment_key?: string | null
           prediction_id?: string | null
           project_id: string
+          reconcile_token?: string | null
+          reconcile_until?: string | null
+          refund_txn_id?: string | null
+          request_snapshot?: Json | null
           scene_sounds?: boolean
           seed?: number | null
           silent_bucket?: string | null
@@ -4246,6 +4259,7 @@ export type Database = {
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          submission_state?: string | null
           updated_at?: string
           user_id: string
           variant_index?: number
@@ -4260,6 +4274,7 @@ export type Database = {
         Update: {
           action_description?: string | null
           audio_seconds?: number | null
+          charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -4280,8 +4295,13 @@ export type Database = {
           lipsync_prediction_id?: string | null
           mix_signature?: string | null
           mix_storage_path?: string | null
+          payment_key?: string | null
           prediction_id?: string | null
           project_id?: string
+          reconcile_token?: string | null
+          reconcile_until?: string | null
+          refund_txn_id?: string | null
+          request_snapshot?: Json | null
           scene_sounds?: boolean
           seed?: number | null
           silent_bucket?: string | null
@@ -4291,6 +4311,7 @@ export type Database = {
           status?: string
           storage_bucket?: string | null
           storage_path?: string | null
+          submission_state?: string | null
           updated_at?: string
           user_id?: string
           variant_index?: number
@@ -4304,10 +4325,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "pvg_videos_charge_txn_id_fkey"
+            columns: ["charge_txn_id"]
+            isOneToOne: false
+            referencedRelation: "credit_transactions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pvg_videos_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "pvg_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvg_videos_refund_txn_id_fkey"
+            columns: ["refund_txn_id"]
+            isOneToOne: false
+            referencedRelation: "credit_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -5921,6 +5956,14 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_pvg_video_reconcile: {
+        Args: { _token: string; _video_id: string }
+        Returns: boolean
+      }
+      claim_pvg_video_submission: {
+        Args: { _video_id: string }
+        Returns: boolean
+      }
       confirm_credit_purchase: {
         Args: {
           _order_id: string
@@ -6031,6 +6074,19 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
+      }
+      purchase_pvg_final_video: {
+        Args: {
+          _previous_video_id: string
+          _project_id: string
+          _snapshot: Json
+          _user_id: string
+        }
+        Returns: Json
+      }
+      pvg_final_price: {
+        Args: { _another: boolean; _seconds: number }
+        Returns: number
       }
       refund_live_card_animation: {
         Args: { _price: number; _reason: string; _user_id: string }

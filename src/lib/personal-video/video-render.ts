@@ -23,6 +23,7 @@ export interface PvgVideoJob {
   durationSeconds: number;
   sceneSounds: boolean;
   creditsCharged: number;
+  paymentUncertain?: boolean;
   videoUrl: string | null;
   errorCode: string | null;
   errorMessage: string | null;

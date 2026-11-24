@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { PvgVideoJob } from "./video-render";
 import { PVR_REGENERATION_CREDITS } from "./video-render";
 import { clampDuration, videoCredits } from "./video-setup";
+import { pvgPaymentInput } from "./payment-input";
 
 interface ProjectRowLite {
   id: string;
@@ -39,6 +40,7 @@ export interface PvgVideoState {
   /** What the next film costs: full price at first, then the fixed price. */
   nextPrice: number;
   hasReady: boolean;
+  previousVideoId: string | null;
 }
 
 /** Every film of one order, finished in the background when needed. */
@@ -56,13 +58,16 @@ export const getPvgVideo = createServerFn({ method: "POST" })
         .select(VIDEO_COLUMNS)
         .eq("project_id", data.projectId)
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
       return (rows ?? []) as Row[];
     };
 
     let rows = await read();
-    const running = rows.filter((r) =>
-      ["pending", "processing", "lipsync", "assets"].includes(r.status),
+    const running = rows.filter(
+      (r) =>
+        ["pending", "processing", "lipsync", "assets"].includes(r.status) ||
+        (r.status === "failed" && r.credits_charged > 0),
     );
     if (running.length > 0) {
       await Promise.all(running.map((row) => reconcileVideo(row.id)));
@@ -97,6 +102,7 @@ export const getPvgVideo = createServerFn({ method: "POST" })
       balance: (wallet as { balance: number } | null)?.balance ?? 0,
       nextPrice: everReady ? PVR_REGENERATION_CREDITS : videoCredits(seconds),
       hasReady: ready.length > 0,
+      previousVideoId: rows[0]?.id ?? null,
     };
   });
 
@@ -120,7 +126,10 @@ async function loadRow(supabase: unknown, id: string) {
  */
 export const startPvgVideo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string; again?: boolean | undefined }) => input)
+  .inputValidator(
+    (input: { projectId: string; previousVideoId: string | null; again?: boolean | undefined }) =>
+      pvgPaymentInput.parse(input),
+  )
   .handler(
     async ({
       data,
@@ -142,7 +151,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         .eq("id", data.projectId)
         .maybeSingle();
       const project = projectRow as ProjectRowLite | null;
-      if (!project || project.user_id !== userId) throw new Error("project_not_found");
+      if (!project || project.user_id !== userId)
+        return { ok: false, error: "pvr_err_unauthorized", video: null, balance: 0 };
 
       const balanceOf = async () => {
         const { data: wallet } = await supabase
@@ -154,6 +164,21 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       };
 
       type Row = import("./video-render.server").VideoRow;
+
+      // Replay survives completion, failure, refresh and network response loss.
+      const replay = await supabase
+        .from("pvg_videos")
+        .select(VIDEO_COLUMNS)
+        .eq("project_id", project.id)
+        .eq("payment_key", data.previousVideoId ?? "initial")
+        .maybeSingle();
+      if (replay.data) {
+        return {
+          ok: true,
+          video: await toVideoJob(replay.data as Row),
+          balance: await balanceOf(),
+        };
+      }
 
       // One film at a time: a second click never starts a second paid render.
       const { data: runningRow } = await supabase
@@ -177,8 +202,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false });
       const ready = (readyRows ?? []) as Row[];
       // Without an explicit wish for another film, the finished one is shown.
-      if (ready.length > 0 && !data.again) {
-        return { ok: true, video: await toVideoJob(ready[0]!), balance: await balanceOf() };
+      if (ready[0] && !data.again) {
+        return { ok: true, video: await toVideoJob(ready[0]), balance: await balanceOf() };
       }
 
       // The approved starting scene is the first frame of the film.
@@ -233,11 +258,6 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       const route = "person" as const;
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
-      const isAgain = ready.length > 0;
-      const price = isAgain
-        ? PVR_REGENERATION_CREDITS
-        : videoCredits(duration);
-
       // The finished greeting voice from page two is what the film is built
       // on. It is sent once, and never laid over the result again.
       const { readVoiceover } = await import("./voice/voice.server");
@@ -263,50 +283,6 @@ export const startPvgVideo = createServerFn({ method: "POST" })
       }
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: walletRow } = await supabaseAdmin
-        .from("credit_wallets")
-        .select("id, balance, lifetime_spent")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const w = walletRow as { id: string; balance: number; lifetime_spent: number } | null;
-      if (!w || w.balance < price) {
-        return { ok: false, error: "pvr_err_credits", video: null, balance: w?.balance ?? 0 };
-      }
-      // Conditional write: two clicks can never take the same credits twice.
-      const { data: charged } = await supabaseAdmin
-        .from("credit_wallets")
-        .update({ balance: w.balance - price, lifetime_spent: w.lifetime_spent + price })
-        .eq("id", w.id)
-        .eq("balance", w.balance)
-        .select("id")
-        .maybeSingle();
-      if (!charged) {
-        return { ok: false, error: "pvr_err_credits", video: null, balance: await balanceOf() };
-      }
-      await supabaseAdmin.from("credit_transactions").insert({
-        wallet_id: w.id,
-        user_id: userId,
-        txn_type: "order_charge",
-        amount: -price,
-        balance_after: w.balance - price,
-        description: isAgain
-          ? "Personal video greeting — another film of the same order"
-          : "Personal video greeting — the film",
-        metadata: {
-          project_id: project.id,
-          seconds: duration,
-          scene_sounds: false,
-          regeneration: isAgain,
-        },
-      });
-      await supabaseAdmin
-        .from("pvg_projects")
-        .update({
-          credits_charged: (project.credits_charged ?? 0) + price,
-          status: "video_generating",
-        } as never)
-        .eq("id", project.id);
-
       const named = (p: PersonLite, i: number) =>
         p.name?.trim() ? p.name.trim() : `Person ${i + 1}`;
 
@@ -326,31 +302,63 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         silentNames: [],
       });
 
-      const variantIndex =
-        ready.length > 0 ? Math.max(...ready.map((r) => r.variant_index ?? 1)) + 1 : 1;
-      // A fresh seed makes every further film a genuinely new variation.
       const seed = Math.floor(Math.random() * 2_147_483_647);
-
-      const { data: created, error: createError } = await supabaseAdmin
-        .from("pvg_videos")
-        .insert({
-          project_id: project.id,
-          user_id: userId,
-          job_id: `pvg-${project.id}-${Date.now()}`,
-          status: "pending",
-          duration_seconds: duration,
-          scene_sounds: false,
-          credits_charged: price,
-          variant_index: variantIndex,
-          action_description: project.action_description ?? "",
-          seed,
-          audio_seconds: audioSeconds,
-          speaker_person_id: speaker.id,
-        } as never)
-        .select(VIDEO_COLUMNS)
-        .single();
-      if (createError) throw new Error(createError.message);
-      const videoRow = created as Row;
+      // Translation and audio validation are preparation, not a paid operation.
+      // Generated RPC types mark UUID parameters non-null although PostgreSQL accepts NULL.
+      const purchaseRpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: unknown }>;
+      const { data: purchased, error: purchaseError } = await purchaseRpc(
+        "purchase_pvg_final_video",
+        {
+          _user_id: userId,
+          _project_id: project.id,
+          _previous_video_id: data.previousVideoId,
+          _snapshot: {
+            prompt,
+            imageUrl,
+            audioUrl,
+            audioSeconds,
+            seed,
+            duration,
+            scene_id: chosen.id,
+            speaker_id: speaker.id,
+          },
+        },
+      );
+      const payment = purchased as {
+        ok?: boolean;
+        created?: boolean;
+        video_id?: string;
+        error?: string;
+      } | null;
+      if (purchaseError || !payment?.ok || !payment.video_id) {
+        const errors: Record<string, string> = {
+          insufficient_credits: "pvr_err_credits",
+          unauthorized: "pvr_err_unauthorized",
+          stale_operation: "pvr_err_duplicate",
+          invalid_operation: "pvr_err_duplicate",
+          refund_pending: "pvr_err_refund_pending",
+        };
+        return {
+          ok: false,
+          error: errors[payment?.error ?? ""] ?? "pvr_err_generic",
+          video: null,
+          balance: await balanceOf(),
+        };
+      }
+      const videoRow = await loadRow(supabase, payment.video_id);
+      if (!videoRow)
+        return { ok: false, error: "pvr_err_temporary", video: null, balance: await balanceOf() };
+      if (!payment.created)
+        return { ok: true, video: await toVideoJob(videoRow), balance: await balanceOf() };
+      const claim = await supabaseAdmin.rpc("claim_pvg_video_submission", {
+        _video_id: videoRow.id,
+      });
+      if (claim.error || !claim.data)
+        return { ok: true, video: await toVideoJob(videoRow), balance: await balanceOf() };
+      let submitted = false;
 
       try {
         // Picture + finished greeting voice in, speaking film out.
@@ -375,10 +383,25 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           audioSeconds,
           seed,
           route,
+          beforeSubmit: async (attempt) => {
+            const write = await supabaseAdmin
+              .from("pvg_videos")
+              .update({
+                submission_state: "dispatching",
+                video_generator_key: attempt.engineKey,
+                video_generator_model: attempt.model,
+                video_prediction_id: attempt.predictionId,
+              })
+              .eq("id", videoRow.id)
+              .eq("status", "pending");
+            if (write.error) throw new Error("submission_checkpoint_failed");
+            submitted = true;
+          },
         });
-        await supabaseAdmin
+        const accepted = await supabaseAdmin
           .from("pvg_videos")
           .update({
+            submission_state: "accepted",
             status: "processing",
             prediction_id: started.predictionId,
             generator_key: started.engineKey,
@@ -387,12 +410,28 @@ export const startPvgVideo = createServerFn({ method: "POST" })
             video_generator_key: started.engineKey,
             video_generator_model: started.model,
           } as never)
-          .eq("id", videoRow.id);
+          .eq("id", videoRow.id)
+          .eq("status", "pending");
+        if (accepted.error) throw new Error("accepted_checkpoint_failed");
       } catch (err) {
+        const { PvgSubmissionUncertain, PvgStageError } =
+          await import("./generator/pipeline.server");
+        if (
+          err instanceof PvgSubmissionUncertain ||
+          (submitted && !(err instanceof PvgStageError))
+        ) {
+          await supabaseAdmin
+            .from("pvg_videos")
+            .update({ submission_state: "uncertain", error_code: "submission_uncertain" })
+            .eq("id", videoRow.id)
+            .eq("status", "pending");
+          return { ok: true, video: await toVideoJob(videoRow), balance: await balanceOf() };
+        }
         await supabaseAdmin
           .from("pvg_videos")
           .update({
             status: "failed",
+            submission_state: "rejected",
             error_code: "engine_error",
             error_message:
               err instanceof Error ? err.message.slice(0, 300) : "The engine refused the request.",
@@ -416,7 +455,6 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           }),
           balance: await balanceOf(),
         };
-
       }
 
       const fresh = await loadRow(supabase, videoRow.id);
@@ -587,6 +625,14 @@ export const retryPvgVideo = createServerFn({ method: "POST" })
     const p = project as { id: string; user_id: string } | null;
     if (!p || p.user_id !== userId) throw new Error("project_not_found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("pvg_videos").delete().eq("project_id", p.id).eq("status", "failed");
+    // Keep failed purchases and their linked ledger forever; the next click uses a successor key.
+    const { reconcileVideo } = await import("./video-render.server");
+    const failed = await supabaseAdmin
+      .from("pvg_videos")
+      .select("id")
+      .eq("project_id", p.id)
+      .eq("status", "failed")
+      .gt("credits_charged", 0);
+    for (const row of failed.data ?? []) await reconcileVideo(row.id);
     return { cleared: true as const };
   });
