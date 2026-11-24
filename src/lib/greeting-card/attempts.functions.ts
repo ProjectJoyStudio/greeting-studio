@@ -103,84 +103,25 @@ export const buyCardAttemptPack = createServerFn({ method: "POST" })
       | { ok: true; attempts: CardAttemptState; balance: number }
       | { ok: false; errorCode: string; balance: number }
     > => {
+      // The wallet and the attempt package are locked together in the
+      // database: price and pack size come from the server, a double click or
+      // two parallel requests can never charge twice or lose a package.
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-      const { data: session } = await context.supabase
-        .from("user_card_attempt_sessions")
-        .select("id, attempts_used, extra_packs, closed_at")
-        .eq("user_id", context.userId)
-        .eq("session_key", data.sessionKey)
-        .maybeSingle();
-      // A completed card order can never be topped up again.
-      if (session?.closed_at) return { ok: false, errorCode: "session_closed", balance: 0 };
-      const current = session ?? { id: null, attempts_used: 0, extra_packs: 0 };
-
-      // Starting the card is a one-time purchase: a repeated tap that reaches
-      // the server twice finds the package already there and charges nothing.
-      if (data.firstPackOnly && current.extra_packs > 0) {
-        const { data: w0 } = await supabaseAdmin
-          .from("credit_wallets")
-          .select("balance")
-          .eq("user_id", context.userId)
-          .maybeSingle();
-        return {
-          ok: true,
-          attempts: attemptState(current.attempts_used, current.extra_packs),
-          balance: (w0 as { balance: number } | null)?.balance ?? 0,
-        };
-      }
-
-
-      const { data: wallet } = await supabaseAdmin
-        .from("credit_wallets")
-        .select("id, balance, lifetime_spent")
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      const w = wallet as { id: string; balance: number; lifetime_spent: number } | null;
-      if (!w || w.balance < ATTEMPT_PACK_CREDITS) {
-        return { ok: false, errorCode: "insufficient_credits", balance: w?.balance ?? 0 };
-      }
-
-      const { data: charged } = await supabaseAdmin
-        .from("credit_wallets")
-        .update({
-          balance: w.balance - ATTEMPT_PACK_CREDITS,
-          lifetime_spent: w.lifetime_spent + ATTEMPT_PACK_CREDITS,
-        })
-        .eq("id", w.id)
-        .eq("balance", w.balance)
-        .select("id")
-        .maybeSingle();
-      if (!charged) return { ok: false, errorCode: "insufficient_credits", balance: w.balance };
-
-      await supabaseAdmin.from("credit_transactions").insert({
-        wallet_id: w.id,
-        user_id: context.userId,
-        txn_type: "order_charge",
-        amount: -ATTEMPT_PACK_CREDITS,
-        balance_after: w.balance - ATTEMPT_PACK_CREDITS,
-        description: `Greeting card — ${ATTEMPTS_PER_PACK} more generation attempts`,
-        metadata: { session_key: data.sessionKey },
+      const { data: raw, error } = await supabaseAdmin.rpc("buy_card_attempt_pack", {
+        _user_id: context.userId,
+        _session_key: data.sessionKey,
+        _price: ATTEMPT_PACK_CREDITS,
+        _attempts_per_pack: ATTEMPTS_PER_PACK,
+        _first_pack_only: data.firstPackOnly,
       });
-
-      const packs = current.extra_packs + 1;
-      if (current.id) {
-        await context.supabase
-          .from("user_card_attempt_sessions")
-          .update({ extra_packs: packs, updated_at: new Date().toISOString() })
-          .eq("id", current.id);
-      } else {
-        await context.supabase.from("user_card_attempt_sessions").insert({
-          user_id: context.userId,
-          session_key: data.sessionKey,
-          extra_packs: packs,
-        });
+      const r = (raw ?? {}) as { ok?: boolean; error?: string; balance?: number; packs?: number; used?: number };
+      if (error || !r.ok) {
+        return { ok: false, errorCode: r.error ?? "purchase_failed", balance: r.balance ?? 0 };
       }
-
       return {
         ok: true,
-        attempts: attemptState(current.attempts_used, packs),
-        balance: w.balance - ATTEMPT_PACK_CREDITS,
+        attempts: attemptState(r.used ?? 0, r.packs ?? 0),
+        balance: r.balance ?? 0,
       };
     },
   );
@@ -294,8 +235,10 @@ export const startFreeFirstCard = createServerFn({ method: "POST" })
       }
       const orderId = (Array.isArray(rows) ? rows[0]?.order_id : null) ?? null;
 
+      // Attempt grants are written only with server rights.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       if (session?.id) {
-        await context.supabase
+        await supabaseAdmin
           .from("user_card_attempt_sessions")
           .update({
             free_grant: true,
@@ -304,7 +247,7 @@ export const startFreeFirstCard = createServerFn({ method: "POST" })
           })
           .eq("id", session.id);
       } else {
-        await context.supabase.from("user_card_attempt_sessions").insert({
+        await supabaseAdmin.from("user_card_attempt_sessions").insert({
           user_id: context.userId,
           session_key: data.sessionKey,
           free_grant: true,
@@ -344,13 +287,22 @@ export const releaseFreeFirstCard = createServerFn({ method: "POST" })
     // A successful picture already exists: the free right stays used.
     if (!session?.free_grant || session.attempts_used > 0) return { released: false };
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (session.free_order_id) {
+      // Only the server marks the free order as failed (no picture was ever
+      // stored); customers cannot change order status themselves.
+      await supabaseAdmin
+        .from("orders")
+        .update({ status: "failed" } as never)
+        .eq("id", session.free_order_id)
+        .eq("user_id", context.userId)
+        .in("status", ["queued", "draft"]);
       const { error } = await context.supabase.rpc("release_first_free_greeting", {
         _order_id: session.free_order_id,
       });
       if (error) return { released: false };
     }
-    await context.supabase
+    await supabaseAdmin
       .from("user_card_attempt_sessions")
       .update({ free_grant: false, free_order_id: null, updated_at: new Date().toISOString() })
       .eq("id", session.id);

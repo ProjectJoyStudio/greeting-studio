@@ -18,6 +18,7 @@ import { NO_TEXT_INSTRUCTION, wantsVisibleText } from "./generator/text-policy";
 import {
   PVG_MAX_ADDED_PEOPLE,
   PVG_SCENE_PACK_CREDITS,
+  PVG_SCENE_ATTEMPTS_PER_PACK,
   addedPeople,
   pvgIncludedGenerations,
   pvgSceneAttempts,
@@ -120,7 +121,10 @@ async function syncGenerationsUsed(
   projectId: string,
   used: number,
 ): Promise<void> {
-  await supabase.from("pvg_projects").update({ generations_used: used }).eq("id", projectId);
+  // Attempt counters are server-controlled: written only with server rights.
+  void supabase;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("pvg_projects").update({ generations_used: used }).eq("id", projectId);
 }
 
 // --- server functions ------------------------------------------------------
@@ -160,7 +164,8 @@ export const openPvgProject = createServerFn({ method: "POST" })
         return { project: candidate, balance: await walletBalance(supabase, userId) };
       }
     }
-    const { data: created, error } = await supabase
+    const { supabaseAdmin: creator } = await import("@/integrations/supabase/client.server");
+    const { data: created, error } = await creator
       .from("pvg_projects")
       .insert({ user_id: userId, generations_limit: pvgIncludedGenerations(0) })
       .select(PROJECT_COLUMNS)
@@ -626,27 +631,32 @@ export const generatePvgScene = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join(" ");
 
-    const { data: sceneRow, error: sceneError } = await supabase
-      .from("pvg_scenes")
-      .insert({
-        project_id: project.id,
-        user_id: userId,
-        variation_index: variationIndex,
-        status: "pending",
-        prompt,
-      })
-      .select(SCENE_COLUMNS)
-      .single();
-    if (sceneError) throw new Error(sceneError.message);
-
-    await supabase
-      .from("pvg_projects")
-      .update({
-        generations_used: used + 1,
-        generations_limit: included,
-        status: "generating",
-      })
-      .eq("id", project.id);
+    // Scenes and attempt counters are written only with server rights.
+    const { supabaseAdmin: srv } = await import("@/integrations/supabase/client.server");
+    // Atomic in the database: the project is locked, the remaining paid
+    // attempts are recounted and the scene is created in one step, so two
+    // parallel clicks can never share one attempt.
+    const { data: claimRaw, error: claimError } = await srv.rpc("claim_pvg_scene_attempt", {
+      _user_id: userId,
+      _project_id: project.id,
+      _variation_index: variationIndex,
+      _prompt: prompt,
+      _attempts_per_pack: PVG_SCENE_ATTEMPTS_PER_PACK,
+      _included: included,
+    });
+    const claim = (claimRaw ?? {}) as { ok?: boolean; error?: string; scene_id?: string };
+    if (claimError || !claim.ok || !claim.scene_id) {
+      return {
+        ok: claim.error === "busy",
+        issues:
+          claim.error === "busy"
+            ? ([] as { field: string; key: string }[])
+            : [{ field: "generations", key: "pvg_attempts_empty" }],
+        project: await loadProject(supabase, project.id),
+        balance,
+      } as never;
+    }
+    const sceneRow = { id: claim.scene_id } as SceneRow;
 
     try {
       const referenceUrls = added
@@ -654,7 +664,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         .filter((url): url is string => Boolean(url));
       const { startSceneRender } = await import("./generator/image-engine.server");
       const started = await startSceneRender({ prompt, referenceUrls });
-      await supabase
+      await srv
         .from("pvg_scenes")
         .update({
           status: "processing",
@@ -664,7 +674,7 @@ export const generatePvgScene = createServerFn({ method: "POST" })
         })
         .eq("id", (sceneRow as SceneRow).id);
     } catch (err) {
-      await supabase
+      await srv
         .from("pvg_scenes")
         .update({
           status: "failed",

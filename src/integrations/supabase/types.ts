@@ -1844,6 +1844,7 @@ export type Database = {
       live_card_animations: {
         Row: {
           aspect_ratio: string | null
+          charge_txn_id: string | null
           completed_at: string | null
           created_at: string
           credits_charged: number
@@ -1895,6 +1896,7 @@ export type Database = {
         }
         Insert: {
           aspect_ratio?: string | null
+          charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -1946,6 +1948,7 @@ export type Database = {
         }
         Update: {
           aspect_ratio?: string | null
+          charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
@@ -5789,6 +5792,16 @@ export type Database = {
           total_credits: number
         }[]
       }
+      buy_card_attempt_pack: {
+        Args: {
+          _attempts_per_pack: number
+          _first_pack_only: boolean
+          _price: number
+          _session_key: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       buy_live_card_attempt_pack: {
         Args: {
           _attempts_per_pack: number
@@ -5897,11 +5910,32 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_pvg_scene_attempt: {
+        Args: {
+          _attempts_per_pack: number
+          _included: number
+          _project_id: string
+          _prompt: string
+          _user_id: string
+          _variation_index: number
+        }
+        Returns: Json
+      }
       confirm_credit_purchase: {
         Args: {
           _order_id: string
           _provider?: string
           _provider_reference?: string
+        }
+        Returns: Json
+      }
+      consume_card_attempt: {
+        Args: {
+          _attempts_per_pack: number
+          _card_id: string
+          _free_attempts: number
+          _session_key: string
+          _user_id: string
         }
         Returns: Json
       }
@@ -5943,6 +5977,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_client_write: { Args: never; Returns: boolean }
       is_editor_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_first_free_eligible_product: {
         Args: { _product_type: string }
@@ -6000,6 +6035,10 @@ export type Database = {
       refund_live_card_animation: {
         Args: { _price: number; _reason: string; _user_id: string }
         Returns: number
+      }
+      refund_live_card_charge: {
+        Args: { _charge_id: string; _reason: string; _user_id: string }
+        Returns: Json
       }
       refund_pvg_video_credits: {
         Args: { _reason: string; _video_id: string }

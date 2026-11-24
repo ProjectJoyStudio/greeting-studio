@@ -12,7 +12,7 @@ import {
 import type { AnimationResult, AnimationStatus, LiveCardAnimation } from "./types";
 
 const COLUMNS =
-  "id, status, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, generator_key, prediction_id, error_code, error_message, created_at, session_id, credits_charged, metadata";
+  "id, status, source_card_id, source_bucket, source_path, prompt, prompt_en, duration_seconds, aspect_ratio, storage_bucket, storage_path, generator_key, prediction_id, error_code, error_message, created_at, session_id, credits_charged, metadata, charge_txn_id";
 
 type Row = {
   id: string;
@@ -34,6 +34,7 @@ type Row = {
   session_id?: string | null;
   credits_charged?: number | null;
   metadata?: Record<string, unknown> | null;
+  charge_txn_id?: string | null;
 };
 
 const STATUSES: AnimationStatus[] = ["preparing", "queued", "processing", "storing", "ready", "failed"];
@@ -135,17 +136,12 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
 
     // The price is taken before the paid provider request is created; the
     // wallet is locked in the database, so the balance can never go negative.
-    const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
-    const { data: charge, error: chargeError } = await wallet.rpc("charge_live_card_animation", {
-      _user_id: context.userId,
-      _price: price,
-      _duration: duration,
-    });
-    const charged = (charge ?? {}) as { ok?: boolean; error?: string; balance?: number };
-    if (chargeError || !charged.ok) {
+    const { chargeAnimation, refundCharge } = await import("./charge.server");
+    const charged = await chargeAnimation(context.userId, price, duration);
+    if (!charged.ok) {
       return {
         ok: false,
-        errorCode: charged.error ?? "charge_failed",
+        errorCode: charged.error,
         errorMessage: "Not enough credits for this animation.",
       };
     }
@@ -159,6 +155,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       .createSignedUrl(card.storage_path, 60 * 60 * 2);
     const imageUrl = signed.data?.signedUrl;
     if (!imageUrl) {
+      await refundCharge(context.userId, charged.chargeId, "image_missing");
       return { ok: false, errorCode: "image_missing", errorMessage: "The source picture could not be read." };
     }
 
@@ -175,6 +172,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       aspect_ratio: card.aspect_ratio,
       resolution: liveCardsVideoResolution(),
       credits_charged: price,
+      charge_txn_id: charged.chargeId,
     };
 
     try {
@@ -185,7 +183,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
         aspectRatio: card.aspect_ratio ?? "1:1",
         resolution: liveCardsVideoResolution(),
       });
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await supabaseAdmin
         .from("live_card_animations")
         .insert({
           ...base,
@@ -197,6 +195,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
         .select(COLUMNS)
         .single();
       if (error || !row) {
+        await refundCharge(context.userId, charged.chargeId, "db_failed");
         return { ok: false, errorCode: "db_failed", errorMessage: error?.message ?? "Could not store the animation." };
       }
       const { logLiveCardEvent } = await import("./lifecycle.server");
@@ -222,11 +221,7 @@ export const startLiveCardAnimation = createServerFn({ method: "POST" })
       const errorCode = known ? err.code : "unknown";
       const errorMessage = err instanceof Error ? err.message : "The animation could not be started.";
       // Nothing was produced — the credits go straight back.
-      await wallet.rpc("refund_live_card_animation", {
-        _user_id: context.userId,
-        _price: price,
-        _reason: errorCode,
-      });
+      await refundCharge(context.userId, charged.chargeId, errorCode);
       // A refused engine request is a technical state of the same project, not
       // a new creation of the person: no card is written, so nothing extra can
       // ever appear in the personal cabinet. The attempt is kept in the
@@ -295,27 +290,22 @@ export const refreshLiveCardAnimation = createServerFn({ method: "POST" })
       // A generation that ends technically without a video must never keep the
       // customer's credits. The refund happens exactly once, and the record
       // remembers it, so a repeated poll can never pay twice.
-      let extra: Record<string, unknown> = {};
-      const alreadyRefunded = Boolean(
-        (current.metadata as { refunded?: boolean } | null | undefined)?.refunded,
-      );
-      if (patch.status === "failed" && !alreadyRefunded && (current.credits_charged ?? 0) > 0) {
-        const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
-        await wallet.rpc("refund_live_card_animation", {
-          _user_id: context.userId,
-          _price: current.credits_charged ?? 0,
-          _reason: patch.error_code ?? "generation_failed",
-        });
-        extra = {
-          metadata: { ...(current.metadata ?? {}), refunded: true },
-          credits_charged: 0,
-        };
+      // The amount comes only from the recorded charge transaction, and the
+      // database refunds each charge once — whatever the row says.
+      const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+      await db
+        .from("live_card_animations")
+        .update(patch as never)
+        .eq("id", current.id)
+        .eq("user_id", context.userId);
+      if (patch.status === "failed") {
+        const { refundFailedAnimation } = await import("./charge.server");
+        await refundFailedAnimation(current.id, patch.error_code ?? "generation_failed");
       }
       const { data: updated } = await context.supabase
         .from("live_card_animations")
-        .update({ ...patch, ...extra })
-        .eq("id", current.id)
         .select(COLUMNS)
+        .eq("id", current.id)
         .single();
       return { ok: true, animation: await toAnimation((updated ?? current) as Row) };
     }
@@ -448,6 +438,18 @@ export const retryLiveCardAnimation = createServerFn({ method: "POST" })
       return { ok: false, errorCode: "image_missing", errorMessage: "The source picture could not be read." };
     }
 
+    // The failed attempt was refunded, so a new attempt is a new paid
+    // operation with its own recorded charge.
+    const { animationDurationCredits } = await import("./duration-pricing");
+    const retryPrice = (current.metadata as { regeneration?: boolean } | null)?.regeneration
+      ? ANIMATION_REGENERATE_CREDITS
+      : animationDurationCredits(current.duration_seconds ?? 5);
+    const { chargeAnimation, refundCharge } = await import("./charge.server");
+    const charged = await chargeAnimation(context.userId, retryPrice, current.duration_seconds ?? 5);
+    if (!charged.ok) {
+      return { ok: false, errorCode: charged.error, errorMessage: "Not enough credits for this animation." };
+    }
+
     try {
       const routed = await startVideoRequest({
         imageUrl,
@@ -456,9 +458,12 @@ export const retryLiveCardAnimation = createServerFn({ method: "POST" })
         aspectRatio: current.aspect_ratio ?? "1:1",
         resolution: liveCardsVideoResolution(),
       });
-      const { data: updated } = await context.supabase
+      const { data: updated } = await supabaseAdmin
         .from("live_card_animations")
         .update({
+          charge_txn_id: charged.chargeId,
+          credits_charged: retryPrice,
+          metadata: { ...(current.metadata ?? {}), refunded: false },
           status: "queued",
           generator_key: routed.generatorKey,
           generator_model: routed.generatorModel,
@@ -480,6 +485,7 @@ export const retryLiveCardAnimation = createServerFn({ method: "POST" })
       });
       return { ok: true, animation: await toAnimation((updated ?? current) as Row) };
     } catch (err) {
+      await refundCharge(context.userId, charged.chargeId, "retry_failed");
       const errorMessage = err instanceof Error ? err.message : "The animation could not be started.";
       return { ok: false, errorCode: "retry_failed", errorMessage };
     }
@@ -588,27 +594,18 @@ export const regenerateLiveCardAnimation = createServerFn({ method: "POST" })
     const duration = state.lockedDuration;
     const price = state.price;
 
-    const { supabaseAdmin: wallet } = await import("@/integrations/supabase/client.server");
-    const { data: charge, error: chargeError } = await wallet.rpc("charge_live_card_animation", {
-      _user_id: context.userId,
-      _price: price,
-      _duration: duration,
-    });
-    const charged = (charge ?? {}) as { ok?: boolean; error?: string };
-    if (chargeError || !charged.ok) {
+    const { chargeAnimation, refundCharge } = await import("./charge.server");
+    const charged = await chargeAnimation(context.userId, price, duration);
+    if (!charged.ok) {
       return {
         ok: false,
-        errorCode: charged.error ?? "charge_failed",
+        errorCode: charged.error,
         errorMessage: "Not enough credits for this regeneration.",
       };
     }
 
     const refund = async (reason: string) => {
-      await wallet.rpc("refund_live_card_animation", {
-        _user_id: context.userId,
-        _price: price,
-        _reason: reason,
-      });
+      await refundCharge(context.userId, charged.chargeId, reason);
     };
 
     const { startVideoRequest } = await import("./generators/router.server");
@@ -638,7 +635,7 @@ export const regenerateLiveCardAnimation = createServerFn({ method: "POST" })
         aspectRatio: original.aspect_ratio ?? "1:1",
         resolution: liveCardsVideoResolution(),
       });
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await supabaseAdmin
         .from("live_card_animations")
         .insert({
           user_id: context.userId,
@@ -653,6 +650,7 @@ export const regenerateLiveCardAnimation = createServerFn({ method: "POST" })
           aspect_ratio: original.aspect_ratio,
           resolution: liveCardsVideoResolution(),
           credits_charged: price,
+          charge_txn_id: charged.chargeId,
           status: "queued",
           generator_key: routed.generatorKey,
           generator_model: routed.generatorModel,

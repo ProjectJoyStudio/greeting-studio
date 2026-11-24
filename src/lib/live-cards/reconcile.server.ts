@@ -54,6 +54,8 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
         error_message: progress.errorMessage,
         completed_at: new Date().toISOString(),
       });
+      // A genuine failure gives the recorded charge back exactly once.
+      await (await import("./charge.server")).refundFailedAnimation(row.id, "generation_failed");
       await notifyOwner(row, "live_card.failed");
       await logLiveCardEvent({
         actorUserId: null,
@@ -76,6 +78,8 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
         error_message: `Could not fetch the animation (${res.status}).`,
         completed_at: new Date().toISOString(),
       });
+      // A genuine failure gives the recorded charge back exactly once.
+      await (await import("./charge.server")).refundFailedAnimation(row.id, "generation_failed");
       await notifyOwner(row, "live_card.failed");
       return "failed";
     }
@@ -95,6 +99,8 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
         error_message: upload.error.message,
         completed_at: new Date().toISOString(),
       });
+      // A genuine failure gives the recorded charge back exactly once.
+      await (await import("./charge.server")).refundFailedAnimation(row.id, "generation_failed");
       await notifyOwner(row, "live_card.failed");
       return "failed";
     }

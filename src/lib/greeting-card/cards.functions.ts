@@ -52,12 +52,11 @@ export const generateCardImage = createServerFn({ method: "POST" })
     const { runModel, ReplicateError, PRIMARY_MODEL, FALLBACK_MODEL } =
       await import("@/lib/replicate/replicate.server");
     const { toEnglishImagePrompt } = await import("./prompt-translate.server");
-    const { attemptState, FREE_FIRST_CARD_ATTEMPTS } = await import("./attempts");
+    const { attemptState, FREE_FIRST_CARD_ATTEMPTS, ATTEMPTS_PER_PACK: ATTEMPTS_PER_PACK_FOR_CONSUME } = await import("./attempts");
 
     // Every card creation carries its own attempt budget: three attempts for
     // each package the person paid for, valid only for this card order.
     let attemptRowId: string | null = null;
-    let attemptsUsed = 0;
     if (data.sessionKey) {
       const { data: row } = await context.supabase
         .from("user_card_attempt_sessions")
@@ -79,7 +78,6 @@ export const generateCardImage = createServerFn({ method: "POST" })
         };
       }
       attemptRowId = row?.id ?? null;
-      attemptsUsed = state.used;
     }
 
     // The person writes in their own language; the engine always receives English.
@@ -261,24 +259,15 @@ export const generateCardImage = createServerFn({ method: "POST" })
 
     // Only a genuinely successful generation costs an attempt. The package is
     // bound to this card project, so its rest travels with the card itself.
-    if (data.sessionKey) {
-      if (attemptRowId) {
-        await context.supabase
-          .from("user_card_attempt_sessions")
-          .update({
-            attempts_used: attemptsUsed + 1,
-            card_id: row.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", attemptRowId);
-      } else {
-        await context.supabase.from("user_card_attempt_sessions").insert({
-          user_id: context.userId,
-          session_key: data.sessionKey,
-          attempts_used: 1,
-          card_id: row.id,
-        });
-      }
+    if (data.sessionKey && attemptRowId) {
+      // Atomic: two parallel generations can never share one remaining attempt.
+      await supabaseAdmin.rpc("consume_card_attempt", {
+        _user_id: context.userId,
+        _session_key: data.sessionKey,
+        _card_id: row.id,
+        _attempts_per_pack: ATTEMPTS_PER_PACK_FOR_CONSUME,
+        _free_attempts: FREE_FIRST_CARD_ATTEMPTS,
+      });
     }
 
 
