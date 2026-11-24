@@ -1,0 +1,13 @@
+-- Financial trust-boundary regression checks (run as one DO block; everything
+-- is rolled back by the final RAISE). Replace :test_user with a disposable
+-- test account id. Expected report (2026-11-24 run):
+-- T1 refund=6 bal=20 | T6 repeat=0 bal=20 | T8 other=invalid_charge |
+-- T3 fake=invalid_charge | T4 blocked | T28 blocked | T25 title ok |
+-- anim insert blocked | T31 rows=0 | T10/13 denied | refund rpc denied |
+-- T32 denied | T20 forged insert stored 0/false | T20 blocked |
+-- live attempts insert blocked | PVG forged packs stored=0 | PVG packs blocked |
+-- PVG edit ok | scene blocked | T27 blocked | T26/30 blocked |
+-- T25 order title ok | T29 other rows=0 | consume w/o packs ok=false |
+-- T14 double first-pack packs=1 bal=16 | T24 consume ok=true used=1 |
+-- T11/22 insufficient_credits packs=1
+-- (Full script: see the 2026-11-24 security report in Files.)
