@@ -27,6 +27,16 @@ export async function memoryBookTariffs(): Promise<MemoryBookTariffs> {
     for (const row of (data ?? []) as Array<{ key: string; credits: number }>) {
       stored[row.key] = Number(row.credits);
     }
+    // The two "extra time to finish" prices live in the storage offers list
+    // (one source of truth, edited in Admin → Storage prices).
+    const { data: offers } = await client
+      .from("memory_book_storage_offers")
+      .select("code, credits")
+      .in("code", ["working_week", "working_month"]);
+    for (const row of (offers ?? []) as Array<{ code: string; credits: number | null }>) {
+      if (row.credits === null) continue;
+      stored[row.code === "working_week" ? "storage_week" : "storage_month"] = Number(row.credits);
+    }
     return normalizeMemoryBookTariffs(stored);
   } catch {
     return normalizeMemoryBookTariffs(null);
@@ -46,6 +56,7 @@ export async function saveMemoryBookTariffs(
 ): Promise<MemoryBookTariffs> {
   const client = await db();
   const rows = MEMORY_BOOK_TARIFF_KEYS.filter((key) => {
+    if (key === "storage_week" || key === "storage_month") return false;
     const value = Number(values[key]);
     return Number.isFinite(value) && value >= 0 && value <= 100000;
   }).map((key) => ({

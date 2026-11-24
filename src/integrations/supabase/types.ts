@@ -2955,6 +2955,83 @@ export type Database = {
           },
         ]
       }
+      memory_book_storage_offer_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          code: string
+          id: string
+          new_credits: number | null
+          new_enabled: boolean | null
+          old_credits: number | null
+          old_enabled: boolean | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          code: string
+          id?: string
+          new_credits?: number | null
+          new_enabled?: boolean | null
+          old_credits?: number | null
+          old_enabled?: boolean | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          code?: string
+          id?: string
+          new_credits?: number | null
+          new_enabled?: boolean | null
+          old_credits?: number | null
+          old_enabled?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_storage_offer_audit_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "memory_book_storage_offers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      memory_book_storage_offers: {
+        Row: {
+          code: string
+          credits: number | null
+          duration_days: number
+          duration_months: number
+          enabled: boolean
+          service: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          credits?: number | null
+          duration_days?: number
+          duration_months?: number
+          enabled?: boolean
+          service: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          credits?: number | null
+          duration_days?: number
+          duration_months?: number
+          enabled?: boolean
+          service?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       memory_book_storage_operations: {
         Row: {
           activated_at: string | null
@@ -3041,6 +3118,60 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "memory_book_projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_book_storage_purchases: {
+        Row: {
+          book_id: string
+          created_at: string
+          credits: number
+          id: string
+          new_expires_at: string
+          offer_code: string
+          previous_expires_at: string | null
+          purchase_key: string
+          service: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          credits: number
+          id?: string
+          new_expires_at: string
+          offer_code: string
+          previous_expires_at?: string | null
+          purchase_key: string
+          service: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          new_expires_at?: string
+          offer_code?: string
+          previous_expires_at?: string | null
+          purchase_key?: string
+          service?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_storage_purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "memory_book_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_storage_purchases_offer_code_fkey"
+            columns: ["offer_code"]
+            isOneToOne: false
+            referencedRelation: "memory_book_storage_offers"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -5855,6 +5986,17 @@ export type Database = {
         }
         Returns: Json
       }
+      purchase_memory_book_storage: {
+        Args: {
+          _assets_verified: boolean
+          _book_id: string
+          _expected_price: number
+          _offer_code: string
+          _purchase_key: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       refund_live_card_animation: {
         Args: { _price: number; _reason: string; _user_id: string }
         Returns: number
@@ -5915,6 +6057,7 @@ export type Database = {
         | "promotional_bonus"
         | "manual_adjustment"
         | "expiration"
+        | "storage_extension"
       generation_job_status:
         | "pending"
         | "queued"
@@ -6105,6 +6248,7 @@ export const Constants = {
         "promotional_bonus",
         "manual_adjustment",
         "expiration",
+        "storage_extension",
       ],
       generation_job_status: [
         "pending",

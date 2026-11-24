@@ -19,6 +19,7 @@ import {
 import { uploadReadyDesign } from "@/lib/memory-book/ready-designs.functions";
 import { MemoryBookBooksPanel } from "@/components/admin/memory-book/BooksPanel";
 import { MemoryBookTariffsPanel } from "@/components/admin/memory-book/TariffsPanel";
+import { MemoryBookStoragePricesPanel } from "@/components/admin/memory-book/StoragePricesPanel";
 import { MemoryBookHistoryPanel } from "@/components/admin/memory-book/HistoryPanel";
 import { ReadyDesignsPanel } from "@/components/admin/memory-book/ReadyDesignsPanel";
 
@@ -173,6 +174,7 @@ function AdminMemoryBookPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <MemoryBookAdminTabs tab={tab} setTab={setTab} />
         <MemoryBookTariffsPanel />
+        <MemoryBookStoragePricesPanel />
       </div>
     );
   }

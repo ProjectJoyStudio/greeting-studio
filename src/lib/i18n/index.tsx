@@ -41,6 +41,7 @@ import { MEMORY_BOOK_I18N } from "./locales/memory-book";
 import { MEMORY_BOOK_PACKAGES_I18N } from "./locales/memory-book-packages";
 import { MEMORY_BOOK_DESIGNS_I18N } from "./locales/memory-book-designs";
 import { MEMORY_BOOKS_DASHBOARD_I18N } from "./locales/memory-books-dashboard";
+import { MEMORY_BOOK_STORAGE_EXT_I18N } from "./locales/memory-book-storage-ext";
 import { MEMORY_BOOK_MATERIALS_I18N } from "./locales/memory-book-materials";
 import { MEMORY_BOOK_PAGES_I18N } from "./locales/memory-book-pages";
 import { MEMORY_BOOK_DECORATIONS_I18N } from "./locales/memory-book-decorations";
@@ -87,6 +88,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.en,
     ...MEMORY_BOOK_DESIGNS_I18N.en,
     ...MEMORY_BOOKS_DASHBOARD_I18N.en,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.en,
     ...MEMORY_BOOK_MATERIALS_I18N.en,
     ...MEMORY_BOOK_PAGES_I18N.en,
     ...MEMORY_BOOK_DECORATIONS_I18N.en,
@@ -126,6 +128,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.ru,
     ...MEMORY_BOOK_DESIGNS_I18N.ru,
     ...MEMORY_BOOKS_DASHBOARD_I18N.ru,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.ru,
     ...MEMORY_BOOK_MATERIALS_I18N.ru,
     ...MEMORY_BOOK_PAGES_I18N.ru,
     ...MEMORY_BOOK_DECORATIONS_I18N.ru,
@@ -165,6 +168,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.de,
     ...MEMORY_BOOK_DESIGNS_I18N.de,
     ...MEMORY_BOOKS_DASHBOARD_I18N.de,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.de,
     ...MEMORY_BOOK_MATERIALS_I18N.de,
     ...MEMORY_BOOK_PAGES_I18N.de,
     ...MEMORY_BOOK_DECORATIONS_I18N.de,
@@ -204,6 +208,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.uk,
     ...MEMORY_BOOK_DESIGNS_I18N.uk,
     ...MEMORY_BOOKS_DASHBOARD_I18N.uk,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.uk,
     ...MEMORY_BOOK_MATERIALS_I18N.uk,
     ...MEMORY_BOOK_PAGES_I18N.uk,
     ...MEMORY_BOOK_DECORATIONS_I18N.uk,
@@ -243,6 +248,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.fr,
     ...MEMORY_BOOK_DESIGNS_I18N.fr,
     ...MEMORY_BOOKS_DASHBOARD_I18N.fr,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.fr,
     ...MEMORY_BOOK_MATERIALS_I18N.fr,
     ...MEMORY_BOOK_PAGES_I18N.fr,
     ...MEMORY_BOOK_DECORATIONS_I18N.fr,
@@ -282,6 +288,7 @@ const DICTS: Record<Lang, Dict> = {
     ...MEMORY_BOOK_PACKAGES_I18N.pl,
     ...MEMORY_BOOK_DESIGNS_I18N.pl,
     ...MEMORY_BOOKS_DASHBOARD_I18N.pl,
+    ...MEMORY_BOOK_STORAGE_EXT_I18N.pl,
     ...MEMORY_BOOK_MATERIALS_I18N.pl,
     ...MEMORY_BOOK_PAGES_I18N.pl,
     ...MEMORY_BOOK_DECORATIONS_I18N.pl,

@@ -299,3 +299,41 @@ async function buildPlan(bookId: string, userId: string): Promise<OfflinePackage
     };
   }
 }
+
+/**
+ * Read-only proof that every file a completed book shows still physically
+ * exists: each signed address is asked for its first byte. Nothing is written.
+ */
+export async function verifyCompletedBookAssets(
+  bookId: string,
+  userId: string,
+): Promise<{ ok: true; files: number } | { ok: false; asset: string }> {
+  let plan: OfflinePackagePlan;
+  try {
+    plan = await buildPlan(bookId, userId);
+  } catch (error) {
+    if (error instanceof MissingAsset) return { ok: false, asset: error.asset };
+    throw error;
+  }
+  const items = [...plan.files.map((f) => ({ url: f.url, asset: f.asset })), ...plan.inline.map((f) => ({ url: f.url, asset: f.asset }))];
+  let missing: string | null = null;
+  let index = 0;
+  async function worker() {
+    while (missing === null && index < items.length) {
+      const item = items[index++]!;
+      let okFile = false;
+      for (let attempt = 0; attempt < 2 && !okFile; attempt++) {
+        try {
+          const res = await fetch(item.url, { headers: { Range: "bytes=0-0" } });
+          okFile = res.status === 200 || res.status === 206;
+          await res.body?.cancel().catch(() => undefined);
+        } catch {
+          okFile = false;
+        }
+      }
+      if (!okFile) missing = item.asset;
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(6, items.length) }, () => worker()));
+  return missing === null ? { ok: true, files: items.length } : { ok: false, asset: missing };
+}

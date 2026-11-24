@@ -45,6 +45,7 @@ export function MemoryBookTariffsPanel() {
     setError(null);
     const prices: Record<string, number> = {};
     for (const key of MEMORY_BOOK_TARIFF_KEYS) {
+      if (key === "storage_week" || key === "storage_month") continue;
       const raw = Number(values[key]);
       if (!Number.isInteger(raw) || raw < 0 || raw > 100000) {
         setError(t("mba_price_invalid"));
@@ -71,7 +72,7 @@ export function MemoryBookTariffsPanel() {
       <p className="mt-1 text-sm text-muted-foreground">{t("mba_tariffs_hint")}</p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {MEMORY_BOOK_TARIFF_KEYS.map((key: MemoryBookTariffKey) => (
+        {MEMORY_BOOK_TARIFF_KEYS.filter((k) => k !== "storage_week" && k !== "storage_month").map((key: MemoryBookTariffKey) => (
           <div key={key} className="space-y-1">
             <label className="block text-sm font-medium" htmlFor={`tariff-${key}`}>
               {t(`mba_tariff_${key}`)}

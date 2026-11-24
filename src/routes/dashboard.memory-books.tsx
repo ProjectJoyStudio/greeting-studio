@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useCreditBalance } from "@/lib/credits/useCreditBalance";
 import {
-  extendMemoryBookStorage,
   listMemoryBooks,
   type MemoryBookProject,
 } from "@/lib/memory-book/packages.functions";
@@ -20,6 +19,8 @@ import {
 import { requestOfflineSaveTarget } from "@/lib/memory-book/offline-save";
 import { OFFLINE_PACKAGE_NAME } from "@/lib/memory-book/offline-package";
 import { MemoryBookShareDialog } from "@/components/memory-book/MemoryBookShareDialog";
+import { StorageExtensionPanel } from "@/components/memory-book/StorageExtensionPanel";
+import { getStorageOffers } from "@/lib/memory-book/storage-offers.functions";
 
 export const Route = createFileRoute("/dashboard/memory-books")({
   component: MyMemoryBooksPage,
@@ -42,7 +43,7 @@ function MyMemoryBooksPage() {
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const fetchBooks = useServerFn(listMemoryBooks);
-  const extend = useServerFn(extendMemoryBookStorage);
+  const readOffers = useServerFn(getStorageOffers);
   const buildPlan = useServerFn(buildMemoryBookOfflinePlan);
   const reportIssue = useServerFn(reportOfflineExportIssue);
   const [stage, setStage] = useState<string>("preparing");
@@ -126,19 +127,6 @@ function MyMemoryBooksPage() {
     })();
   }
 
-  // One stable key per book + option, so a repeated click never charges twice.
-  const keys = useRef<Record<string, string>>({});
-  const keyFor = useCallback((id: string) => {
-    const existing = keys.current[id];
-    if (existing) return existing;
-    const generated =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    keys.current[id] = generated;
-    return generated;
-  }, []);
-
   const { data, isLoading } = useQuery({
     queryKey: ["my-memory-books"],
     queryFn: () => fetchBooks({ data: undefined }),
@@ -151,33 +139,17 @@ function MyMemoryBooksPage() {
     return Number.isFinite(date.getTime()) ? date.toLocaleDateString(lang) : "—";
   };
 
-  async function runExtend(book: MemoryBookProject, days: 7 | 30) {
-    if (busy) return;
-    setNotice(null);
-    setBusy(`${book.id}-${days}`);
-    try {
-      const res = await extend({
-        data: { bookId: book.id, days, extendKey: `${keyFor(`${book.id}-${days}`)}` },
-      });
-      if (res.ok) {
-        keys.current[`${book.id}-${days}`] = "";
-        delete keys.current[`${book.id}-${days}`];
-        setNotice(t("mbd_extended"));
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["my-memory-books"] }),
-          refresh(),
-        ]);
-      } else {
-        setNotice(
-          res.error === "insufficient_credits" ? t("mbd_err_credits") : t("mbd_err_failed"),
-        );
-      }
-    } catch {
-      setNotice(t("mbd_err_failed"));
-    } finally {
-      setBusy(null);
-    }
-  }
+  const { data: offerData } = useQuery({
+    queryKey: ["memory-book-storage-offers"],
+    queryFn: () => readOffers(),
+  });
+  const offers = offerData?.offers ?? [];
+  const afterPurchase = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["my-memory-books"] }),
+      queryClient.invalidateQueries({ queryKey: ["memory-book-storage-offers"] }),
+      refresh(),
+    ]);
 
   return (
     <>
@@ -240,15 +212,16 @@ function MyMemoryBooksPage() {
                         </p>
                         {book.retentionExpiresAt && (
                           <p className="text-sm text-muted-foreground">
-                            {t("mbd_kept_until")}: {formatDate(book.retentionExpiresAt)}
-                            {keptLeft > 0 ? ` · ${fill(t("mbd_remaining"), { n: keptLeft })}` : ""}
+                            {t("mbx_stored_until")}: {formatDate(book.retentionExpiresAt)}
+                            {" · "}
+                            {keptLeft > 0 ? fill(t("mbx_days_left"), { n: keptLeft }) : t("mbx_keep_expired")}
                           </p>
                         )}
                       </>
                     ) : (
                       <>
                         <p className="text-sm text-muted-foreground">
-                          {t("mbd_expires")}: {formatDate(book.expiresAt)}
+                          {t("mbx_finish_until")}: {formatDate(book.expiresAt)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {left > 0 ? fill(t("mbd_remaining"), { n: left }) : t("mbd_expired")}
@@ -289,25 +262,10 @@ function MyMemoryBooksPage() {
                           {t("mbd_continue")}
                         </Link>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy !== null}
-                        onClick={() => void runExtend(book, 7)}
-                      >
-                        {busy === `${book.id}-7` ? t("mbd_working") : t("mbd_extend_week")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy !== null}
-                        onClick={() => void runExtend(book, 30)}
-                      >
-                        {busy === `${book.id}-30` ? t("mbd_working") : t("mbd_extend_month")}
-                      </Button>
                     </>
                   )}
                 </div>
+                <StorageExtensionPanel book={book} offers={offers} onPurchased={afterPurchase} />
               </li>
             );
           })}

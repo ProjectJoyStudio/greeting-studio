@@ -223,7 +223,9 @@ export const extendMemoryBookStorage = createServerFn({ method: "POST" })
       expiresAt?: string;
       balance?: number;
     }> => {
-      if (!data.bookId || !data.extendKey) return { ok: false, error: "failed" };
+      // DEPRECATED: replaced by purchaseMemoryBookStorage (storage-offers.functions),
+      // which validates the book state and uses the Admin storage prices.
+      if (data.bookId || !data.bookId) return { ok: false, error: "failed" };
       const { memoryBookTariffs } = await import("@/lib/pricing/tariffs.server");
       const prices = await memoryBookTariffs();
       const price = data.days === 30 ? prices.storage_month : prices.storage_week;

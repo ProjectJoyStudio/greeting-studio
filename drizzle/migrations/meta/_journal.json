@@ -92,6 +92,13 @@
       "when": 1794932183515,
       "tag": "0012_storage_admin_bucket_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795531075826,
+      "tag": "0013_memory_book_storage_offers",
+      "breakpoints": true
     }
   ]
 }
