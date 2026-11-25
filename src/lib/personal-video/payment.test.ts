@@ -152,7 +152,7 @@ describe("isolated mocked provider acceptance", () => {
         throw new Error("network timeout");
       }),
     );
-    expect(await pollStage("prediction-one")).toEqual({ state: "processing" });
+    expect(await pollStage("prediction-one")).toEqual({ state: "processing", transient: true });
   });
   it("records verified asynchronous provider failure", async () => {
     vi.stubGlobal(

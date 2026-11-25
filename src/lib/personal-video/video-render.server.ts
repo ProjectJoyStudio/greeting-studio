@@ -9,7 +9,7 @@
 import type { PvgVideoJob, PvgVideoStatus } from "./video-render";
 
 export const VIDEO_COLUMNS =
-  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at, mix_storage_path, mix_signature, submission_state, charge_txn_id, reconcile_token, reconcile_until, updated_at";
+  "id, project_id, user_id, job_id, status, duration_seconds, scene_sounds, credits_charged, prediction_id, generator_key, generator_model, storage_bucket, storage_path, error_code, error_message, created_at, variant_index, action_description, is_selected, video_generator_key, video_generator_model, video_prediction_id, video_predict_seconds, video_cost_usd, audio_seconds, speaker_person_id, delivered_at, mix_storage_path, mix_signature, submission_state, charge_txn_id, reconcile_token, reconcile_until, updated_at, dispatch_fingerprint, dispatched_at, needs_review, reconcile_attempts";
 
 export interface VideoRow {
   id: string;
@@ -48,6 +48,20 @@ export interface VideoRow {
   /** The very same film, but with the chosen music already inside it. */
   mix_storage_path?: string | null;
   mix_signature?: string | null;
+  dispatch_fingerprint?: string | null;
+  dispatched_at?: string | null;
+  needs_review?: boolean | null;
+  reconcile_attempts?: number | null;
+}
+
+/** How long an operation may stay unresolved before an administrator must look at it. */
+export const PVG_UNCERTAIN_REVIEW_MS = 45 * 60_000;
+export const PVG_MAX_OPEN_MS = 3 * 60 * 60_000;
+export const PVG_MAX_TRANSIENT_ATTEMPTS = 8;
+
+/** Bounded exponential backoff for repeated provider/polling errors. */
+export function pvgBackoffMs(attempts: number): number {
+  return Math.min(30 * 60_000, 30_000 * 2 ** Math.max(0, attempts - 1));
 }
 
 export function pvgVideoBucket(): string {
@@ -182,7 +196,67 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
         .in("status", ["pending", "processing", "lipsync", "assets"]);
     };
 
-    const predictionId = row.video_prediction_id ?? row.prediction_id;
+    // Flagged operations wait for an administrator; nothing automatic happens.
+    if (row.needs_review) return statusOf(row.status);
+    const now = Date.now();
+    const flag = async (reason: string) => {
+      await patch({
+        needs_review: true,
+        review_reason: reason,
+        review_flagged_at: new Date().toISOString(),
+        last_reconcile_at: new Date().toISOString(),
+      });
+    };
+    const backoff = async (error: string) => {
+      const attempts = Number(row.reconcile_attempts ?? 0) + 1;
+      if (attempts >= PVG_MAX_TRANSIENT_ATTEMPTS) return flag(`repeated_errors:${error}`);
+      await patch({
+        reconcile_attempts: attempts,
+        last_reconcile_error: error,
+        last_reconcile_at: new Date().toISOString(),
+        next_reconcile_at: new Date(now + pvgBackoffMs(attempts)).toISOString(),
+      });
+    };
+    if (now - Date.parse(row.created_at) > PVG_MAX_OPEN_MS) {
+      await flag("open_too_long");
+      return statusOf(row.status);
+    }
+
+    let predictionId = row.video_prediction_id ?? row.prediction_id;
+    // A Replicate request whose response (and job ID) was lost: look for the
+    // exact submission at the provider. Never resubmit, never refund here.
+    if (
+      !predictionId &&
+      (row.submission_state === "uncertain" || row.submission_state === "dispatching") &&
+      row.dispatch_fingerprint
+    ) {
+      const { findLostReplicatePrediction, engineModel } = await import(
+        "./generator/pipeline.server"
+      );
+      const model = engineModel(row.video_generator_key);
+      const found = model
+        ? await findLostReplicatePrediction(
+            model,
+            row.dispatch_fingerprint,
+            row.dispatched_at ?? row.created_at,
+          )
+        : null;
+      if (found) {
+        await patch({
+          video_prediction_id: found,
+          prediction_id: found,
+          submission_state: "accepted",
+          status: "processing",
+        });
+        predictionId = found;
+      } else if (now - Date.parse(row.dispatched_at ?? row.created_at) > PVG_UNCERTAIN_REVIEW_MS) {
+        await flag("submission_outcome_unknown");
+        return statusOf(row.status);
+      } else {
+        await backoff("submission_outcome_unknown");
+        return statusOf(row.status);
+      }
+    }
     if (!predictionId) {
       const stale = Date.now() - Date.parse(row.created_at) > 10 * 60_000;
       if (stale && row.submission_state === "paid") {
@@ -208,7 +282,21 @@ export async function reconcileVideo(videoId: string): Promise<PvgVideoStatus> {
     }
 
     if (progress.state === "processing") {
-      if (row.status !== "processing") await patch({ status: "processing" });
+      if (progress.unknown) {
+        await flag("provider_job_not_found");
+        return statusOf(row.status);
+      }
+      if (progress.transient) {
+        await backoff("provider_unreachable");
+        return statusOf(row.status);
+      }
+      await patch({
+        ...(row.status !== "processing" ? { status: "processing" } : {}),
+        reconcile_attempts: 0,
+        last_reconcile_error: null,
+        last_reconcile_at: new Date().toISOString(),
+        next_reconcile_at: new Date(now + 20_000).toISOString(),
+      });
       return "processing";
     }
     if (progress.state === "failed") {
@@ -292,6 +380,8 @@ export async function reconcilePendingVideos(limit = 20): Promise<{ checkedVideo
     .from("pvg_videos")
     .select("id")
     .or("status.in.(pending,processing,lipsync,assets),and(status.eq.failed,credits_charged.gt.0)")
+    .eq("needs_review", false)
+    .or(`next_reconcile_at.is.null,next_reconcile_at.lte.${new Date().toISOString()}`)
     .order("created_at", { ascending: true })
     .limit(limit);
   const rows = (data ?? []) as { id: string }[];

@@ -97,6 +97,7 @@ import { Route as ApiPublicLiveCardsReconcileRouteImport } from './routes/api/pu
 import { Route as ApiPublicMemoryBookBackupRetryRouteImport } from './routes/api/public/memory-book-backup-retry'
 import { Route as ApiPublicMemoryBookCleanupRouteImport } from './routes/api/public/memory-book-cleanup'
 import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/public/purge-deleted-cards'
+import { Route as ApiPublicPvgProviderCallbackRouteImport } from './routes/api/public/pvg-provider-callback'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
 import { Route as MemoryBookShareTokenRouteImport } from './routes/memory-book_.share.$token'
@@ -554,6 +555,12 @@ const ApiPublicPurgeDeletedCardsRoute =
     path: '/api/public/purge-deleted-cards',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPvgProviderCallbackRoute =
+  ApiPublicPvgProviderCallbackRouteImport.update({
+    id: '/api/public/pvg-provider-callback',
+    path: '/api/public/pvg-provider-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPvgReconcileRoute = ApiPublicPvgReconcileRouteImport.update({
   id: '/api/public/pvg-reconcile',
   path: '/api/public/pvg-reconcile',
@@ -686,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
   '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
@@ -781,6 +789,7 @@ export interface FileRoutesByTo {
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
   '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
@@ -880,6 +889,7 @@ export interface FileRoutesById {
   '/api/public/memory-book-backup-retry': typeof ApiPublicMemoryBookBackupRetryRoute
   '/api/public/memory-book-cleanup': typeof ApiPublicMemoryBookCleanupRoute
   '/api/public/purge-deleted-cards': typeof ApiPublicPurgeDeletedCardsRoute
+  '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
   '/memory-book_/share/$token': typeof MemoryBookShareTokenRoute
@@ -980,6 +990,7 @@ export interface FileRouteTypes {
     | '/api/public/memory-book-backup-retry'
     | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
     | '/memory-book/share/$token'
@@ -1075,6 +1086,7 @@ export interface FileRouteTypes {
     | '/api/public/memory-book-backup-retry'
     | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
     | '/memory-book/share/$token'
@@ -1173,6 +1185,7 @@ export interface FileRouteTypes {
     | '/api/public/memory-book-backup-retry'
     | '/api/public/memory-book-cleanup'
     | '/api/public/purge-deleted-cards'
+    | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
     | '/memory-book_/share/$token'
@@ -1225,6 +1238,7 @@ export interface RootRouteChildren {
   ApiPublicMemoryBookBackupRetryRoute: typeof ApiPublicMemoryBookBackupRetryRoute
   ApiPublicMemoryBookCleanupRoute: typeof ApiPublicMemoryBookCleanupRoute
   ApiPublicPurgeDeletedCardsRoute: typeof ApiPublicPurgeDeletedCardsRoute
+  ApiPublicPvgProviderCallbackRoute: typeof ApiPublicPvgProviderCallbackRoute
   ApiPublicPvgReconcileRoute: typeof ApiPublicPvgReconcileRoute
   ApiPublicVoicePreviewsMaintainRoute: typeof ApiPublicVoicePreviewsMaintainRoute
   MemoryBookShareTokenRoute: typeof MemoryBookShareTokenRoute
@@ -1848,6 +1862,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPurgeDeletedCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pvg-provider-callback': {
+      id: '/api/public/pvg-provider-callback'
+      path: '/api/public/pvg-provider-callback'
+      fullPath: '/api/public/pvg-provider-callback'
+      preLoaderRoute: typeof ApiPublicPvgProviderCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/pvg-reconcile': {
       id: '/api/public/pvg-reconcile'
       path: '/api/public/pvg-reconcile'
@@ -2095,6 +2116,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMemoryBookBackupRetryRoute: ApiPublicMemoryBookBackupRetryRoute,
   ApiPublicMemoryBookCleanupRoute: ApiPublicMemoryBookCleanupRoute,
   ApiPublicPurgeDeletedCardsRoute: ApiPublicPurgeDeletedCardsRoute,
+  ApiPublicPvgProviderCallbackRoute: ApiPublicPvgProviderCallbackRoute,
   ApiPublicPvgReconcileRoute: ApiPublicPvgReconcileRoute,
   ApiPublicVoicePreviewsMaintainRoute: ApiPublicVoicePreviewsMaintainRoute,
   MemoryBookShareTokenRoute: MemoryBookShareTokenRoute,

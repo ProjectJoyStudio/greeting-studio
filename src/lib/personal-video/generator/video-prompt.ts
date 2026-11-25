@@ -98,3 +98,20 @@ export function buildScenePrompt(actionDescription: string): string {
 /** How a picture without a speaking participant behaves by default. */
 export const PVG_DEFAULT_SCENE_ACTION_DESCRIPTION =
   "The scene comes gently to life with calm, natural movement and a slow, subtle camera motion.";
+
+/**
+ * No-speaker film: nobody on screen speaks; the greeting is heard as
+ * voice-over. The scene itself is animated calmly for the whole duration.
+ */
+export function buildSceneVideoPrompt(actionDescription: string): string {
+  const action =
+    motionOnly(actionDescription.trim()) ||
+    "The scene comes gently to life with calm, natural motion, warm light and subtle camera movement.";
+  return [
+    action,
+    "The given audio is an off-screen voice-over. Nobody in the picture speaks or moves their lips to it; any people or animals that may be visible keep their mouths naturally closed and only move, breathe, blink and react naturally.",
+    "The scene stays alive with calm, natural motion and subtle camera or background movement for the whole length of the video. The video never freezes, never cuts and never ends early.",
+    "Preserve every visual element of the approved source picture exactly. The frame remains a faithful moving version of the source picture from beginning to end, with no new visual elements.",
+    "No added music.",
+  ].join(" ");
+}

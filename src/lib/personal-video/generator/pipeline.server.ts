@@ -21,7 +21,7 @@ export const FINAL_VIDEO_FUNCTION_ID = "personal_video.final_video";
  * Personal Video Greeting is a talking-person product; the only film made
  * here is the one with the added person speaking the greeting.
  */
-export type FinalVideoRoute = "person";
+export type FinalVideoRoute = "person" | "scene";
 
 export interface FinalVideoInput {
   /** The approved starting scene, exactly as page one produced it. */
@@ -115,8 +115,13 @@ export const FINAL_VIDEO_ENGINES: Record<string, FinalVideoEngine> = {
 const RUNWARE_PREFIX = "runware:";
 
 /** Engines able to serve the talking-person film with the greeting inside. */
-function enginesFor(_route: FinalVideoRoute = "person"): FinalVideoEngine[] {
-  return Object.values(FINAL_VIDEO_ENGINES).filter((e) => e.keepsPreparedVoice);
+function enginesFor(route: FinalVideoRoute = "person"): FinalVideoEngine[] {
+  // The no-speaker film (route "scene") animates the approved scene under the
+  // greeting voice-over; avatar engines that need a visible talking face are
+  // never used for it.
+  return Object.values(FINAL_VIDEO_ENGINES).filter(
+    (e) => e.keepsPreparedVoice && (route === "person" || !e.requiresPerson),
+  );
 }
 
 /** The longest greeting voice the active engines of one route can speak. */
@@ -189,14 +194,30 @@ export class PvgSubmissionUncertain extends Error {
   }
 }
 
-async function createPrediction(model: string, input: Record<string, unknown>): Promise<string> {
+/** Stable fingerprint of what was handed to the provider, used to match a lost submission. */
+export async function dispatchFingerprint(model: string, imageUrl: string, audioUrl: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`${model}|${imageUrl}|${audioUrl}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function createPrediction(
+  model: string,
+  input: Record<string, unknown>,
+  webhook: string | null,
+): Promise<string> {
   const apiToken = token(); // Missing configuration is a definite pre-submit failure.
   let res: Response;
   try {
     res = await fetch(`${API_BASE}/models/${model}/predictions`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ input }),
+      // Replicate documents no idempotency key. The signed webhook (start +
+      // completed) carries our operation id, so a response lost in transit is
+      // still matched to the paid job without a second submission.
+      body: JSON.stringify(
+        webhook ? { input, webhook, webhook_events_filter: ["start", "completed"] } : { input },
+      ),
     });
   } catch {
     throw new PvgSubmissionUncertain();
@@ -223,10 +244,13 @@ export async function startFinalVideo(
   input: FinalVideoInput & {
     audioSeconds: number;
     route?: FinalVideoRoute;
+    /** Signed provider callback address for this operation, when configured. */
+    webhookUrl?: string | null;
     beforeSubmit?: (attempt: {
       engineKey: string;
       model: string;
       predictionId: string | null;
+      fingerprint: string;
     }) => Promise<void>;
   },
 ): Promise<FinalVideoStartResult> {
@@ -258,6 +282,7 @@ export async function startFinalVideo(
           engineKey: engine.key,
           model: engine.model,
           predictionId: taskUUID ? `${RUNWARE_PREFIX}${taskUUID}` : null,
+          fingerprint: await dispatchFingerprint(engine.model, input.imageUrl, input.audioUrl),
         });
         attempted = true;
         if (engine.provider === "runware") {
@@ -293,7 +318,7 @@ export async function startFinalVideo(
             throw new PvgSubmissionUncertain();
           }
         }
-        return createPrediction(engine.model, engine.buildInput(input));
+        return createPrediction(engine.model, engine.buildInput(input), input.webhookUrl ?? null);
       });
       return {
         predictionId,
@@ -313,7 +338,7 @@ export async function startFinalVideo(
 }
 
 export type StageProgress =
-  | { state: "processing" }
+  | { state: "processing"; transient?: boolean; unknown?: boolean }
   | {
       state: "ready";
       url: string;
@@ -346,7 +371,7 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
     const state = await runwareProgress(predictionId.slice(RUNWARE_PREFIX.length));
     if (state.state === "processing") return { state: "processing" };
     if (state.state === "failed") {
-      if (state.errorCode !== "generation_failed") return { state: "processing" };
+      if (state.errorCode !== "generation_failed") return { state: "processing", transient: true };
       return { state: "failed", errorCode: state.errorCode, errorMessage: state.errorMessage };
     }
     return {
@@ -362,10 +387,10 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
       headers: { Authorization: `Bearer ${token()}` },
     });
     if (!res.ok) {
-      if (res.status === 404) {
-        return { state: "failed", errorCode: "not_found", errorMessage: "The film was lost." };
-      }
-      return { state: "processing" };
+      // A missing prediction is not proof of failure (wrong token, retention):
+      // it goes to administrator review instead of an automatic refund.
+      if (res.status === 404) return { state: "processing", unknown: true };
+      return { state: "processing", transient: true };
     }
     const prediction = (await res.json()) as {
       status?: string;
@@ -404,7 +429,7 @@ export async function pollStage(predictionId: string): Promise<StageProgress> {
     };
   } catch {
     // An unreachable polling endpoint is not evidence that generation failed.
-    return { state: "processing" };
+    return { state: "processing", transient: true };
   }
 }
 
@@ -428,4 +453,77 @@ export function finalVideoCostUsd(engineKey: string, seconds: number): number {
   const engine = FINAL_VIDEO_ENGINES[engineKey];
   if (!engine || seconds <= 0) return 0;
   return Math.round(engine.usdPerSecond * seconds * 10_000) / 10_000;
+}
+
+/** One Replicate prediction, read server-side with our own token. Never throws. */
+export async function readReplicatePrediction(
+  predictionId: string,
+): Promise<{ id: string; model: string; input: Record<string, unknown> } | null> {
+  if (!/^[a-z0-9]{10,64}$/i.test(predictionId)) return null;
+  try {
+    const res = await fetch(`${API_BASE}/predictions/${predictionId}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!res.ok) return null;
+    const p = (await res.json()) as { id?: string; model?: string; input?: Record<string, unknown> };
+    return p.id ? { id: p.id, model: String(p.model ?? ""), input: p.input ?? {} } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Searches recent predictions (documented GET /v1/predictions) for the one a
+ * lost submission created. Adopts only a single exact fingerprint match.
+ */
+export async function findLostReplicatePrediction(
+  model: string,
+  fingerprint: string,
+  since: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/predictions`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!res.ok) return null;
+    const page = (await res.json()) as {
+      results?: { id?: string; model?: string; created_at?: string; input?: Record<string, unknown> }[];
+    };
+    const sinceMs = Date.parse(since) - 60_000;
+    const matches: string[] = [];
+    for (const p of page.results ?? []) {
+      if (!p.id || p.model !== model || Date.parse(p.created_at ?? "") < sinceMs) continue;
+      const image = String(p.input?.["image"] ?? "");
+      const audio = String(p.input?.["audio"] ?? "");
+      if (image && audio && (await dispatchFingerprint(model, image, audio)) === fingerprint)
+        matches.push(p.id);
+    }
+    return matches.length === 1 ? matches[0]! : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Replicate's documented webhook signing secret for this account. */
+let webhookSecretCache: { value: string; at: number } | null = null;
+export async function replicateWebhookSecret(): Promise<string | null> {
+  if (webhookSecretCache && Date.now() - webhookSecretCache.at < 3_600_000)
+    return webhookSecretCache.value;
+  try {
+    const res = await fetch(`${API_BASE}/webhooks/default/secret`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { key?: string };
+    if (!body.key) return null;
+    webhookSecretCache = { value: body.key, at: Date.now() };
+    return body.key;
+  } catch {
+    return null;
+  }
+}
+
+/** Model key of a Replicate engine, used to verify an adopted prediction. */
+export function engineModel(engineKey: string | null | undefined): string | null {
+  return engineKey ? (FINAL_VIDEO_ENGINES[engineKey]?.model ?? null) : null;
 }

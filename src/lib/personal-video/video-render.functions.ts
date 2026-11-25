@@ -244,10 +244,14 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         addedPersons[0] ??
         null;
 
-      // Personal Video Greeting is a talking-person product. Without an added
-      // person there is nobody to speak the greeting, so the order is stopped
-      // here — before any credit is taken and before any engine is asked.
-      if (!speaker) {
+      // Two supported routes. "person": the one added person speaks on screen.
+      // "scene": the order's only participant is the narrator, so nobody is
+      // shown speaking — the approved scene is animated and the greeting is
+      // heard as voice-over. Anything else (no participant at all) is refused
+      // before any credit is taken.
+      const narratorOnly =
+        !speaker && people.length > 0 && people.every((p) => p.role === "narrator");
+      if (!speaker && !narratorOnly) {
         return {
           ok: false,
           error: "pvr_err_no_person_engine",
@@ -255,7 +259,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           balance: await balanceOf(),
         };
       }
-      const route = "person" as const;
+      const route: "person" | "scene" = speaker ? "person" : "scene";
 
       const duration = clampDuration(project.video_duration_seconds ?? 10);
       // The finished greeting voice from page two is what the film is built
@@ -294,13 +298,16 @@ export const startPvgVideo = createServerFn({ method: "POST" })
         "animation",
       );
       const { buildVideoPrompt } = await import("./generator/video-prompt");
-      const prompt = buildVideoPrompt({
-        actionDescription: translatedAction.english,
-        speakerName: named(speaker, addedPersons.indexOf(speaker)),
-        speakerIndex: addedPersons.indexOf(speaker),
-        totalPeople: addedPersons.length,
-        silentNames: [],
-      });
+      const { buildSceneVideoPrompt } = await import("./generator/video-prompt");
+      const prompt = speaker
+        ? buildVideoPrompt({
+            actionDescription: translatedAction.english,
+            speakerName: named(speaker, addedPersons.indexOf(speaker)),
+            speakerIndex: addedPersons.indexOf(speaker),
+            totalPeople: addedPersons.length,
+            silentNames: [],
+          })
+        : buildSceneVideoPrompt(translatedAction.english);
 
       const seed = Math.floor(Math.random() * 2_147_483_647);
       // Translation and audio validation are preparation, not a paid operation.
@@ -323,7 +330,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
             seed,
             duration,
             scene_id: chosen.id,
-            speaker_id: speaker.id,
+            speaker_id: speaker ? speaker.id : null,
+            route,
           },
         },
       );
@@ -376,6 +384,16 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           }
         }
         const { startFinalVideo } = await import("./generator/pipeline.server");
+        // Signed provider callback for this exact operation (see pvg-provider-callback).
+        const { data: dispatchCfg } = await supabaseAdmin
+          .from("pvg_dispatch_config")
+          .select("callback_base_url, enabled")
+          .eq("id", true)
+          .maybeSingle();
+        const base = (dispatchCfg as { callback_base_url: string | null } | null)?.callback_base_url;
+        const webhookUrl = base
+          ? `${base.replace(/\/$/, "")}/api/public/pvg-provider-callback?op=${videoRow.id}`
+          : null;
         const started = await startFinalVideo({
           prompt,
           imageUrl,
@@ -383,6 +401,7 @@ export const startPvgVideo = createServerFn({ method: "POST" })
           audioSeconds,
           seed,
           route,
+          webhookUrl,
           beforeSubmit: async (attempt) => {
             const write = await supabaseAdmin
               .from("pvg_videos")
@@ -391,6 +410,8 @@ export const startPvgVideo = createServerFn({ method: "POST" })
                 video_generator_key: attempt.engineKey,
                 video_generator_model: attempt.model,
                 video_prediction_id: attempt.predictionId,
+                dispatch_fingerprint: attempt.fingerprint,
+                dispatched_at: new Date().toISOString(),
               })
               .eq("id", videoRow.id)
               .eq("status", "pending");

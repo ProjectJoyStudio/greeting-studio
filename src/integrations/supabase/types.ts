@@ -3720,6 +3720,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pvg_dispatch_config: {
+        Row: {
+          callback_base_url: string | null
+          enabled: boolean
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          callback_base_url?: string | null
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          callback_base_url?: string | null
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pvg_people: {
         Row: {
           appearance_description: string | null
@@ -4098,6 +4122,36 @@ export type Database = {
           },
         ]
       }
+      pvg_provider_callbacks: {
+        Row: {
+          delivery_id: string
+          event: string | null
+          outcome: string
+          prediction_id: string | null
+          provider: string
+          received_at: string
+          video_id: string | null
+        }
+        Insert: {
+          delivery_id: string
+          event?: string | null
+          outcome: string
+          prediction_id?: string | null
+          provider: string
+          received_at?: string
+          video_id?: string | null
+        }
+        Update: {
+          delivery_id?: string
+          event?: string | null
+          outcome?: string
+          prediction_id?: string | null
+          provider?: string
+          received_at?: string
+          video_id?: string | null
+        }
+        Relationships: []
+      }
       pvg_scenes: {
         Row: {
           completed_at: string | null
@@ -4170,11 +4224,14 @@ export type Database = {
         Row: {
           action_description: string | null
           audio_seconds: number | null
+          callback_count: number
           charge_txn_id: string | null
           completed_at: string | null
           created_at: string
           credits_charged: number
           delivered_at: string | null
+          dispatch_fingerprint: string | null
+          dispatched_at: string | null
           duration_seconds: number
           error_code: string | null
           error_message: string | null
@@ -4183,6 +4240,9 @@ export type Database = {
           id: string
           is_selected: boolean
           job_id: string
+          last_callback_at: string | null
+          last_reconcile_at: string | null
+          last_reconcile_error: string | null
           lipsync_active_speaker: boolean | null
           lipsync_cost_usd: number | null
           lipsync_generator_key: string | null
@@ -4191,18 +4251,26 @@ export type Database = {
           lipsync_prediction_id: string | null
           mix_signature: string | null
           mix_storage_path: string | null
+          needs_review: boolean
+          next_reconcile_at: string | null
           payment_key: string | null
           prediction_id: string | null
           project_id: string
+          reconcile_attempts: number
           reconcile_token: string | null
           reconcile_until: string | null
           refund_txn_id: string | null
           request_snapshot: Json | null
+          review_flagged_at: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           scene_sounds: boolean
           seed: number | null
           silent_bucket: string | null
           silent_path: string | null
           speaker_person_id: string | null
+          speech_route: string | null
           stage: string
           status: string
           storage_bucket: string | null
@@ -4222,11 +4290,14 @@ export type Database = {
         Insert: {
           action_description?: string | null
           audio_seconds?: number | null
+          callback_count?: number
           charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
           delivered_at?: string | null
+          dispatch_fingerprint?: string | null
+          dispatched_at?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
@@ -4235,6 +4306,9 @@ export type Database = {
           id?: string
           is_selected?: boolean
           job_id: string
+          last_callback_at?: string | null
+          last_reconcile_at?: string | null
+          last_reconcile_error?: string | null
           lipsync_active_speaker?: boolean | null
           lipsync_cost_usd?: number | null
           lipsync_generator_key?: string | null
@@ -4243,18 +4317,26 @@ export type Database = {
           lipsync_prediction_id?: string | null
           mix_signature?: string | null
           mix_storage_path?: string | null
+          needs_review?: boolean
+          next_reconcile_at?: string | null
           payment_key?: string | null
           prediction_id?: string | null
           project_id: string
+          reconcile_attempts?: number
           reconcile_token?: string | null
           reconcile_until?: string | null
           refund_txn_id?: string | null
           request_snapshot?: Json | null
+          review_flagged_at?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           scene_sounds?: boolean
           seed?: number | null
           silent_bucket?: string | null
           silent_path?: string | null
           speaker_person_id?: string | null
+          speech_route?: string | null
           stage?: string
           status?: string
           storage_bucket?: string | null
@@ -4274,11 +4356,14 @@ export type Database = {
         Update: {
           action_description?: string | null
           audio_seconds?: number | null
+          callback_count?: number
           charge_txn_id?: string | null
           completed_at?: string | null
           created_at?: string
           credits_charged?: number
           delivered_at?: string | null
+          dispatch_fingerprint?: string | null
+          dispatched_at?: string | null
           duration_seconds?: number
           error_code?: string | null
           error_message?: string | null
@@ -4287,6 +4372,9 @@ export type Database = {
           id?: string
           is_selected?: boolean
           job_id?: string
+          last_callback_at?: string | null
+          last_reconcile_at?: string | null
+          last_reconcile_error?: string | null
           lipsync_active_speaker?: boolean | null
           lipsync_cost_usd?: number | null
           lipsync_generator_key?: string | null
@@ -4295,18 +4383,26 @@ export type Database = {
           lipsync_prediction_id?: string | null
           mix_signature?: string | null
           mix_storage_path?: string | null
+          needs_review?: boolean
+          next_reconcile_at?: string | null
           payment_key?: string | null
           prediction_id?: string | null
           project_id?: string
+          reconcile_attempts?: number
           reconcile_token?: string | null
           reconcile_until?: string | null
           refund_txn_id?: string | null
           request_snapshot?: Json | null
+          review_flagged_at?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           scene_sounds?: boolean
           seed?: number | null
           silent_bucket?: string | null
           silent_path?: string | null
           speaker_person_id?: string | null
+          speech_route?: string | null
           stage?: string
           status?: string
           storage_bucket?: string | null
@@ -5785,6 +5881,10 @@ export type Database = {
         }[]
       }
       admin_reset_test_credits: { Args: { _user_id: string }; Returns: number }
+      admin_resolve_pvg_video: {
+        Args: { _action: string; _note?: string; _video_id: string }
+        Returns: Json
+      }
       admin_restore_first_free_greeting: {
         Args: { _reason: string; _user_id: string }
         Returns: boolean

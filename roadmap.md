@@ -54,3 +54,10 @@
 - [x] Oct 26 fix completed-book ZIP download (save dialog timing, fallback, errors, real e2e).
 - [x] Automatic durable Memory Book working cleanup (server dispatcher, retries, leases, Admin status). Hosted preview scheduler delivery confirmed only after next preview rebuild; Admin layout not re-checked on device sizes.
 - [x] Real Storage Admin with manual B2 emergency, recovery and return to R2 (tested in isolated scopes; global emergency never activated).
+
+## PVG reliability, callbacks, scheduler, no-speaker (2026-11-25)
+- [x] No-speaker (narrator) route through the same atomic payment
+- [x] Ambiguous submissions → admin review; signed Replicate callbacks; bounded backoff
+- [x] Scheduler on service-only credential; admin attention list
+- [ ] Remove the public key from the scheduler call once the new version is live (blocked: deploy)
+- [ ] Real paid generation and physical-device/six-language browser matrix (not run)
