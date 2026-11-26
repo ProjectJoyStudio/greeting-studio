@@ -1438,6 +1438,211 @@ export type Database = {
         }
         Relationships: []
       }
+      cleanup_object_attempts: {
+        Row: {
+          api_result: string | null
+          attempt: number
+          error: string | null
+          executed_at: string
+          id: number
+          object_id: string
+          operation_id: string
+          status: string
+          verification: string | null
+        }
+        Insert: {
+          api_result?: string | null
+          attempt: number
+          error?: string | null
+          executed_at?: string
+          id?: number
+          object_id: string
+          operation_id: string
+          status: string
+          verification?: string | null
+        }
+        Update: {
+          api_result?: string | null
+          attempt?: number
+          error?: string | null
+          executed_at?: string
+          id?: number
+          object_id?: string
+          operation_id?: string
+          status?: string
+          verification?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleanup_object_attempts_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "cleanup_object_audit"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleanup_object_audit: {
+        Row: {
+          api_result: string | null
+          attempt: number
+          bucket: string
+          created_at: string
+          deleted_at_snapshot: string | null
+          eligibility: Json
+          entity_id: string
+          entity_type: string
+          error: string | null
+          id: string
+          key_hash: string
+          last_attempt_at: string | null
+          next_attempt_at: string | null
+          object_key: string
+          operation_id: string
+          provider: string
+          purge_after_snapshot: string | null
+          reason: string
+          role: string
+          status: string
+          updated_at: string
+          verification: string | null
+        }
+        Insert: {
+          api_result?: string | null
+          attempt?: number
+          bucket: string
+          created_at?: string
+          deleted_at_snapshot?: string | null
+          eligibility?: Json
+          entity_id: string
+          entity_type: string
+          error?: string | null
+          id?: string
+          key_hash: string
+          last_attempt_at?: string | null
+          next_attempt_at?: string | null
+          object_key: string
+          operation_id: string
+          provider?: string
+          purge_after_snapshot?: string | null
+          reason?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          verification?: string | null
+        }
+        Update: {
+          api_result?: string | null
+          attempt?: number
+          bucket?: string
+          created_at?: string
+          deleted_at_snapshot?: string | null
+          eligibility?: Json
+          entity_id?: string
+          entity_type?: string
+          error?: string | null
+          id?: string
+          key_hash?: string
+          last_attempt_at?: string | null
+          next_attempt_at?: string | null
+          object_key?: string
+          operation_id?: string
+          provider?: string
+          purge_after_snapshot?: string | null
+          reason?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          verification?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleanup_object_audit_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "cleanup_operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleanup_operations: {
+        Row: {
+          attempts: number
+          created_at: string
+          deleted_at_snapshot: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          is_test: boolean
+          last_error: string | null
+          last_run_at: string | null
+          lease_token: string | null
+          lease_until: string | null
+          next_attempt_at: string | null
+          objects_absent: number
+          objects_protected: number
+          objects_total: number
+          objects_unresolved: number
+          objects_verified: number
+          owner_user_id: string | null
+          purge_after_snapshot: string | null
+          reason: string
+          record_finalized_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          deleted_at_snapshot?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_test?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string | null
+          objects_absent?: number
+          objects_protected?: number
+          objects_total?: number
+          objects_unresolved?: number
+          objects_verified?: number
+          owner_user_id?: string | null
+          purge_after_snapshot?: string | null
+          reason?: string
+          record_finalized_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          deleted_at_snapshot?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_test?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string | null
+          objects_absent?: number
+          objects_protected?: number
+          objects_total?: number
+          objects_unresolved?: number
+          objects_verified?: number
+          owner_user_id?: string | null
+          purge_after_snapshot?: string | null
+          reason?: string
+          record_finalized_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consent_records: {
         Row: {
           confirmed_at: string
@@ -6030,6 +6235,10 @@ export type Database = {
         Args: { _duration: number; _price: number; _user_id: string }
         Returns: Json
       }
+      claim_cleanup_operation: {
+        Args: { _op: string; _seconds: number; _token: string }
+        Returns: boolean
+      }
       claim_first_free_greeting: {
         Args: {
           _configuration?: Json
@@ -6130,6 +6339,19 @@ export type Database = {
       claim_pvg_video_submission: {
         Args: { _video_id: string }
         Returns: boolean
+      }
+      cleanup_object_present: {
+        Args: { _bucket: string; _key: string }
+        Returns: boolean
+      }
+      cleanup_object_reference_count: {
+        Args: {
+          _bucket: string
+          _entity_id: string
+          _entity_type: string
+          _key: string
+        }
+        Returns: number
       }
       confirm_credit_purchase: {
         Args: {

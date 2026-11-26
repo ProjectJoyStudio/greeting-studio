@@ -50,11 +50,21 @@ export async function purgePvgProjectCompletely(projectId: string): Promise<bool
 
   const { purgeProjectFiles } = await import("./pvg.server");
   await purgeProjectFiles(projectId);
+  await finalizePvgProjectRecord(projectId);
+  return true;
+}
 
-  await supabaseAdmin.from("pvg_scenes").delete().eq("project_id", projectId);
-  await supabaseAdmin.from("pvg_people").delete().eq("project_id", projectId);
-  await supabaseAdmin.from("pvg_project_versions").delete().eq("project_id", projectId);
-  await supabaseAdmin
+/**
+ * Removes the order's records once its files are gone. Financial history is
+ * never touched; the order id stays as a permanently deleted marker.
+ */
+export async function finalizePvgProjectRecord(projectId: string): Promise<void> {
+  const supabaseAdmin = await getAdmin();
+  for (const table of ["pvg_scenes", "pvg_people", "pvg_project_versions"] as const) {
+    const { error } = await supabaseAdmin.from(table).delete().eq("project_id", projectId);
+    if (error) throw new Error(error.message);
+  }
+  const { error } = await supabaseAdmin
     .from("pvg_projects")
     .update({
       permanently_deleted: true,
@@ -66,9 +76,10 @@ export async function purgePvgProjectCompletely(projectId: string): Promise<bool
       greeting_keywords: "",
     })
     .eq("id", projectId);
-  return true;
+  if (error) throw new Error(error.message);
 }
 
+/** Legacy unverified clean-up; the scheduler now uses the verified engine. */
 /** Scheduled clean-up of every order whose retention window has passed. */
 export async function purgeExpiredPvgProjects(): Promise<{ purged: number }> {
   const supabaseAdmin = await getAdmin();

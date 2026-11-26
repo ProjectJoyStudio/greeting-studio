@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * Scheduled clean-up: permanently removes user postcards whose retention
- * period has expired (records, projects and stored files).
+ * period has expired. Records are finalized only after their files are
+ * verified gone (see src/lib/cleanup).
  */
 export const Route = createFileRoute("/api/public/purge-deleted-cards")({
   server: {
@@ -12,19 +13,19 @@ export const Route = createFileRoute("/api/public/purge-deleted-cards")({
         if (!(await verifySchedulerRequest(request, "card_purge_dispatch_config"))) {
           return new Response("Unauthorized", { status: 401 });
         }
-        const { purgeExpiredCards, purgeExpiredLiveCards, purgeExpiredLiveAnimations } = await import(
-          "@/lib/admin/deleted-cards.server"
-        );
-        const cards = await purgeExpiredCards();
-        const liveCards = await purgeExpiredLiveCards();
-        const liveGreetings = await purgeExpiredLiveAnimations();
-        const { purgeExpiredPvgProjects } = await import("@/lib/personal-video/order.server");
-        const videoDrafts = await purgeExpiredPvgProjects();
+        // Verified cleanup: every file is checked absent before its item is
+        // finalized, with a durable per-file history and bounded retries.
+        const { runVerifiedCleanup } = await import("@/lib/cleanup/cleanup.server");
+        const r = await runVerifiedCleanup();
         return Response.json({
-          purged: cards.purged,
-          purgedLiveCards: liveCards.purged,
-          purgedLiveGreetings: liveGreetings.purged,
-          purgedVideoDrafts: videoDrafts.purged,
+          purged: r.completed.card,
+          purgedLiveCards: r.completed.live_card,
+          purgedLiveGreetings: r.completed.live_animation,
+          purgedVideoDrafts: r.completed.pvg_project,
+          retrying: r.retrying,
+          failed: r.failed,
+          notVerified: r.notVerified,
+          cancelled: r.cancelled,
         });
       },
     },

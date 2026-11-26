@@ -268,46 +268,47 @@ export async function reconcileScene(sceneId: string): Promise<PvgSceneStatus> {
 }
 
 /** Finishes every running starting scene across the platform. */
-export async function purgeProjectFiles(projectId: string): Promise<void> {
+/** Every stored file of one order, as recorded in its people and scenes. */
+export async function collectProjectFiles(
+  projectId: string,
+): Promise<Array<{ bucket: string; path: string; role: string }>> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const [{ data: people }, { data: scenes }] = await Promise.all([
+  const [{ data: people, error: e1 }, { data: scenes, error: e2 }] = await Promise.all([
     supabaseAdmin
       .from("pvg_people")
       .select("optimized_bucket, optimized_path, original_bucket, original_path, extra_photos")
       .eq("project_id", projectId),
-    supabaseAdmin
-      .from("pvg_scenes")
-      .select("storage_bucket, storage_path, prediction_id, status")
-      .eq("project_id", projectId),
+    supabaseAdmin.from("pvg_scenes").select("storage_bucket, storage_path").eq("project_id", projectId),
   ]);
-
-  const byBucket = new Map<string, string[]>();
-  const add = (bucket: string | null | undefined, path: string | null | undefined) => {
-    if (!bucket || !path) return;
-    const list = byBucket.get(bucket) ?? [];
-    list.push(path);
-    byBucket.set(bucket, list);
+  if (e1 || e2) throw new Error((e1 ?? e2)!.message);
+  const out: Array<{ bucket: string; path: string; role: string }> = [];
+  const add = (bucket: unknown, path: unknown, role: string) => {
+    if (typeof bucket === "string" && bucket && typeof path === "string" && path) out.push({ bucket, path, role });
   };
-
   for (const row of (people ?? []) as Array<Record<string, unknown>>) {
-    add(row["optimized_bucket"] as string, row["optimized_path"] as string);
-    add(row["original_bucket"] as string, row["original_path"] as string);
+    add(row["optimized_bucket"], row["optimized_path"], "person_optimized");
+    add(row["original_bucket"], row["original_path"], "person_original");
     const extra = row["extra_photos"];
     if (Array.isArray(extra)) {
       for (const item of extra) {
         if (item && typeof item === "object") {
           const rec = item as Record<string, unknown>;
-          add(rec["bucket"] as string, rec["path"] as string);
+          add(rec["bucket"], rec["path"], "person_extra");
         }
       }
     }
   }
-  for (const row of (scenes ?? []) as Array<Record<string, unknown>>) {
-    add(row["storage_bucket"] as string, row["storage_path"] as string);
-  }
+  for (const row of (scenes ?? []) as Array<Record<string, unknown>>) add(row["storage_bucket"], row["storage_path"], "scene");
+  return out;
+}
 
-  // Stop anything still rendering; results that arrive later have no row left.
+/** Stops anything still rendering; results that arrive later have no row left. */
+export async function cancelRunningScenes(projectId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: scenes } = await supabaseAdmin
+    .from("pvg_scenes")
+    .select("prediction_id, status")
+    .eq("project_id", projectId);
   const running = ((scenes ?? []) as Array<Record<string, unknown>>).filter(
     (row) => row["prediction_id"] && row["status"] !== "ready" && row["status"] !== "failed",
   );
@@ -315,7 +316,15 @@ export async function purgeProjectFiles(projectId: string): Promise<void> {
     const { cancelSceneRender } = await import("./generator/image-engine.server");
     await Promise.all(running.map((row) => cancelSceneRender(row["prediction_id"] as string)));
   }
+}
 
+/** Administrator-initiated immediate removal (not the automatic cleanup). */
+export async function purgeProjectFiles(projectId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const files = await collectProjectFiles(projectId);
+  await cancelRunningScenes(projectId);
+  const byBucket = new Map<string, string[]>();
+  for (const f of files) byBucket.set(f.bucket, [...(byBucket.get(f.bucket) ?? []), f.path]);
   for (const [bucket, paths] of byBucket) {
     if (paths.length > 0) await supabaseAdmin.storage.from(bucket).remove(paths);
   }

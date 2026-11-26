@@ -155,6 +155,13 @@
       "when": 1795708463451,
       "tag": "0021_maintenance_scheduler_private_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795726765975,
+      "tag": "0022_verified_cleanup_audit",
+      "breakpoints": true
     }
   ]
 }
