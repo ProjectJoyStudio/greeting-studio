@@ -8,9 +8,8 @@ export const Route = createFileRoute("/api/public/purge-deleted-cards")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        const provided = request.headers.get("apikey") ?? "";
-        if (!expected || provided !== expected) {
+        const { verifySchedulerRequest } = await import("@/lib/scheduler/auth.server");
+        if (!(await verifySchedulerRequest(request, "card_purge_dispatch_config"))) {
           return new Response("Unauthorized", { status: 401 });
         }
         const { purgeExpiredCards, purgeExpiredLiveCards, purgeExpiredLiveAnimations } = await import(

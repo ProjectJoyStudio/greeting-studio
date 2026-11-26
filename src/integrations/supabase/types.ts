@@ -116,6 +116,27 @@ export type Database = {
         }
         Relationships: []
       }
+      card_purge_dispatch_config: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       card_variant_additional_occasions: {
         Row: {
           card_variant_id: string
@@ -5795,6 +5816,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      voice_previews_dispatch_config: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       voice_profiles: {
         Row: {

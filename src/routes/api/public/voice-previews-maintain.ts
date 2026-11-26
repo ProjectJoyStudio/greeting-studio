@@ -10,9 +10,8 @@ export const Route = createFileRoute("/api/public/voice-previews-maintain")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        const provided = request.headers.get("apikey") ?? "";
-        if (!expected || provided !== expected) {
+        const { verifySchedulerRequest } = await import("@/lib/scheduler/auth.server");
+        if (!(await verifySchedulerRequest(request, "voice_previews_dispatch_config"))) {
           return new Response("Unauthorized", { status: 401 });
         }
         const { verifyPreviews } = await import("@/lib/voice-library/library.server");

@@ -2,7 +2,11 @@
 // service-only secret in its own config table (never readable by anon or
 // authenticated roles); callers must send it as a Bearer token. Public keys
 // are never accepted.
-type ConfigTable = "pvg_dispatch_config" | "live_cards_dispatch_config";
+export type ConfigTable =
+  | "pvg_dispatch_config"
+  | "live_cards_dispatch_config"
+  | "card_purge_dispatch_config"
+  | "voice_previews_dispatch_config";
 
 export function constantTimeEqual(a: string, b: string): boolean {
   const x = new TextEncoder().encode(a);

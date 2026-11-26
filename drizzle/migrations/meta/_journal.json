@@ -148,6 +148,13 @@
       "when": 1795705786685,
       "tag": "0020_scheduler_private_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795708463451,
+      "tag": "0021_maintenance_scheduler_private_auth",
+      "breakpoints": true
     }
   ]
 }
