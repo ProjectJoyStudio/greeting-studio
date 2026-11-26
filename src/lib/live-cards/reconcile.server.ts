@@ -33,6 +33,18 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
   const row = data as PendingRow | null;
   if (!row) return "skipped";
   if (!PENDING.includes(row.status) || !row.prediction_id) return "skipped";
+  // Lease: concurrent sweeps/page polls never process the same animation twice.
+  const { data: claimed } = await supabaseAdmin.rpc("claim_live_card_reconcile" as never, { _id: row.id } as never);
+  if (claimed !== true) return "skipped";
+  try {
+    return await reconcileClaimed(row);
+  } finally {
+    await supabaseAdmin.from("live_card_animations").update({ reconcile_until: null } as never).eq("id", row.id);
+  }
+}
+
+async function reconcileClaimed(row: PendingRow): Promise<ReconcileOutcome> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { logLiveCardEvent } = await import("./lifecycle.server");
   const patch = async (values: Record<string, unknown>) => {
@@ -41,7 +53,7 @@ export async function reconcileAnimation(animationId: string): Promise<Reconcile
 
   try {
     const { pollVideoRequest } = await import("./generators/router.server");
-    const progress = await pollVideoRequest(row.generator_key ?? "", row.prediction_id);
+    const progress = await pollVideoRequest(row.generator_key ?? "", row.prediction_id ?? "");
 
     if (progress.state === "queued" || progress.state === "processing") {
       if (row.status !== progress.state) await patch({ status: progress.state });

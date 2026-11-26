@@ -1877,6 +1877,7 @@ export type Database = {
           prompt_en: string | null
           prompt_lang: string | null
           purge_after: string | null
+          reconcile_until: string | null
           resolution: string | null
           scheduled_send_at: string | null
           session_id: string | null
@@ -1929,6 +1930,7 @@ export type Database = {
           prompt_en?: string | null
           prompt_lang?: string | null
           purge_after?: string | null
+          reconcile_until?: string | null
           resolution?: string | null
           scheduled_send_at?: string | null
           session_id?: string | null
@@ -1981,6 +1983,7 @@ export type Database = {
           prompt_en?: string | null
           prompt_lang?: string | null
           purge_after?: string | null
+          reconcile_until?: string | null
           resolution?: string | null
           scheduled_send_at?: string | null
           session_id?: string | null
@@ -2035,6 +2038,27 @@ export type Database = {
           session_key?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      live_cards_dispatch_config: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          secret?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5979,6 +6003,7 @@ export type Database = {
           used_at: string
         }[]
       }
+      claim_live_card_reconcile: { Args: { _id: string }; Returns: boolean }
       claim_memory_book_backup: {
         Args: {
           _key: string

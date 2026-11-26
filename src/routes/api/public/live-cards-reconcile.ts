@@ -1,24 +1,21 @@
 // Scheduled background job: finishes live greeting card animations whose
 // creators have already left the page, so nothing depends on an open browser.
+// Authorised only by the service-only scheduler secret (live_cards_dispatch_config).
 import { createFileRoute } from "@tanstack/react-router";
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 export const Route = createFileRoute("/api/public/live-cards-reconcile")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = request.headers.get("apikey") ?? "";
-        const expected = process.env["SUPABASE_ANON_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "";
-        if (!expected || key !== expected) {
-          return new Response(JSON.stringify({ error: "unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const { verifySchedulerRequest } = await import("@/lib/scheduler/auth.server");
+        if (!(await verifySchedulerRequest(request, "live_cards_dispatch_config")))
+          return json({ error: "unauthorized" }, 401);
         const { reconcilePendingAnimations } = await import("@/lib/live-cards/reconcile.server");
         const result = await reconcilePendingAnimations(40);
-        return new Response(JSON.stringify({ ok: true, ...result }), {
-          headers: { "Content-Type": "application/json" },
-        });
+        return json({ ok: true, ...result });
       },
     },
   },
