@@ -100,6 +100,10 @@ import { Route as ApiPublicPurgeDeletedCardsRouteImport } from './routes/api/pub
 import { Route as ApiPublicPvgProviderCallbackRouteImport } from './routes/api/public/pvg-provider-callback'
 import { Route as ApiPublicPvgReconcileRouteImport } from './routes/api/public/pvg-reconcile'
 import { Route as ApiPublicVoicePreviewsMaintainRouteImport } from './routes/api/public/voice-previews-maintain'
+import { Route as DashboardMemoryBooksIndexRouteImport } from './routes/dashboard.memory-books.index'
+import { Route as DashboardMemoryBooksCompletedRouteImport } from './routes/dashboard.memory-books.completed'
+import { Route as DashboardMemoryBooksStorageRouteImport } from './routes/dashboard.memory-books.storage'
+import { Route as DashboardMemoryBooksWorkingRouteImport } from './routes/dashboard.memory-books.working'
 import { Route as MemoryBookShareTokenRouteImport } from './routes/memory-book_.share.$token'
 import { Route as AdminCatalogBackgroundsIdRouteImport } from './routes/admin.catalog.backgrounds.$id'
 import { Route as AdminCatalogBackgroundsNewRouteImport } from './routes/admin.catalog.backgrounds.new'
@@ -572,6 +576,30 @@ const ApiPublicVoicePreviewsMaintainRoute =
     path: '/api/public/voice-previews-maintain',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DashboardMemoryBooksIndexRoute =
+  DashboardMemoryBooksIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => DashboardMemoryBooksRoute,
+  } as any)
+const DashboardMemoryBooksCompletedRoute =
+  DashboardMemoryBooksCompletedRouteImport.update({
+    id: '/completed',
+    path: '/completed',
+    getParentRoute: () => DashboardMemoryBooksRoute,
+  } as any)
+const DashboardMemoryBooksStorageRoute =
+  DashboardMemoryBooksStorageRouteImport.update({
+    id: '/storage',
+    path: '/storage',
+    getParentRoute: () => DashboardMemoryBooksRoute,
+  } as any)
+const DashboardMemoryBooksWorkingRoute =
+  DashboardMemoryBooksWorkingRouteImport.update({
+    id: '/working',
+    path: '/working',
+    getParentRoute: () => DashboardMemoryBooksRoute,
+  } as any)
 const MemoryBookShareTokenRoute = MemoryBookShareTokenRouteImport.update({
   id: '/memory-book_/share/$token',
   path: '/memory-book/share/$token',
@@ -669,7 +697,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
-  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksRouteWithChildren
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -696,9 +724,13 @@ export interface FileRoutesByFullPath {
   '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/dashboard/memory-books/completed': typeof DashboardMemoryBooksCompletedRoute
+  '/dashboard/memory-books/storage': typeof DashboardMemoryBooksStorageRoute
+  '/dashboard/memory-books/working': typeof DashboardMemoryBooksWorkingRoute
   '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
+  '/dashboard/memory-books/': typeof DashboardMemoryBooksIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -765,7 +797,6 @@ export interface FileRoutesByTo {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
-  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -792,9 +823,13 @@ export interface FileRoutesByTo {
   '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/dashboard/memory-books/completed': typeof DashboardMemoryBooksCompletedRoute
+  '/dashboard/memory-books/storage': typeof DashboardMemoryBooksStorageRoute
+  '/dashboard/memory-books/working': typeof DashboardMemoryBooksWorkingRoute
   '/memory-book/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog': typeof AdminCatalogIndexRoute
   '/admin/voice-settings': typeof AdminVoiceSettingsIndexRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -865,7 +900,7 @@ export interface FileRoutesById {
   '/dashboard/credits': typeof DashboardCreditsRoute
   '/dashboard/favorites': typeof DashboardFavoritesRoute
   '/dashboard/live-cards': typeof DashboardLiveCardsRoute
-  '/dashboard/memory-books': typeof DashboardMemoryBooksRoute
+  '/dashboard/memory-books': typeof DashboardMemoryBooksRouteWithChildren
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -892,9 +927,13 @@ export interface FileRoutesById {
   '/api/public/pvg-provider-callback': typeof ApiPublicPvgProviderCallbackRoute
   '/api/public/pvg-reconcile': typeof ApiPublicPvgReconcileRoute
   '/api/public/voice-previews-maintain': typeof ApiPublicVoicePreviewsMaintainRoute
+  '/dashboard/memory-books/completed': typeof DashboardMemoryBooksCompletedRoute
+  '/dashboard/memory-books/storage': typeof DashboardMemoryBooksStorageRoute
+  '/dashboard/memory-books/working': typeof DashboardMemoryBooksWorkingRoute
   '/memory-book_/share/$token': typeof MemoryBookShareTokenRoute
   '/admin/catalog/': typeof AdminCatalogIndexRoute
   '/admin/voice-settings/': typeof AdminVoiceSettingsIndexRoute
+  '/dashboard/memory-books/': typeof DashboardMemoryBooksIndexRoute
   '/admin/catalog/backgrounds/$id': typeof AdminCatalogBackgroundsIdRoute
   '/admin/catalog/backgrounds/new': typeof AdminCatalogBackgroundsNewRoute
   '/admin/catalog/variants/$id': typeof AdminCatalogVariantsIdRoute
@@ -993,9 +1032,13 @@ export interface FileRouteTypes {
     | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/dashboard/memory-books/completed'
+    | '/dashboard/memory-books/storage'
+    | '/dashboard/memory-books/working'
     | '/memory-book/share/$token'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
+    | '/dashboard/memory-books/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -1062,7 +1105,6 @@ export interface FileRouteTypes {
     | '/dashboard/credits'
     | '/dashboard/favorites'
     | '/dashboard/live-cards'
-    | '/dashboard/memory-books'
     | '/dashboard/notifications'
     | '/dashboard/orders'
     | '/dashboard/profile'
@@ -1089,9 +1131,13 @@ export interface FileRouteTypes {
     | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/dashboard/memory-books/completed'
+    | '/dashboard/memory-books/storage'
+    | '/dashboard/memory-books/working'
     | '/memory-book/share/$token'
     | '/admin/catalog'
     | '/admin/voice-settings'
+    | '/dashboard/memory-books'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -1188,9 +1234,13 @@ export interface FileRouteTypes {
     | '/api/public/pvg-provider-callback'
     | '/api/public/pvg-reconcile'
     | '/api/public/voice-previews-maintain'
+    | '/dashboard/memory-books/completed'
+    | '/dashboard/memory-books/storage'
+    | '/dashboard/memory-books/working'
     | '/memory-book_/share/$token'
     | '/admin/catalog/'
     | '/admin/voice-settings/'
+    | '/dashboard/memory-books/'
     | '/admin/catalog/backgrounds/$id'
     | '/admin/catalog/backgrounds/new'
     | '/admin/catalog/variants/$id'
@@ -1883,6 +1933,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVoicePreviewsMaintainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/memory-books/': {
+      id: '/dashboard/memory-books/'
+      path: '/'
+      fullPath: '/dashboard/memory-books/'
+      preLoaderRoute: typeof DashboardMemoryBooksIndexRouteImport
+      parentRoute: typeof DashboardMemoryBooksRoute
+    }
+    '/dashboard/memory-books/completed': {
+      id: '/dashboard/memory-books/completed'
+      path: '/completed'
+      fullPath: '/dashboard/memory-books/completed'
+      preLoaderRoute: typeof DashboardMemoryBooksCompletedRouteImport
+      parentRoute: typeof DashboardMemoryBooksRoute
+    }
+    '/dashboard/memory-books/storage': {
+      id: '/dashboard/memory-books/storage'
+      path: '/storage'
+      fullPath: '/dashboard/memory-books/storage'
+      preLoaderRoute: typeof DashboardMemoryBooksStorageRouteImport
+      parentRoute: typeof DashboardMemoryBooksRoute
+    }
+    '/dashboard/memory-books/working': {
+      id: '/dashboard/memory-books/working'
+      path: '/working'
+      fullPath: '/dashboard/memory-books/working'
+      preLoaderRoute: typeof DashboardMemoryBooksWorkingRouteImport
+      parentRoute: typeof DashboardMemoryBooksRoute
+    }
     '/memory-book_/share/$token': {
       id: '/memory-book_/share/$token'
       path: '/memory-book/share/$token'
@@ -2042,12 +2120,29 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface DashboardMemoryBooksRouteChildren {
+  DashboardMemoryBooksCompletedRoute: typeof DashboardMemoryBooksCompletedRoute
+  DashboardMemoryBooksStorageRoute: typeof DashboardMemoryBooksStorageRoute
+  DashboardMemoryBooksWorkingRoute: typeof DashboardMemoryBooksWorkingRoute
+  DashboardMemoryBooksIndexRoute: typeof DashboardMemoryBooksIndexRoute
+}
+
+const DashboardMemoryBooksRouteChildren: DashboardMemoryBooksRouteChildren = {
+  DashboardMemoryBooksCompletedRoute: DashboardMemoryBooksCompletedRoute,
+  DashboardMemoryBooksStorageRoute: DashboardMemoryBooksStorageRoute,
+  DashboardMemoryBooksWorkingRoute: DashboardMemoryBooksWorkingRoute,
+  DashboardMemoryBooksIndexRoute: DashboardMemoryBooksIndexRoute,
+}
+
+const DashboardMemoryBooksRouteWithChildren =
+  DashboardMemoryBooksRoute._addFileChildren(DashboardMemoryBooksRouteChildren)
+
 interface DashboardRouteChildren {
   DashboardCardsRoute: typeof DashboardCardsRoute
   DashboardCreditsRoute: typeof DashboardCreditsRoute
   DashboardFavoritesRoute: typeof DashboardFavoritesRoute
   DashboardLiveCardsRoute: typeof DashboardLiveCardsRoute
-  DashboardMemoryBooksRoute: typeof DashboardMemoryBooksRoute
+  DashboardMemoryBooksRoute: typeof DashboardMemoryBooksRouteWithChildren
   DashboardNotificationsRoute: typeof DashboardNotificationsRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
@@ -2062,7 +2157,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCreditsRoute: DashboardCreditsRoute,
   DashboardFavoritesRoute: DashboardFavoritesRoute,
   DashboardLiveCardsRoute: DashboardLiveCardsRoute,
-  DashboardMemoryBooksRoute: DashboardMemoryBooksRoute,
+  DashboardMemoryBooksRoute: DashboardMemoryBooksRouteWithChildren,
   DashboardNotificationsRoute: DashboardNotificationsRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProfileRoute: DashboardProfileRoute,

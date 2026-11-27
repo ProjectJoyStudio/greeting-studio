@@ -41,10 +41,12 @@ export function StorageExtensionPanel({
   book,
   offers,
   onPurchased,
+  completedActionLabelKey = "mbx_keep_button",
 }: {
   book: { id: string; status: string; expiresAt: string; retentionExpiresAt: string | null };
   offers: StorageOffer[];
   onPurchased: () => Promise<unknown>;
+  completedActionLabelKey?: string;
 }) {
   const { t, lang } = useI18n();
   const purchase = useServerFn(purchaseMemoryBookStorage);
@@ -134,7 +136,7 @@ export function StorageExtensionPanel({
                 setPending(o);
               }}
             >
-              {busy && pending?.code === o.code ? t("mbd_working") : completed ? t("mbx_keep_button") : label(o)}
+              {busy && pending?.code === o.code ? t("mbd_working") : completed ? t(completedActionLabelKey) : label(o)}
             </Button>
           ))}
         </div>

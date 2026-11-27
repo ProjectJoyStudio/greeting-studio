@@ -1,3 +1,8 @@
+# Memory Book customer collections (2026-11-27)
+- [x] Separate entry, working, completed and purchased-storage routes; reuse existing actions and six-language design.
+- [x] Verify owner read-only navigation: 96 Chromium viewport/language cases, editor/viewer, share dialog, mocked paid classification/loading/error/retry; 215 unit tests; protected records/wallets/pages/shares/purchases hashes unchanged; Russian report delivered, no publication.
+- [ ] Physical devices, Safari/Edge and full ZIP/paid purchase acceptance: unavailable devices; real payments/download not run in this read-only task.
+
 # PVG atomic final payment
 - [x] Trace existing debit, job creation, provider submission and refund paths.
 - [x] Secure atomic paid jobs, stable retries, provider uncertainty and linked refunds without changing prices or attempts.

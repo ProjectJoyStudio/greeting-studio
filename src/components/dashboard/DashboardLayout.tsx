@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   UserRound,
@@ -36,9 +36,10 @@ const items = [
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { t } = useI18n();
+  const memoryBooksSection = useLocation({ select: (location) => location.pathname.startsWith("/dashboard/memory-books") });
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      <Header compactNavigation={memoryBooksSection} />
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-5 py-8 lg:flex-row lg:px-8">
         <aside className="w-full shrink-0 lg:w-60">
           <nav className="rounded-2xl border border-border/60 bg-card/70 p-2 backdrop-blur">

@@ -18,7 +18,7 @@ const OCCASIONS_MENU: NavLeaf[] = [
   { to: "/calendar", key: "nav_calendar" },
 ];
 
-export function Header() {
+export function Header({ compactNavigation = false }: { compactNavigation?: boolean }) {
   const { t } = useI18n();
   const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -60,7 +60,7 @@ export function Header() {
 
         <nav
           ref={wrapperRef}
-          className="ml-2 hidden flex-1 items-center gap-0.5 lg:flex xl:gap-1"
+          className={`ml-2 hidden flex-1 items-center gap-0.5 xl:gap-1 ${compactNavigation ? "2xl:flex" : "lg:flex"}`}
         >
           <TopLink to="/" exact>
             {t("nav_home")}
@@ -110,7 +110,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-border/70 lg:hidden"
+            className={`grid h-9 w-9 place-items-center rounded-full border border-border/70 ${compactNavigation ? "2xl:hidden" : "lg:hidden"}`}
             aria-label={t("menu_open")}
           >
             {mobileOpen ? (
@@ -123,7 +123,7 @@ export function Header() {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-border/60 bg-background/95 lg:hidden">
+        <div className={`border-t border-border/60 bg-background/95 ${compactNavigation ? "2xl:hidden" : "lg:hidden"}`}>
           <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4">
             <MobileLink to="/" onNav={() => setMobileOpen(false)} exact>
               {t("nav_home")}

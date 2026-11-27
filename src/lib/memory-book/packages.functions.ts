@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { purchasedStorageExpiry } from "./dashboard-classification";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -14,6 +15,8 @@ import {
 
 export interface MemoryBookProject {
   id: string;
+  /** Confirmed purchase ledger, never inferred from included retention. */
+  purchasedStorageExpiresAt?: string | null;
   packageCode: string;
   leaves: number;
   internalPages: number;
@@ -32,16 +35,26 @@ export interface MemoryBookProject {
 /** The customer's own purchased Memory Books, newest first. */
 export const listMemoryBooks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ books: MemoryBookProject[] }> => {
-    const { data } = await context.supabase
+  .handler(async ({ context }): Promise<{ books: MemoryBookProject[]; storageEvidenceUnavailable: boolean }> => {
+    const { data, error } = await context.supabase
       .from("memory_book_projects")
       .select("id, package_code, leaves, internal_pages, video_capacity, credits_spent, status, expires_at, created_at, completed_at, retention_expires_at, last_view, last_page")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
+    if (error) throw new Error("memory_book_list_failed");
     const rows = (data ?? []) as Record<string, unknown>[];
+    const { data: purchases, error: purchaseError } = await context.supabase
+      .from("memory_book_storage_purchases")
+      .select("book_id, service, new_expires_at")
+      .eq("user_id", context.userId)
+      .eq("service", "completed");
     return {
+      storageEvidenceUnavailable: Boolean(purchaseError),
       books: rows.map((r) => ({
         id: String(r.id),
+        purchasedStorageExpiresAt: purchaseError ? null : purchasedStorageExpiry(
+          (purchases ?? []).filter((p) => p.book_id === r.id),
+        ),
         packageCode: String(r.package_code),
         leaves: Number(r.leaves ?? 0),
         internalPages: Number(r.internal_pages ?? 0),
