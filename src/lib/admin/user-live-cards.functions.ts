@@ -1,6 +1,7 @@
 // Administration view of every finished Live Greeting Card on the platform.
 
 import { createServerFn } from "@tanstack/react-start";
+import { parseManualInput as parseManualInputSync } from "@/lib/cleanup/manual-input";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -185,15 +186,14 @@ export const adminRestoreLiveGreeting = createServerFn({ method: "POST" })
 /** Irreversible removal — only allowed once the retention period has expired. */
 export const adminPurgeLiveGreeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { animationId: string }) => {
+  .inputValidator((input: { animationId: string; confirm: string; allowBeforeRetention?: boolean }) => {
     if (!input?.animationId) throw new Error("animationId is required");
-    return { animationId: input.animationId };
+    return { animationId: input.animationId, ...parseManualInputSync(input) };
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { getAdmin, purgeLiveAnimationCompletely, recordAdminAction } = await import(
-      "./deleted-cards.server"
-    );
+    const { getAdmin } = await import("./deleted-cards.server");
+    const { adminManualPurge } = await import("@/lib/cleanup/manual.server");
     const supabaseAdmin = await getAdmin();
 
     const { data: row } = await supabaseAdmin
@@ -202,21 +202,16 @@ export const adminPurgeLiveGreeting = createServerFn({ method: "POST" })
       .eq("id", data.animationId)
       .maybeSingle();
     if (!row) throw new Error("animation_not_found");
-    if (!row.deleted_at) throw new Error("not_deleted");
-    if (row.purge_after && new Date(row.purge_after).getTime() > Date.now()) {
-      throw new Error("retention_active");
-    }
-
-    await purgeLiveAnimationCompletely(row.id);
-    await recordAdminAction({
+    // This page never allowed early removal; keep that rule.
+    return adminManualPurge({
+      type: "live_animation",
+      id: row.id,
       actorUserId: context.userId,
-      action: "live_greeting.purged",
-      entityType: "live_card_animation",
-      entityId: row.id,
       affectedUserId: row.user_id,
-      previous: { prompt: row.prompt, deleted_at: row.deleted_at },
+      allowBeforeRetention: false,
+      auditAction: "live_greeting.purged",
+      auditEntityType: "live_card_animation",
     });
-    return { ok: true };
   });
 
 /**

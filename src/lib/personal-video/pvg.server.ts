@@ -273,14 +273,18 @@ export async function collectProjectFiles(
   projectId: string,
 ): Promise<Array<{ bucket: string; path: string; role: string }>> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [{ data: people, error: e1 }, { data: scenes, error: e2 }] = await Promise.all([
+  const [{ data: people, error: e1 }, { data: scenes, error: e2 }, { data: videos, error: e3 }, { data: voiceovers, error: e4 }, { data: recordings, error: e5 }] = await Promise.all([
     supabaseAdmin
       .from("pvg_people")
-      .select("optimized_bucket, optimized_path, original_bucket, original_path, extra_photos")
+      .select("optimized_bucket, optimized_path, original_bucket, original_path, extra_photos, recording_bucket, recording_path")
       .eq("project_id", projectId),
     supabaseAdmin.from("pvg_scenes").select("storage_bucket, storage_path").eq("project_id", projectId),
+    supabaseAdmin.from("pvg_videos").select("storage_bucket, storage_path, mix_storage_path, silent_bucket, silent_path").eq("project_id", projectId),
+    supabaseAdmin.from("pvg_voiceovers").select("storage_bucket, storage_path").eq("project_id", projectId),
+    supabaseAdmin.from("pvg_voice_recordings").select("original_bucket, original_path, processed_bucket, processed_path, enhanced_bucket, enhanced_path").eq("project_id", projectId),
   ]);
-  if (e1 || e2) throw new Error((e1 ?? e2)!.message);
+  const err = e1 ?? e2 ?? e3 ?? e4 ?? e5;
+  if (err) throw new Error(err.message);
   const out: Array<{ bucket: string; path: string; role: string }> = [];
   const add = (bucket: unknown, path: unknown, role: string) => {
     if (typeof bucket === "string" && bucket && typeof path === "string" && path) out.push({ bucket, path, role });
@@ -299,6 +303,18 @@ export async function collectProjectFiles(
     }
   }
   for (const row of (scenes ?? []) as Array<Record<string, unknown>>) add(row["storage_bucket"], row["storage_path"], "scene");
+  for (const row of (people ?? []) as Array<Record<string, unknown>>) add(row["recording_bucket"], row["recording_path"], "person_recording");
+  for (const row of (videos ?? []) as Array<Record<string, unknown>>) {
+    add(row["storage_bucket"], row["storage_path"], "final_video");
+    add(row["storage_bucket"], row["mix_storage_path"], "final_video_mix");
+    add(row["silent_bucket"], row["silent_path"], "video_silent");
+  }
+  for (const row of (voiceovers ?? []) as Array<Record<string, unknown>>) add(row["storage_bucket"], row["storage_path"], "voiceover");
+  for (const row of (recordings ?? []) as Array<Record<string, unknown>>) {
+    add(row["original_bucket"], row["original_path"], "voice_recording_original");
+    add(row["processed_bucket"], row["processed_path"], "voice_recording_processed");
+    add(row["enhanced_bucket"], row["enhanced_path"], "voice_recording_enhanced");
+  }
   return out;
 }
 
@@ -318,17 +334,6 @@ export async function cancelRunningScenes(projectId: string): Promise<void> {
   }
 }
 
-/** Administrator-initiated immediate removal (not the automatic cleanup). */
-export async function purgeProjectFiles(projectId: string): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const files = await collectProjectFiles(projectId);
-  await cancelRunningScenes(projectId);
-  const byBucket = new Map<string, string[]>();
-  for (const f of files) byBucket.set(f.bucket, [...(byBucket.get(f.bucket) ?? []), f.path]);
-  for (const [bucket, paths] of byBucket) {
-    if (paths.length > 0) await supabaseAdmin.storage.from(bucket).remove(paths);
-  }
-}
 
 export async function reconcilePendingScenes(limit = 40): Promise<{ checked: number }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

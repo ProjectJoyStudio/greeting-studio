@@ -21,6 +21,11 @@ export interface CleanupOperationRow {
   lastError: string | null;
   isTest: boolean;
   purgeAfter: string | null;
+  triggerKind: "automatic" | "manual";
+  initiatedBy: string | null;
+  initiatedByName: string | null;
+  reason: string;
+  createdAt: string | null;
 }
 export interface CleanupSummary {
   verified: number;
@@ -77,8 +82,19 @@ export const listCleanupOperations = createServerFn({ method: "POST" })
     const by = (s: string[]) => list.filter((r) => s.includes(String(r["status"]))).length;
     const maxOf = (k: string, pick: (a: string, b: string) => boolean) =>
       list.map((r) => r[k] as string | null).filter((x): x is string => !!x).reduce<string | null>((a, b) => (a === null || pick(b, a) ? b : a), null);
+    const actorIds = [...new Set(((rows ?? []) as Record<string, unknown>[]).map((r) => r["initiated_by"]).filter((x): x is string => typeof x === "string"))];
+    const names = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const { data: profs } = await sb.from("profiles").select("id, display_name").in("id", actorIds);
+      for (const p of (profs ?? []) as Array<{ id: string; display_name: string | null }>) if (p.display_name) names.set(p.id, p.display_name);
+    }
     return {
       rows: ((rows ?? []) as Record<string, unknown>[]).map((r) => ({
+        triggerKind: r["trigger_kind"] === "manual" ? ("manual" as const) : ("automatic" as const),
+        initiatedBy: (r["initiated_by"] as string | null) ?? null,
+        initiatedByName: typeof r["initiated_by"] === "string" ? (names.get(r["initiated_by"]) ?? null) : null,
+        reason: String(r["reason"] ?? ""),
+        createdAt: (r["created_at"] as string | null) ?? null,
         id: String(r["id"]),
         entityType: String(r["entity_type"]),
         entityId: String(r["entity_id"]),

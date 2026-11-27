@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Play, RotateCcw, Send, Trash2, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
+import { ManualPurgeDialog, useManualPurgeMessages } from "@/components/admin/cleanup/ManualPurgeDialog";
 
 import { useI18n } from "@/lib/i18n";
 import {
@@ -64,10 +65,17 @@ export function UserLiveCardsPage() {
     onSuccess: () => done(t("ulc_restored_toast")),
     onError: fail,
   });
+  const mp = useManualPurgeMessages();
   const purge = useMutation({
-    mutationFn: (id: string) => purgeRow({ data: { animationId: id } }),
-    onSuccess: () => done(t("ulc_purged_toast")),
-    onError: fail,
+    mutationFn: (v: { id: string; confirm: string; allowBeforeRetention: boolean }) =>
+      purgeRow({ data: { animationId: v.id, confirm: v.confirm } }),
+    onSuccess: (r) => {
+      mp.report(r);
+      setOpen(null);
+      setConfirmPurge(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-user-live-cards"] });
+    },
+    onError: (e) => mp.error(e),
   });
   const deliver = useMutation({
     mutationFn: (vars: { id: string; email: string }) =>
@@ -297,31 +305,13 @@ export function UserLiveCardsPage() {
       )}
 
       {confirmPurge && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-5 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-xl">
-            <h3 className="font-[Fraunces] text-lg font-semibold text-foreground">
-              {t("ulc_purge_confirm_title")}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">{t("ulc_purge_confirm_desc")}</p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmPurge(null)}
-                className="rounded-full border border-border/60 px-5 py-2.5 text-sm hover:bg-secondary"
-              >
-                {t("ulc_cancel")}
-              </button>
-              <button
-                type="button"
-                disabled={purge.isPending}
-                onClick={() => purge.mutate(confirmPurge.id)}
-                className="rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
-              >
-                {t("ulc_purge")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ManualPurgeDialog
+          purgeAfter={confirmPurge.purge_after}
+          allowEarly={false}
+          pending={purge.isPending}
+          onCancel={() => setConfirmPurge(null)}
+          onConfirm={(input) => purge.mutate({ id: confirmPurge.id, ...input })}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Eye, Loader2, RotateCcw, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { ManualPurgeDialog, useManualPurgeMessages } from "@/components/admin/cleanup/ManualPurgeDialog";
 
 import { useI18n } from "@/lib/i18n";
 import { countdown, PVG_RETENTION_OPTIONS, PVG_STATUS_KEY, normalizeStatus } from "@/lib/personal-video/order";
@@ -61,15 +62,16 @@ export function DeletedVideoDraftsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
   });
 
+  const mp = useManualPurgeMessages();
   const purgeM = useMutation({
-    mutationFn: (projectId: string) => purge({ data: { projectId } }),
-    onSuccess: () => {
-      toast.success(t("pvo_purged_toast"));
+    mutationFn: (v: { id: string; confirm: string; allowBeforeRetention: boolean }) =>
+      purge({ data: { projectId: v.id, confirm: v.confirm, allowBeforeRetention: v.allowBeforeRetention } }),
+    onSuccess: (r) => {
+      if (mp.report(r)) setDetail(null);
       setConfirmPurge(null);
-      setDetail(null);
       invalidate();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+    onError: (e) => mp.error(e),
   });
 
   const retentionM = useMutation({
@@ -301,29 +303,13 @@ export function DeletedVideoDraftsPage() {
       )}
 
       {confirmPurge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-5 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card p-6 shadow-warm">
-            <p className="text-sm text-muted-foreground">{t("pvo_confirm_purge")}</p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmPurge(null)}
-                className="rounded-full border border-border/60 px-5 py-2.5 text-sm transition hover:bg-secondary"
-              >
-                {t("pvo_cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => purgeM.mutate(confirmPurge.id)}
-                disabled={purgeM.isPending}
-                className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground disabled:opacity-60"
-              >
-                {purgeM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {t("pvo_purge")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ManualPurgeDialog
+          purgeAfter={confirmPurge.purgeAfter}
+          allowEarly={true}
+          pending={purgeM.isPending}
+          onCancel={() => setConfirmPurge(null)}
+          onConfirm={(input) => purgeM.mutate({ id: confirmPurge.id, ...input })}
+        />
       )}
     </div>
   );

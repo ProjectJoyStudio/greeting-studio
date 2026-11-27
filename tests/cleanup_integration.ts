@@ -139,7 +139,7 @@ const fo = await card({ deleted: true, purgeAfter: past, path: foreign });
 await runCleanup(await serverDeps({ onlyIds: [sh, fo] }), ["card"]);
 const sharedStatus = (await objs(sh))[0]?.status;
 const foreignStatus = (await objs(fo))[0]?.status;
-check("14 shared/unrelated objects not deleted", sharedStatus === "PROTECTED_RETAINED" && foreignStatus === "PROTECTED_RETAINED" && (await exists(kS)) && (await exists(foreign)) && (await rowExists(keeper)), `${sharedStatus}/${foreignStatus}`);
+check("14 shared/unrelated objects not deleted", sharedStatus === "PROTECTED_RETAINED" && foreignStatus === "NEEDS_REVIEW" && (await exists(kS)) && (await exists(foreign)) && (await rowExists(keeper)), `${sharedStatus}/${foreignStatus}`);
 await supabaseAdmin.storage.from(BUCKET).remove([foreign]);
 
 // 15 customers cannot read or write audit records (anon + REST)

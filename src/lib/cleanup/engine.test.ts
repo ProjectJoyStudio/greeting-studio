@@ -185,9 +185,55 @@ describe("verified cleanup", () => {
   it("14 out-of-scope and shared files are never deleted", async () => {
     const other = "22222222-2222-2222-2222-222222222222/x.jpg";
     const w = world({ files: [K("shared"), other], refs: (k) => (k === K("shared") ? 1 : 0) });
+    // Another owner's folder inside the product bucket is ambiguous: kept and escalated.
+    expect(await runEntity(w.deps, "card", "e1")).toBe("NOT_VERIFIED");
+    expect(w.removed).toEqual([]);
+    expect(w.objects().map((o) => o.status)).toEqual(["PROTECTED_RETAINED", "NEEDS_REVIEW"]);
+    expect(w.finalized()).toBe(0);
+  });
+  it("14b library/other-product buckets are protected without deletion", async () => {
+    const w = world({ files: [K("lib")], bucket: "music-library" });
     expect(await runEntity(w.deps, "card", "e1")).toBe("COMPLETED");
     expect(w.removed).toEqual([]);
-    expect(w.objects().every((o) => o.status === "PROTECTED_RETAINED")).toBe(true);
+    expect(w.objects()[0]?.status).toBe("PROTECTED_RETAINED");
+  });
+  it("final PVG videos, voice-overs and recordings are cleanable for the owner", () => {
+    for (const b of ["generated-videos", "generated-audio", "voice-samples"]) expect(inScope("pvg_project", OWNER, b, K("v"))).toBe(true);
+    expect(inScope("live_animation", OWNER, "live-greeting-card-videos", K("final"))).toBe(true);
+  });
+  it("manual: item not in recycle bin is refused", async () => {
+    const w = world({ entity: { deletedAt: null, purgeAfter: null }, files: [K("a")] });
+    expect(await runEntity(w.deps, "card", "e1", { actorUserId: "adm", allowBeforeRetention: true })).toBe("REFUSED_NOT_IN_TRASH");
+    expect(w.removed).toEqual([]);
+  });
+  it("manual: within retention needs explicit confirmation", async () => {
+    const w = world({ entity: { purgeAfter: FUTURE }, files: [K("a")] });
+    expect(await runEntity(w.deps, "card", "e1", { actorUserId: "adm", allowBeforeRetention: false })).toBe("REFUSED_RETENTION");
+    expect(w.files.has(K("a"))).toBe(true);
+    expect(await runEntity(w.deps, "card", "e1", { actorUserId: "adm", allowBeforeRetention: true })).toBe("COMPLETED");
+    expect(w.objects()[0]?.status).toBe("VERIFIED_DELETED");
+  });
+  it("manual: active customer rights block deletion", async () => {
+    const w = world({ files: [K("a")] });
+    w.deps.activeRightsBlock = async () => "shared_link_active";
+    expect(await runEntity(w.deps, "live_animation", "e1", { actorUserId: "adm", allowBeforeRetention: true })).toBe("REFUSED_ACTIVE");
+    expect(w.removed).toEqual([]);
+  });
+  it("manual: administrator may retry an escalated failure; scheduler may not", async () => {
+    let fail = true;
+    const w = world({ files: [K("a")], remove: () => (fail ? { ok: false, listed: false, status: 403 } : { ok: true, listed: true }) });
+    expect(await runEntity(w.deps, "card", "e1")).toBe("FAILED");
+    fail = false;
+    expect(await runEntity(w.deps, "card", "e1")).toBe("SKIPPED");
+    expect(await runEntity(w.deps, "card", "e1", { actorUserId: "adm", allowBeforeRetention: false })).toBe("COMPLETED");
+    expect(w.finalized()).toBe(1);
+  });
+  it("manual: concurrent requests — one runs, the other is told it is busy", async () => {
+    const w = world({ files: [K("a")] });
+    const m = { actorUserId: "adm", allowBeforeRetention: false };
+    const r = await Promise.all([runEntity(w.deps, "card", "e1", m), runEntity(w.deps, "card", "e1", m)]);
+    expect(r.sort()).toEqual(["BUSY", "COMPLETED"]);
+    expect(w.removed.length).toBe(1);
   });
   it("cancelled deletion during run stops before further deletes", async () => {
     const w = world({ files: [K("a"), K("b")] });

@@ -5,6 +5,9 @@
 // is verified deleted, verified absent, or protected because something else
 // still needs it.
 
+/** Bump when cleanup behaviour changes; exposed by the scheduler endpoint to verify deployments. */
+export const CLEANUP_ENGINE_VERSION = "verified-2026-11-27-manual-final-outputs";
+
 export type EntityType = "card" | "live_card" | "live_animation" | "pvg_project";
 export const ENTITY_TYPES: EntityType[] = ["card", "live_card", "live_animation", "pvg_project"];
 
@@ -16,7 +19,9 @@ export type ObjectStatus =
   | "PROTECTED_RETAINED"
   | "RETRY_REQUIRED"
   | "FAILED"
-  | "NOT_VERIFIED";
+  | "NOT_VERIFIED"
+  /** Ownership/location is ambiguous: never deleted, escalated to administrators. */
+  | "NEEDS_REVIEW";
 export type OperationStatus =
   | "PENDING"
   | "IN_PROGRESS"
@@ -35,7 +40,7 @@ export const ALLOWED_BUCKETS: Record<EntityType, string[]> = {
   card: ["user-greeting-cards"],
   live_card: ["live-greeting-cards", "live-greeting-card-videos"],
   live_animation: ["live-greeting-card-videos"],
-  pvg_project: ["pvg-photos", "pvg-scenes"],
+  pvg_project: ["pvg-photos", "pvg-scenes", "generated-videos", "generated-audio", "voice-samples"],
 };
 
 export interface EntityState {
@@ -89,14 +94,16 @@ export interface CleanupDeps {
   loadEntity(type: EntityType, id: string): Promise<EntityState | null>;
   planObjects(type: EntityType, id: string): Promise<PlannedObject[]>;
   beforeDelete?(type: EntityType, id: string): Promise<void>;
+  /** Manual deletion only: returns a reason when the customer still has active rights. */
+  activeRightsBlock?(type: EntityType, id: string): Promise<string | null>;
   finalize(type: EntityType, id: string): Promise<void>;
   present(bucket: string, key: string): Promise<Presence>;
   remove(bucket: string, key: string): Promise<RemoveResult>;
   referenceCount(bucket: string, key: string, type: EntityType, id: string): Promise<number>;
   store: {
     getOperation(type: EntityType, id: string): Promise<OperationRow | null>;
-    createOperation(type: EntityType, entity: EntityState): Promise<OperationRow>;
-    resetOperation(opId: string, entity: EntityState): Promise<void>;
+    createOperation(type: EntityType, entity: EntityState, manual?: ManualRequest): Promise<OperationRow>;
+    resetOperation(opId: string, entity: EntityState, manual?: ManualRequest): Promise<void>;
     claim(opId: string, token: string): Promise<boolean>;
     finishOperation(opId: string, token: string, patch: OperationPatch): Promise<void>;
     upsertObjects(op: OperationRow, entity: EntityState, objects: PlannedObject[], eligibility: Record<string, unknown>): Promise<void>;
@@ -167,8 +174,13 @@ export async function processObject(
     return { status, attempt, apiResult, verification, error, nextAttemptAt: new Date(now.getTime() + backoffMs(attempt)).toISOString() };
   };
 
+  if (!ALLOWED_BUCKETS[type].includes(obj.bucket)) {
+    // Libraries, templates and other products' buckets are never touched.
+    return { status: "PROTECTED_RETAINED", attempt, apiResult: "not_called", verification: "bucket_not_owned_by_product", error: null, nextAttemptAt: null };
+  }
   if (!inScope(type, entity.ownerUserId, obj.bucket, obj.key)) {
-    return { status: "PROTECTED_RETAINED", attempt, apiResult: "not_called", verification: "out_of_scope", error: null, nextAttemptAt: null };
+    // A product bucket, but not this owner's folder: ambiguous, ask an administrator.
+    return { status: "NEEDS_REVIEW", attempt, apiResult: "not_called", verification: "owner_folder_mismatch", error: null, nextAttemptAt: null };
   }
   let refs: number;
   try {
@@ -226,26 +238,53 @@ export interface RunSummary {
 }
 
 /** Runs one cleanup pass over one item. Returns its resulting status, or null when skipped. */
-export async function runEntity(deps: CleanupDeps, type: EntityType, id: string): Promise<OperationStatus | "SKIPPED"> {
+export interface ManualRequest {
+  actorUserId: string;
+  /** Administrator explicitly confirmed removal before the retention date. */
+  allowBeforeRetention: boolean;
+}
+export type RunResult = OperationStatus | "SKIPPED" | "REFUSED_NOT_IN_TRASH" | "REFUSED_RETENTION" | "REFUSED_ACTIVE" | "BUSY";
+
+/** Manual eligibility: only items in the recycle bin; early removal needs explicit confirmation. */
+export function manualEligibility(e: EntityState | null, now: Date, allowEarly: boolean): "ok" | "REFUSED_NOT_IN_TRASH" | "REFUSED_RETENTION" {
+  if (!e || !e.deletedAt || e.permanentlyDeleted) return "REFUSED_NOT_IN_TRASH";
+  if (isEligible(e, now)) return "ok";
+  return allowEarly ? "ok" : "REFUSED_RETENTION";
+}
+
+export async function runEntity(deps: CleanupDeps, type: EntityType, id: string, manual?: ManualRequest): Promise<RunResult> {
   const now = deps.now();
   const entity = await deps.loadEntity(type, id);
   let op = await deps.store.getOperation(type, id);
-  if (!isEligible(entity, now) || !entity) {
+  const eligible = (e: EntityState | null, at: Date) =>
+    manual ? manualEligibility(e, at, manual.allowBeforeRetention) === "ok" : isEligible(e, at);
+  if (manual) {
+    const m = manualEligibility(entity, now, manual.allowBeforeRetention);
+    if (m !== "ok") return m;
+    const block = deps.activeRightsBlock ? await deps.activeRightsBlock(type, id) : null;
+    if (block) return "REFUSED_ACTIVE";
+  } else if (!isEligible(entity, now)) {
     return "SKIPPED";
   }
+  if (!entity) return "SKIPPED";
   if (!op) {
-    op = await deps.store.createOperation(type, entity);
-  } else if (op.status === "COMPLETED" || op.status === "FAILED" || op.status === "NOT_VERIFIED") {
-    // Terminal: escalated to administrators, never retried automatically.
+    op = await deps.store.createOperation(type, entity, manual);
+  } else if (op.status === "COMPLETED") {
     return "SKIPPED";
+  } else if (op.status === "FAILED" || op.status === "NOT_VERIFIED") {
+    // Terminal for the scheduler; only an administrator may retry it.
+    if (!manual) return "SKIPPED";
+    await deps.store.resetOperation(op.id, entity, manual);
   } else if (op.status === "CANCELLED" || !sameInstant(op.deletedAtSnapshot, entity.deletedAt)) {
-    await deps.store.resetOperation(op.id, entity);
+    await deps.store.resetOperation(op.id, entity, manual);
+  } else if (manual) {
+    await deps.store.resetOperation(op.id, entity, manual);
   } else if (!isDue(op.nextAttemptAt, now)) {
     return "SKIPPED";
   }
 
   const token = deps.newToken();
-  if (!(await deps.store.claim(op.id, token))) return "SKIPPED";
+  if (!(await deps.store.claim(op.id, token))) return manual ? "BUSY" : "SKIPPED";
 
   let lastError: string | null = null;
   try {
@@ -255,18 +294,27 @@ export async function runEntity(deps: CleanupDeps, type: EntityType, id: string)
       deleted_at: entity.deletedAt,
       purge_after: entity.purgeAfter,
       checked_at: now.toISOString(),
-      rule: "deleted_at set and purge_after reached",
+      rule: manual
+        ? isEligible(entity, now)
+          ? "manual: in recycle bin, purge_after reached"
+          : "manual: in recycle bin, administrator confirmed removal before purge_after"
+        : "deleted_at set and purge_after reached",
+      trigger: manual ? "manual" : "automatic",
+      initiated_by: manual?.actorUserId ?? null,
     });
     const objects = await deps.store.listObjects(op.id);
     const work = objects.filter(
-      (o) => !RESOLVED.includes(o.status) && o.status !== "FAILED" && !(o.status === "NOT_VERIFIED" && !o.nextAttemptAt) && isDue(o.nextAttemptAt, now),
+      (o) =>
+        !RESOLVED.includes(o.status) &&
+        o.status !== "NEEDS_REVIEW" &&
+        (manual || (o.status !== "FAILED" && !(o.status === "NOT_VERIFIED" && !o.nextAttemptAt) && isDue(o.nextAttemptAt, now))),
     );
     if (work.length > 0 && deps.beforeDelete) await deps.beforeDelete(type, id);
 
     for (const obj of work) {
       // Revalidate against fresh authoritative state before each destructive step.
       const fresh = await deps.loadEntity(type, id);
-      if (!fresh || !isEligible(fresh, deps.now()) || !sameInstant(fresh?.deletedAt ?? null, entity.deletedAt)) {
+      if (!fresh || !eligible(fresh, deps.now()) || !sameInstant(fresh?.deletedAt ?? null, entity.deletedAt)) {
         await deps.store.finishOperation(op.id, token, {
           status: "CANCELLED",
           nextAttemptAt: null,
@@ -295,6 +343,9 @@ export async function runEntity(deps: CleanupDeps, type: EntityType, id: string)
         lastError = sanitize(`finalize: ${(e as Error).message}`);
         next = new Date(deps.now().getTime() + backoffMs(1)).toISOString();
       }
+    } else if (final.some((o) => o.status === "NEEDS_REVIEW")) {
+      status = "NOT_VERIFIED";
+      lastError = "needs_admin_review: ambiguous file ownership";
     } else if (final.some((o) => o.status === "FAILED")) {
       status = "FAILED";
       lastError = "one or more files failed";

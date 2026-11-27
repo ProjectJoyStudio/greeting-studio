@@ -1,6 +1,7 @@
 // Real dependencies for the verified cleanup engine: Lovable Cloud storage,
 // the authoritative storage metadata check and the server-only audit tables.
 import type {
+  ManualRequest,
   CleanupDeps,
   EntityState,
   EntityType,
@@ -9,7 +10,7 @@ import type {
   PlannedObject,
   Presence,
 } from "./engine";
-import { LEASE_SECONDS, runCleanup } from "./engine";
+import { LEASE_SECONDS, runCleanup, runEntity } from "./engine";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 // The audit tables are new; keep calls loosely typed to avoid coupling.
@@ -107,10 +108,12 @@ export async function serverDeps(opts: ServerDepsOptions = {}): Promise<CleanupD
           add(data.video_storage_bucket, data.video_storage_path, "video");
         }
       } else if (type === "live_animation") {
-        const { data } = await db.from(TABLE.live_animation).select("storage_bucket, storage_path, music_storage_bucket, music_storage_path").eq("id", id).maybeSingle();
+        const { data } = await db.from(TABLE.live_animation).select("storage_bucket, storage_path, music_storage_bucket, music_storage_path, final_bucket, final_path").eq("id", id).maybeSingle();
         if (data) {
           add(data.storage_bucket, data.storage_path, "animation");
           add(data.music_storage_bucket, data.music_storage_path, "music");
+          // Delivered (finished) animation; the source image belongs to its live card and is never planned here.
+          add(data.final_bucket, data.final_path, "final_animation");
         }
       } else {
         const { collectProjectFiles } = await import("@/lib/personal-video/pvg.server");
@@ -118,6 +121,18 @@ export async function serverDeps(opts: ServerDepsOptions = {}): Promise<CleanupD
       }
       const seen = new Set<string>();
       return out.filter((o) => (seen.has(`${o.bucket}/${o.key}`) ? false : (seen.add(`${o.bucket}/${o.key}`), true)));
+    },
+    async activeRightsBlock(type, id) {
+      if (type === "live_animation") {
+        const { data } = await db.from(TABLE.live_animation).select("is_shared, scheduled_send_at, delivery_status").eq("id", id).maybeSingle();
+        if (data?.is_shared) return "shared_link_active";
+        if (data?.scheduled_send_at && Date.parse(data.scheduled_send_at) > Date.now() && data.delivery_status !== "sent") return "scheduled_delivery_pending";
+      }
+      if (type === "pvg_project") {
+        const { data } = await db.from("pvg_videos").select("id").eq("project_id", id).or("needs_review.eq.true,status.in.(pending,processing)").limit(1);
+        if ((data ?? []).length > 0) return "video_job_unresolved";
+      }
+      return null;
     },
     async beforeDelete(type, id) {
       if (type === "pvg_project") {
@@ -161,16 +176,16 @@ export async function serverDeps(opts: ServerDepsOptions = {}): Promise<CleanupD
         if (error) throw new Error(error.message);
         return data ? opFromRow(data) : null;
       },
-      async createOperation(type, e) {
-        const row = { entity_type: type, entity_id: e.id, owner_user_id: e.ownerUserId, deleted_at_snapshot: e.deletedAt, purge_after_snapshot: e.purgeAfter, is_test: !!opts.onlyIds };
+      async createOperation(type, e, manual) {
+        const row = { entity_type: type, entity_id: e.id, owner_user_id: e.ownerUserId, deleted_at_snapshot: e.deletedAt, purge_after_snapshot: e.purgeAfter, is_test: !!opts.onlyIds, ...manualMeta(e, manual) };
         await db.from("cleanup_operations").upsert(row, { onConflict: "entity_type,entity_id", ignoreDuplicates: true });
         const op = await deps.store.getOperation(type, e.id);
         if (!op) throw new Error("operation not created");
         return op;
       },
-      async resetOperation(opId, e) {
+      async resetOperation(opId, e, manual) {
         await must(
-          db.from("cleanup_operations").update({ status: "PENDING", next_attempt_at: null, last_error: null, deleted_at_snapshot: e.deletedAt, purge_after_snapshot: e.purgeAfter, updated_at: new Date().toISOString() }).eq("id", opId).is("lease_token", null),
+          db.from("cleanup_operations").update({ status: "PENDING", next_attempt_at: null, last_error: null, deleted_at_snapshot: e.deletedAt, purge_after_snapshot: e.purgeAfter, updated_at: new Date().toISOString(), ...(manual ? manualMeta(e, manual) : {}) }).eq("id", opId).is("lease_token", null),
         );
       },
       async claim(opId, token) {
@@ -238,6 +253,17 @@ export async function serverDeps(opts: ServerDepsOptions = {}): Promise<CleanupD
     },
   };
   return deps;
+}
+
+function manualMeta(e: EntityState, manual?: ManualRequest) {
+  if (!manual) return { trigger_kind: "automatic", reason: "retention_expired" };
+  const early = !e.purgeAfter || Date.parse(e.purgeAfter) > Date.now();
+  return { trigger_kind: "manual", initiated_by: manual.actorUserId, manual_early: early, reason: early ? "admin_manual_before_retention" : "admin_manual" };
+}
+
+/** Administrator-initiated permanent deletion through the same verified engine. */
+export async function runManualCleanup(type: EntityType, id: string, manual: ManualRequest, opts: ServerDepsOptions = {}) {
+  return runEntity(await serverDeps(opts), type, id, manual);
 }
 
 async function must(p: PromiseLike<{ error: { message: string } | null }>) {

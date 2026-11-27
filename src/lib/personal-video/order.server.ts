@@ -35,24 +35,6 @@ export async function writeRetentionDays(days: number, actorUserId: string): Pro
   return value;
 }
 
-/**
- * Removes every file and record of one order for good. Financial history is
- * never touched and the order id stays as a permanently deleted marker.
- */
-export async function purgePvgProjectCompletely(projectId: string): Promise<boolean> {
-  const supabaseAdmin = await getAdmin();
-  const { data: project } = await supabaseAdmin
-    .from("pvg_projects")
-    .select("id, user_id, permanently_deleted")
-    .eq("id", projectId)
-    .maybeSingle();
-  if (!project || project.permanently_deleted) return false;
-
-  const { purgeProjectFiles } = await import("./pvg.server");
-  await purgeProjectFiles(projectId);
-  await finalizePvgProjectRecord(projectId);
-  return true;
-}
 
 /**
  * Removes the order's records once its files are gone. Financial history is
@@ -60,7 +42,15 @@ export async function purgePvgProjectCompletely(projectId: string): Promise<bool
  */
 export async function finalizePvgProjectRecord(projectId: string): Promise<void> {
   const supabaseAdmin = await getAdmin();
-  for (const table of ["pvg_scenes", "pvg_people", "pvg_project_versions"] as const) {
+  // Payment rows (pvg_videos) are kept as financial history; only their file pointers are cleared.
+  {
+    const { error } = await supabaseAdmin
+      .from("pvg_videos")
+      .update({ storage_path: null, mix_storage_path: null, silent_path: null } as never)
+      .eq("project_id", projectId);
+    if (error) throw new Error(error.message);
+  }
+  for (const table of ["pvg_voiceovers", "pvg_voice_recordings", "pvg_scenes", "pvg_people", "pvg_project_versions"] as const) {
     const { error } = await supabaseAdmin.from(table).delete().eq("project_id", projectId);
     if (error) throw new Error(error.message);
   }
@@ -79,24 +69,6 @@ export async function finalizePvgProjectRecord(projectId: string): Promise<void>
   if (error) throw new Error(error.message);
 }
 
-/** Legacy unverified clean-up; the scheduler now uses the verified engine. */
-/** Scheduled clean-up of every order whose retention window has passed. */
-export async function purgeExpiredPvgProjects(): Promise<{ purged: number }> {
-  const supabaseAdmin = await getAdmin();
-  const { data: rows } = await supabaseAdmin
-    .from("pvg_projects")
-    .select("id")
-    .not("deleted_at", "is", null)
-    .eq("permanently_deleted", false)
-    .lte("purge_after", new Date().toISOString())
-    .limit(200);
-
-  let purged = 0;
-  for (const row of rows ?? []) {
-    if (await purgePvgProjectCompletely(row.id)) purged += 1;
-  }
-  return { purged };
-}
 
 /**
  * Every successful automatic save keeps a numbered snapshot, so a failed or

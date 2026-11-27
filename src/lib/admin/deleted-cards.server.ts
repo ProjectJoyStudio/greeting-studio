@@ -23,53 +23,7 @@ export async function readRetentionDays(): Promise<number> {
   return Number.isFinite(days) && days > 0 ? Math.min(Math.round(days), 3650) : DEFAULT_RETENTION_DAYS;
 }
 
-/**
- * Removes every trace of one postcard: storage objects (artwork + rendered
- * final image), activity rows and the database record itself.
- */
-export async function purgeCardCompletely(cardId: string): Promise<boolean> {
-  const supabaseAdmin = await getAdmin();
-  const { data: card } = await supabaseAdmin
-    .from("user_greeting_cards")
-    .select("id, storage_bucket, storage_path, final_storage_bucket, final_storage_path")
-    .eq("id", cardId)
-    .maybeSingle();
-  if (!card) return false;
 
-  const byBucket = new Map<string, string[]>();
-  const push = (bucket: string | null, path: string | null) => {
-    if (!path) return;
-    const b = bucket || USER_CARD_BUCKET;
-    byBucket.set(b, [...(byBucket.get(b) ?? []), path]);
-  };
-  push(card.storage_bucket, card.storage_path);
-  push(card.final_storage_bucket, card.final_storage_path);
-
-  for (const [bucket, paths] of byBucket) {
-    await supabaseAdmin.storage.from(bucket).remove(paths);
-  }
-
-  await supabaseAdmin.from("user_card_events").delete().eq("card_id", card.id);
-  await supabaseAdmin.from("user_greeting_cards").delete().eq("id", card.id);
-  return true;
-}
-
-/** Permanently removes every postcard whose retention period has expired. */
-export async function purgeExpiredCards(): Promise<{ purged: number }> {
-  const supabaseAdmin = await getAdmin();
-  const { data: rows } = await supabaseAdmin
-    .from("user_greeting_cards")
-    .select("id")
-    .not("deleted_at", "is", null)
-    .lte("purge_after", new Date().toISOString())
-    .limit(500);
-
-  let purged = 0;
-  for (const row of rows ?? []) {
-    if (await purgeCardCompletely(row.id)) purged += 1;
-  }
-  return { purged };
-}
 
 /** Writes one administrator action into the activity log. */
 export async function recordAdminAction(input: {
@@ -97,86 +51,6 @@ export async function recordAdminAction(input: {
 // as user postcards: soft delete, retention window, permanent purge.
 // ---------------------------------------------------------------------------
 
-/** Removes one live-card source image completely (storage + record). */
-export async function purgeLiveCardCompletely(cardId: string): Promise<boolean> {
-  const supabaseAdmin = await getAdmin();
-  const { data: card } = await supabaseAdmin
-    .from("live_greeting_cards")
-    .select("id, storage_bucket, storage_path, video_storage_bucket, video_storage_path")
-    .eq("id", cardId)
-    .maybeSingle();
-  if (!card) return false;
 
-  const byBucket = new Map<string, string[]>();
-  const push = (bucket: string | null, path: string | null) => {
-    if (!bucket || !path) return;
-    byBucket.set(bucket, [...(byBucket.get(bucket) ?? []), path]);
-  };
-  push(card.storage_bucket, card.storage_path);
-  push(card.video_storage_bucket, card.video_storage_path);
-  for (const [bucket, paths] of byBucket) {
-    await supabaseAdmin.storage.from(bucket).remove(paths);
-  }
 
-  await supabaseAdmin.from("live_greeting_cards").delete().eq("id", card.id);
-  return true;
-}
 
-/** Permanently removes every live-card image whose retention period expired. */
-export async function purgeExpiredLiveCards(): Promise<{ purged: number }> {
-  const supabaseAdmin = await getAdmin();
-  const { data: rows } = await supabaseAdmin
-    .from("live_greeting_cards")
-    .select("id")
-    .not("deleted_at", "is", null)
-    .lte("purge_after", new Date().toISOString())
-    .limit(500);
-
-  let purged = 0;
-  for (const row of rows ?? []) {
-    if (await purgeLiveCardCompletely(row.id)) purged += 1;
-  }
-  return { purged };
-}
-
-/** Removes one finished live greeting card completely (video + record). */
-export async function purgeLiveAnimationCompletely(animationId: string): Promise<boolean> {
-  const supabaseAdmin = await getAdmin();
-  const { data: row } = await supabaseAdmin
-    .from("live_card_animations")
-    .select("id, storage_bucket, storage_path, music_storage_bucket, music_storage_path")
-    .eq("id", animationId)
-    .maybeSingle();
-  if (!row) return false;
-
-  const byBucket = new Map<string, string[]>();
-  const push = (bucket: string | null, path: string | null) => {
-    if (!bucket || !path) return;
-    byBucket.set(bucket, [...(byBucket.get(bucket) ?? []), path]);
-  };
-  push(row.storage_bucket, row.storage_path);
-  push(row.music_storage_bucket, row.music_storage_path);
-  for (const [bucket, paths] of byBucket) {
-    await supabaseAdmin.storage.from(bucket).remove(paths);
-  }
-
-  await supabaseAdmin.from("live_card_animations").delete().eq("id", row.id);
-  return true;
-}
-
-/** Permanently removes every live greeting card whose retention period expired. */
-export async function purgeExpiredLiveAnimations(): Promise<{ purged: number }> {
-  const supabaseAdmin = await getAdmin();
-  const { data: rows } = await supabaseAdmin
-    .from("live_card_animations")
-    .select("id")
-    .not("deleted_at", "is", null)
-    .lte("purge_after", new Date().toISOString())
-    .limit(500);
-
-  let purged = 0;
-  for (const row of rows ?? []) {
-    if (await purgeLiveAnimationCompletely(row.id)) purged += 1;
-  }
-  return { purged };
-}

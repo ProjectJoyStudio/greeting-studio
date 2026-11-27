@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { parseManualInput as parseManualInputSync } from "@/lib/cleanup/manual-input";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -340,11 +341,14 @@ export const restorePvgDraft = createServerFn({ method: "POST" })
 /** Irreversible removal of every file of the order. History is kept. */
 export const purgePvgDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { projectId: string }) => input)
+  .inputValidator((input: { projectId: string; confirm: string; allowBeforeRetention?: boolean }) => {
+    if (!input?.projectId) throw new Error("projectId is required");
+    return { projectId: input.projectId, ...parseManualInputSync(input) };
+  })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { getAdmin, purgePvgProjectCompletely } = await import("./order.server");
-    const { recordAdminAction } = await import("@/lib/admin/deleted-cards.server");
+    const { getAdmin } = await import("./order.server");
+    const { adminManualPurge } = await import("@/lib/cleanup/manual.server");
     const supabaseAdmin = await getAdmin();
 
     const { data: project } = await supabaseAdmin
@@ -355,15 +359,13 @@ export const purgePvgDraft = createServerFn({ method: "POST" })
     if (!project) throw new Error("project_not_found");
     if (!project.deleted_at) throw new Error("not_deleted");
 
-    await purgePvgProjectCompletely(project.id);
-    await recordAdminAction({
+    return adminManualPurge({
+      type: "pvg_project",
+      id: project.id,
       actorUserId: context.userId,
-      action: "pvg_draft.purged",
-      entityType: "pvg_project",
-      entityId: project.id,
       affectedUserId: project.user_id,
-      previous: { credits_charged: project.credits_charged },
-      next: { status: "permanently_deleted" },
+      allowBeforeRetention: data.allowBeforeRetention === true,
+      auditAction: "pvg_draft.purged",
+      auditEntityType: "pvg_project",
     });
-    return { ok: true as const };
   });

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { parseManualInput as parseManualInputSync } from "@/lib/cleanup/manual-input";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -113,13 +114,14 @@ export const restoreDeletedLiveCard = createServerFn({ method: "POST" })
 /** Irreversible removal of the record and every stored file. */
 export const purgeDeletedLiveCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cardId: string }) => {
+  .inputValidator((input: { cardId: string; confirm: string; allowBeforeRetention?: boolean }) => {
     if (!input?.cardId) throw new Error("cardId is required");
-    return { cardId: input.cardId };
+    return { cardId: input.cardId, ...parseManualInputSync(input) };
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { getAdmin, purgeLiveCardCompletely, recordAdminAction } = await import("./deleted-cards.server");
+    const { getAdmin } = await import("./deleted-cards.server");
+    const { adminManualPurge } = await import("@/lib/cleanup/manual.server");
     const supabaseAdmin = await getAdmin();
 
     const { data: card } = await supabaseAdmin
@@ -129,14 +131,13 @@ export const purgeDeletedLiveCard = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!card) throw new Error("card_not_found");
 
-    await purgeLiveCardCompletely(data.cardId);
-    await recordAdminAction({
+    return adminManualPurge({
+      type: "live_card",
+      id: card.id,
       actorUserId: context.userId,
-      action: "live_card_image.purged",
-      entityType: "live_greeting_card",
-      entityId: card.id,
       affectedUserId: card.user_id,
-      previous: { prompt: card.prompt },
+      allowBeforeRetention: data.allowBeforeRetention === true,
+      auditAction: "live_card_image.purged",
+      auditEntityType: "live_greeting_card",
     });
-    return { ok: true };
   });

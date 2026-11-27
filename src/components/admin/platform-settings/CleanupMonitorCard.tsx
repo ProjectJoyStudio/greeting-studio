@@ -15,7 +15,21 @@ import {
 
 type Dict = Record<string, Record<Lang, string>>;
 const T: Dict = {
-  title: { en: "Automatic file cleanup", ru: "Автоматическая очистка файлов", uk: "Автоматичне очищення файлів", pl: "Automatyczne czyszczenie plików", de: "Automatische Dateibereinigung", fr: "Nettoyage automatique des fichiers" },
+  title: { en: "File cleanup (automatic and manual)", ru: "Очистка файлов (автоматическая и ручная)", uk: "Очищення файлів (автоматичне й ручне)", pl: "Czyszczenie plików (automatyczne i ręczne)", de: "Dateibereinigung (automatisch und manuell)", fr: "Nettoyage des fichiers (automatique et manuel)" },
+  k_automatic: { en: "Automatic", ru: "Автоматически", uk: "Автоматично", pl: "Automatycznie", de: "Automatisch", fr: "Automatique" },
+  k_manual: { en: "Manual by administrator", ru: "Вручную администратором", uk: "Вручну адміністратором", pl: "Ręcznie przez administratora", de: "Manuell durch Administrator", fr: "Manuel par administrateur" },
+  by: { en: "Initiated by", ru: "Кто запустил", uk: "Хто запустив", pl: "Uruchomił", de: "Ausgelöst von", fr: "Lancé par" },
+  system: { en: "Scheduler", ru: "Планировщик", uk: "Планувальник", pl: "Harmonogram", de: "Zeitplaner", fr: "Planificateur" },
+  reasonL: { en: "Reason", ru: "Причина", uk: "Причина", pl: "Powód", de: "Grund", fr: "Motif" },
+  createdL: { en: "Started", ru: "Начато", uk: "Розпочато", pl: "Rozpoczęto", de: "Begonnen", fr: "Commencé" },
+  protectedL: { en: "Kept", ru: "Сохранено", uk: "Збережено", pl: "Zachowane", de: "Behalten", fr: "Conservés" },
+  unresolvedL: { en: "Unresolved", ru: "Не решено", uk: "Не вирішено", pl: "Nierozwiązane", de: "Offen", fr: "Non résolus" },
+  r_retention_expired: { en: "Retention period ended", ru: "Истёк срок хранения", uk: "Сплив термін зберігання", pl: "Upłynął okres przechowywania", de: "Aufbewahrungsfrist abgelaufen", fr: "Période de conservation écoulée" },
+  r_admin_manual: { en: "Administrator, after retention period", ru: "Администратор, после срока хранения", uk: "Адміністратор, після терміну зберігання", pl: "Administrator, po okresie przechowywania", de: "Administrator, nach Fristablauf", fr: "Administrateur, après la période" },
+  r_admin_manual_before_retention: { en: "Administrator, confirmed before retention ended", ru: "Администратор, подтверждено до окончания срока", uk: "Адміністратор, підтверджено до завершення терміну", pl: "Administrator, potwierdzone przed końcem okresu", de: "Administrator, vor Fristablauf bestätigt", fr: "Administrateur, confirmé avant la fin" },
+  s_NEEDS_REVIEW: { en: "Needs administrator review — not deleted", ru: "Требует проверки администратором — не удалён", uk: "Потребує перевірки адміністратором — не видалено", pl: "Wymaga sprawdzenia przez administratora — nie usunięto", de: "Prüfung durch Administrator nötig — nicht gelöscht", fr: "À examiner par un administrateur — non supprimé" },
+  v_owner_folder_mismatch: { en: "Not in the owner's folder — kept for review", ru: "Не в папке владельца — сохранён для проверки", uk: "Не в теці власника — збережено для перевірки", pl: "Poza folderem właściciela — zachowany do sprawdzenia", de: "Nicht im Ordner des Eigentümers — zur Prüfung behalten", fr: "Hors du dossier du propriétaire — conservé pour examen" },
+  v_bucket_not_owned_by_product: { en: "Shared library or other product — not touched", ru: "Общая библиотека или другой продукт — не тронут", uk: "Спільна бібліотека або інший продукт — не змінено", pl: "Wspólna biblioteka lub inny produkt — nietknięty", de: "Gemeinsame Bibliothek oder anderes Produkt — unberührt", fr: "Bibliothèque partagée ou autre produit — non modifié" },
   intro: {
     en: "Files of expired deleted items are removed only after each one is independently confirmed gone. This page only shows history; it never deletes or retries anything.",
     ru: "Файлы удалённых элементов с истёкшим сроком удаляются, только когда отдельная проверка подтверждает, что каждого файла больше нет. Страница только показывает историю и ничего не удаляет и не повторяет.",
@@ -76,6 +90,7 @@ const STATUS_TONE: Record<string, string> = {
   ALREADY_ABSENT_VERIFIED: "bg-primary/10 text-primary",
   FAILED: "bg-destructive/10 text-destructive",
   NOT_VERIFIED: "bg-destructive/10 text-destructive",
+  NEEDS_REVIEW: "bg-destructive/10 text-destructive",
 };
 
 const FILTERS = ["all", "open", "FAILED", "NOT_VERIFIED", "COMPLETED", "CANCELLED"] as const;
@@ -204,13 +219,18 @@ export function CleanupMonitorCard() {
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-foreground">{t(r.entityType)}</span>
                     {chip(r.status)}
+                    <span className="rounded bg-secondary px-1.5 py-0.5 text-foreground">{t(`k_${r.triggerKind}`)}</span>
                     {r.isTest && <span className="rounded bg-muted px-1.5 py-0.5">{t("test")}</span>}
                   </span>
                   <span className="mt-1 block break-all font-mono text-muted-foreground">{r.entityId}</span>
                   <span className="mt-1 block break-words text-muted-foreground">
                     {r.total} {t("files")} · {t("verified")} {r.verified} · {t("absent")} {r.absent} · {r.attempts} {t("tries")} ·{" "}
-                    {t("lastRun")}: {dt(r.lastRunAt)}
+                    {t("protectedL")} {r.protected} · {t("unresolvedL")} {r.unresolved} · {t("lastRun")}: {dt(r.lastRunAt)}
                     {r.nextAttemptAt ? ` · ${t("nextRetry")}: ${dt(r.nextAttemptAt)}` : ""}
+                  </span>
+                  <span className="mt-1 block break-words text-muted-foreground">
+                    {t("by")}: {r.triggerKind === "manual" ? (r.initiatedByName ?? r.initiatedBy ?? "—") : t("system")} · {t("reasonL")}:{" "}
+                    {T[`r_${r.reason}`] ? t(`r_${r.reason}`) : r.reason} · {t("createdL")}: {dt(r.createdAt)}
                   </span>
                   {r.lastError && (
                     <span className="mt-1 block break-words text-destructive">

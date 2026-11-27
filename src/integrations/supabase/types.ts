@@ -1573,11 +1573,13 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
+          initiated_by: string | null
           is_test: boolean
           last_error: string | null
           last_run_at: string | null
           lease_token: string | null
           lease_until: string | null
+          manual_early: boolean
           next_attempt_at: string | null
           objects_absent: number
           objects_protected: number
@@ -1589,6 +1591,7 @@ export type Database = {
           reason: string
           record_finalized_at: string | null
           status: string
+          trigger_kind: string
           updated_at: string
         }
         Insert: {
@@ -1598,11 +1601,13 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
+          initiated_by?: string | null
           is_test?: boolean
           last_error?: string | null
           last_run_at?: string | null
           lease_token?: string | null
           lease_until?: string | null
+          manual_early?: boolean
           next_attempt_at?: string | null
           objects_absent?: number
           objects_protected?: number
@@ -1614,6 +1619,7 @@ export type Database = {
           reason?: string
           record_finalized_at?: string | null
           status?: string
+          trigger_kind?: string
           updated_at?: string
         }
         Update: {
@@ -1623,11 +1629,13 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+          initiated_by?: string | null
           is_test?: boolean
           last_error?: string | null
           last_run_at?: string | null
           lease_token?: string | null
           lease_until?: string | null
+          manual_early?: boolean
           next_attempt_at?: string | null
           objects_absent?: number
           objects_protected?: number
@@ -1639,6 +1647,7 @@ export type Database = {
           reason?: string
           record_finalized_at?: string | null
           status?: string
+          trigger_kind?: string
           updated_at?: string
         }
         Relationships: []

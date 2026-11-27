@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { parseManualInput as parseManualInputSync } from "@/lib/cleanup/manual-input";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -140,13 +141,14 @@ export const restoreDeletedCard = createServerFn({ method: "POST" })
 /** Irreversible removal of record, project and every stored file. */
 export const purgeDeletedCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cardId: string }) => {
+  .inputValidator((input: { cardId: string; confirm: string; allowBeforeRetention?: boolean }) => {
     if (!input?.cardId) throw new Error("cardId is required");
-    return { cardId: input.cardId };
+    return { cardId: input.cardId, ...parseManualInputSync(input) };
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { getAdmin, purgeCardCompletely, recordAdminAction } = await import("./deleted-cards.server");
+    const { getAdmin } = await import("./deleted-cards.server");
+    const { adminManualPurge } = await import("@/lib/cleanup/manual.server");
     const supabaseAdmin = await getAdmin();
 
     const { data: card } = await supabaseAdmin
@@ -156,16 +158,15 @@ export const purgeDeletedCard = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!card) throw new Error("card_not_found");
 
-    await purgeCardCompletely(data.cardId);
-    await recordAdminAction({
+    return adminManualPurge({
+      type: "card",
+      id: card.id,
       actorUserId: context.userId,
-      action: "user_card.purged",
-      entityType: "user_greeting_card",
-      entityId: card.id,
       affectedUserId: card.user_id,
-      previous: { title: card.title },
+      allowBeforeRetention: data.allowBeforeRetention === true,
+      auditAction: "user_card.purged",
+      auditEntityType: "user_greeting_card",
     });
-    return { ok: true };
   });
 
 /** Logged whenever an administrator opens a user postcard. */
